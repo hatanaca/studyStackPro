@@ -47,5 +47,43 @@ _API VERSIONADA
 
     Accept: application/vnd.myapp.v2+json
 
+Tecnologias FrontEnd
+
+_Vue, Typescript, 
+
+_Pinia
+biblioteca de gerenciamento de estado  'state management' para aplicações feitas com Vue.js
+Estado => dados que afetam a interface, Pinia ferramente para gerenciar estado dos componentes
+
+_Vue Router
+biblioteca oficial de rotas do Vue.js
+Responsável por mudar url, conteudo porém pagina não recarrega
+
+_Chart.js
+Biblioteca utilizada para criar gráficos, 
+
+_Socket.IO <- no lado do cliente, no lado do server -> Socket.IO
+biblioteca que permite comunicação em tempo real
+
+
+Tecnologias rede
+
+_Nginx 
+Proxy reverso
+
+_SSL Termination 
+Nginx retira criptografia do https e encaminha http pro backend 
+
+_Rate Limiting 
+técnica que limita quantas requisições o usuario consegue realizar por minuto, podendo ser empregada por laravel ou nginx 
+
+_Static files 
+Arquivos estáticos entregues pelo servidor 
+
+WebSocket Upgrade
+cliente envia http com campo upgrade, servidor responde e inicia uma comunicação bidirecional
+
+
+
 
 
