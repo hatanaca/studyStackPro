@@ -24,8 +24,11 @@ class StudySessionService
     public function findForUser(string $id, string $userId): StudySession
     {
         $session = $this->repository->findById($id);
-        if (! $session || $session->user_id !== $userId) {
+        if (! $session) {
             abort(404);
+        }
+        if ($session->user_id !== $userId) {
+            abort(403);
         }
 
         return $session;

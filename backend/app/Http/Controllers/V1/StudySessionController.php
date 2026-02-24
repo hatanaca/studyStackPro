@@ -8,6 +8,7 @@ use App\Http\Requests\StudySessions\StoreStudySessionRequest;
 use App\Http\Requests\StudySessions\UpdateStudySessionRequest;
 use App\Http\Resources\StudySessionResource;
 use App\Modules\StudySessions\DTOs\StudySessionDTO;
+use App\Exceptions\ConcurrentSessionException;
 use App\Modules\StudySessions\Services\StudySessionService;
 use App\Traits\HasApiResponse;
 use Carbon\Carbon;
@@ -111,7 +112,7 @@ class StudySessionController extends Controller
         $user = $request->user();
         $existing = $user->studySessions()->whereNull('ended_at')->first();
         if ($existing) {
-            return $this->error('Você já possui uma sessão ativa.', 'VALIDATION_ERROR', null, 422);
+            throw new ConcurrentSessionException('O usuário já possui uma sessão ativa.');
         }
 
         $techId = $request->validated('technology_id')

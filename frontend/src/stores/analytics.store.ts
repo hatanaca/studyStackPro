@@ -7,20 +7,30 @@ import type { ApiResponse } from '@/types/api.types'
 export const useAnalyticsStore = defineStore('analytics', () => {
   const dashboard = ref<DashboardData | null>(null)
   const isLoading = ref(false)
-  const lastUpdated = ref<Date | null>(null)
+  const isRecalculating = ref(false)
+  const lastFetchAt = ref<Date | null>(null)
+
+  const TTL_MS = 5 * 60 * 1000
+  const isFresh = computed(
+    () =>
+      lastFetchAt.value !== null &&
+      Date.now() - lastFetchAt.value.getTime() < TTL_MS
+  )
 
   const userMetrics = computed((): UserMetrics | null => dashboard.value?.user_metrics ?? null)
   const technologyMetrics = computed(() => dashboard.value?.technology_metrics ?? [])
   const timeSeries30d = computed(() => dashboard.value?.time_series_30d ?? [])
   const topTechnologies = computed(() => dashboard.value?.top_technologies ?? [])
 
-  async function fetchDashboard() {
+  async function fetchDashboard(force = false) {
+    if (!force && isFresh.value) return
+
     isLoading.value = true
     try {
       const { data } = await apiClient.get<ApiResponse<DashboardData>>('/analytics/dashboard')
       if (data.success && data.data) {
         dashboard.value = data.data
-        lastUpdated.value = new Date()
+        lastFetchAt.value = new Date()
       }
     } finally {
       isLoading.value = false
@@ -29,18 +39,26 @@ export const useAnalyticsStore = defineStore('analytics', () => {
 
   function updateFromWebSocket(data: DashboardData) {
     dashboard.value = data
-    lastUpdated.value = new Date()
+    lastFetchAt.value = new Date()
+    isRecalculating.value = false
+  }
+
+  function setRecalculating(value: boolean) {
+    isRecalculating.value = value
   }
 
   return {
     dashboard,
     isLoading,
-    lastUpdated,
+    isRecalculating,
+    lastFetchAt,
+    isFresh,
     userMetrics,
     technologyMetrics,
     timeSeries30d,
     topTechnologies,
     fetchDashboard,
-    updateFromWebSocket
+    updateFromWebSocket,
+    setRecalculating
   }
 })

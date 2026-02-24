@@ -44,6 +44,11 @@ class AuthService
             return false;
         }
 
-        return $this->authRepository->updatePassword($user, Hash::make($newPassword));
+        $updated = $this->authRepository->updatePassword($user, Hash::make($newPassword));
+        if ($updated) {
+            $user->tokens()->delete();
+        }
+
+        return $updated;
     }
 }

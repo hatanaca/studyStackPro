@@ -14,11 +14,15 @@ class AnalyticsService
 
     public function getDashboardData(string $userId): array
     {
-        return Cache::tags(['analytics', "user:{$userId}"])->remember(
+        $lockKey = 'dashboard:lock:'.$userId;
+
+        return \Illuminate\Support\Facades\Cache::lock($lockKey, 10)->block(5, function () use ($userId) {
+            return Cache::tags(['analytics', "user:{$userId}"])->remember(
             "dashboard:{$userId}",
             now()->addMinutes(5),
             fn () => $this->buildDashboardData($userId)
         );
+        });
     }
 
     public function getUserMetrics(string $userId): array

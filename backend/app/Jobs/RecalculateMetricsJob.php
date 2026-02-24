@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\Analytics\MetricsRecalculating;
 use App\Modules\Analytics\Aggregators\MetricsAggregator;
 use App\Modules\Analytics\Services\AnalyticsService;
 use Illuminate\Bus\Queueable;
@@ -39,6 +40,8 @@ class RecalculateMetricsJob implements ShouldQueue, ShouldBeUnique
 
     public function handle(MetricsAggregator $aggregator, AnalyticsService $analyticsService): void
     {
+        event(new MetricsRecalculating($this->userId));
+
         $aggregator->recalculateUserMetrics($this->userId);
         $aggregator->recalculateTechnologyMetrics($this->userId);
         $aggregator->recalculateDailyMinutes($this->userId);

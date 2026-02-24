@@ -1,19 +1,39 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
+import { useWebSocket } from '@/composables/useWebSocket'
 import ActiveSessionBanner from '@/components/sessions/ActiveSessionBanner.vue'
+import RealtimeBadge from '@/components/RealtimeBadge.vue'
+
+const authStore = useAuthStore()
+const { connect, disconnect } = useWebSocket()
+
+onMounted(() => {
+  if (authStore.user?.id) connect(authStore.user.id)
+})
+
+onUnmounted(() => {
+  disconnect()
+})
+
+function handleLogout() {
+  disconnect()
+  authStore.logout()
+}
 </script>
 
 <template>
   <div class="app-layout">
     <aside class="sidebar">
       <h1 class="logo">StudyTrack Pro</h1>
+      <RealtimeBadge class="realtime-badge" />
       <nav>
         <RouterLink to="/" active-class="active">Dashboard</RouterLink>
         <RouterLink to="/sessions" active-class="active">Sessões</RouterLink>
         <RouterLink to="/technologies" active-class="active">Tecnologias</RouterLink>
       </nav>
-      <button class="logout" @click="useAuthStore().logout()">Sair</button>
+      <button class="logout" @click="handleLogout">Sair</button>
     </aside>
     <main class="main">
       <ActiveSessionBanner />
@@ -37,7 +57,10 @@ import ActiveSessionBanner from '@/components/sessions/ActiveSessionBanner.vue'
 }
 .logo {
   font-size: 1.1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.realtime-badge {
+  margin-bottom: 1rem;
 }
 .sidebar nav {
   display: flex;

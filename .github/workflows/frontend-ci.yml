@@ -27,6 +27,14 @@ jobs:
         working-directory: frontend
         run: npm run type-check
 
+      - name: Run Vitest
+        working-directory: frontend
+        run: npm run test:run
+
+      - name: Run ESLint
+        working-directory: frontend
+        run: npm run lint
+
       - name: Build
         working-directory: frontend
         run: npm run build

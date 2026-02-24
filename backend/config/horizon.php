@@ -3,7 +3,7 @@
 use Illuminate\Support\Str;
 
 return [
-    'use' => 'default',
+    'use' => env('HORIZON_REDIS_CONNECTION', 'horizon'),
     'path' => env('HORIZON_PATH', 'horizon'),
     'prefix' => env('HORIZON_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_horizon:'),
     'middleware' => ['web'],
