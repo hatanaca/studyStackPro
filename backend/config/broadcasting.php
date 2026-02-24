@@ -3,6 +3,9 @@
 return [
     'default' => env('BROADCAST_CONNECTION', 'reverb'),
     'connections' => [
+        'log' => [
+            'driver' => 'log',
+        ],
         'reverb' => [
             'driver' => 'reverb',
             'key' => env('REVERB_APP_KEY'),

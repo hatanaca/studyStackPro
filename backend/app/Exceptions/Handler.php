@@ -8,6 +8,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Throwable;
 
@@ -43,6 +44,14 @@ class Handler extends ExceptionHandler
                     'success' => false,
                     'error' => ['code' => 'NOT_FOUND', 'message' => 'Recurso não encontrado.'],
                 ], 404),
+                $e instanceof \App\Exceptions\ConcurrentSessionException => response()->json([
+                    'success' => false,
+                    'error' => ['code' => \App\Exceptions\ConcurrentSessionException::CODE, 'message' => $e->getMessage()],
+                ], 409),
+                $e instanceof QueryException && str_contains($e->getMessage() ?? '', 'sessão ativa') => response()->json([
+                    'success' => false,
+                    'error' => ['code' => \App\Exceptions\ConcurrentSessionException::CODE, 'message' => 'O usuário já possui uma sessão ativa.'],
+                ], 409),
                 $e instanceof TooManyRequestsHttpException => response()->json([
                     'success' => false,
                     'error' => ['code' => 'RATE_LIMITED', 'message' => 'Muitas requisições.'],

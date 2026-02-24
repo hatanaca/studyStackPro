@@ -5,6 +5,8 @@ namespace App\Modules\Technologies\Repositories;
 use App\Models\Technology;
 use App\Modules\Technologies\DTOs\TechnologyDTO;
 use App\Modules\Technologies\Repositories\Contracts\TechnologyRepositoryInterface;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -48,7 +50,15 @@ class EloquentTechnologyRepository implements TechnologyRepositoryInterface
 
     public function findForUser(string $id, string $userId): Technology
     {
-        return Technology::where('user_id', $userId)->findOrFail($id);
+        $tech = Technology::find($id);
+        if (! $tech) {
+            throw (new ModelNotFoundException)->setModel(Technology::class, $id);
+        }
+        if ($tech->user_id !== $userId) {
+            throw new AuthorizationException('Acesso negado a este recurso.');
+        }
+
+        return $tech;
     }
 
     public function create(TechnologyDTO $dto): Technology

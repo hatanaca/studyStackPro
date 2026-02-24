@@ -9,6 +9,20 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: studytrack_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -27,6 +41,17 @@ jobs:
         working-directory: backend
         run: cp .env.example .env && php artisan key:generate
 
+      - name: Run migrations
+        working-directory: backend
+        run: php artisan migrate --force
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: studytrack_test
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+
       - name: Run tests
         working-directory: backend
         run: php artisan test
@@ -37,3 +62,11 @@ jobs:
           DB_DATABASE: studytrack_test
           DB_USERNAME: postgres
           DB_PASSWORD: postgres
+
+      - name: Run Pint
+        working-directory: backend
+        run: ./vendor/bin/pint --test
+
+      - name: Run PHPStan
+        working-directory: backend
+        run: ./vendor/bin/phpstan analyse --memory-limit=512M

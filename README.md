@@ -1,14 +1,33 @@
 # StudyTrack Pro
 
+[![Backend CI](https://github.com/hatanaca/studyStackPro/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/hatanaca/studyStackPro/actions/workflows/backend-ci.yml)
+[![Frontend CI](https://github.com/hatanaca/studyStackPro/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/hatanaca/studyStackPro/actions/workflows/frontend-ci.yml)
+
 Plataforma de análise de sessões de estudo: registro, métricas e dashboard em tempo real.
+
+**Demo:** [em breve]
 
 ## Stack
 
-- **Frontend:** Vue 3 + TypeScript + Pinia + Vue Router
-- **Backend:** Laravel 11 API REST (Sanctum, Reverb, Horizon)
-- **Banco:** PostgreSQL 16 (schemas `public` + `analytics`)
-- **Cache/Filas:** Redis 7
-- **Infra:** Docker, Nginx
+| Tecnologia | Motivação |
+|------------|-----------|
+| Vue 3 + TypeScript | SPA reativa, tipagem estática e DX moderna |
+| Laravel 11 | API REST robusta, filas, broadcasting, ecosystem maduro |
+| PostgreSQL 16 | ACID, JSON, schemas (public + analytics) |
+| Redis 7 | Cache, sessões, filas, pub/sub para Reverb |
+| Reverb + Horizon | WebSockets em tempo real e processamento assíncrono |
+| Docker + Nginx | Containerização e proxy reverso |
+
+## Arquitetura
+
+```mermaid
+flowchart LR
+  Frontend[Vue SPA] --> API[Laravel API]
+  API --> DB[(PostgreSQL)]
+  API --> Redis[(Redis)]
+  API --> Reverb[WebSocket]
+  Horizon[Horizon] --> Redis
+```
 
 ## Pré-requisitos
 

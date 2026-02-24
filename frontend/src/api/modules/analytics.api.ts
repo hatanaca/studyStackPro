@@ -4,5 +4,10 @@ import type { DashboardData } from '@/types/domain.types'
 
 export const analyticsApi = {
   getDashboard: () => apiClient.get<ApiResponse<DashboardData>>('/analytics/dashboard'),
-  getUserMetrics: () => apiClient.get<ApiResponse<Record<string, unknown>>>('/analytics/user-metrics')
+  getUserMetrics: () => apiClient.get<ApiResponse<Record<string, unknown>>>('/analytics/user-metrics'),
+  getHeatmap: (year?: number) =>
+    apiClient.get<ApiResponse<{ date: string; total_minutes: number }[]>>(
+      '/analytics/heatmap',
+      { params: year ? { year } : {} }
+    )
 }
