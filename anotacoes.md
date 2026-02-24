@@ -85,5 +85,43 @@ cliente envia http com campo upgrade, servidor responde e inicia uma comunicaç�
 
 
 
+BackEnd 
+
+Routes - 
+    * cada Request chama uma rota
+web.php => rotas acessadas via browser, sessão, cookies, csrf
+api.php => retorna json, dados pro front, autenticação Sanctum, JWD
+channels.php => chat, notificação eventos echo + web socket 
+console.php => comandos artisan 
+
+Classes
+    \Route -> endpoints, mapear url -> controller
+    \Broadcast -> trabalha autorizar canais, trabalhar com broadcast 
+    \DB - > banco de dados 
+    \Redis - > cache/filas 
+    \facades\emailGenerico -> facades são atalhos para serviçoes no service container
+
+    
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
