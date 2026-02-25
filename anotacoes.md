@@ -100,8 +100,17 @@ Classes
     \DB - > banco de dados 
     \Redis - > cache/filas 
     \facades\emailGenerico -> facades são atalhos para serviçoes no service container
+* Facades => camada de abstração que fornece interface para serviços do container e injeção de dep
+* aliases de namespace => Facades
 
-    
+* Broadcast::routes(['middleware' => ['auth:sanctum']]);
+      Broadcast => Facade => atalho para classe \Illuminate\Support\Facades\Broadcast\
+      ::route() => método estático da classe
+      
+
+
+
+
             
 
 
