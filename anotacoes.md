@@ -106,6 +106,12 @@ Classes
 * Broadcast::routes(['middleware' => ['auth:sanctum']]);
       Broadcast => Facade => atalho para classe \Illuminate\Support\Facades\Broadcast\
       ::route() => método estático da classe
+   cada arquivo de rota pode devolver algo como http,json, logica,wenhooks, comandos p/ testes
+
+
+  O trait é um molde de resposta — garante que toda a API fale a mesma língua, independente de qual controller está respondendo.
+  Um Trait é um bloco de métodos reutilizáveis que pode ser "injetado" em qualquer classe. Como o PHP não tem herança múltipla, Traits resolvem esse problema:
+
       
 
 
