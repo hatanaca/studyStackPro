@@ -1,12 +1,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useSessionTimer } from '../useSessionTimer'
+import { useSessionTimer } from '@/features/sessions/composables/useSessionTimer'
+import { sessionsApi } from '@/api/modules/sessions.api'
+
+vi.mock('@/api/modules/sessions.api', () => ({
+  sessionsApi: {
+    getActive: vi.fn()
+  }
+}))
 
 vi.useFakeTimers()
 
 describe('useSessionTimer', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    vi.clearAllMocks()
   })
 
   afterEach(() => {
@@ -23,17 +31,22 @@ describe('useSessionTimer', () => {
   })
 
   it('refresh com elapsed_seconds do servidor preenche o store', async () => {
-    const { useSessionsStore } = await import('@/stores/sessions.store')
-    const store = useSessionsStore()
-    vi.spyOn(store, 'fetchActiveSession').mockResolvedValue({
-      id: '1',
-      elapsed_seconds: 120,
-      technology: {}
+    vi.mocked(sessionsApi.getActive).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          id: '1',
+          elapsed_seconds: 120,
+          technology: {}
+        }
+      }
     } as never)
 
     const { refresh } = useSessionTimer()
     await refresh()
 
+    const { useSessionsStore } = await import('@/stores/sessions.store')
+    const store = useSessionsStore()
     expect(store.elapsedSeconds).toBe(120)
     expect(store.activeSession).toBeTruthy()
   })

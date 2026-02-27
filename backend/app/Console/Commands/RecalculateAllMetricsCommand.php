@@ -17,12 +17,14 @@ class RecalculateAllMetricsCommand extends Command
         $count = User::count();
         if ($count === 0) {
             $this->info('Nenhum usuário no sistema.');
+
             return self::SUCCESS;
         }
 
         User::query()->pluck('id')->each(fn (string $id) => RecalculateMetricsJob::dispatch($id));
 
         $this->info("{$count} job(s) enfileirado(s).");
+
         return self::SUCCESS;
     }
 }

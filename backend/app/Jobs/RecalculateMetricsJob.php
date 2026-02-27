@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Events\Analytics\MetricsRecalculating;
+use App\Models\User;
 use App\Modules\Analytics\Aggregators\MetricsAggregator;
 use App\Modules\Analytics\Services\AnalyticsService;
 use Illuminate\Bus\Queueable;
@@ -12,9 +13,10 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class RecalculateMetricsJob implements ShouldQueue, ShouldBeUnique
+class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -42,9 +44,14 @@ class RecalculateMetricsJob implements ShouldQueue, ShouldBeUnique
     {
         event(new MetricsRecalculating($this->userId));
 
-        $aggregator->recalculateUserMetrics($this->userId);
-        $aggregator->recalculateTechnologyMetrics($this->userId);
-        $aggregator->recalculateDailyMinutes($this->userId);
+        $user = User::find($this->userId);
+        $timezone = $user?->timezone ?? 'UTC';
+
+        DB::transaction(function () use ($aggregator, $timezone) {
+            $aggregator->recalculateUserMetrics($this->userId, $timezone);
+            $aggregator->recalculateTechnologyMetrics($this->userId);
+            $aggregator->recalculateDailyMinutes($this->userId, $timezone);
+        });
 
         Cache::tags(['analytics', "user:{$this->userId}"])->flush();
         $dashboardData = $analyticsService->getDashboardData($this->userId);

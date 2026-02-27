@@ -35,12 +35,14 @@ class TechnologyService
             icon: $data['icon'] ?? null,
             description: $data['description'] ?? null,
         );
+
         return $this->repository->create($dto);
     }
 
     public function update(string $id, string $userId, array $data): \App\Models\Technology
     {
         $tech = $this->repository->findForUser($id, $userId);
+
         return $this->repository->update($tech, $data);
     }
 

@@ -21,7 +21,9 @@ return new class extends Migration
             $table->timestampsTz();
         });
 
-        DB::statement("
+        // duration_min calculado pelo banco: evita inconsistência e garante integridade
+        // GENERATED STORED = valor persistido, não recalculado a cada SELECT
+        DB::statement('
             ALTER TABLE study_sessions
             ADD COLUMN duration_min INTEGER GENERATED ALWAYS AS (
                 CASE WHEN ended_at IS NOT NULL
@@ -29,12 +31,12 @@ return new class extends Migration
                 ELSE NULL
                 END
             ) STORED
-        ");
-        DB::statement("
+        ');
+        DB::statement('
             ALTER TABLE study_sessions
             ADD CONSTRAINT chk_session_end_after_start
             CHECK (ended_at IS NULL OR ended_at > started_at)
-        ");
+        ');
     }
 
     public function down(): void

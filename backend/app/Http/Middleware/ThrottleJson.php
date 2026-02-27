@@ -13,7 +13,7 @@ class ThrottleJson
     {
         $key = $request->user()?->id ?? $request->ip();
 
-        if (RateLimiter::tooManyAttempts('api:' . $key, (int) $limit)) {
+        if (RateLimiter::tooManyAttempts('api:'.$key, (int) $limit)) {
             return response()->json([
                 'success' => false,
                 'error' => [
@@ -23,7 +23,7 @@ class ThrottleJson
             ], 429);
         }
 
-        RateLimiter::hit('api:' . $key);
+        RateLimiter::hit('api:'.$key);
 
         return $next($request);
     }

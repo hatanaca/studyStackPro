@@ -7,86 +7,140 @@ use Illuminate\Support\Facades\DB;
 /**
  * Agrega métricas a partir de study_sessions para o schema analytics.
  * Usado pelo RecalculateMetricsJob.
+ * Conforme spec: usa timezone do usuário para study_date e streaks.
  */
 class MetricsAggregator
 {
-    public function recalculateUserMetrics(string $userId): void
+    public function recalculateUserMetrics(string $userId, string $userTimezone = 'UTC'): void
     {
         $row = DB::selectOne('
             SELECT
-                COALESCE(COUNT(*) FILTER (WHERE ended_at IS NOT NULL), 0)::int AS total_sessions,
-                COALESCE(SUM(duration_min) FILTER (WHERE ended_at IS NOT NULL), 0)::int AS total_minutes,
-                MAX(ended_at) FILTER (WHERE ended_at IS NOT NULL) AS last_session_at
+                COUNT(*)::int AS total_sessions,
+                COALESCE(SUM(duration_min), 0)::int AS total_minutes,
+                COALESCE(AVG(duration_min), 0)::numeric AS avg_session_min,
+                COALESCE(MAX(duration_min), 0)::int AS longest_session_min,
+                COALESCE(MIN(duration_min), 0)::int AS shortest_session_min,
+                AVG(CASE WHEN mood IS NOT NULL THEN mood::numeric END) AS avg_mood,
+                AVG(CASE WHEN focus_score IS NOT NULL THEN focus_score::numeric END) AS avg_focus_score,
+                MAX(ended_at) AS last_session_at
             FROM public.study_sessions
-            WHERE user_id = ?::uuid
+            WHERE user_id = ?::uuid AND ended_at IS NOT NULL
         ', [$userId]);
 
-        $totalSessions = $row->total_sessions ?? 0;
-        $totalMinutes = $row->total_minutes ?? 0;
-        $lastSessionAt = $row->last_session_at?->format('Y-m-d H:i:s');
-        $currentStreak = $this->calculateCurrentStreak($userId);
-        $maxStreak = $this->calculateMaxStreak($userId);
-        $now = now()->toIso8601String();
+        $currentStreak = $this->calculateCurrentStreak($userId, $userTimezone);
+        $maxStreak = $this->calculateMaxStreak($userId, $userTimezone);
+
+        $totalSessions = $row?->total_sessions ?? 0;
+        $totalMinutes = $row?->total_minutes ?? 0;
+        $avgSessionMin = $row ? round((float) $row->avg_session_min, 2) : 0;
+        $longestSessionMin = $row?->longest_session_min ?? 0;
+        $shortestSessionMin = $row?->shortest_session_min ?? 0;
+        $avgMood = $row?->avg_mood !== null ? round((float) $row->avg_mood, 2) : null;
+        $avgFocusScore = $row?->avg_focus_score !== null ? round((float) $row->avg_focus_score, 2) : null;
+        $lastSessionAt = $row?->last_session_at?->format('Y-m-d H:i:s');
 
         DB::statement('
-            INSERT INTO analytics.user_metrics (user_id, total_sessions, total_minutes, current_streak_days, max_streak_days, last_session_at, updated_at)
-            VALUES (?::uuid, ?, ?, ?, ?, ?::timestamptz, ?::timestamptz)
+            INSERT INTO analytics.user_metrics (
+                user_id, total_sessions, total_minutes, avg_session_min,
+                longest_session_min, shortest_session_min, current_streak_days, max_streak_days,
+                avg_mood, avg_focus_score, last_session_at, recalculated_at
+            )
+            VALUES (?::uuid, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::timestamptz, NOW())
             ON CONFLICT (user_id) DO UPDATE SET
                 total_sessions = EXCLUDED.total_sessions,
                 total_minutes = EXCLUDED.total_minutes,
+                avg_session_min = EXCLUDED.avg_session_min,
+                longest_session_min = EXCLUDED.longest_session_min,
+                shortest_session_min = EXCLUDED.shortest_session_min,
                 current_streak_days = EXCLUDED.current_streak_days,
                 max_streak_days = EXCLUDED.max_streak_days,
+                avg_mood = EXCLUDED.avg_mood,
+                avg_focus_score = EXCLUDED.avg_focus_score,
                 last_session_at = EXCLUDED.last_session_at,
-                updated_at = EXCLUDED.updated_at
-        ', [$userId, $totalSessions, $totalMinutes, $currentStreak, $maxStreak, $lastSessionAt, $now]);
+                recalculated_at = NOW()
+        ', [
+            $userId,
+            $totalSessions,
+            $totalMinutes,
+            $avgSessionMin,
+            $longestSessionMin,
+            $shortestSessionMin,
+            $currentStreak,
+            $maxStreak,
+            $avgMood,
+            $avgFocusScore,
+            $lastSessionAt,
+        ]);
     }
 
     public function recalculateTechnologyMetrics(string $userId): void
     {
-        $now = now()->toIso8601String();
-
         DB::statement('
-            INSERT INTO analytics.technology_metrics (user_id, technology_id, total_minutes, session_count, last_used_at, updated_at)
+            WITH user_total AS (
+                SELECT COALESCE(SUM(duration_min), 1)::numeric AS total
+                FROM public.study_sessions
+                WHERE user_id = ?::uuid AND ended_at IS NOT NULL
+            )
+            INSERT INTO analytics.technology_metrics (
+                user_id, technology_id, total_minutes, session_count,
+                avg_session_min, percentage_total, first_studied_at, last_studied_at, recalculated_at
+            )
             SELECT
                 ss.user_id,
                 ss.technology_id,
                 COALESCE(SUM(ss.duration_min), 0),
-                COUNT(*),
+                COUNT(*)::int,
+                COALESCE(AVG(ss.duration_min), 0),
+                ROUND((COALESCE(SUM(ss.duration_min), 0)::numeric / ut.total) * 100, 2),
+                MIN(ss.started_at),
                 MAX(ss.ended_at),
-                ?::timestamptz
-            FROM public.study_sessions ss
-            WHERE ss.user_id = ?::uuid AND ss.technology_id IS NOT NULL AND ss.ended_at IS NOT NULL
-            GROUP BY ss.user_id, ss.technology_id
+                NOW()
+            FROM public.study_sessions ss, user_total ut
+            WHERE ss.user_id = ?::uuid
+              AND ss.ended_at IS NOT NULL
+              AND ss.technology_id IS NOT NULL
+            GROUP BY ss.user_id, ss.technology_id, ut.total
             ON CONFLICT (user_id, technology_id) DO UPDATE SET
                 total_minutes = EXCLUDED.total_minutes,
                 session_count = EXCLUDED.session_count,
-                last_used_at = EXCLUDED.last_used_at,
-                updated_at = EXCLUDED.updated_at
-        ', [$now, $userId]);
-
+                avg_session_min = EXCLUDED.avg_session_min,
+                percentage_total = EXCLUDED.percentage_total,
+                first_studied_at = EXCLUDED.first_studied_at,
+                last_studied_at = EXCLUDED.last_studied_at,
+                recalculated_at = NOW()
+        ', [$userId, $userId]);
     }
 
-    public function recalculateDailyMinutes(string $userId): void
+    public function recalculateDailyMinutes(string $userId, string $userTimezone = 'UTC'): void
     {
-        $now = now()->toIso8601String();
-
         DB::statement('
-            INSERT INTO analytics.daily_minutes (user_id, date, total_minutes, updated_at)
+            INSERT INTO analytics.daily_minutes (
+                user_id, study_date, total_minutes, session_count, technologies, avg_mood, recalculated_at
+            )
             SELECT
                 ss.user_id,
-                (ss.started_at AT TIME ZONE \'UTC\')::date,
+                (ss.started_at AT TIME ZONE ?)::date,
                 COALESCE(SUM(ss.duration_min), 0),
-                ?::timestamptz
+                COUNT(*)::int,
+                COALESCE(
+                    array_remove(array_agg(DISTINCT ss.technology_id) FILTER (WHERE ss.technology_id IS NOT NULL), NULL),
+                    \'{}\'::uuid[]
+                ),
+                AVG(ss.mood) FILTER (WHERE ss.mood IS NOT NULL),
+                NOW()
             FROM public.study_sessions ss
             WHERE ss.user_id = ?::uuid AND ss.ended_at IS NOT NULL
-            GROUP BY ss.user_id, (ss.started_at AT TIME ZONE \'UTC\')::date
-            ON CONFLICT (user_id, date) DO UPDATE SET
+            GROUP BY ss.user_id, (ss.started_at AT TIME ZONE ?)::date
+            ON CONFLICT (user_id, study_date) DO UPDATE SET
                 total_minutes = EXCLUDED.total_minutes,
-                updated_at = EXCLUDED.updated_at
-        ', [$now, $userId]);
+                session_count = EXCLUDED.session_count,
+                technologies = EXCLUDED.technologies,
+                avg_mood = EXCLUDED.avg_mood,
+                recalculated_at = NOW()
+        ', [$userTimezone, $userId, $userTimezone]);
     }
 
-    private function calculateCurrentStreak(string $userId): int
+    private function calculateCurrentStreak(string $userId, string $userTimezone = 'UTC'): int
     {
         $dates = DB::select('
             SELECT DISTINCT (started_at AT TIME ZONE ?)::date AS d
@@ -94,14 +148,14 @@ class MetricsAggregator
             WHERE user_id = ?::uuid AND ended_at IS NOT NULL
             ORDER BY d DESC
             LIMIT 365
-        ', [config('app.timezone', 'UTC'), $userId]);
+        ', [$userTimezone, $userId]);
 
         if (empty($dates)) {
             return 0;
         }
 
         $streak = 0;
-        $today = now()->timezone(config('app.timezone'))->toDateString();
+        $today = now()->timezone($userTimezone)->toDateString();
 
         foreach ($dates as $row) {
             $d = $row->d;
@@ -119,14 +173,14 @@ class MetricsAggregator
         return $streak;
     }
 
-    private function calculateMaxStreak(string $userId): int
+    private function calculateMaxStreak(string $userId, string $userTimezone = 'UTC'): int
     {
         $dates = DB::select('
             SELECT DISTINCT (started_at AT TIME ZONE ?)::date AS d
             FROM public.study_sessions
             WHERE user_id = ?::uuid AND ended_at IS NOT NULL
             ORDER BY d
-        ', [config('app.timezone', 'UTC'), $userId]);
+        ', [$userTimezone, $userId]);
 
         if (count($dates) < 2) {
             return count($dates);

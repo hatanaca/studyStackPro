@@ -7,8 +7,14 @@ defineProps<{
 
 <template>
   <div class="error-card">
-    <p class="message">{{ message || 'Ocorreu um erro ao carregar os dados.' }}</p>
-    <button v-if="onRetry" class="retry" @click="onRetry">
+    <p class="message">
+      {{ message || 'Ocorreu um erro ao carregar os dados.' }}
+    </p>
+    <button
+      v-if="onRetry"
+      class="retry"
+      @click="onRetry"
+    >
       Tentar novamente
     </button>
   </div>

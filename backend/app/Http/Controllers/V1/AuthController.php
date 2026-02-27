@@ -8,6 +8,8 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
+use App\Modules\Auth\DTOs\LoginDTO;
+use App\Modules\Auth\DTOs\RegisterDTO;
 use App\Modules\Auth\Services\AuthService;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -23,12 +25,13 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request): JsonResponse
     {
-        $user = $this->authService->register(
-            $request->validated('name'),
-            $request->validated('email'),
-            $request->validated('password'),
-            $request->validated('timezone', 'UTC')
+        $dto = new RegisterDTO(
+            name: $request->validated('name'),
+            email: $request->validated('email'),
+            password: $request->validated('password'),
+            timezone: $request->validated('timezone', 'UTC')
         );
+        $user = $this->authService->register($dto);
         $token = $user->createToken('api-token')->plainTextToken;
 
         return $this->success(new UserResource($user), 'Registrado com sucesso.', 201)->withHeaders([
@@ -38,11 +41,12 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): JsonResponse
     {
-        $result = $this->authService->login(
-            $request->validated('email'),
-            $request->validated('password'),
-            $request->boolean('remember')
+        $dto = new LoginDTO(
+            email: $request->validated('email'),
+            password: $request->validated('password'),
+            remember: $request->boolean('remember')
         );
+        $result = $this->authService->login($dto);
         if (! $result) {
             return $this->error('Credenciais inválidas.', 'UNAUTHENTICATED', null, 401);
         }

@@ -1,0 +1,18 @@
+# Override para desenvolvimento: serviços adicionais (pgAdmin, Mailpit)
+# Uso: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+services:
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@studytrack.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"

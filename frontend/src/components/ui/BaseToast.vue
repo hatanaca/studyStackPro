@@ -25,7 +25,13 @@ onMounted(() => {
         role="alert"
       >
         <span class="message">{{ t.message }}</span>
-        <button class="close" aria-label="Fechar" @click="remove(t.id)">×</button>
+        <button
+          class="close"
+          aria-label="Fechar"
+          @click="remove(t.id)"
+        >
+          ×
+        </button>
       </div>
     </TransitionGroup>
   </div>

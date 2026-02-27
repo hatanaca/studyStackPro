@@ -8,6 +8,7 @@ return new class extends Migration
     public function up(): void
     {
         DB::statement('CREATE SCHEMA IF NOT EXISTS analytics');
+        DB::statement("COMMENT ON SCHEMA analytics IS 'Dados pré-calculados para o dashboard'");
     }
 
     public function down(): void

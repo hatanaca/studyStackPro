@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StudySession extends BaseModel
 {
+    use HasFactory;
+
     protected $table = 'study_sessions';
 
     protected $fillable = [
@@ -46,6 +49,7 @@ class StudySession extends BaseModel
         }
         $h = intdiv($this->duration_min, 60);
         $m = $this->duration_min % 60;
+
         return $h > 0 ? "{$h}h {$m}min" : "{$m}min";
     }
 }

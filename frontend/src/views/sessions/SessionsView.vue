@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import SessionList from '@/components/sessions/SessionList.vue'
+import SessionList from '@/features/sessions/components/SessionList.vue'
 </script>
 
 <template>

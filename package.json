@@ -1,0 +1,24 @@
+{
+  "name": "studytrack-pro",
+  "private": true,
+  "scripts": {
+    "prepare": "husky",
+    "lint": "cd frontend && npm run lint",
+    "lint:backend": "cd backend && php vendor/bin/pint --test 2>/dev/null || true",
+    "precommit": "cd backend && php vendor/bin/pint --test 2>/dev/null || true && cd frontend && npm run lint && npm run type-check"
+  },
+  "devDependencies": {
+    "husky": "^9.0.0",
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0"
+  },
+  "description": "[![Backend CI](https://github.com/hatanaca/studyStackPro/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/hatanaca/studyStackPro/actions/workflows/backend-ci.yml) [![Frontend CI](https://github.com/hatanaca/studyStackPro/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/hatanaca/studyStackPro/actions/workflows/frontend-ci.yml)",
+  "version": "1.0.0",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

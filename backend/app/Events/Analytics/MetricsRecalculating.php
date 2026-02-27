@@ -2,7 +2,6 @@
 
 namespace App\Events\Analytics;
 
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -25,7 +24,7 @@ class MetricsRecalculating implements ShouldBroadcast
 
     public function broadcastAs(): string
     {
-        return 'metrics.recalculating';
+        return '.metrics.recalculating';
     }
 
     public function broadcastWith(): array

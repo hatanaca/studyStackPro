@@ -32,7 +32,7 @@ class StudySessionConcurrentTest extends TestCase
         ]);
         $token = $user->createToken('api-token')->plainTextToken;
 
-        $response1 = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response1 = $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/v1/study-sessions/start', [
                 'technology_id' => $tech->id,
             ]);
@@ -40,7 +40,7 @@ class StudySessionConcurrentTest extends TestCase
         $response1->assertStatus(201)
             ->assertJson(['success' => true]);
 
-        $response2 = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response2 = $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/v1/study-sessions/start', [
                 'technology_id' => $tech->id,
             ]);

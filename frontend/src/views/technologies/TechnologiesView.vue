@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import TechnologyList from '@/components/technologies/TechnologyList.vue'
+import TechnologyList from '@/features/technologies/components/TechnologyList.vue'
 </script>
 
 <template>

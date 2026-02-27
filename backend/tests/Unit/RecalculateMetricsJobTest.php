@@ -5,9 +5,9 @@ namespace Tests\Unit;
 use App\Events\Analytics\MetricsRecalculated;
 use App\Events\Analytics\MetricsRecalculating;
 use App\Jobs\RecalculateMetricsJob;
+use App\Models\User;
 use App\Modules\Analytics\Aggregators\MetricsAggregator;
 use App\Modules\Analytics\Services\AnalyticsService;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
@@ -25,9 +25,9 @@ class RecalculateMetricsJobTest extends TestCase
 
         $user = User::factory()->create();
         $aggregator = Mockery::mock(MetricsAggregator::class);
-        $aggregator->shouldReceive('recalculateUserMetrics')->once()->with($user->id);
+        $aggregator->shouldReceive('recalculateUserMetrics')->once()->withArgs([$user->id, Mockery::any()]);
         $aggregator->shouldReceive('recalculateTechnologyMetrics')->once()->with($user->id);
-        $aggregator->shouldReceive('recalculateDailyMinutes')->once()->with($user->id);
+        $aggregator->shouldReceive('recalculateDailyMinutes')->once()->withArgs([$user->id, Mockery::any()]);
 
         $dashboardData = ['user_metrics' => [], 'technology_metrics' => []];
         $analyticsService = Mockery::mock(AnalyticsService::class);

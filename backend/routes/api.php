@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Broadcast;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
 
 Broadcast::routes(['middleware' => ['auth:sanctum']]);
@@ -56,49 +54,4 @@ Route::prefix('v1')->name('v1.')->group(function () {
     });
 });
 
-Route::get('health', function () {
-    $services = [];
-    $healthy = true;
-
-    try {
-        DB::connection()->getPdo();
-        $services['database'] = 'ok';
-    } catch (\Throwable $e) {
-        $services['database'] = 'error';
-        $healthy = false;
-    }
-
-    try {
-        Redis::ping();
-        $services['redis'] = 'ok';
-    } catch (\Throwable $e) {
-        $services['redis'] = 'error';
-        $healthy = false;
-    }
-
-    try {
-        $queueConn = config('queue.default');
-        $services['queue'] = $queueConn === 'redis' ? 'ok' : $queueConn;
-    } catch (\Throwable $e) {
-        $services['queue'] = 'error';
-    }
-
-    $reverbHost = config('broadcasting.connections.reverb.options.host', 'localhost');
-    $reverbPort = config('broadcasting.connections.reverb.options.port', 8080);
-    try {
-        $socket = @fsockopen($reverbHost, (int) $reverbPort, $errno, $errstr, 2);
-        $services['reverb'] = $socket ? 'ok' : 'error';
-        if ($socket) {
-            fclose($socket);
-        }
-    } catch (\Throwable $e) {
-        $services['reverb'] = 'error';
-    }
-
-    return response()->json([
-        'status' => $healthy ? 'healthy' : 'degraded',
-        'services' => $services,
-        'version' => '1.0.0',
-        'timestamp' => now()->toIso8601String(),
-    ], $healthy ? 200 : 503);
-})->name('health');
+Route::get('health', \App\Http\Controllers\HealthController::class)->name('health');

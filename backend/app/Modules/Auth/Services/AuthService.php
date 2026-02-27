@@ -3,6 +3,8 @@
 namespace App\Modules\Auth\Services;
 
 use App\Models\User;
+use App\Modules\Auth\DTOs\LoginDTO;
+use App\Modules\Auth\DTOs\RegisterDTO;
 use App\Modules\Auth\Repositories\Contracts\AuthRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -13,22 +15,22 @@ class AuthService
         private AuthRepositoryInterface $authRepository
     ) {}
 
-    public function register(string $name, string $email, string $password, string $timezone = 'UTC'): User
+    public function register(RegisterDTO $dto): User
     {
         return $this->authRepository->create([
-            'name' => $name,
-            'email' => $email,
-            'password' => Hash::make($password),
-            'timezone' => $timezone,
+            'name' => $dto->name,
+            'email' => $dto->email,
+            'password' => Hash::make($dto->password),
+            'timezone' => $dto->timezone,
         ]);
     }
 
     /**
      * @return array{user: User, token: string}|null
      */
-    public function login(string $email, string $password, bool $remember = false): ?array
+    public function login(LoginDTO $dto): ?array
     {
-        if (! Auth::attempt(compact('email', 'password'))) {
+        if (! Auth::attempt(['email' => $dto->email, 'password' => $dto->password])) {
             return null;
         }
         $user = Auth::user();
