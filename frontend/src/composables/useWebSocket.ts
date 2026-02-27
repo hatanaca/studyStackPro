@@ -1,6 +1,6 @@
 import Echo from 'laravel-echo'
 import Pusher from 'pusher-js'
-import { ref, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 import type { MetricsUpdatedEvent } from '@/types/websocket.types'
@@ -16,7 +16,7 @@ if (typeof window !== 'undefined') {
 }
 
 const isConnected = ref(false)
-let echo: Echo | null = null
+let echo: Echo<'reverb'> | null = null
 
 export function useWebSocket() {
   const authStore = useAuthStore()
