@@ -3,8 +3,6 @@ import { ref, computed } from 'vue'
 import type { StudySession } from '@/types/domain.types'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import type { ActiveSessionResponse } from '@/api/modules/sessions.api'
-import type { ApiResponse } from '@/types/api.types'
-
 export const useSessionsStore = defineStore('sessions', () => {
   const sessions = ref<StudySession[]>([])
   const activeSession = ref<ActiveSessionResponse | null>(null)

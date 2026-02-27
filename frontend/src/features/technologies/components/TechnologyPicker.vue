@@ -9,7 +9,7 @@ const props = withDefaults(
     placeholder?: string
     minSearchLength?: number
   }>(),
-  { placeholder: 'Buscar tecnologia...', minSearchLength: 2 }
+  { modelValue: null, placeholder: 'Buscar tecnologia...', minSearchLength: 2 }
 )
 
 const emit = defineEmits<{

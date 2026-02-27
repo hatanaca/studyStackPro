@@ -2,8 +2,6 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Technology } from '@/types/domain.types'
 import { technologiesApi } from '@/api/modules/technologies.api'
-import type { ApiResponse } from '@/types/api.types'
-
 const CACHE_FRESH_MS = 60_000 // 1 minuto
 
 export const useTechnologiesStore = defineStore('technologies', () => {
