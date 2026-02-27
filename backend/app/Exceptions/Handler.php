@@ -2,13 +2,12 @@
 
 namespace App\Exceptions;
 
-use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
-use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
+use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Throwable;
 
@@ -44,13 +43,17 @@ class Handler extends ExceptionHandler
                     'success' => false,
                     'error' => ['code' => 'NOT_FOUND', 'message' => 'Recurso não encontrado.'],
                 ], 404),
-                $e instanceof \App\Exceptions\ConcurrentSessionException => response()->json([
+                $e instanceof \App\Exceptions\Domain\ConcurrentSessionException => response()->json([
                     'success' => false,
-                    'error' => ['code' => \App\Exceptions\ConcurrentSessionException::CODE, 'message' => $e->getMessage()],
+                    'error' => ['code' => \App\Exceptions\Domain\ConcurrentSessionException::CODE, 'message' => $e->getMessage()],
                 ], 409),
+                $e instanceof \App\Exceptions\ApiException => response()->json([
+                    'success' => false,
+                    'error' => ['code' => $e->code, 'message' => $e->getMessage()],
+                ], $e->statusCode),
                 $e instanceof QueryException && str_contains($e->getMessage() ?? '', 'sessão ativa') => response()->json([
                     'success' => false,
-                    'error' => ['code' => \App\Exceptions\ConcurrentSessionException::CODE, 'message' => 'O usuário já possui uma sessão ativa.'],
+                    'error' => ['code' => \App\Exceptions\Domain\ConcurrentSessionException::CODE, 'message' => 'O usuário já possui uma sessão ativa.'],
                 ], 409),
                 $e instanceof TooManyRequestsHttpException => response()->json([
                     'success' => false,
@@ -86,6 +89,7 @@ class Handler extends ExceptionHandler
                 'error' => ['code' => 'UNAUTHENTICATED', 'message' => 'Token inválido ou ausente.'],
             ], 401);
         }
+
         return redirect()->guest($exception->redirectTo() ?? route('login'));
     }
 }

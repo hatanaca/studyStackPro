@@ -1,0 +1,20 @@
+/* Animações de rota e componentes */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.25s ease;
+}
+.slide-enter-from {
+  transform: translateX(-20px);
+}
+.slide-leave-to {
+  transform: translateX(20px);
+}

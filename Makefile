@@ -1,7 +1,7 @@
-.PHONY: dev stop build shell-php shell-vue test test-db-setup migrate fresh
+.PHONY: dev stop build shell-php shell-vue test test-back test-front test-db-setup migrate seed fresh horizon pint lint logs
 
 dev:
-	docker compose up -d
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 stop:
 	docker compose down
@@ -18,12 +18,31 @@ shell-vue:
 test-db-setup:
 	docker compose exec postgres psql -U studytrack -d postgres -c "CREATE DATABASE studytrack_test OWNER studytrack;" 2>/dev/null || true
 
-test: test-db-setup
+test: test-back test-front
+
+test-back: test-db-setup
 	docker compose exec php-fpm php artisan test
+
+test-front:
 	cd frontend && npm run test:run
 
 migrate:
 	docker compose exec php-fpm php artisan migrate
 
+seed:
+	docker compose exec php-fpm php artisan db:seed
+
 fresh:
 	docker compose exec php-fpm php artisan migrate:fresh --seed
+
+horizon:
+	docker compose exec php-fpm php artisan horizon
+
+pint:
+	docker compose exec php-fpm ./vendor/bin/pint
+
+lint:
+	cd frontend && npm run lint
+
+logs:
+	docker compose logs -f

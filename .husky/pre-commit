@@ -1,0 +1,3 @@
+#!/bin/sh
+(cd backend && php vendor/bin/pint --test 2>/dev/null) || true
+(cd frontend && npm run lint --if-present && npm run type-check --if-present) || true

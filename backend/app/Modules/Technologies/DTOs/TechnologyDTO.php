@@ -2,7 +2,7 @@
 
 namespace App\Modules\Technologies\DTOs;
 
-readonly final class TechnologyDTO
+final readonly class TechnologyDTO
 {
     public function __construct(
         public string $userId,

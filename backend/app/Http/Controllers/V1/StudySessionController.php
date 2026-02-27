@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\V1;
 
+use App\Exceptions\Domain\ConcurrentSessionException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StudySessions\StartStudySessionRequest;
 use App\Http\Requests\StudySessions\StoreStudySessionRequest;
 use App\Http\Requests\StudySessions\UpdateStudySessionRequest;
 use App\Http\Resources\StudySessionResource;
 use App\Modules\StudySessions\DTOs\StudySessionDTO;
-use App\Exceptions\ConcurrentSessionException;
+use App\Modules\StudySessions\DTOs\StudySessionFilterDTO;
 use App\Modules\StudySessions\Services\StudySessionService;
 use App\Traits\HasApiResponse;
 use Carbon\Carbon;
@@ -25,17 +26,9 @@ class StudySessionController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $filters = [
-            'technology_id' => $request->query('technology_id'),
-            'date_from' => $request->query('date_from'),
-            'date_to' => $request->query('date_to'),
-            'min_duration' => $request->query('min_duration'),
-            'mood' => $request->query('mood'),
-            'status' => $request->query('status'),
-            'per_page' => $request->query('per_page', 15),
-        ];
+        $filterDto = StudySessionFilterDTO::fromArray($request->query());
 
-        $paginator = $this->studySessionService->listForUser($request->user()->id, $filters);
+        $paginator = $this->studySessionService->listForUser($request->user()->id, $filterDto);
 
         return response()->json([
             'success' => true,

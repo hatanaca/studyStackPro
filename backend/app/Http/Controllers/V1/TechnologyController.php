@@ -5,6 +5,7 @@ namespace App\Http\Controllers\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Technologies\StoreTechnologyRequest;
 use App\Http\Requests\Technologies\UpdateTechnologyRequest;
+use App\Http\Resources\TechnologyResource;
 use App\Modules\Technologies\Services\TechnologyService;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -21,7 +22,8 @@ class TechnologyController extends Controller
     public function index(Request $request): JsonResponse
     {
         $technologies = $this->technologyService->listForUser($request->user()->id);
-        return $this->success($technologies);
+
+        return $this->success(TechnologyResource::collection($technologies));
     }
 
     public function search(Request $request): JsonResponse
@@ -29,7 +31,8 @@ class TechnologyController extends Controller
         $q = $request->query('q', '');
         $limit = min((int) $request->query('limit', 10), 50);
         $technologies = $this->technologyService->search($request->user()->id, $q, $limit);
-        return $this->success($technologies);
+
+        return $this->success(TechnologyResource::collection($technologies));
     }
 
     public function store(StoreTechnologyRequest $request): JsonResponse
@@ -38,24 +41,28 @@ class TechnologyController extends Controller
             $request->user()->id,
             $request->validated()
         );
-        return $this->success($tech, 'Tecnologia criada.', 201);
+
+        return $this->success(new TechnologyResource($tech), 'Tecnologia criada.', 201);
     }
 
     public function show(Request $request, string $id): JsonResponse
     {
         $tech = $this->technologyService->findForUser($id, $request->user()->id);
-        return $this->success($tech);
+
+        return $this->success(new TechnologyResource($tech));
     }
 
     public function update(UpdateTechnologyRequest $request, string $id): JsonResponse
     {
         $tech = $this->technologyService->update($id, $request->user()->id, $request->validated());
-        return $this->success($tech, 'Tecnologia atualizada.');
+
+        return $this->success(new TechnologyResource($tech), 'Tecnologia atualizada.');
     }
 
     public function destroy(Request $request, string $id): JsonResponse
     {
         $this->technologyService->deactivate($id, $request->user()->id);
+
         return $this->success(null, 'Tecnologia desativada.');
     }
 }

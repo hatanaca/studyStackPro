@@ -20,6 +20,7 @@ class EloquentAuthRepository implements AuthRepositoryInterface
     public function updatePassword(User $user, string $hashedPassword): bool
     {
         $user->password = $hashedPassword;
+
         return $user->save();
     }
 }

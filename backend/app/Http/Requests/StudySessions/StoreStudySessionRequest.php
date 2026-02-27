@@ -9,9 +9,10 @@ class StoreStudySessionRequest extends FormRequest
     public function authorize(): bool
     {
         $techId = $this->input('technology_id');
-        if (!$techId) {
+        if (! $techId) {
             return true;
         }
+
         return $this->user()?->technologies()->where('id', $techId)->exists() ?? false;
     }
 

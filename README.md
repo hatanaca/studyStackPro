@@ -3,9 +3,15 @@
 [![Backend CI](https://github.com/hatanaca/studyStackPro/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/hatanaca/studyStackPro/actions/workflows/backend-ci.yml)
 [![Frontend CI](https://github.com/hatanaca/studyStackPro/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/hatanaca/studyStackPro/actions/workflows/frontend-ci.yml)
 
-Plataforma de análise de sessões de estudo: registro, métricas e dashboard em tempo real.
-
 **Demo:** [em breve]
+
+## Sobre o projeto
+
+StudyTrack Pro é uma plataforma para **desenvolvedores e estudantes** acompanharem suas sessões de estudo, visualizar métricas de produtividade e manter consistência em rotinas de aprendizado. O sistema registra tempo por tecnologia (ex: JavaScript, Laravel), exibe gráficos de distribuição, heatmap de atividade e streaks de dias consecutivos. O dashboard atualiza em tempo real via WebSocket quando novas sessões são criadas ou métricas são recalculadas.
+
+**Para quem:** desenvolvedores autodidatas, bootcamps ou quem quer medir evolução técnica.
+
+**Por quê:** portfólio full‑stack demonstrando arquitetura event‑driven, cache distribuído, TypeScript e boas práticas (DDD, testes, CI/CD).
 
 ## Stack
 
@@ -100,6 +106,14 @@ studyTrackPro/
 - `make shell-php` — shell no container PHP
 - `make migrate` — roda migrations
 - `make fresh` — migrate:fresh --seed
+- `make test` — cria banco `studytrack_test` (se não existir), roda testes backend (PHPUnit) e frontend (Vitest)
+
+## Decisões de design
+
+- **Schemas separados (public + analytics):** dados transacionais em `public`, métricas pré-calculadas em `analytics` — facilita CQRS e consultas pesadas sem impactar writes.
+- **Event-driven:** controllers disparam eventos; listeners invalidam cache e enfileiram jobs. Lógica de negócio isolada nos Services.
+- **Cache com tags:** `Cache::tags(['analytics', "user:{$id}"])` permite flush por usuário sem listar chaves.
+- **Trigger de sessão concorrente:** garantia no banco (máx 1 sessão ativa por usuário) além da validação no app.
 
 ## Documentação do projeto
 

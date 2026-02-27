@@ -1,4 +1,5 @@
 import { apiClient } from '@/api/client'
+import { ENDPOINTS } from '@/api/endpoints'
 import type { ApiResponse } from '@/types/api.types'
 import type { StudySession } from '@/types/domain.types'
 
@@ -16,21 +17,21 @@ export const sessionsApi = {
     min_duration?: number
     mood?: number
     status?: string
-  }) => apiClient.get<ApiResponse<StudySession[]>>('/study-sessions', { params }),
+  }) => apiClient.get<ApiResponse<StudySession[]>>(ENDPOINTS.sessions.list, { params }),
   getOne: (id: string) =>
-    apiClient.get<ApiResponse<StudySession>>(`/study-sessions/${id}`),
+    apiClient.get<ApiResponse<StudySession>>(ENDPOINTS.sessions.one(id)),
   getActive: () =>
-    apiClient.get<ApiResponse<ActiveSessionResponse | null>>('/study-sessions/active'),
+    apiClient.get<ApiResponse<ActiveSessionResponse | null>>(ENDPOINTS.sessions.active),
   start: (technology_id?: string) =>
-    apiClient.post<ApiResponse<StudySession>>('/study-sessions/start', {
+    apiClient.post<ApiResponse<StudySession>>(ENDPOINTS.sessions.start, {
       technology_id: technology_id || undefined
     }),
   end: (id: string) =>
-    apiClient.patch<ApiResponse<StudySession>>(`/study-sessions/${id}/end`),
+    apiClient.patch<ApiResponse<StudySession>>(ENDPOINTS.sessions.end(id)),
   create: (data: Partial<StudySession> & { technology_id: string; started_at: string }) =>
-    apiClient.post<ApiResponse<StudySession>>('/study-sessions', data),
+    apiClient.post<ApiResponse<StudySession>>(ENDPOINTS.sessions.create, data),
   update: (id: string, data: Partial<StudySession>) =>
-    apiClient.put<ApiResponse<StudySession>>(`/study-sessions/${id}`, data),
+    apiClient.patch<ApiResponse<StudySession>>(ENDPOINTS.sessions.one(id), data),
   delete: (id: string) =>
-    apiClient.delete<ApiResponse<null>>(`/study-sessions/${id}`)
+    apiClient.delete<ApiResponse<null>>(ENDPOINTS.sessions.one(id)),
 }

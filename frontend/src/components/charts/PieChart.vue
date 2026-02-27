@@ -7,8 +7,15 @@ defineProps<{
 
 <template>
   <div class="pie-chart">
-    <h3 v-if="title" class="chart-title">{{ title }}</h3>
-    <div class="chart-placeholder">Gráfico de pizza (Chart.js)</div>
+    <h3
+      v-if="title"
+      class="chart-title"
+    >
+      {{ title }}
+    </h3>
+    <div class="chart-placeholder">
+      Gráfico de pizza (Chart.js)
+    </div>
   </div>
 </template>
 

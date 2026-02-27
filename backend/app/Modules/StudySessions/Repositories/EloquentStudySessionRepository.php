@@ -6,7 +6,6 @@ use App\Models\StudySession;
 use App\Modules\StudySessions\DTOs\StudySessionDTO;
 use App\Modules\StudySessions\Repositories\Contracts\StudySessionRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
 
 class EloquentStudySessionRepository implements StudySessionRepositoryInterface
 {

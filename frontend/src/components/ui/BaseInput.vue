@@ -17,7 +17,10 @@ defineEmits<{
 
 <template>
   <div class="base-input">
-    <label v-if="label" class="base-input__label">{{ label }}</label>
+    <label
+      v-if="label"
+      class="base-input__label"
+    >{{ label }}</label>
     <input
       :type="type ?? 'text'"
       :value="modelValue"
@@ -28,8 +31,13 @@ defineEmits<{
       :class="{ 'base-input__field--error': error }"
       class="base-input__field"
       @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-    />
-    <p v-if="error" class="base-input__error">{{ error }}</p>
+    >
+    <p
+      v-if="error"
+      class="base-input__error"
+    >
+      {{ error }}
+    </p>
   </div>
 </template>
 

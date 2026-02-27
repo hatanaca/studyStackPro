@@ -32,7 +32,7 @@ class TechnologyCrudTest extends TestCase
             'is_active' => true,
         ]);
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
             ->getJson('/api/v1/technologies');
 
         $response->assertStatus(200)
@@ -42,7 +42,7 @@ class TechnologyCrudTest extends TestCase
 
     public function test_store_creates_technology(): void
     {
-        $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
             ->postJson('/api/v1/technologies', [
                 'name' => 'TypeScript',
                 'color' => '#3178C6',
@@ -74,8 +74,8 @@ class TechnologyCrudTest extends TestCase
             'is_active' => true,
         ]);
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
-            ->getJson('/api/v1/technologies/' . $tech->id);
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
+            ->getJson('/api/v1/technologies/'.$tech->id);
 
         $response->assertStatus(200)
             ->assertJson([
@@ -95,8 +95,8 @@ class TechnologyCrudTest extends TestCase
             'is_active' => true,
         ]);
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
-            ->getJson('/api/v1/technologies/' . $tech->id);
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
+            ->getJson('/api/v1/technologies/'.$tech->id);
 
         $response->assertStatus(403)
             ->assertJson(['success' => false, 'error' => ['code' => 'FORBIDDEN']]);
@@ -112,8 +112,8 @@ class TechnologyCrudTest extends TestCase
             'is_active' => true,
         ]);
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
-            ->putJson('/api/v1/technologies/' . $tech->id, [
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
+            ->putJson('/api/v1/technologies/'.$tech->id, [
                 'name' => 'PHP 8',
                 'color' => '#777BB4',
             ]);
@@ -135,8 +135,8 @@ class TechnologyCrudTest extends TestCase
             'is_active' => true,
         ]);
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
-            ->deleteJson('/api/v1/technologies/' . $tech->id);
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
+            ->deleteJson('/api/v1/technologies/'.$tech->id);
 
         $response->assertStatus(200)
             ->assertJson(['success' => true]);

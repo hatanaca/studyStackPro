@@ -7,6 +7,7 @@ use App\Events\StudySession\StudySessionDeleted;
 use App\Events\StudySession\StudySessionUpdated;
 use App\Models\StudySession;
 use App\Modules\StudySessions\DTOs\StudySessionDTO;
+use App\Modules\StudySessions\DTOs\StudySessionFilterDTO;
 use App\Modules\StudySessions\Repositories\Contracts\StudySessionRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -16,9 +17,13 @@ class StudySessionService
         private StudySessionRepositoryInterface $repository,
     ) {}
 
-    public function listForUser(string $userId, array $filters = []): LengthAwarePaginator
+    public function listForUser(string $userId, array|StudySessionFilterDTO $filters = []): LengthAwarePaginator
     {
-        return $this->repository->findByUser($userId, $filters);
+        $filterArray = $filters instanceof StudySessionFilterDTO
+            ? $filters->toArray()
+            : $filters;
+
+        return $this->repository->findByUser($userId, $filterArray);
     }
 
     public function findForUser(string $id, string $userId): StudySession

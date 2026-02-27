@@ -17,7 +17,7 @@ class EloquentTechnologyRepository implements TechnologyRepositoryInterface
 
     public function listForUser(string $userId, bool $activeOnly = true): Collection
     {
-        $cacheKey = "technologies:list:{$userId}:" . ($activeOnly ? 'active' : 'all');
+        $cacheKey = "technologies:list:{$userId}:".($activeOnly ? 'active' : 'all');
 
         return Cache::tags(['technologies', "user:{$userId}"])->remember(
             $cacheKey,

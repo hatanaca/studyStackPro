@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\DashboardResource;
 use App\Modules\Analytics\Services\AnalyticsService;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -20,7 +21,7 @@ class AnalyticsController extends Controller
     {
         $data = $this->analyticsService->getDashboardData($request->user()->id);
 
-        return $this->success($data);
+        return $this->success(new DashboardResource($data));
     }
 
     public function userMetrics(Request $request): JsonResponse

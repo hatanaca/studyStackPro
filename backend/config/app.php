@@ -16,6 +16,7 @@ return [
     'maintenance' => [
         'driver' => 'file',
     ],
+    'horizon_admin_emails' => env('HORIZON_ADMIN_EMAILS', ''),
     'providers' => [
         Illuminate\Auth\AuthServiceProvider::class,
         Illuminate\Broadcasting\BroadcastServiceProvider::class,

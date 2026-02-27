@@ -4,7 +4,7 @@ namespace App\Modules\StudySessions\DTOs;
 
 use Carbon\Carbon;
 
-readonly final class StudySessionDTO
+final readonly class StudySessionDTO
 {
     public function __construct(
         public string $userId,

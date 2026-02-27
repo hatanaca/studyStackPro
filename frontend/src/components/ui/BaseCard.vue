@@ -6,9 +6,20 @@ defineProps<{
 
 <template>
   <div class="base-card">
-    <div v-if="title || $slots.actions" class="base-card__header">
-      <h3 v-if="title" class="base-card__title">{{ title }}</h3>
-      <div v-if="$slots.actions" class="base-card__actions">
+    <div
+      v-if="title || $slots.actions"
+      class="base-card__header"
+    >
+      <h3
+        v-if="title"
+        class="base-card__title"
+      >
+        {{ title }}
+      </h3>
+      <div
+        v-if="$slots.actions"
+        class="base-card__actions"
+      >
         <slot name="actions" />
       </div>
     </div>

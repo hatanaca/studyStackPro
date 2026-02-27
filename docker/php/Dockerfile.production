@@ -1,0 +1,44 @@
+# Uso: docker build -f docker/php/Dockerfile.production .
+# Contexto: raiz do projeto
+
+# Stage 1: Build (composer install)
+FROM composer:2 AS builder
+
+WORKDIR /app
+
+# Copiar apenas arquivos de dependências
+COPY backend/composer.json backend/composer.lock* ./
+
+RUN composer install \
+    --no-dev \
+    --no-scripts \
+    --no-autoloader \
+    --prefer-dist \
+    --ignore-platform-reqs
+
+# Copiar código da aplicação
+COPY backend/ ./
+
+RUN composer dump-autoload --optimize --no-dev
+
+# Stage 2: Runtime
+FROM php:8.3-fpm-alpine
+
+RUN apk add --no-cache \
+    libpq-dev \
+    icu-dev \
+    libzip-dev \
+    oniguruma-dev \
+    $PHPIZE_DEPS
+
+RUN docker-php-ext-install pdo_pgsql intl zip bcmath opcache
+RUN pecl install redis && docker-php-ext-enable redis
+
+COPY docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
+COPY docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf
+
+WORKDIR /var/www/html
+
+COPY --from=builder /app /var/www/html
+
+RUN chown -R www-data:www-data /var/www/html
