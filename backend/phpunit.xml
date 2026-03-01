@@ -19,11 +19,6 @@
         <exclude>
             <directory>app/Exceptions</directory>
         </exclude>
-        <coverage>
-            <report>
-                <html outputDirectory="coverage"/>
-            </report>
-        </coverage>
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>

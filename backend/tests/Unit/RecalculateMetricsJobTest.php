@@ -3,7 +3,6 @@
 namespace Tests\Unit;
 
 use App\Events\Analytics\MetricsRecalculated;
-use App\Events\Analytics\MetricsRecalculating;
 use App\Jobs\RecalculateMetricsJob;
 use App\Models\User;
 use App\Modules\Analytics\Aggregators\MetricsAggregator;
@@ -21,7 +20,7 @@ class RecalculateMetricsJobTest extends TestCase
 
     public function test_handle_calls_aggregator_and_analytics_service(): void
     {
-        Event::fake([MetricsRecalculating::class, MetricsRecalculated::class]);
+        Event::fake([MetricsRecalculated::class]);
 
         $user = User::factory()->create();
         $aggregator = Mockery::mock(MetricsAggregator::class);
@@ -43,7 +42,6 @@ class RecalculateMetricsJobTest extends TestCase
         $job = new RecalculateMetricsJob($user->id, true);
         $job->handle($aggregator, $analyticsService);
 
-        Event::assertDispatched(MetricsRecalculating::class);
         Event::assertDispatched(MetricsRecalculated::class, function ($e) use ($user, $dashboardData) {
             return $e->userId === $user->id && $e->dashboardData === $dashboardData;
         });

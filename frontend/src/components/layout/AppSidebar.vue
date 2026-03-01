@@ -38,6 +38,12 @@ function handleLogout() {
       >
         Tecnologias
       </RouterLink>
+      <RouterLink
+        to="/profile"
+        active-class="active"
+      >
+        Configurações
+      </RouterLink>
     </nav>
     <button
       class="app-sidebar__logout"

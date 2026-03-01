@@ -1,12 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAnalyticsStore } from '../analytics.store'
-import { apiClient } from '@/api/client'
+import { analyticsApi } from '@/api/modules/analytics.api'
 
-vi.mock('@/api/client', () => ({
-  apiClient: {
-    get: vi.fn()
-  }
+vi.mock('@/api/modules/analytics.api', () => ({
+  analyticsApi: {
+    getDashboard: vi.fn(),
+    getHeatmap: vi.fn(),
+    getWeekly: vi.fn(),
+    getTimeSeries: vi.fn(),
+    getTechStats: vi.fn(),
+  },
 }))
 
 describe('analytics.store', () => {
@@ -25,7 +29,7 @@ describe('analytics.store', () => {
         top_technologies: []
       }
     }
-    vi.mocked(apiClient.get).mockResolvedValue({ data: mockData } as never)
+    vi.mocked(analyticsApi.getDashboard).mockResolvedValue({ data: mockData } as never)
 
     const store = useAnalyticsStore()
     await store.fetchDashboard(true)
@@ -44,7 +48,7 @@ describe('analytics.store', () => {
         top_technologies: []
       }
     }
-    vi.mocked(apiClient.get).mockResolvedValue({ data: mockData } as never)
+    vi.mocked(analyticsApi.getDashboard).mockResolvedValue({ data: mockData } as never)
 
     const store = useAnalyticsStore()
     expect(store.isFresh).toBe(false)

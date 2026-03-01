@@ -7,6 +7,10 @@ use App\Events\StudySession\StudySessionCreated;
 use App\Events\StudySession\StudySessionDeleted;
 use App\Events\StudySession\StudySessionUpdated;
 use App\Listeners\Analytics\BroadcastMetricsUpdate;
+use App\Listeners\Analytics\UpdateCacheWithFreshData;
+use App\Listeners\StudySession\BroadcastMetricsRecalculating;
+use App\Listeners\StudySession\BroadcastSessionEnded;
+use App\Listeners\StudySession\BroadcastSessionStarted;
 use App\Listeners\StudySession\DispatchMetricsRecalculation;
 use App\Listeners\StudySession\InvalidateSessionCache;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -17,16 +21,21 @@ class EventServiceProvider extends ServiceProvider
         StudySessionCreated::class => [
             InvalidateSessionCache::class,
             DispatchMetricsRecalculation::class,
+            BroadcastSessionStarted::class,
+            BroadcastMetricsRecalculating::class,
         ],
         StudySessionUpdated::class => [
             InvalidateSessionCache::class,
             DispatchMetricsRecalculation::class,
+            BroadcastMetricsRecalculating::class,
+            BroadcastSessionEnded::class,
         ],
         StudySessionDeleted::class => [
             InvalidateSessionCache::class,
             DispatchMetricsRecalculation::class,
         ],
         MetricsRecalculated::class => [
+            UpdateCacheWithFreshData::class,
             BroadcastMetricsUpdate::class,
         ],
     ];

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 import {
   Chart as ChartJS,
   ArcElement,
@@ -81,7 +82,14 @@ const options: ChartOptions<'doughnut'> = {
     <div
       v-if="loading"
       class="chart-skeleton"
-    />
+    >
+      <SkeletonLoader
+        v-for="i in 6"
+        :key="i"
+        height="1.25rem"
+        class="skeleton-item"
+      />
+    </div>
     <div
       v-else-if="chartData.labels.length"
       class="chart-wrap"
@@ -121,14 +129,13 @@ const options: ChartOptions<'doughnut'> = {
 }
 .chart-skeleton {
   min-height: 200px;
-  background: #f1f5f9;
-  border-radius: 0.25rem;
-  animation: pulse 1.5s ease-in-out infinite;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 0;
 }
-@keyframes pulse {
-  50% {
-    opacity: 0.7;
-  }
+.skeleton-item {
+  width: 70%;
 }
 .hint {
   font-size: 0.75rem;

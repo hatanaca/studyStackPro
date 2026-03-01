@@ -1,45 +1,53 @@
 import { ref } from 'vue'
 
-export type ToastType = 'success' | 'error' | 'info'
-
-export interface Toast {
+export interface ToastMessage {
   id: number
   message: string
-  type: ToastType
+  type: 'success' | 'error' | 'info'
   duration?: number
 }
 
-const toasts = ref<Toast[]>([])
-let idCounter = 0
-let hideTimer: ReturnType<typeof setTimeout> | null = null
+const toasts = ref<ToastMessage[]>([])
+let nextId = 0
+let dismissTimer: ReturnType<typeof setTimeout> | null = null
+const DEFAULT_DURATION = 4000
 
 export function useToast() {
-  function add(message: string, type: ToastType = 'success', duration = 4000) {
-    const id = ++idCounter
+  function show(message: string, type: ToastMessage['type'] = 'info', duration = DEFAULT_DURATION) {
+    const id = ++nextId
     toasts.value = [...toasts.value, { id, message, type, duration }]
 
-    if (hideTimer) clearTimeout(hideTimer)
-    hideTimer = setTimeout(() => {
-      remove(id)
-      hideTimer = null
+    if (dismissTimer) clearTimeout(dismissTimer)
+    dismissTimer = setTimeout(() => {
+      dismiss(id)
+      dismissTimer = null
     }, duration)
+
+    return id
   }
 
-  function remove(id: number) {
+  function dismiss(id: number) {
     toasts.value = toasts.value.filter((t) => t.id !== id)
   }
 
   function success(message: string, duration?: number) {
-    add(message, 'success', duration)
+    return show(message, 'success', duration)
   }
 
   function error(message: string, duration?: number) {
-    add(message, 'error', duration ?? 6000)
+    return show(message, 'error', duration ?? 6000)
   }
 
   function info(message: string, duration?: number) {
-    add(message, 'info', duration)
+    return show(message, 'info', duration)
   }
 
-  return { toasts, success, error, info, remove }
+  return {
+    toasts,
+    show,
+    dismiss,
+    success,
+    error,
+    info,
+  }
 }

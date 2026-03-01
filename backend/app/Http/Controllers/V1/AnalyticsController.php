@@ -63,8 +63,8 @@ class AnalyticsController extends Controller
 
     public function recalculate(Request $request): JsonResponse
     {
-        $this->analyticsService->dispatchRecalculate($request->user()->id);
+        $result = $this->analyticsService->dispatchRecalculate($request->user()->id);
 
-        return $this->success(null, 'Recálculo enfileirado.', 202);
+        return $this->success($result, 'Recálculo agendado. Dashboard atualiza em alguns segundos.', 202);
     }
 }

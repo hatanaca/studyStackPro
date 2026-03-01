@@ -1,29 +1,43 @@
 import { ref } from 'vue'
 
-export function useConfirm() {
-  const show = ref(false)
-  const message = ref('')
-  const resolveRef = ref<((value: boolean) => void) | null>(null)
+export interface ConfirmOptions {
+  title?: string
+  message: string
+  confirmLabel?: string
+  cancelLabel?: string
+  variant?: 'danger' | 'primary'
+}
 
-  function confirm(msg: string): Promise<boolean> {
-    message.value = msg
-    show.value = true
+const isOpen = ref(false)
+const options = ref<ConfirmOptions>({ message: '' })
+let resolveFn: ((value: boolean) => void) | null = null
+
+export function useConfirm() {
+  function open(opts: ConfirmOptions | string): Promise<boolean> {
+    options.value = typeof opts === 'string' ? { message: opts } : opts
+    isOpen.value = true
     return new Promise<boolean>((resolve) => {
-      resolveRef.value = resolve
+      resolveFn = resolve
     })
   }
 
-  function accept() {
-    resolveRef.value?.(true)
-    show.value = false
-    resolveRef.value = null
+  function confirm() {
+    if (resolveFn) resolveFn(true)
+    resolveFn = null
+    isOpen.value = false
   }
 
   function cancel() {
-    resolveRef.value?.(false)
-    show.value = false
-    resolveRef.value = null
+    if (resolveFn) resolveFn(false)
+    resolveFn = null
+    isOpen.value = false
   }
 
-  return { show, message, confirm, accept, cancel }
+  return {
+    isOpen,
+    options,
+    open,
+    confirm,
+    cancel,
+  }
 }

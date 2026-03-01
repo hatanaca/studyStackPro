@@ -2,10 +2,11 @@
 withDefaults(
   defineProps<{
     type?: 'button' | 'submit'
-    variant?: 'primary' | 'secondary' | 'ghost'
+    variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline'
+    size?: 'sm' | 'md' | 'lg'
     disabled?: boolean
   }>(),
-  { type: 'button', variant: 'primary', disabled: false }
+  { type: 'button', variant: 'primary', size: 'md', disabled: false }
 )
 </script>
 
@@ -13,7 +14,7 @@ withDefaults(
   <button
     :type="type"
     class="base-button"
-    :class="[`base-button--${variant}`]"
+    :class="[`base-button--${variant}`, `base-button--${size}`]"
     :disabled="disabled"
   >
     <slot />
@@ -39,6 +40,29 @@ withDefaults(
 .base-button--ghost {
   background: transparent;
   color: #64748b;
+}
+.base-button--danger {
+  background: #dc2626;
+  color: #fff;
+}
+.base-button--outline {
+  background: transparent;
+  border: 1px solid #94a3b8;
+  color: #475569;
+}
+.base-button--outline:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+.base-button--sm {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+}
+.base-button--md {
+  padding: 0.5rem 1rem;
+}
+.base-button--lg {
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
 }
 .base-button:disabled {
   opacity: 0.6;

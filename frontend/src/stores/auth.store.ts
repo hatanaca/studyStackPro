@@ -44,6 +44,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  function updateUser(updated: User) {
+    user.value = updated
+  }
+
   async function logout() {
     try {
       await apiClient.post('/auth/logout')
@@ -54,5 +58,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { token, user, isAuthenticated, login, register, fetchMe, logout }
+  return { token, user, isAuthenticated, login, register, fetchMe, logout, updateUser }
 })

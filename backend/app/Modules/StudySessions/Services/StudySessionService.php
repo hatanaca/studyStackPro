@@ -51,7 +51,7 @@ class StudySessionService
     {
         $session = $this->findForUser($id, $userId);
         $session = $this->repository->update($session, $data);
-        event(new StudySessionUpdated($session));
+        event(new StudySessionUpdated($session, array_keys($data)));
 
         return $session;
     }

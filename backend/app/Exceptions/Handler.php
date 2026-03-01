@@ -33,7 +33,7 @@ class Handler extends ExceptionHandler
                 $e instanceof ValidationException => $this->validationError($e),
                 $e instanceof AuthenticationException => response()->json([
                     'success' => false,
-                    'error' => ['code' => 'UNAUTHENTICATED', 'message' => 'Token inválido ou ausente.'],
+                    'error' => ['code' => 'UNAUTHENTICATED', 'message' => 'Credenciais inválidas ou token expirado.'],
                 ], 401),
                 $e instanceof AuthorizationException => response()->json([
                     'success' => false,
@@ -57,7 +57,11 @@ class Handler extends ExceptionHandler
                 ], 409),
                 $e instanceof TooManyRequestsHttpException => response()->json([
                     'success' => false,
-                    'error' => ['code' => 'RATE_LIMITED', 'message' => 'Muitas requisições.'],
+                    'error' => [
+                        'code' => 'RATE_LIMITED',
+                        'message' => 'Muitas requisições.',
+                        'retry_after' => (int) ($e->getHeaders()['Retry-After'] ?? $e->getHeaders()['retry-after'] ?? 60),
+                    ],
                 ], 429),
                 default => response()->json([
                     'success' => false,
@@ -86,7 +90,7 @@ class Handler extends ExceptionHandler
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => false,
-                'error' => ['code' => 'UNAUTHENTICATED', 'message' => 'Token inválido ou ausente.'],
+                'error' => ['code' => 'UNAUTHENTICATED', 'message' => 'Credenciais inválidas ou token expirado.'],
             ], 401);
         }
 

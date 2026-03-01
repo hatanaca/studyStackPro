@@ -1,35 +1,33 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useDashboard } from '@/features/dashboard/composables/useDashboard'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 import ErrorCard from '@/components/ui/ErrorCard.vue'
+import DashboardHeader from '@/features/dashboard/components/DashboardHeader.vue'
 import KpiCards from '@/features/dashboard/components/KpiCards.vue'
 import TechDistributionWidget from '@/features/dashboard/components/TechDistributionWidget.vue'
 import TimeSeriesWidget from '@/features/dashboard/components/TimeSeriesWidget.vue'
 import WeeklyComparisonWidget from '@/features/dashboard/components/WeeklyComparisonWidget.vue'
 import HeatmapWidget from '@/features/dashboard/components/HeatmapWidget.vue'
-import { analyticsApi } from '@/api/modules/analytics.api'
 
-const { fetchDashboard } = useDashboard()
+const { initDashboard, fetchDashboard } = useDashboard()
 const analyticsStore = useAnalyticsStore()
 const hasError = ref(false)
-const heatmapData = ref<{ date: string; total_minutes: number }[]>([])
-const heatmapLoading = ref(false)
 
-async function fetchHeatmap() {
-  heatmapLoading.value = true
-  try {
-    const { data } = await analyticsApi.getHeatmap()
-    if (data.success && Array.isArray(data.data)) heatmapData.value = data.data
-  } finally {
-    heatmapLoading.value = false
+// Lazy fetch para 90d quando usuário selecionar
+watch(
+  () => analyticsStore.selectedPeriod,
+  async (period) => {
+    if (period === '90d' && !analyticsStore.timeSeriesData['90d']?.length) {
+      await analyticsStore.fetchTimeSeries('90d')
+    }
   }
-}
+)
 
 onMounted(async () => {
   try {
-    await Promise.all([fetchDashboard(), fetchHeatmap()])
+    await initDashboard()
   } catch {
     hasError.value = true
   }
@@ -37,13 +35,15 @@ onMounted(async () => {
 
 async function retry() {
   hasError.value = false
-  await fetchDashboard()
+  await fetchDashboard(true)
+  await analyticsStore.fetchHeatmap()
+  await analyticsStore.fetchWeekly()
 }
 </script>
 
 <template>
   <div class="dashboard">
-    <h1>Dashboard</h1>
+    <DashboardHeader />
     <ErrorCard
       v-if="hasError"
       message="Não foi possível carregar o dashboard."
@@ -85,11 +85,7 @@ async function retry() {
         >
           Nenhum dado ainda. Registre sessões de estudo para ver métricas.
         </p>
-        <TimeSeriesWidget
-          class="widget-full"
-          :data="analyticsStore.timeSeries30d"
-          :loading="analyticsStore.isRecalculating"
-        />
+        <TimeSeriesWidget class="widget-full" />
         <WeeklyComparisonWidget class="widget-full" />
         <TechDistributionWidget
           v-if="analyticsStore.technologyMetrics?.length"
@@ -97,8 +93,8 @@ async function retry() {
           :loading="analyticsStore.isRecalculating"
         />
         <HeatmapWidget
-          :data="heatmapData"
-          :loading="heatmapLoading"
+          :data="analyticsStore.heatmap"
+          :loading="analyticsStore.heatmapLoading"
         />
       </div>
     </template>
@@ -106,9 +102,8 @@ async function retry() {
 </template>
 
 <style scoped>
-.dashboard h1 {
-  margin-bottom: 1.5rem;
-  font-size: 1.5rem;
+.dashboard {
+  max-width: 1400px;
 }
 .empty {
   color: #64748b;

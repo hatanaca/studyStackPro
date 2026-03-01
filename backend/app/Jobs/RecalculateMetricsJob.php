@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Events\Analytics\MetricsRecalculating;
 use App\Models\User;
 use App\Modules\Analytics\Aggregators\MetricsAggregator;
 use App\Modules\Analytics\Services\AnalyticsService;
@@ -42,8 +41,7 @@ class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
 
     public function handle(MetricsAggregator $aggregator, AnalyticsService $analyticsService): void
     {
-        event(new MetricsRecalculating($this->userId));
-
+        // MetricsRecalculating já é disparado imediatamente pelo listener BroadcastMetricsRecalculating
         $user = User::find($this->userId);
         $timezone = $user?->timezone ?? 'UTC';
 

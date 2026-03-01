@@ -9,6 +9,10 @@ export const ENDPOINTS = {
     register: '/auth/register',
     logout: '/auth/logout',
     me: '/auth/me',
+    updateProfile: '/auth/me',
+    changePassword: '/auth/change-password',
+    tokens: '/auth/tokens',
+    revokeTokens: '/auth/tokens',
   },
   sessions: {
     list: '/study-sessions',
