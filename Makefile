@@ -1,4 +1,10 @@
-.PHONY: dev stop build shell-php shell-vue test test-back test-front test-db-setup migrate seed fresh horizon pint lint logs
+.PHONY: dev stop build setup shell-php shell-vue test test-back test-front test-db-setup migrate seed fresh horizon pint lint logs
+
+setup:
+	@test -f .env || cp .env.example .env
+	@test -f backend/.env || cp backend/.env.example backend/.env
+	@test -f frontend/.env || cp frontend/.env.example frontend/.env
+	@echo "Arquivos .env criados. Execute 'make dev' e depois 'make shell-php' para key:generate e migrate:fresh --seed"
 
 dev:
 	docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
