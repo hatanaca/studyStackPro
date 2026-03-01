@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { setupAuthGuard } from './guards'
 import { authRoutes } from './routes/auth.routes'
 import { dashboardRoutes } from './routes/dashboard.routes'
+import { profileRoutes } from './routes/profile.routes'
 import { sessionsRoutes } from './routes/sessions.routes'
 import { technologiesRoutes } from './routes/technologies.routes'
 
@@ -17,6 +18,7 @@ const router = createRouter({
         ...dashboardRoutes,
         ...sessionsRoutes,
         ...technologiesRoutes,
+        ...profileRoutes,
       ],
     },
   ],

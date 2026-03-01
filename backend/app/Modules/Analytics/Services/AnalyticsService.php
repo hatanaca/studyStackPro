@@ -75,9 +75,16 @@ class AnalyticsService
         );
     }
 
-    public function dispatchRecalculate(string $userId): void
+    /**
+     * @return array{job_id: string}
+     */
+    public function dispatchRecalculate(string $userId): array
     {
-        RecalculateMetricsJob::dispatch($userId, true);
+        $job = new RecalculateMetricsJob($userId, true);
+        $job->onQueue('metrics');
+        dispatch($job);
+
+        return ['job_id' => method_exists($job, 'uuid') && $job->uuid() ? $job->uuid() : \Illuminate\Support\Str::uuid()->toString()];
     }
 
     private function buildDashboardData(string $userId): array

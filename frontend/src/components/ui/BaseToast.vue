@@ -3,7 +3,7 @@ import { useToast } from '@/composables/useToast'
 import { setApiToast } from '@/api/client'
 import { onMounted } from 'vue'
 
-const { toasts, success, error, info, remove } = useToast()
+const { toasts, success, error, info, dismiss } = useToast()
 
 onMounted(() => {
   setApiToast((msg, type = 'success') => {
@@ -28,7 +28,7 @@ onMounted(() => {
         <button
           class="close"
           aria-label="Fechar"
-          @click="remove(t.id)"
+          @click="dismiss(t.id)"
         >
           ×
         </button>

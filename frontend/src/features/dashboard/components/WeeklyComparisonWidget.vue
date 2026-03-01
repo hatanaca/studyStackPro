@@ -1,35 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { computed } from 'vue'
 import BarChart from '@/components/charts/BarChart.vue'
+import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 import { formatShortDate } from '@/utils/formatters'
-import { analyticsApi } from '@/api/modules/analytics.api'
+import { useAnalyticsStore } from '@/stores/analytics.store'
 
-interface WeeklyData {
-  week_start: string
-  total_minutes: number
-  session_count: number
-}
-
-const data = ref<WeeklyData[]>([])
-const loading = ref(false)
+const analyticsStore = useAnalyticsStore()
 
 const chartData = computed(() => {
-  if (!data.value?.length) return undefined
-  const sorted = [...data.value].reverse()
+  const data = analyticsStore.weeklyComparison
+  if (!data?.length) return undefined
+  const sorted = [...data].reverse()
   return {
     labels: sorted.map((d) => formatShortDate(d.week_start)),
     values: sorted.map((d) => d.total_minutes),
-  }
-})
-
-onMounted(async () => {
-  loading.value = true
-  try {
-    const res = await analyticsApi.getWeekly()
-    const payload = res.data?.data
-    if (res.data?.success && Array.isArray(payload)) data.value = payload
-  } finally {
-    loading.value = false
   }
 })
 </script>
@@ -40,9 +24,16 @@ onMounted(async () => {
       Comparação semanal
     </h3>
     <div
-      v-if="loading"
+      v-if="analyticsStore.weeklyLoading"
       class="chart-skeleton"
-    />
+    >
+      <SkeletonLoader
+        v-for="i in 6"
+        :key="i"
+        height="1.5rem"
+        class="skeleton-bar"
+      />
+    </div>
     <BarChart
       v-else
       :data="chartData"
@@ -64,13 +55,12 @@ onMounted(async () => {
 }
 .chart-skeleton {
   min-height: 200px;
-  background: #f1f5f9;
-  border-radius: 0.25rem;
-  animation: pulse 1.5s ease-in-out infinite;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 0;
 }
-@keyframes pulse {
-  50% {
-    opacity: 0.7;
-  }
+.skeleton-bar {
+  width: 80%;
 }
 </style>

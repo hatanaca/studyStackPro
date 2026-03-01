@@ -40,12 +40,12 @@ class HealthController extends Controller
         $reverbPort = config('broadcasting.connections.reverb.options.port', 8080);
         try {
             $socket = @fsockopen($reverbHost, (int) $reverbPort, $errno, $errstr, 2);
-            $services['reverb'] = $socket ? 'ok' : 'error';
+            $services['websocket'] = $socket ? 'ok' : 'error';
             if ($socket) {
                 fclose($socket);
             }
         } catch (\Throwable) {
-            $services['reverb'] = 'error';
+            $services['websocket'] = 'error';
         }
 
         return response()->json([

@@ -40,39 +40,32 @@ flowchart LR
 - Docker e Docker Compose
 - Git
 
-## Setup local
+## Setup local (< 10 min)
 
 1. Clone o repositório e entre na pasta:
    ```bash
    cd studyTrackPro
    ```
 
-2. Copie o ambiente de exemplo e ajuste se precisar:
+2. Copie o ambiente e suba os containers:
    ```bash
    cp .env.example .env
    cp backend/.env.example backend/.env
-   ```
-
-3. Suba os containers:
-   ```bash
    make dev
    ```
 
-4. No backend, instale dependências e rode as migrations (dentro do container ou com PHP/Composer local):
+3. No backend (primeiro uso): key, migrations e seed
    ```bash
    make shell-php
-   composer install
    php artisan key:generate
-   php artisan migrate --seed
+   php artisan migrate:fresh --seed
    exit
    ```
 
-5. No frontend, instale dependências e build (ou use dev server):
-   ```bash
-   cd frontend && npm install && npm run build
-   ```
+4. No frontend (primeiro uso): `cd frontend && npm install && npm run build`
 
-6. Acesse: **http://localhost** (API em `/api/v1`, health em `/health`).
+5. Acesse: **http://localhost** (API em `/api/v1`, health em `/api/health`).
+6. Coleção Postman em `docs/StudyTrack_API_Collection.postman.json`.
 
 ## Estrutura do projeto
 

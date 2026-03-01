@@ -89,7 +89,7 @@ class AuthController extends Controller
             return $this->error('Senha atual incorreta.', 'VALIDATION_ERROR', null, 422);
         }
 
-        return $this->success(null, 'Senha alterada com sucesso.');
+        return $this->success(null, 'Senha alterada. Reconecte seus dispositivos.');
     }
 
     public function tokens(Request $request): JsonResponse
@@ -106,8 +106,14 @@ class AuthController extends Controller
 
     public function revokeAllTokens(Request $request): JsonResponse
     {
+        $count = $request->user()->tokens()->count();
         $request->user()->tokens()->delete();
 
-        return $this->success(null, 'Todos os tokens foram revogados.');
+        return $this->success(
+            ['revoked_count' => $count],
+            $count === 1
+                ? '1 token revogado.'
+                : "{$count} tokens revogados."
+        );
     }
 }

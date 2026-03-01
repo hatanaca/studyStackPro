@@ -60,7 +60,19 @@ export function useDashboard() {
     }
   })
 
+  async function initDashboard() {
+    await Promise.all([
+      analyticsStore.fetchDashboard(),
+      analyticsStore.fetchHeatmap(),
+      analyticsStore.fetchWeekly(),
+    ])
+    if (!analyticsStore.timeSeriesData['30d']?.length) {
+      await analyticsStore.fetchTimeSeries('30d')
+    }
+  }
+
   return {
-    fetchDashboard: (force?: boolean) => analyticsStore.fetchDashboard(force)
+    fetchDashboard: (force?: boolean) => analyticsStore.fetchDashboard(force),
+    initDashboard,
   }
 }
