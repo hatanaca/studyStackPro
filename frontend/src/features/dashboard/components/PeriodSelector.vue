@@ -6,21 +6,22 @@ const emit = defineEmits<{
   'update:modelValue': [value: TimeSeriesPeriod]
 }>()
 
-const defaultOptions: Array<{ value: TimeSeriesPeriod; label: string }> = [
-  { value: '7d', label: '7 dias' },
-  { value: '30d', label: '30 dias' },
-  { value: '90d', label: '90 dias' },
-]
-
 const props = withDefaults(
   defineProps<{
     modelValue: TimeSeriesPeriod
     options?: Array<{ value: TimeSeriesPeriod; label: string }>
   }>(),
-  { options: () => defaultOptions }
+  {
+    options: () =>
+      [
+        { value: '7d', label: '7 dias' },
+        { value: '30d', label: '30 dias' },
+        { value: '90d', label: '90 dias' },
+      ] as Array<{ value: TimeSeriesPeriod; label: string }>,
+  }
 )
 
-const resolvedOptions = computed(() => props.options ?? defaultOptions)
+const resolvedOptions = computed(() => props.options)
 
 function select(period: TimeSeriesPeriod) {
   emit('update:modelValue', period)

@@ -47,10 +47,9 @@ flowchart LR
    cd studyTrackPro
    ```
 
-2. Copie o ambiente e suba os containers:
+2. Configure o ambiente e suba os containers:
    ```bash
-   cp .env.example .env
-   cp backend/.env.example backend/.env
+   make setup   # cria .env a partir dos .example (se não existirem)
    make dev
    ```
 
@@ -94,6 +93,7 @@ studyTrackPro/
 
 ## Comandos úteis
 
+- `make setup` — cria arquivos .env (primeira vez)
 - `make dev` — sobe todos os serviços
 - `make stop` — para os containers
 - `make shell-php` — shell no container PHP
