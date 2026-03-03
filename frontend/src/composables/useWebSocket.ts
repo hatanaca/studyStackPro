@@ -25,6 +25,7 @@ export function useWebSocket() {
 
   function connect(userId: string) {
     if (typeof window === 'undefined') return
+    if (import.meta.env.VITE_REVERB_ENABLED === 'false') return
 
     disconnect()
 

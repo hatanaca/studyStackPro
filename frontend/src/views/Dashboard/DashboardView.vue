@@ -10,6 +10,7 @@ import TechDistributionWidget from '@/features/dashboard/components/TechDistribu
 import TimeSeriesWidget from '@/features/dashboard/components/TimeSeriesWidget.vue'
 import WeeklyComparisonWidget from '@/features/dashboard/components/WeeklyComparisonWidget.vue'
 import HeatmapWidget from '@/features/dashboard/components/HeatmapWidget.vue'
+import LogSessionWidget from '@/features/sessions/components/LogSessionWidget.vue'
 
 const { initDashboard, fetchDashboard } = useDashboard()
 const analyticsStore = useAnalyticsStore()
@@ -50,6 +51,7 @@ async function retry() {
       :on-retry="retry"
     />
     <template v-else>
+      <LogSessionWidget class="widget-full dashboard-register" />
       <template v-if="analyticsStore.isLoading && !analyticsStore.dashboard">
         <div class="widgets widgets--skeleton">
           <section class="kpi-skeleton">
@@ -83,7 +85,7 @@ async function retry() {
           v-else
           class="empty"
         >
-          Nenhum dado ainda. Registre sessões de estudo para ver métricas.
+          Nenhum dado ainda. Registre sessões acima para ver métricas.
         </p>
         <TimeSeriesWidget class="widget-full" />
         <WeeklyComparisonWidget class="widget-full" />
@@ -141,5 +143,8 @@ async function retry() {
 }
 .widget-full {
   grid-column: 1 / -1;
+}
+.dashboard-register {
+  margin-bottom: 1rem;
 }
 </style>

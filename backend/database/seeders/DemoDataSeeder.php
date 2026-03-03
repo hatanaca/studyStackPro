@@ -33,8 +33,8 @@ class DemoDataSeeder extends Seeder
                 ['name' => 'PostgreSQL', 'color' => '#4169E1'],
             ];
             foreach ($techs as $t) {
-                $tech = Technology::firstOrCreate(
-                    ['user_id' => $user->id, 'slug' => Str::slug($t['name'])],
+                $tech = $user->technologies()->firstOrCreate(
+                    ['slug' => Str::slug($t['name'])],
                     ['name' => $t['name'], 'color' => $t['color'], 'is_active' => true]
                 );
                 $technologies[] = $tech->id;

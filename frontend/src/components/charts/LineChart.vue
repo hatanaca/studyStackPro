@@ -1,19 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  type ChartOptions
-} from 'chart.js'
+import 'chart.js/auto'
+import { Chart, Filler } from 'chart.js'
+import type { ChartOptions } from 'chart.js'
 import { Line } from 'vue-chartjs'
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
+Chart.register(Filler)
 
 const props = defineProps<{
   data?: { labels: string[]; values: number[] }

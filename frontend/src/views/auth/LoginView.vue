@@ -17,8 +17,11 @@ async function onSubmit(payload: { email: string; password: string }) {
     await authStore.login(payload.email, payload.password)
     router.push('/')
   } catch (e: unknown) {
-    const err = e as { response?: { data?: { error?: { message?: string }; message?: string } } }
-    const msg = err?.response?.data?.error?.message ?? err?.response?.data?.message ?? 'Falha no login.'
+    const err = e as { response?: { data?: { error?: { message?: string }; message?: string }; status?: number }; message?: string }
+    const msg =
+      err?.response?.data?.error?.message ??
+      err?.response?.data?.message ??
+      (typeof err?.message === 'string' ? err.message : 'Falha no login.')
     loginFormRef.value?.setError(msg)
   } finally {
     loading.value = false
