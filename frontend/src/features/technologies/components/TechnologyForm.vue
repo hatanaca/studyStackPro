@@ -47,11 +47,21 @@ function validate(): boolean {
   return Object.keys(e).length === 0
 }
 
+function normalizeHexColor(hex: string): string {
+  const m = hex.match(/^#?([0-9A-Fa-f]+)$/)
+  if (!m) return '#3498DB'
+  const s = m[1]
+  if (s.length === 6) return '#' + s
+  if (s.length === 3) return '#' + s.split('').map((c) => c + c).join('')
+  if (s.length === 5) return '#' + (s + s[0]).slice(0, 6)
+  return '#' + (s + '0'.repeat(6)).slice(0, 6)
+}
+
 function onSubmit() {
   if (!validate()) return
   emit('submit', {
     name: name.value.trim(),
-    color: color.value,
+    color: normalizeHexColor(color.value),
     description: description.value.trim() || undefined
   })
 }

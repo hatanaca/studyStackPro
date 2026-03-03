@@ -206,6 +206,15 @@ function formatDate(iso: string | null): string {
           class="profile-form"
           @submit.prevent="changePassword"
         >
+          <!-- Campo oculto para acessibilidade em formulários de senha -->
+          <input
+            type="text"
+            name="username"
+            autocomplete="username"
+            style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0"
+            tabindex="-1"
+            aria-hidden="true"
+          >
           <BaseInput
             v-model="passwordForm.current_password"
             type="password"
