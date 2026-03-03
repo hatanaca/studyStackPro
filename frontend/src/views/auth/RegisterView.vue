@@ -22,8 +22,11 @@ async function onSubmit(payload: {
     await authStore.register(payload.name, payload.email, payload.password, payload.password_confirmation)
     router.push('/')
   } catch (e: unknown) {
-    const err = e as { response?: { data?: { error?: { message?: string }; message?: string } } }
-    const msg = err?.response?.data?.error?.message ?? err?.response?.data?.message ?? 'Falha no registro.'
+    const err = e as { response?: { data?: { error?: { message?: string }; message?: string }; status?: number }; message?: string }
+    const msg =
+      err?.response?.data?.error?.message ??
+      err?.response?.data?.message ??
+      (typeof err?.message === 'string' ? err.message : 'Falha no registro.')
     registerFormRef.value?.setError(msg)
   } finally {
     loading.value = false

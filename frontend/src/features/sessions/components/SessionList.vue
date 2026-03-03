@@ -2,9 +2,14 @@
 import { ref, watch } from 'vue'
 import SessionCard from './SessionCard.vue'
 import SessionFilters from './SessionFilters.vue'
+import LogSessionForm from './LogSessionForm.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseModal from '@/components/ui/BaseModal.vue'
 import { apiClient } from '@/api/client'
 import type { StudySession } from '@/types/domain.types'
 import type { ApiResponse } from '@/types/api.types'
+
+const showAddModal = ref(false)
 
 const filters = ref<{
   technology_id?: string
@@ -58,11 +63,24 @@ function onFiltersChange() {
   currentPage.value = 1
   fetchSessions()
 }
+
+function onSessionCreated() {
+  showAddModal.value = false
+  fetchSessions()
+}
 </script>
 
 <template>
   <div class="session-list">
-    <h2>Sessões de estudo</h2>
+    <div class="session-list__header">
+      <h2>Sessões de estudo</h2>
+      <BaseButton
+        size="sm"
+        @click="showAddModal = true"
+      >
+        Nova sessão
+      </BaseButton>
+    </div>
     <SessionFilters
       v-model="filters"
       @change="onFiltersChange"
@@ -89,15 +107,35 @@ function onFiltersChange() {
       v-else
       class="empty"
     >
-      Nenhuma sessão registrada.
+      Nenhuma sessão registrada. Clique em "Nova sessão" para registrar.
     </p>
+
+    <BaseModal
+      :show="showAddModal"
+      title="Registrar sessão"
+      @close="showAddModal = false"
+    >
+      <LogSessionForm
+        show-cancel
+        @success="onSessionCreated"
+        @cancel="showAddModal = false"
+      />
+    </BaseModal>
   </div>
 </template>
 
 <style scoped>
+.session-list__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
 .session-list h2 {
   font-size: 1.25rem;
-  margin-bottom: 1rem;
+  margin: 0;
 }
 .session-list__grid {
   display: flex;
