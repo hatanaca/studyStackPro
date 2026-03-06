@@ -5,6 +5,11 @@ import { dashboardRoutes } from './routes/dashboard.routes'
 import { profileRoutes } from './routes/profile.routes'
 import { sessionsRoutes } from './routes/sessions.routes'
 import { technologiesRoutes } from './routes/technologies.routes'
+import { goalsRoutes } from './routes/goals.routes'
+import { exportRoutes } from './routes/export.routes'
+import { settingsRoutes } from './routes/settings.routes'
+import { reportsRoutes } from './routes/reports.routes'
+import { helpRoutes } from './routes/help.routes'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -18,6 +23,11 @@ const router = createRouter({
         ...dashboardRoutes,
         ...sessionsRoutes,
         ...technologiesRoutes,
+        ...goalsRoutes,
+        ...exportRoutes,
+        ...settingsRoutes,
+        ...reportsRoutes,
+        ...helpRoutes,
         ...profileRoutes,
       ],
     },

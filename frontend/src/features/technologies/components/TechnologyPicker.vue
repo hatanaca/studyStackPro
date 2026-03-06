@@ -139,38 +139,48 @@ function onBlur() {
 }
 .technology-picker__input {
   width: 100%;
-  padding: 0.5rem 2rem 0.5rem 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
+  min-height: var(--input-height-sm);
+  padding: 0.45rem 2rem 0.45rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
   box-sizing: border-box;
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+.technology-picker__input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 .technology-picker__clear {
   position: absolute;
-  right: 0.5rem;
+  right: var(--spacing-sm);
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
-  font-size: 1.25rem;
-  color: #94a3b8;
+  font-size: 1.125rem;
+  color: var(--color-text-muted);
   cursor: pointer;
-  padding: 0.25rem;
+  padding: var(--spacing-xs);
   line-height: 1;
+  transition: color var(--duration-fast) ease;
 }
 .technology-picker__clear:hover {
-  color: #64748b;
+  color: var(--color-primary);
 }
 .technology-picker__dropdown {
   position: absolute;
   top: 100%;
   left: 0;
   right: 0;
-  margin-top: 0.25rem;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  margin-top: var(--spacing-xs);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
   max-height: 200px;
   overflow-y: auto;
   z-index: 10;
@@ -178,29 +188,31 @@ function onBlur() {
 .technology-picker__option {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: var(--spacing-sm) var(--spacing-md);
   border: none;
   background: none;
   text-align: left;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   cursor: pointer;
+  color: var(--color-text);
+  transition: background var(--duration-fast) ease;
 }
 .technology-picker__option:hover,
 .technology-picker__option--highlight {
-  background: #f1f5f9;
+  background: var(--color-bg-soft);
 }
 .technology-picker__color-dot {
-  width: 10px;
-  height: 10px;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 50%;
   flex-shrink: 0;
 }
 .technology-picker__loading {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.8125rem;
-  color: #64748b;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
   margin: 0;
 }
 </style>

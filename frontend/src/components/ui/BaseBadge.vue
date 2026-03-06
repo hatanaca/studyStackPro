@@ -18,11 +18,16 @@ defineProps<{
 .base-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 500;
+  padding: var(--spacing-2xs) var(--spacing-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
   border-radius: 9999px;
-  background-color: #e2e8f0;
-  color: #475569;
+  background-color: var(--color-bg-soft);
+  color: var(--color-text-muted);
+  border: 1px solid transparent;
+  transition: border-color var(--duration-fast) ease;
+}
+.base-badge:not([style*="background"]) {
+  border-color: color-mix(in srgb, var(--color-border) 60%, transparent);
 }
 </style>

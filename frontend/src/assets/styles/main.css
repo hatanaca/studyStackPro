@@ -1,6 +1,9 @@
 /* Entry point de estilos */
 @import './variables.css';
 @import './transitions.css';
+@import './utilities.css';
+@import './utilities-2.css';
+@import './animations.css';
 
 *,
 *::before,
@@ -10,10 +13,96 @@
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 body {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
   color: var(--color-text);
   background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+/* Focus visível para acessibilidade (teclado) */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+button:focus-visible,
+a:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Layout de página: header padrão para rotas */
+.page-header {
+  margin-bottom: var(--page-header-margin-bottom);
+}
+.page-title {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 var(--page-header-gap);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+.page-subtitle {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.5;
+  max-width: 42ch;
+}
+.page-view--narrow {
+  max-width: var(--page-max-width-narrow);
+}
+.page-view--wide {
+  max-width: var(--page-max-width);
+}
+@media (min-width: 1024px) {
+  .page-title {
+    font-size: var(--text-2xl);
+  }
+}
+/* Título de seção dentro de páginas (ex: "Por tecnologia") */
+.page-section-title {
+  font-size: var(--page-section-title-size);
+  font-weight: 600;
+  color: var(--color-text);
+  margin: var(--page-section-title-margin);
+  letter-spacing: -0.01em;
 }

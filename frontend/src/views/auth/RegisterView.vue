@@ -55,19 +55,32 @@ async function onSubmit(payload: {
 
 <style scoped>
 h1 {
-  font-size: 1.5rem;
-  margin-bottom: 0.25rem;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--spacing-xs);
+  color: var(--color-text);
 }
 .subtitle {
-  color: #64748b;
-  margin-bottom: 1.5rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--text-sm);
+  line-height: 1.4;
 }
 .footer {
-  margin-top: 1rem;
-  font-size: 0.875rem;
-  color: #64748b;
+  margin-top: var(--spacing-lg);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: 1.5;
 }
 .footer a {
-  color: #3b82f6;
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--duration-fast) ease;
+}
+.footer a:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
 }
 </style>

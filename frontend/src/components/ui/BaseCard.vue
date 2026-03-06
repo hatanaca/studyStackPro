@@ -31,24 +31,34 @@ defineProps<{
 
 <style scoped>
 .base-card {
-  background: #fff;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
   overflow: hidden;
+  transition: box-shadow var(--duration-normal) var(--ease-in-out),
+    border-color var(--duration-fast) ease;
+}
+.base-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--color-border);
 }
 .base-card__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1rem 0;
+  padding: var(--widget-padding, var(--spacing-md));
+  padding-bottom: 0;
 }
 .base-card__title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #334155;
+  font-size: var(--widget-title-size, var(--text-sm));
+  font-weight: var(--widget-title-weight, 600);
+  color: var(--color-text);
   margin: 0;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
 }
 .base-card__body {
-  padding: 1rem;
+  padding: var(--widget-padding, var(--spacing-md));
 }
 </style>

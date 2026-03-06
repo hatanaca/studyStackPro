@@ -37,7 +37,8 @@ class MetricsAggregator
         $shortestSessionMin = $row?->shortest_session_min ?? 0;
         $avgMood = $row?->avg_mood !== null ? round((float) $row->avg_mood, 2) : null;
         $avgFocusScore = $row?->avg_focus_score !== null ? round((float) $row->avg_focus_score, 2) : null;
-        $lastSessionAt = $row?->last_session_at?->format('Y-m-d H:i:s');
+        $raw = $row?->last_session_at;
+        $lastSessionAt = $raw instanceof \DateTimeInterface ? $raw->format('Y-m-d H:i:s') : $raw;
 
         DB::statement('
             INSERT INTO analytics.user_metrics (
@@ -130,14 +131,14 @@ class MetricsAggregator
                 NOW()
             FROM public.study_sessions ss
             WHERE ss.user_id = ?::uuid AND ss.ended_at IS NOT NULL
-            GROUP BY ss.user_id, (ss.started_at AT TIME ZONE ?)::date
+            GROUP BY 1, 2
             ON CONFLICT (user_id, study_date) DO UPDATE SET
                 total_minutes = EXCLUDED.total_minutes,
                 session_count = EXCLUDED.session_count,
                 technologies = EXCLUDED.technologies,
                 avg_mood = EXCLUDED.avg_mood,
                 recalculated_at = NOW()
-        ', [$userTimezone, $userId, $userTimezone]);
+        ', [$userTimezone, $userId]);
     }
 
     private function calculateCurrentStreak(string $userId, string $userTimezone = 'UTC'): int

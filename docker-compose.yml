@@ -70,7 +70,7 @@ services:
       - VITE_REVERB_PORT=${VITE_REVERB_PORT:-5173}
       - VITE_REVERB_SCHEME=http
       - PROXY_TARGET=http://nginx
-    command: npm run dev
+    command: npm run dev -- --host 0.0.0.0
 
   postgres:
     image: postgres:16-alpine

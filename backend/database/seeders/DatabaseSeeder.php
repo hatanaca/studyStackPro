@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             TechnologySeeder::class,
             DemoDataSeeder::class,
+            StudySpreadsheetUserSeeder::class,
         ]);
     }
 }

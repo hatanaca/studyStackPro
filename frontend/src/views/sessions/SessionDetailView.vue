@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { getApiErrorMessage } from '@/api/client'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import { useToast } from '@/composables/useToast'
 import { formatDateTime } from '@/utils/formatters'
+import KeyValueList from '@/components/ui/KeyValueList.vue'
 import type { StudySession } from '@/types/domain.types'
 
 const route = useRoute()
@@ -19,10 +21,18 @@ const id = computed(() => route.params.id as string)
 onMounted(async () => {
   try {
     const res = await sessionsApi.getOne(id.value)
-    session.value = res.data.data
-  } catch {
-    error.value = 'Sessão não encontrada.'
-    toast.error('Sessão não encontrada.')
+    if (res.data?.success && res.data?.data) {
+      session.value = res.data.data
+    } else {
+      const msg = (res.data as { error?: { message?: string } })?.error?.message ?? 'Sessão não encontrada.'
+      error.value = msg
+      toast.error(msg)
+      router.replace({ name: 'sessions' })
+    }
+  } catch (err: unknown) {
+    const msg = getApiErrorMessage(err) || 'Sessão não encontrada.'
+    error.value = msg
+    toast.error(msg)
     router.replace({ name: 'sessions' })
   } finally {
     loading.value = false
@@ -51,6 +61,7 @@ function goBack() {
     <template v-else-if="session">
       <div class="session-detail__header">
         <button
+          type="button"
           class="session-detail__back"
           @click="goBack"
         >
@@ -61,22 +72,10 @@ function goBack() {
         <h2 class="session-detail__title">
           Sessão de estudo
         </h2>
-        <dl class="session-detail__meta">
-          <dt>Tecnologia</dt>
-          <dd>{{ session.technology?.name ?? 'N/A' }}</dd>
-          <dt>Início</dt>
-          <dd>{{ formatDateTime(session.started_at) }}</dd>
-          <dt>Fim</dt>
-          <dd>{{ session.ended_at ? formatDateTime(session.ended_at) : 'Em andamento' }}</dd>
-          <dt>Duração</dt>
-          <dd>{{ session.duration_formatted ?? 'Em andamento' }}</dd>
-          <dt v-if="session.notes">
-            Notas
-          </dt>
-          <dd v-if="session.notes">
-            {{ session.notes }}
-          </dd>
-        </dl>
+        <KeyValueList
+          :items="sessionMetaItems"
+          layout="row"
+        />
       </div>
     </template>
   </div>
@@ -85,44 +84,56 @@ function goBack() {
 <style scoped>
 .session-detail {
   padding: 0;
+  max-width: var(--page-max-width-narrow);
 }
 .session-detail__header {
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-md);
 }
 .session-detail__back {
-  padding: 0.5rem 0.75rem;
-  background: transparent;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
+  min-height: var(--input-height-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  color: #64748b;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+  transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease;
 }
 .session-detail__back:hover {
-  background: #f1f5f9;
+  background: var(--color-bg-soft);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 .session-detail__card {
-  background: #fff;
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
 }
 .session-detail__title {
-  font-size: 1.25rem;
-  margin-bottom: 1rem;
-}
-.session-detail__meta {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.5rem 1.5rem;
-}
-.session-detail__meta dt {
-  color: #64748b;
-  font-size: 0.875rem;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+  color: var(--color-text);
+  letter-spacing: -0.01em;
 }
 .session-detail__loading,
 .session-detail__error {
-  padding: 2rem;
+  padding: var(--spacing-xl);
   text-align: center;
-  color: #64748b;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  background: color-mix(in srgb, var(--color-bg-soft) 50%, var(--color-bg-card));
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+}
+@media (max-width: 480px) {
+  .session-detail__card {
+    padding: var(--spacing-md);
+  }
 }
 </style>

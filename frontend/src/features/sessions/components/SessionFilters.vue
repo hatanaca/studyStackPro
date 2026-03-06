@@ -125,44 +125,73 @@ function clear() {
 
 <style scoped>
 .session-filters {
-  background: #fff;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  background: var(--color-bg-card);
+  padding: var(--widget-padding);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--page-section-gap);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
 }
 .session-filters__row {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: var(--spacing-sm);
   align-items: flex-end;
 }
 .filter-group {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--spacing-xs);
+  flex: 1;
+  min-width: 140px;
 }
 .filter-group label {
-  font-size: 0.75rem;
-  color: #64748b;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
 }
 .filter-input {
-  padding: 0.375rem 0.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  min-width: 120px;
+  min-height: var(--input-height-sm);
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+.filter-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  outline: none;
 }
 .btn-clear {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.8125rem;
-  background: #f1f5f9;
-  color: #64748b;
-  border: none;
-  border-radius: 0.375rem;
+  min-height: var(--input-height-sm);
+  padding: 0.35rem 0.75rem;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  background: var(--color-bg-card);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
+  white-space: nowrap;
+  align-self: flex-end;
+  transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease;
 }
 .btn-clear:hover {
-  background: #e2e8f0;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+@media (max-width: 640px) {
+  .filter-group {
+    min-width: 100%;
+  }
+  .btn-clear {
+    width: 100%;
+  }
 }
 </style>
