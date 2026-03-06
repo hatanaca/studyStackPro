@@ -25,8 +25,6 @@ class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
 
     public int $timeout = 60;
 
-    public string $queue = 'metrics';
-
     public int $uniqueFor = 5;
 
     public function uniqueId(): string
@@ -37,7 +35,9 @@ class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
     public function __construct(
         public readonly string $userId,
         public readonly bool $fullRecalc = true,
-    ) {}
+    ) {
+        $this->onQueue('metrics');
+    }
 
     public function handle(MetricsAggregator $aggregator, AnalyticsService $analyticsService): void
     {

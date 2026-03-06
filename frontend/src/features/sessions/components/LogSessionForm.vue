@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { useTechnologiesStore } from '@/stores/technologies.store'
+import { getApiErrorMessage } from '@/api/client'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import { useToast } from '@/composables/useToast'
 
@@ -9,8 +10,16 @@ defineProps<{
   showCancel?: boolean
 }>()
 
+export interface SessionSavedPayload {
+  date: string
+  durationMinutes: number
+  technologyId: string
+  technologyName: string
+  technologyColor: string
+}
+
 const emit = defineEmits<{
-  success: []
+  success: [payload: SessionSavedPayload]
   cancel: []
 }>()
 
@@ -69,15 +78,22 @@ async function onSubmit(e: Event) {
       notes: notes.value.trim() || undefined,
     })
     toast.success('Sessão registrada com sucesso!')
+    const tech = technologiesStore.technologies.find(t => t.id === technologyId.value)
+    const savedDate = date.value
+    const savedDuration = durationMinutes.value
     date.value = today.value
     durationMinutes.value = 30
     notes.value = ''
-    emit('success')
+    emit('success', {
+      date: savedDate,
+      durationMinutes: savedDuration,
+      technologyId: technologyId.value,
+      technologyName: tech?.name ?? '',
+      technologyColor: tech?.color ?? '#3b82f6',
+    })
   } catch (err: unknown) {
-    const msg = err && typeof err === 'object' && 'response' in err
-      ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
-      : 'Erro ao registrar sessão'
-    toast.error(typeof msg === 'string' ? msg : 'Erro ao registrar sessão')
+    const msg = getApiErrorMessage(err) || 'Erro ao registrar sessão'
+    toast.error(msg)
   } finally {
     loading.value = false
   }
@@ -93,7 +109,9 @@ function onCancel() {
     v-if="!technologiesStore.loading && !technologiesStore.technologies.length"
     class="log-session-form__empty"
   >
-    Cadastre ao menos uma tecnologia em <router-link to="/technologies">Tecnologias</router-link> antes de registrar sessões.
+    Cadastre ao menos uma tecnologia em <router-link to="/technologies">
+      Tecnologias
+    </router-link> antes de registrar sessões.
   </p>
   <form
     v-else
@@ -171,10 +189,10 @@ function onCancel() {
           type="number"
           min="1"
           max="1440"
-          step="5"
+          step="1"
           class="log-session-form__input"
           :class="{ 'log-session-form__input--error': errors.duration }"
-          placeholder="30"
+          placeholder="ex: 10, 45, 120"
         >
         <p
           v-if="errors.duration"
@@ -224,13 +242,14 @@ function onCancel() {
 .log-session-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--spacing-md);
 }
 .log-session-form__label {
   display: block;
-  font-size: 0.875rem;
-  margin-bottom: 0.25rem;
-  color: #475569;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+  color: var(--color-text-muted);
 }
 .log-session-form__field {
   flex: 1;
@@ -238,50 +257,79 @@ function onCancel() {
 }
 .log-session-form__row {
   display: flex;
-  gap: 1rem;
+  gap: var(--spacing-md);
 }
 .log-session-form__select,
 .log-session-form__input {
   width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
+  min-height: var(--input-height-sm);
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
   box-sizing: border-box;
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+.log-session-form__select:focus,
+.log-session-form__input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  outline: none;
 }
 .log-session-form__select--error,
 .log-session-form__input--error {
-  border-color: #dc2626;
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 22%, transparent);
 }
 .log-session-form__textarea {
   width: 100%;
   padding: 0.5rem 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
   resize: vertical;
   box-sizing: border-box;
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+.log-session-form__textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  outline: none;
 }
 .log-session-form__error {
-  font-size: 0.75rem;
-  color: #dc2626;
-  margin-top: 0.25rem;
+  font-size: var(--text-xs);
+  color: var(--color-error);
+  margin-top: var(--spacing-xs);
+  line-height: 1.35;
 }
 .log-session-form__actions {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--spacing-sm);
   flex-wrap: wrap;
 }
 .log-session-form__empty {
-  color: #64748b;
-  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
   margin: 0;
+  line-height: 1.5;
 }
 .log-session-form__empty a {
-  color: #3b82f6;
+  color: var(--color-primary);
+  font-weight: 500;
   text-decoration: none;
+  transition: color var(--duration-fast) ease;
 }
 .log-session-form__empty a:hover {
+  color: var(--color-primary-hover);
   text-decoration: underline;
+}
+@media (max-width: 480px) {
+  .log-session-form__row {
+    flex-direction: column;
+  }
 }
 </style>

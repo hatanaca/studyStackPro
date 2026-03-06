@@ -1,0 +1,120 @@
+<script setup lang="ts">
+withDefaults(
+  defineProps<{
+    /** Variante visual: info, success, warning, error */
+    variant?: 'info' | 'success' | 'warning' | 'error'
+    /** Título opcional do callout */
+    title?: string
+    /** Exibir ícone ao lado do conteúdo */
+    showIcon?: boolean
+  }>(),
+  { variant: 'info', title: '', showIcon: true }
+)
+
+const variantIcon: Record<string, string> = {
+  info: 'ℹ',
+  success: '✓',
+  warning: '!',
+  error: '✕',
+}
+</script>
+
+<template>
+  <div
+    class="callout"
+    :class="`callout--${variant}`"
+    role="status"
+  >
+    <span
+      v-if="showIcon"
+      class="callout__icon"
+      aria-hidden="true"
+    >
+      {{ variantIcon[variant] }}
+    </span>
+    <div class="callout__content">
+      <strong
+        v-if="title || $slots.title"
+        class="callout__title"
+      >
+        <slot name="title">{{ title }}</slot>
+      </strong>
+      <div class="callout__body">
+        <slot />
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.callout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+.callout__icon {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.callout__content {
+  flex: 1;
+  min-width: 0;
+}
+.callout__title {
+  display: block;
+  margin-bottom: var(--spacing-2xs);
+  font-size: var(--text-sm);
+}
+.callout__body {
+  color: inherit;
+  opacity: 0.95;
+}
+.callout--info {
+  background: var(--color-info-soft);
+  border-color: color-mix(in srgb, var(--color-info) 40%, transparent);
+  color: var(--color-text);
+}
+.callout--info .callout__icon {
+  background: var(--color-info);
+  color: #fff;
+}
+.callout--success {
+  background: var(--color-success-soft);
+  border-color: color-mix(in srgb, var(--color-success) 40%, transparent);
+  color: var(--color-text);
+}
+.callout--success .callout__icon {
+  background: var(--color-success);
+  color: #fff;
+}
+.callout--warning {
+  background: var(--color-warning-soft);
+  border-color: color-mix(in srgb, var(--color-warning) 40%, transparent);
+  color: var(--color-text);
+}
+.callout--warning .callout__icon {
+  background: var(--color-warning);
+  color: #fff;
+}
+.callout--error {
+  background: var(--color-error-soft);
+  border-color: color-mix(in srgb, var(--color-error) 40%, transparent);
+  color: var(--color-text);
+}
+.callout--error .callout__icon {
+  background: var(--color-error);
+  color: #fff;
+}
+</style>

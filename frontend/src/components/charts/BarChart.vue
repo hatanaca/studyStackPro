@@ -11,6 +11,7 @@ import {
   type ChartOptions
 } from 'chart.js'
 import { Bar } from 'vue-chartjs'
+import { useChartTheme } from '@/composables/useChartTheme'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
@@ -19,34 +20,51 @@ const props = defineProps<{
   title?: string
 }>()
 
-const chartData = computed(() => ({
-  labels: props.data?.labels ?? [],
-  datasets: [
-    {
-      label: 'Minutos',
-      data: props.data?.values ?? [],
-      backgroundColor: 'rgba(59, 130, 246, 0.7)',
-      borderColor: '#3b82f6',
-      borderWidth: 1,
-    },
-  ],
-}))
+const { themeColors } = useChartTheme()
 
-const options: ChartOptions<'bar'> = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      callbacks: {
-        label: (ctx) => `${ctx.parsed.y} min`,
+const chartData = computed(() => {
+  const { primary } = themeColors.value
+  return {
+    labels: props.data?.labels ?? [],
+    datasets: [
+      {
+        label: 'Minutos',
+        data: props.data?.values ?? [],
+        backgroundColor: primary,
+        borderColor: primary,
+        borderWidth: 1,
+      },
+    ],
+  }
+})
+
+const options = computed<ChartOptions<'bar'>>(() => {
+  const { textColor, gridColor } = themeColors.value
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `${ctx.parsed.y} min`,
+        },
       },
     },
-  },
-  scales: {
-    y: { beginAtZero: true },
-  },
-}
+    scales: {
+      x: {
+        grid: { color: gridColor },
+        ticks: { color: textColor },
+      },
+      y: {
+        beginAtZero: true,
+        grid: { color: gridColor },
+        ticks: { color: textColor },
+      },
+    },
+  }
+})
 </script>
 
 <template>
@@ -77,26 +95,34 @@ const options: ChartOptions<'bar'> = {
 
 <style scoped>
 .bar-chart {
-  background: #fff;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background: transparent;
+  border-radius: var(--radius-md);
+  padding: 0;
+  min-height: var(--widget-chart-min-height-sm);
 }
 .chart-title {
-  font-size: 0.875rem;
-  margin-bottom: 0.75rem;
-  color: #64748b;
+  font-size: var(--widget-title-size);
+  font-weight: var(--widget-title-weight);
+  margin-bottom: var(--spacing-sm);
+  color: var(--widget-title-color);
 }
 .chart-wrap {
-  min-height: 200px;
+  height: var(--widget-chart-min-height-sm);
+  min-height: var(--widget-chart-min-height-sm);
   position: relative;
 }
+@media (min-width: 640px) {
+  .chart-wrap {
+    height: var(--widget-chart-min-height);
+    min-height: var(--widget-chart-min-height);
+  }
+}
 .chart-placeholder {
-  min-height: 200px;
+  min-height: var(--widget-chart-min-height-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #94a3b8;
-  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
 }
 </style>

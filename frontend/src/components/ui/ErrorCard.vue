@@ -12,6 +12,7 @@ defineProps<{
     </p>
     <button
       v-if="onRetry"
+      type="button"
       class="retry"
       @click="onRetry"
     >
@@ -22,26 +23,33 @@ defineProps<{
 
 <style scoped>
 .error-card {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 0.5rem;
-  padding: 1rem;
+  background: var(--color-error-soft);
+  border: 1px solid color-mix(in srgb, var(--color-error) 40%, transparent);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
   text-align: center;
 }
 .message {
-  color: #991b1b;
-  margin-bottom: 0.75rem;
+  color: var(--color-error);
+  margin-bottom: var(--spacing-md);
+  font-size: var(--text-sm);
+  line-height: 1.5;
 }
 .retry {
+  min-height: var(--input-height-sm);
   padding: 0.5rem 1rem;
-  background: #dc2626;
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
+  background: var(--color-error);
+  color: #fff;
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, transform var(--duration-fast) ease;
 }
 .retry:hover {
-  background: #b91c1c;
+  background: color-mix(in srgb, var(--color-error) 88%, #000);
+  border-color: color-mix(in srgb, var(--color-error) 88%, #000);
+  transform: translateY(-1px);
 }
 </style>

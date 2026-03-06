@@ -43,24 +43,38 @@ const chartData = computed(() => {
 
 <style scoped>
 .weekly-widget {
-  background: #fff;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background: var(--color-bg-card);
+  border-radius: var(--widget-radius);
+  padding: var(--widget-padding);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  min-height: var(--widget-chart-min-height-sm);
+}
+@media (min-width: 640px) {
+  .weekly-widget {
+    min-height: var(--widget-chart-min-height);
+  }
 }
 .title {
-  font-size: 0.875rem;
-  color: #64748b;
-  margin-bottom: 0.75rem;
+  font-size: var(--widget-title-size);
+  font-weight: var(--widget-title-weight);
+  color: var(--widget-title-color);
+  margin: 0 0 var(--spacing-sm);
 }
 .chart-skeleton {
-  min-height: 200px;
+  min-height: var(--widget-chart-min-height-sm);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem 0;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) 0;
 }
 .skeleton-bar {
   width: 80%;
+}
+@media (max-width: 480px) {
+  .weekly-widget {
+    padding: var(--widget-padding-sm);
+  }
 }
 </style>

@@ -65,7 +65,7 @@ const years = computed(() => {
   <div class="heatmap-widget">
     <div class="header">
       <h3 class="title">
-        Atividade
+        Atividade (calendário)
       </h3>
       <select
         v-model="selectedYear"
@@ -128,27 +128,39 @@ const years = computed(() => {
 
 <style scoped>
 .heatmap-widget {
-  background: #fff;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background: var(--color-bg-card);
+  border-radius: var(--widget-radius);
+  padding: var(--widget-padding);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
 }
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--spacing-sm);
 }
 .title {
-  font-size: 0.875rem;
-  color: #64748b;
+  font-size: var(--widget-title-size);
+  font-weight: var(--widget-title-weight);
+  color: var(--widget-title-color);
   margin: 0;
 }
 .year-select {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  border: 1px solid #e2e8f0;
+  min-height: var(--input-height-sm);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+.year-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 .heatmap {
   overflow-x: auto;
@@ -159,11 +171,11 @@ const years = computed(() => {
   height: auto;
 }
 .heatmap-skeleton {
-  min-height: 120px;
+  min-height: var(--widget-chart-min-height-sm);
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
-  padding: 0.5rem 0;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) 0;
 }
 .skeleton-row {
   width: 100%;

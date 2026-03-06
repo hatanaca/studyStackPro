@@ -19,6 +19,12 @@ export interface HeatmapDay {
   total_minutes: number
 }
 
+interface PendingSession {
+  date: string
+  minutes: number
+  technology: { id: string; name: string; color: string } | null
+}
+
 const PERIOD_TO_DAYS: Record<TimeSeriesPeriod, number> = {
   '7d': 7,
   '30d': 30,
@@ -31,7 +37,6 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   const isRecalculating = ref(false)
   const lastFetchAt = ref<Date | null>(null)
 
-  // Dados separados para widgets (sem fetch próprio nos widgets)
   const heatmapData = ref<HeatmapDay[]>([])
   const heatmapLoading = ref(false)
   const heatmapYear = ref<number>(new Date().getFullYear())
@@ -50,6 +55,10 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   const techStatsData = ref<TechnologyMetric[]>([])
   const techStatsLoading = ref(false)
 
+  // --- Pending optimistic sessions (never overwritten by API) ---
+  const pendingSessions = ref<PendingSession[]>([])
+  const sessionCountAtPendingStart = ref<number | null>(null)
+
   const TTL_MS = 5 * 60 * 1000
   const isFresh = computed(
     () =>
@@ -57,15 +66,169 @@ export const useAnalyticsStore = defineStore('analytics', () => {
       Date.now() - lastFetchAt.value.getTime() < TTL_MS
   )
 
-  // Computeds granulares (Dashboard.txt)
-  const userMetrics = computed((): UserMetrics | null => dashboard.value?.user_metrics ?? null)
-  const technologyMetrics = computed(() => dashboard.value?.technology_metrics ?? [])
-  const timeSeries = computed(() => timeSeriesData.value[selectedPeriod.value] ?? [])
-  const weeklyComparison = computed(() => weeklyData.value)
-  const heatmap = computed(() => heatmapData.value)
+  const todayStr = computed(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })
+
+  // --- Helper: merge DailyMinute[] with pending sessions ---
+  function mergeDailyWithPending(raw: DailyMinute[]): DailyMinute[] {
+    if (!pendingSessions.value.length) return raw
+    const merged = raw.map(d => ({ ...d }))
+    for (const ps of pendingSessions.value) {
+      const entry = merged.find(d => d.date === ps.date)
+      if (entry) {
+        entry.total_minutes += ps.minutes
+        entry.session_count = (entry.session_count ?? 0) + 1
+      } else {
+        merged.push({ date: ps.date, total_minutes: ps.minutes, session_count: 1 })
+      }
+    }
+    merged.sort((a, b) => a.date.localeCompare(b.date))
+    return merged
+  }
+
+  // --- Computeds that merge API data + pending ---
+  const userMetrics = computed((): UserMetrics | null => {
+    const base = dashboard.value?.user_metrics
+    if (!base) return null
+    if (!pendingSessions.value.length) return base
+    const pendingMins = pendingSessions.value.reduce((s, p) => s + p.minutes, 0)
+    const pendingCount = pendingSessions.value.length
+    return {
+      ...base,
+      total_sessions: base.total_sessions + pendingCount,
+      total_minutes: base.total_minutes + pendingMins,
+      total_hours: Math.round(((base.total_minutes + pendingMins) / 60) * 100) / 100,
+    }
+  })
+
+  const technologyMetrics = computed(() => {
+    const base = dashboard.value?.technology_metrics ?? []
+    if (!pendingSessions.value.length) return base
+    const merged = base.map(tm => ({ ...tm }))
+    for (const ps of pendingSessions.value) {
+      if (!ps.technology) continue
+      const existing = merged.find(tm => tm.technology?.id === ps.technology!.id)
+      if (existing) {
+        existing.total_minutes += ps.minutes
+        existing.session_count += 1
+        existing.last_studied_at = new Date().toISOString()
+      } else {
+        merged.push({
+          technology: { id: ps.technology.id, name: ps.technology.name, color: ps.technology.color, slug: '', is_active: true },
+          total_minutes: ps.minutes,
+          session_count: 1,
+          last_studied_at: new Date().toISOString(),
+        })
+      }
+    }
+    return merged
+  })
+
+  const timeSeries = computed(() =>
+    mergeDailyWithPending(timeSeriesData.value[selectedPeriod.value] ?? [])
+  )
+
+  const weeklyComparison = computed(() => {
+    const data = weeklyData.value
+    if (!pendingSessions.value.length || !data.length) return data
+    const pendingMins = pendingSessions.value.reduce((s, p) => s + p.minutes, 0)
+    const pendingCount = pendingSessions.value.length
+    return data.map((w, i) =>
+      i === 0
+        ? { ...w, total_minutes: w.total_minutes + pendingMins, session_count: w.session_count + pendingCount }
+        : w
+    )
+  })
+
+  const heatmap = computed(() => {
+    const data = heatmapData.value
+    if (!pendingSessions.value.length) return data
+    const merged = data.map(d => ({ ...d }))
+    for (const ps of pendingSessions.value) {
+      const entry = merged.find(d => d.date === ps.date)
+      if (entry) {
+        entry.total_minutes += ps.minutes
+      } else {
+        merged.push({ date: ps.date, total_minutes: ps.minutes })
+      }
+    }
+    return merged
+  })
+
   const techMetrics = computed(() => techStatsData.value)
   const topTechnologies = computed(() => dashboard.value?.top_technologies ?? [])
 
+  const todayMinutes = computed(() => {
+    const entry = (dashboard.value?.time_series_30d ?? []).find(d => d.date === todayStr.value)
+    const apiMinutes = entry?.total_minutes ?? 0
+    const pendingMinutes = pendingSessions.value
+      .filter(s => s.date === todayStr.value)
+      .reduce((sum, s) => sum + s.minutes, 0)
+    return apiMinutes + pendingMinutes
+  })
+
+  const todaySessions = computed(() => {
+    const entry = (dashboard.value?.time_series_30d ?? []).find(d => d.date === todayStr.value)
+    const apiSessions = entry?.session_count ?? 0
+    const pendingCount = pendingSessions.value.filter(s => s.date === todayStr.value).length
+    return apiSessions + pendingCount
+  })
+
+  const todayTechnologies = computed(() => {
+    const today = todayStr.value
+    const apiTechs = (dashboard.value?.technology_metrics ?? []).filter(tm =>
+      tm.last_studied_at?.startsWith(today)
+    )
+
+    const seenIds = new Set(apiTechs.map(tm => tm.technology?.id))
+    const extras: TechnologyMetric[] = []
+
+    for (const ps of pendingSessions.value) {
+      if (ps.date !== today || !ps.technology || seenIds.has(ps.technology.id)) continue
+      seenIds.add(ps.technology.id)
+      const pendingMins = pendingSessions.value
+        .filter(s => s.technology?.id === ps.technology!.id)
+        .reduce((sum, s) => sum + s.minutes, 0)
+      extras.push({
+        technology: { id: ps.technology.id, name: ps.technology.name, color: ps.technology.color, slug: '', is_active: true },
+        total_minutes: pendingMins,
+        session_count: pendingSessions.value.filter(s => s.technology?.id === ps.technology!.id).length,
+        last_studied_at: new Date().toISOString(),
+      })
+    }
+
+    return [...apiTechs, ...extras]
+  })
+
+  // --- Reconcile: clear pending when API confirms data is up to date ---
+  function reconcilePending() {
+    if (!pendingSessions.value.length || sessionCountAtPendingStart.value === null) return
+    const apiTotal = dashboard.value?.user_metrics.total_sessions ?? 0
+    const expected = sessionCountAtPendingStart.value + pendingSessions.value.length
+    if (apiTotal >= expected) {
+      pendingSessions.value = []
+      sessionCountAtPendingStart.value = null
+    }
+  }
+
+  // --- Optimistic add: just pushes to pending, never touches API data ---
+  function addLocalTodaySession(
+    sessionDate: string,
+    minutes: number,
+    technology?: { id: string; name: string; color: string }
+  ) {
+    if (pendingSessions.value.length === 0) {
+      sessionCountAtPendingStart.value = dashboard.value?.user_metrics.total_sessions ?? 0
+    }
+    pendingSessions.value = [
+      ...pendingSessions.value,
+      { date: sessionDate, minutes, technology: technology ?? null },
+    ]
+  }
+
+  // --- Fetch functions ---
   async function fetchDashboard(force = false) {
     if (!force && isFresh.value) return
 
@@ -79,6 +242,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
           timeSeriesData.value = { ...timeSeriesData.value, '30d': data.time_series_30d }
         }
         lastFetchAt.value = new Date()
+        reconcilePending()
       }
     } finally {
       isLoading.value = false
@@ -141,6 +305,8 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     dashboard.value = data
     lastFetchAt.value = new Date()
     isRecalculating.value = false
+    pendingSessions.value = []
+    sessionCountAtPendingStart.value = null
   }
 
   function setRecalculating(value: boolean) {
@@ -159,7 +325,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     isFresh,
     userMetrics,
     technologyMetrics,
-    timeSeries30d: computed(() => timeSeriesData.value['30d'] ?? dashboard.value?.time_series_30d ?? []),
+    timeSeries30d: computed(() => mergeDailyWithPending(timeSeriesData.value['30d'] ?? dashboard.value?.time_series_30d ?? [])),
     timeSeries,
     weeklyComparison,
     heatmap,
@@ -174,6 +340,10 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     techStatsLoading,
     timeSeriesData,
     topTechnologies,
+    todayMinutes,
+    todaySessions,
+    todayTechnologies,
+    addLocalTodaySession,
     fetchDashboard,
     fetchHeatmap,
     fetchWeekly,

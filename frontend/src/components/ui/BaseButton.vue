@@ -23,49 +23,100 @@ withDefaults(
 
 <style scoped>
 .base-button {
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: 0.5rem 0.95rem;
+  min-height: var(--input-height-sm);
+  border-radius: var(--radius-md, 0.375rem);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
   cursor: pointer;
-  border: none;
+  border: 1px solid transparent;
+  box-shadow: var(--shadow-sm);
+  transition: background var(--duration-fast, 0.15s) ease,
+    color var(--duration-fast, 0.15s) ease,
+    border-color var(--duration-fast, 0.15s) ease,
+    box-shadow var(--duration-fast, 0.15s) ease,
+    transform var(--duration-fast, 0.15s) var(--ease-out-expo, ease);
+}
+.base-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+.base-button:active:not(:disabled) {
+  transform: translateY(0);
 }
 .base-button--primary {
-  background: #3b82f6;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   color: #fff;
 }
+.base-button--primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
 .base-button--secondary {
-  background: #e2e8f0;
-  color: #475569;
+  background: color-mix(in srgb, var(--color-text) 8%, var(--color-bg-card));
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+.base-button--secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-card));
+  border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-border));
+  color: var(--color-primary);
 }
 .base-button--ghost {
   background: transparent;
-  color: #64748b;
+  border-color: transparent;
+  color: var(--color-text-muted);
+  box-shadow: none;
+}
+.base-button--ghost:hover:not(:disabled) {
+  background: var(--color-bg-soft);
+  color: var(--color-text);
 }
 .base-button--danger {
-  background: #dc2626;
+  background: var(--color-error);
+  border-color: var(--color-error);
   color: #fff;
+}
+.base-button--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-error) 88%, #000);
+  border-color: color-mix(in srgb, var(--color-error) 88%, #000);
 }
 .base-button--outline {
   background: transparent;
-  border: 1px solid #94a3b8;
-  color: #475569;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  box-shadow: none;
 }
 .base-button--outline:hover:not(:disabled) {
-  background: #f1f5f9;
+  background: var(--color-bg-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 .base-button--sm {
-  padding: 0.25rem 0.75rem;
-  font-size: 0.8125rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.7rem;
+  font-size: var(--text-xs, 0.8125rem);
 }
 .base-button--md {
   padding: 0.5rem 1rem;
+  min-height: var(--input-height-sm);
 }
 .base-button--lg {
-  padding: 0.75rem 1.25rem;
-  font-size: 1rem;
+  min-height: var(--input-height-md);
+  padding: 0.65rem 1.2rem;
+  font-size: var(--text-base, 1rem);
 }
 .base-button:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 </style>

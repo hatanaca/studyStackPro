@@ -106,21 +106,43 @@ async function handleDelete(tech: Technology) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: var(--page-section-gap);
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 .technology-list__header h2 {
-  font-size: 1.25rem;
+  font-size: var(--text-lg);
+  font-weight: 600;
   margin: 0;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
 }
 .technology-list__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
+  grid-template-columns: 1fr;
+  gap: var(--widget-gap);
+  margin-top: var(--spacing-md);
+}
+@media (min-width: 640px) {
+  .technology-list__grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--spacing-md);
+  }
 }
 .loading,
 .empty {
-  color: #64748b;
-  margin-top: 1rem;
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  background: color-mix(in srgb, var(--color-bg-soft) 50%, var(--color-bg-card));
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  margin-top: var(--spacing-md);
 }
 </style>

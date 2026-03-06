@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RouterLink } from 'vue-router'
 import type { Technology } from '@/types/domain.types'
 
 defineProps<{
@@ -29,6 +30,12 @@ const emit = defineEmits<{
         {{ technology.description }}
       </p>
       <div class="technology-card__actions">
+        <RouterLink
+          :to="{ name: 'technology-detail', params: { id: technology.id } }"
+          class="btn btn--primary"
+        >
+          Ver detalhes
+        </RouterLink>
         <button
           type="button"
           class="btn btn--ghost"
@@ -50,57 +57,85 @@ const emit = defineEmits<{
 
 <style scoped>
 .technology-card {
-  background: #fff;
-  border-radius: 0.5rem;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  transition: box-shadow var(--duration-normal) var(--ease-in-out), border-color var(--duration-fast) ease;
+}
+.technology-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: color-mix(in srgb, var(--tech-color, var(--color-primary)) 40%, var(--color-border));
 }
 .technology-card__bar {
-  height: 4px;
-  background: var(--tech-color, #3498db);
+  height: 3px;
+  background: var(--tech-color, var(--color-primary));
 }
 .technology-card__content {
-  padding: 1rem;
+  padding: var(--widget-padding);
 }
 .technology-card__main {
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 .technology-card__name {
   font-weight: 600;
-  color: #1e293b;
+  font-size: var(--text-base);
+  color: var(--color-text);
 }
 .technology-card__slug {
-  font-size: 0.875rem;
-  color: #64748b;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
 }
 .technology-card__desc {
-  font-size: 0.875rem;
-  color: #64748b;
-  margin: 0.5rem 0 0;
-  line-height: 1.4;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: var(--spacing-sm) 0 0;
+  line-height: 1.45;
 }
 .technology-card__actions {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-md);
+  flex-wrap: wrap;
 }
 .btn {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8125rem;
-  border: none;
-  border-radius: 0.25rem;
+  padding: 0.3rem 0.6rem;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   background: transparent;
-  color: #64748b;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease, transform var(--duration-fast) ease;
 }
 .btn--ghost:hover {
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--color-bg-soft);
+  color: var(--color-text);
 }
 .btn--danger:hover {
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--color-error-soft);
+  color: var(--color-error);
+}
+.btn--primary {
+  padding: 0.35rem 0.65rem;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  background: var(--tech-color, var(--color-primary));
+  color: #fff;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: opacity var(--duration-fast) ease, transform var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+.btn--primary:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 </style>

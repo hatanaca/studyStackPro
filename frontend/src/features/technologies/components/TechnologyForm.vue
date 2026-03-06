@@ -127,39 +127,55 @@ defineExpose({ reset, setError: (msg: string) => { errors.value = { name: msg } 
 .technology-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--spacing-md);
 }
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--spacing-xs);
 }
 .label {
-  font-size: 0.875rem;
-  color: #475569;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
 }
 .color-input {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
   align-items: center;
 }
 .color-picker {
-  width: 40px;
-  height: 36px;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
+  width: 2.5rem;
+  height: var(--input-height-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
+  background: var(--color-bg-card);
+  transition: border-color var(--duration-fast) ease;
+}
+.color-picker:hover {
+  border-color: var(--color-primary);
 }
 .color-text {
   flex: 1;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
+  min-height: var(--input-height-sm);
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-family: monospace;
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+.color-text:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 .actions {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
 }
 </style>

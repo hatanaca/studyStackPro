@@ -1,17 +1,26 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import BaseBreadcrumb from '@/components/ui/BaseBreadcrumb.vue'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseTabs from '@/components/ui/BaseTabs.vue'
+import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { authApi, type TokenInfo } from '@/api/modules/auth.api'
 import { useToast } from '@/composables/useToast'
+
 const authStore = useAuthStore()
 const router = useRouter()
 const toast = useToast()
 
-const activeTab = ref<'profile' | 'password' | 'sessions'>('profile')
+const profileTabs = [
+  { id: 'profile', label: 'Perfil', disabled: false },
+  { id: 'password', label: 'Senha', disabled: false },
+  { id: 'sessions', label: 'Sessões', disabled: false },
+]
+const activeTab = ref('profile')
 
 const profileLoading = ref(false)
 const profileForm = ref({ name: '', timezone: 'UTC' })
@@ -151,219 +160,280 @@ function formatDate(iso: string | null): string {
 
 <template>
   <div class="profile-view">
-    <h1 class="profile-view__title">
-      Configurações
-    </h1>
-    <div class="profile-view__tabs">
-      <button
-        v-for="t in ([{ k: 'profile', l: 'Perfil' }, { k: 'password', l: 'Senha' }, { k: 'sessions', l: 'Sessões' }] as const)"
-        :key="t.k"
-        type="button"
-        class="tab"
-        :class="{ active: activeTab === t.k }"
-        @click="activeTab = t.k"
-      >
-        {{ t.l }}
-      </button>
-    </div>
-    <BaseCard class="profile-view__card">
-      <template v-if="activeTab === 'profile'">
-        <h2 class="section-title">
-          Dados do perfil
-        </h2>
-        <form
-          class="profile-form"
-          @submit.prevent="saveProfile"
-        >
-          <BaseInput
-            v-model="profileForm.name"
-            label="Nome"
-            placeholder="Seu nome"
-            :error="profileErrors.name"
-          />
-          <BaseInput
-            v-model="profileForm.timezone"
-            label="Fuso horário"
-            placeholder="UTC"
-            :error="profileErrors.timezone"
-          />
-          <BaseButton
-            type="submit"
-            :disabled="profileLoading"
-          >
-            {{ profileLoading ? 'Salvando...' : 'Salvar perfil' }}
-          </BaseButton>
-        </form>
-      </template>
-      <template v-else-if="activeTab === 'password'">
-        <h2 class="section-title">
-          Alterar senha
-        </h2>
-        <p class="section-desc">
-          Após alterar a senha, você será desconectado de todos os dispositivos.
+    <BaseBreadcrumb
+      :items="[{ label: 'Dashboard', to: '/' }, { label: 'Configurações' }]"
+      class="profile-view__breadcrumb"
+    />
+    <header class="profile-view__header">
+      <BaseAvatar
+        :name="authStore.user?.name"
+        size="xl"
+        class="profile-view__avatar"
+      />
+      <div class="profile-view__header-text">
+        <h1 class="profile-view__title">
+          Configurações
+        </h1>
+        <p class="profile-view__subtitle">
+          Gerencie seu perfil, senha e dispositivos conectados.
         </p>
-        <form
-          class="profile-form"
-          @submit.prevent="changePassword"
-        >
-          <!-- Campo oculto para acessibilidade em formulários de senha -->
-          <input
-            type="text"
-            name="username"
-            autocomplete="username"
-            style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0"
-            tabindex="-1"
-            aria-hidden="true"
-          >
-          <BaseInput
-            v-model="passwordForm.current_password"
-            type="password"
-            label="Senha atual"
-            placeholder="••••••••"
-            :error="passwordErrors.current_password"
-            autocomplete="current-password"
-          />
-          <BaseInput
-            v-model="passwordForm.password"
-            type="password"
-            label="Nova senha"
-            placeholder="••••••••"
-            :error="passwordErrors.password"
-            autocomplete="new-password"
-          />
-          <BaseInput
-            v-model="passwordForm.password_confirmation"
-            type="password"
-            label="Confirmar nova senha"
-            placeholder="••••••••"
-            :error="passwordErrors.password_confirmation"
-            autocomplete="new-password"
-          />
-          <BaseButton
-            type="submit"
-            :disabled="passwordLoading"
-          >
-            {{ passwordLoading ? 'Alterando...' : 'Alterar senha' }}
-          </BaseButton>
-        </form>
-      </template>
-      <template v-else>
-        <h2 class="section-title">
-          Sessões ativas
-        </h2>
-        <p class="section-desc">
-          Gerencie os dispositivos onde você está logado.
-        </p>
-        <div
-          v-if="tokensLoading"
-          class="loading-msg"
-        >
-          Carregando...
-        </div>
-        <template v-else>
-          <ul
-            v-if="tokens.length"
-            class="tokens-list"
-          >
-            <li
-              v-for="t in tokens"
-              :key="t.id"
-              class="token-item"
+      </div>
+    </header>
+    <BaseTabs
+      v-model="activeTab"
+      :tabs="profileTabs"
+      variant="pill"
+      align="start"
+      class="profile-view__tabs"
+    >
+      <template #default="{ activeId }">
+        <BaseCard class="profile-view__card">
+          <template v-if="activeId === 'profile'">
+            <h2 class="section-title">
+              Dados do perfil
+            </h2>
+            <form
+              class="profile-form"
+              @submit.prevent="saveProfile"
             >
-              <span class="token-name">{{ t.name }}</span>
-              <span class="token-date">Criado: {{ formatDate(t.created_at) }}</span>
-              <span class="token-date">Último uso: {{ formatDate(t.last_used_at) }}</span>
-            </li>
-          </ul>
-          <p
-            v-else
-            class="no-tokens"
-          >
-            Nenhuma sessão ativa.
-          </p>
-          <BaseButton
-            class="revoke-btn"
-            variant="danger"
-            :disabled="revokeLoading || tokens.length <= 1"
-            @click="revokeAllTokens"
-          >
-            {{ revokeLoading ? 'Revogando...' : 'Sair de todos os dispositivos' }}
-          </BaseButton>
-        </template>
+              <BaseInput
+                v-model="profileForm.name"
+                label="Nome"
+                placeholder="Seu nome"
+                :error="profileErrors.name"
+              />
+              <BaseInput
+                v-model="profileForm.timezone"
+                label="Fuso horário"
+                placeholder="UTC"
+                :error="profileErrors.timezone"
+              />
+              <BaseButton
+                type="submit"
+                :disabled="profileLoading"
+              >
+                {{ profileLoading ? 'Salvando...' : 'Salvar perfil' }}
+              </BaseButton>
+            </form>
+          </template>
+          <template v-else-if="activeId === 'password'">
+            <h2 class="section-title">
+              Alterar senha
+            </h2>
+            <p class="section-desc">
+              Após alterar a senha, você será desconectado de todos os dispositivos.
+            </p>
+            <form
+              class="profile-form"
+              @submit.prevent="changePassword"
+            >
+              <!-- Campo oculto para acessibilidade em formulários de senha -->
+              <input
+                type="text"
+                name="username"
+                autocomplete="username"
+                style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0"
+                tabindex="-1"
+                aria-hidden="true"
+              >
+              <BaseInput
+                v-model="passwordForm.current_password"
+                type="password"
+                label="Senha atual"
+                placeholder="••••••••"
+                :error="passwordErrors.current_password"
+                autocomplete="current-password"
+              />
+              <BaseInput
+                v-model="passwordForm.password"
+                type="password"
+                label="Nova senha"
+                placeholder="••••••••"
+                :error="passwordErrors.password"
+                autocomplete="new-password"
+              />
+              <BaseInput
+                v-model="passwordForm.password_confirmation"
+                type="password"
+                label="Confirmar nova senha"
+                placeholder="••••••••"
+                :error="passwordErrors.password_confirmation"
+                autocomplete="new-password"
+              />
+              <BaseButton
+                type="submit"
+                :disabled="passwordLoading"
+              >
+                {{ passwordLoading ? 'Alterando...' : 'Alterar senha' }}
+              </BaseButton>
+            </form>
+          </template>
+          <template v-else-if="activeId === 'sessions'">
+            <h2 class="section-title">
+              Sessões ativas
+            </h2>
+            <p class="section-desc">
+              Gerencie os dispositivos onde você está logado.
+            </p>
+            <div
+              v-if="tokensLoading"
+              class="loading-msg"
+            >
+              Carregando...
+            </div>
+            <template v-else>
+              <ul
+                v-if="tokens.length"
+                class="tokens-list"
+              >
+                <li
+                  v-for="t in tokens"
+                  :key="t.id"
+                  class="token-item"
+                >
+                  <span class="token-name">{{ t.name }}</span>
+                  <span class="token-date">Criado: {{ formatDate(t.created_at) }}</span>
+                  <span class="token-date">Último uso: {{ formatDate(t.last_used_at) }}</span>
+                </li>
+              </ul>
+              <p
+                v-else
+                class="no-tokens"
+              >
+                Nenhuma sessão ativa.
+              </p>
+              <BaseButton
+                class="revoke-btn"
+                variant="danger"
+                :disabled="revokeLoading || tokens.length <= 1"
+                @click="revokeAllTokens"
+              >
+                {{ revokeLoading ? 'Revogando...' : 'Sair de todos os dispositivos' }}
+              </BaseButton>
+            </template>
+          </template>
+        </BaseCard>
       </template>
-    </BaseCard>
+    </BaseTabs>
   </div>
 </template>
 
 <style scoped>
 .profile-view {
-  max-width: 480px;
+  max-width: var(--page-max-width-narrow);
+  margin: 0 auto;
+}
+.profile-view__breadcrumb {
+  margin-bottom: var(--page-breadcrumb-margin-bottom);
+}
+.profile-view__header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--page-header-margin-bottom);
+  padding: var(--spacing-lg);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+.profile-view__avatar {
+  flex-shrink: 0;
+}
+.profile-view__header-text {
+  min-width: 0;
 }
 .profile-view__title {
-  font-size: 1.5rem;
-  color: #1e293b;
-  margin-bottom: 1rem;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--color-text);
+  margin: 0 0 var(--page-header-gap);
+}
+.profile-view__subtitle {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.5;
 }
 .profile-view__tabs {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-md);
 }
-.tab {
-  padding: 0.5rem 1rem;
-  background: #f1f5f9;
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-.tab.active {
-  background: #1e293b;
-  color: #fff;
+.profile-view__card {
+  margin-top: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
 .profile-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--spacing-md);
 }
 .section-title {
-  font-size: 1.1rem;
-  margin-bottom: 0.5rem;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 var(--spacing-sm);
+  letter-spacing: -0.01em;
 }
 .section-desc {
-  color: #64748b;
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--spacing-md);
+  line-height: 1.5;
 }
 .tokens-list {
   list-style: none;
   padding: 0;
-  margin: 0 0 1rem;
-}
-.token-item {
-  padding: 0.75rem;
-  background: #f8fafc;
-  border-radius: 0.375rem;
-  margin-bottom: 0.5rem;
+  margin: 0 0 var(--spacing-md);
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--spacing-xs);
+}
+.token-item {
+  padding: var(--spacing-md);
+  background: color-mix(in srgb, var(--color-bg-soft) 70%, var(--color-bg-card));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+.token-item:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
 }
 .token-name {
-  font-weight: 500;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--color-text);
 }
 .token-date {
-  font-size: 0.85rem;
-  color: #64748b;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
 }
 .no-tokens {
-  color: #64748b;
-  margin-bottom: 1rem;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-md);
 }
 .revoke-btn {
-  margin-top: 0.5rem;
+  margin-top: var(--spacing-sm);
 }
 .loading-msg {
-  color: #64748b;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  padding: var(--spacing-md) 0;
+}
+@media (max-width: 480px) {
+  .profile-view__header {
+    flex-direction: column;
+    text-align: center;
+    padding: var(--spacing-md);
+  }
+  .profile-view__title {
+    font-size: var(--text-lg);
+  }
 }
 </style>

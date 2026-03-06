@@ -53,5 +53,17 @@ describe('formatters', () => {
       expect(result).toMatch(/\d{2}\/\d{2}\/\d{4}/)
       expect(result).toMatch(/\d{2}:\d{2}/)
     })
+    it('retorna — para null/undefined/vazio', () => {
+      expect(formatDateTime(null)).toBe('—')
+      expect(formatDateTime(undefined)).toBe('—')
+      expect(formatDateTime('')).toBe('—')
+    })
+  })
+
+  describe('formatDate e formatDateTime com valor inválido', () => {
+    it('retorna — para string de data inválida', () => {
+      expect(formatDate('invalid')).toBe('—')
+      expect(formatDateTime('invalid')).toBe('—')
+    })
   })
 })

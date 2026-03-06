@@ -1,7 +1,14 @@
 <?php
 
+// Usar 'log' quando Reverb está selecionado mas credenciais não estão configuradas (evita crash).
+$requested = env('BROADCAST_CONNECTION', 'reverb');
+$reverbReady = $requested === 'reverb'
+    && env('REVERB_APP_ID')
+    && env('REVERB_APP_KEY')
+    && env('REVERB_APP_SECRET');
+
 return [
-    'default' => env('BROADCAST_CONNECTION', 'reverb'),
+    'default' => $reverbReady ? 'reverb' : 'log',
     'connections' => [
         'log' => [
             'driver' => 'log',
