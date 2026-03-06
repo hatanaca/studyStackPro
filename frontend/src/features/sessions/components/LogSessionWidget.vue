@@ -1,20 +1,23 @@
 <script setup lang="ts">
 import BaseCard from '@/components/ui/BaseCard.vue'
 import LogSessionForm from './LogSessionForm.vue'
-import { useDashboard } from '@/features/dashboard/composables/useDashboard'
+import type { SessionSavedPayload } from './LogSessionForm.vue'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 
-const { fetchDashboard } = useDashboard()
 const analyticsStore = useAnalyticsStore()
 
-async function onSuccess() {
-  await Promise.all([
-    fetchDashboard(true),
-    analyticsStore.fetchHeatmap(),
-    analyticsStore.fetchWeekly(),
-  ])
+function onSuccess(payload: SessionSavedPayload) {
+  analyticsStore.addLocalTodaySession(payload.date, payload.durationMinutes, {
+    id: payload.technologyId,
+    name: payload.technologyName,
+    color: payload.technologyColor,
+  })
+
+  analyticsStore.fetchDashboard(true).catch(() => {})
+  analyticsStore.fetchHeatmap().catch(() => {})
+  analyticsStore.fetchWeekly().catch(() => {})
   if (analyticsStore.selectedPeriod) {
-    await analyticsStore.fetchTimeSeries(analyticsStore.selectedPeriod)
+    analyticsStore.fetchTimeSeries(analyticsStore.selectedPeriod).catch(() => {})
   }
 }
 </script>

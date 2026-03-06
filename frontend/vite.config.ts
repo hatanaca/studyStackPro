@@ -17,9 +17,27 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('chart.js') || id.includes('vue-chartjs')) {
+            return 'chart-vendor'
+          }
+          if (id.includes('pusher-js') || id.includes('laravel-echo')) {
+            return 'ws-vendor'
+          }
+        },
+      },
+    },
+  },
   server: {
     host: '0.0.0.0',
     port: 5173,
+    watch: {
+      usePolling: true,
+      interval: 1000,
+    },
     proxy: {
       '/api': {
         target: process.env.PROXY_TARGET || 'http://localhost',

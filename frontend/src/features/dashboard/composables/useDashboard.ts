@@ -1,24 +1,35 @@
-import { onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAnalyticsStore } from '@/stores/analytics.store'
-import { useWebSocket } from '@/composables/useWebSocket'
 
 const POLLING_INTERVAL_MS = 120_000
 const DISCONNECTED_POLLING_DELAY_MS = 5000
+const VISIBILITY_COOLDOWN_MS = 10_000
 
 export function useDashboard() {
   const authStore = useAuthStore()
   const analyticsStore = useAnalyticsStore()
-  const { isConnected } = useWebSocket()
+
+  const wsIsConnected = ref(false)
 
   let pollingIntervalId: ReturnType<typeof setInterval> | null = null
   let reconnectCheckId: ReturnType<typeof setInterval> | null = null
   let lastConnectedAt = Date.now()
+  let lastVisibilityFetchAt = 0
+  let consecutiveErrors = 0
 
   function startPolling() {
-    stopPolling()
-    pollingIntervalId = setInterval(() => {
-      analyticsStore.fetchDashboard(true)
+    if (pollingIntervalId) return
+    pollingIntervalId = setInterval(async () => {
+      try {
+        await analyticsStore.fetchDashboard(true)
+        consecutiveErrors = 0
+      } catch {
+        consecutiveErrors++
+        if (consecutiveErrors >= 3) {
+          stopPolling()
+        }
+      }
     }, POLLING_INTERVAL_MS)
   }
 
@@ -29,26 +40,45 @@ export function useDashboard() {
     }
   }
 
-  function handleVisibilityChange() {
-    if (document.visibilityState === 'visible') {
-      analyticsStore.fetchDashboard(true)
+  async function handleVisibilityChange() {
+    if (document.visibilityState !== 'visible') return
+
+    const now = Date.now()
+    if (now - lastVisibilityFetchAt < VISIBILITY_COOLDOWN_MS) return
+    lastVisibilityFetchAt = now
+
+    try {
+      await analyticsStore.fetchDashboard(true)
+      consecutiveErrors = 0
+    } catch {
+      consecutiveErrors++
     }
   }
 
-  onMounted(() => {
+  onMounted(async () => {
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
-    reconnectCheckId = setInterval(() => {
-      if (isConnected.value) {
-        lastConnectedAt = Date.now()
-        stopPolling()
-      } else if (authStore.user?.id) {
-        const disconnectedFor = Date.now() - lastConnectedAt
-        if (disconnectedFor > DISCONNECTED_POLLING_DELAY_MS) {
-          startPolling()
+    try {
+      const { useWebSocket } = await import('@/composables/useWebSocket')
+      const ws = useWebSocket()
+      wsIsConnected.value = ws.isConnected.value
+
+      reconnectCheckId = setInterval(() => {
+        wsIsConnected.value = ws.isConnected.value
+        if (wsIsConnected.value) {
+          lastConnectedAt = Date.now()
+          consecutiveErrors = 0
+          stopPolling()
+        } else if (authStore.user?.id && consecutiveErrors < 3) {
+          const disconnectedFor = Date.now() - lastConnectedAt
+          if (disconnectedFor > DISCONNECTED_POLLING_DELAY_MS) {
+            startPolling()
+          }
         }
-      }
-    }, 2000)
+      }, 5000)
+    } catch {
+      startPolling()
+    }
   })
 
   onUnmounted(() => {
@@ -61,13 +91,13 @@ export function useDashboard() {
   })
 
   async function initDashboard() {
-    await Promise.all([
-      analyticsStore.fetchDashboard(),
-      analyticsStore.fetchHeatmap(),
-      analyticsStore.fetchWeekly(),
-    ])
+    await analyticsStore.fetchDashboard()
+
+    analyticsStore.fetchHeatmap().catch(() => {})
+    analyticsStore.fetchWeekly().catch(() => {})
+
     if (!analyticsStore.timeSeriesData['30d']?.length) {
-      await analyticsStore.fetchTimeSeries('30d')
+      analyticsStore.fetchTimeSeries('30d').catch(() => {})
     }
   }
 

@@ -31,10 +31,10 @@ withDefaults(
 .skeleton {
   background: linear-gradient(
     90deg,
-    #e2e8f0 0%,
-    #f1f5f9 20%,
-    #e2e8f0 40%,
-    #e2e8f0 100%
+    var(--color-border) 0%,
+    var(--color-bg-soft) 25%,
+    var(--color-border) 50%,
+    var(--color-border) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
@@ -48,7 +48,7 @@ withDefaults(
   }
 }
 .skeleton--text {
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
 }
 .skeleton--circular {
   aspect-ratio: 1;

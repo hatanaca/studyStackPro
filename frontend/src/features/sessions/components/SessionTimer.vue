@@ -23,16 +23,17 @@ const { formattedTime, activeSession } = useSessionTimer()
 .session-timer {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
   font-variant-numeric: tabular-nums;
 }
 .session-timer__time {
   font-weight: 600;
-  font-size: 1.125rem;
-  color: #1e293b;
+  font-size: var(--text-lg);
+  color: var(--color-text);
+  letter-spacing: 0.02em;
 }
 .session-timer__tech {
-  font-size: 0.875rem;
-  color: #64748b;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
 }
 </style>

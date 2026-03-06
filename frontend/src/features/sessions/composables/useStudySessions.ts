@@ -12,11 +12,10 @@ export function useStudySessions() {
 
   async function createSession(data: { technology_id: string; started_at: string; ended_at?: string; notes?: string; mood?: number }) {
     const { data: res } = await sessionsApi.create(data)
-    if (res.success && res.data) {
-      sessionsStore.sessions.unshift(res.data)
-      return res.data
-    }
-    return null
+    if (!res.success || !res.data) return null
+    const list = sessionsStore.sessions
+    sessionsStore.sessions = [res.data, ...list]
+    return res.data
   }
 
   async function deleteSession(id: string) {

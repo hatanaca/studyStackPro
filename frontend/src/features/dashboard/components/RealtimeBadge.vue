@@ -19,23 +19,27 @@ const { isConnected } = useWebSocket()
 .realtime-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
+  gap: var(--spacing-xs);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  padding: var(--spacing-2xs) var(--spacing-sm);
   border-radius: 9999px;
+  border: 1px solid transparent;
 }
 .realtime-badge .dot {
-  width: 6px;
-  height: 6px;
+  width: 0.375rem;
+  height: 0.375rem;
   border-radius: 50%;
   background: currentColor;
 }
 .realtime-badge.connected {
-  color: #059669;
-  background: #d1fae5;
+  color: var(--color-success);
+  background: var(--color-success-soft);
+  border-color: color-mix(in srgb, var(--color-success) 35%, transparent);
 }
 .realtime-badge.disconnected {
-  color: #dc2626;
-  background: #fee2e2;
+  color: var(--color-error);
+  background: var(--color-error-soft);
+  border-color: color-mix(in srgb, var(--color-error) 35%, transparent);
 }
 </style>

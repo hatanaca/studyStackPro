@@ -82,7 +82,7 @@ defineExpose({
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--spacing-md);
 }
 .w-full {
   width: 100%;

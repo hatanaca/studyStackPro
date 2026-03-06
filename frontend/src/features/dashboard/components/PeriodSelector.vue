@@ -46,24 +46,28 @@ function select(period: TimeSeriesPeriod) {
 <style scoped>
 .period-selector {
   display: flex;
-  gap: 0.25rem;
+  gap: var(--spacing-2xs);
 }
 .period-btn {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  border-radius: 0.25rem;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  color: #64748b;
+  min-height: var(--input-height-sm);
+  padding: 0.3rem 0.6rem;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  color: var(--color-text-muted);
   cursor: pointer;
+  transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease;
 }
 .period-btn:hover {
-  background: #f8fafc;
-  color: #334155;
+  background: var(--color-bg-soft);
+  color: var(--color-text);
+  border-color: var(--color-primary);
 }
 .period-btn.active {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   color: #fff;
 }
 </style>

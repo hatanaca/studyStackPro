@@ -1,20 +1,194 @@
-/* Design tokens: cores, espaçamentos */
+/* Design tokens: cores, espaçamentos, tipografia, motion */
+/* Breakpoints: 480px (xs), 640px (sm), 768px (md), 1024px (lg), 1280px (xl) */
 :root {
-  --color-text: #1e293b;
+  --color-text: #0f172a;
   --color-text-muted: #64748b;
   --color-bg: #f8fafc;
+  --color-bg-soft: #eef2ff;
   --color-bg-card: #ffffff;
   --color-primary: #3b82f6;
   --color-primary-hover: #2563eb;
+  --color-primary-soft: #dbeafe;
   --color-border: #e2e8f0;
+  --color-focus-ring: rgba(59, 130, 246, 0.45);
+
+  --gradient-primary: linear-gradient(135deg, #3b82f6, #6366f1);
+  --gradient-accent: linear-gradient(135deg, #22c55e, #0ea5e9);
+  --gradient-mesh: radial-gradient(at 40% 20%, #eef2ff 0%, transparent 50%),
+    radial-gradient(at 80% 0%, #dbeafe 0%, transparent 40%),
+    radial-gradient(at 0% 50%, #f8fafc 0%, transparent 50%);
+
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
+
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 10px 20px -5px rgba(15, 23, 42, 0.1);
+  --shadow-lg: 0 18px 45px rgba(15, 23, 42, 0.12);
+  --shadow-card-hover: 0 12px 28px rgba(15, 23, 42, 0.12);
+
+  --sidebar-width: 200px;
+
+  /* Page layout: conteúdo das rotas */
+  --page-max-width: 1280px;
+  --page-max-width-narrow: 720px;
+  --page-header-gap: 0.25rem;
+  --page-header-margin-bottom: 1rem;
+  --page-section-gap: 1rem;
+  --page-breadcrumb-margin-bottom: 0.75rem;
+  --page-content-padding-block: 0;
+  --page-section-title-size: var(--text-base);
+  --page-section-title-margin: 0 0 0.5rem;
+
+  /* Widget system: cards e gráficos do dashboard (compacto) */
+  --widget-padding: 1rem;
+  --widget-padding-sm: 0.75rem;
+  --widget-radius: var(--radius-md);
+  --widget-title-size: var(--text-xs);
+  --widget-title-weight: 600;
+  --widget-title-color: var(--color-text-muted);
+  --widget-chart-min-height: 220px;
+  --widget-chart-min-height-sm: 180px;
+  --widget-card-min-height: 100px;
+  --widget-gap: var(--spacing-sm);
+
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.5);
+
+  /* Semantic colors */
+  --color-success: #22c55e;
+  --color-success-soft: #dcfce7;
+  --color-warning: #f59e0b;
+  --color-warning-soft: #fef3c7;
+  --color-error: #ef4444;
+  --color-error-soft: #fee2e2;
+  --color-info: #0ea5e9;
+  --color-info-soft: #e0f2fe;
+
+  /* Extended spacing scale */
+  --spacing-2xs: 0.125rem;
+  --spacing-2xl: 2.5rem;
+  --spacing-3xl: 3rem;
+
+  /* Component-specific */
+  --input-height-sm: 2rem;
+  --input-height-md: 2.5rem;
+  --input-height-lg: 3rem;
+  --avatar-size-sm: 2rem;
+  --avatar-size-md: 2.5rem;
+  --avatar-size-lg: 3rem;
+  --avatar-size-xl: 4rem;
+  --tooltip-offset: 0.5rem;
+  --dropdown-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 4px 10px -5px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme='dark'] {
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-bg: #0f172a;
+  --color-bg-soft: #1e293b;
+  --color-bg-card: #1e293b;
+  --color-primary: #60a5fa;
+  --color-primary-hover: #93c5fd;
+  --color-primary-soft: rgba(59, 130, 246, 0.2);
+  --color-border: rgba(148, 163, 184, 0.2);
+  --color-focus-ring: rgba(96, 165, 250, 0.45);
+
+  --gradient-primary: radial-gradient(circle at top left, #334155, #0f172a 70%);
+  --gradient-accent: radial-gradient(circle at top right, #1e3a5f, #0f172a 70%);
+  --gradient-mesh: radial-gradient(at 40% 20%, #1e293b 0%, transparent 50%),
+    radial-gradient(at 80% 0%, #0f172a 0%, transparent 40%);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.5);
+  --shadow-card-hover: 0 12px 32px rgba(0, 0, 0, 0.45);
+
+  --glass-bg: rgba(30, 41, 59, 0.85);
+  --glass-border: rgba(148, 163, 184, 0.15);
+
+  --color-success: #4ade80;
+  --color-success-soft: rgba(34, 197, 94, 0.2);
+  --color-warning: #fbbf24;
+  --color-warning-soft: rgba(245, 158, 11, 0.2);
+  --color-error: #f87171;
+  --color-error-soft: rgba(239, 68, 68, 0.2);
+  --color-info: #38bdf8;
+  --color-info-soft: rgba(14, 165, 233, 0.2);
+  --dropdown-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* Scrollbar global no tema escuro */
+[data-theme='dark'] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+[data-theme='dark'] ::-webkit-scrollbar-track {
+  background: #0f172a;
+  border-radius: 10px;
+}
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 10px;
+  border: 2px solid #0f172a;
+}
+[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Scrollbar elegante (tema claro) para áreas com classe .scroll-pretty */
+.scroll-pretty {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+.scroll-pretty::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-pretty::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 8px;
+}
+.scroll-pretty::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+  border: 2px solid #f1f5f9;
+}
+.scroll-pretty::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+[data-theme='dark'] .scroll-pretty {
+  scrollbar-color: #475569 #1e293b;
+}
+[data-theme='dark'] .scroll-pretty::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+[data-theme='dark'] .scroll-pretty::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-color: #1e293b;
+}
+[data-theme='dark'] .scroll-pretty::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }

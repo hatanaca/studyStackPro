@@ -18,12 +18,13 @@ defineProps<{
 
 <style scoped>
 .app-header {
-  padding: 0 0 1rem;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 0 0 var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
 }
 .app-header__title {
-  font-size: 1.25rem;
-  color: #1e293b;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-text);
 }
 </style>

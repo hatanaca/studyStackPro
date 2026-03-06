@@ -1,7 +1,7 @@
 /* Animações de rota e componentes */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity var(--duration-normal, 0.25s) var(--ease-in-out, ease);
 }
 .fade-enter-from,
 .fade-leave-to {
@@ -10,11 +10,49 @@
 
 .slide-enter-active,
 .slide-leave-active {
-  transition: transform 0.25s ease;
+  transition: transform var(--duration-normal, 0.25s) var(--ease-out-expo, ease);
 }
 .slide-enter-from {
   transform: translateX(-20px);
 }
 .slide-leave-to {
   transform: translateX(20px);
+}
+
+/* Entrada suave de baixo para cima (widgets, cards) */
+.fade-up-enter-active {
+  transition: opacity var(--duration-slow, 0.4s) var(--ease-out-expo),
+    transform var(--duration-slow, 0.4s) var(--ease-out-expo);
+}
+.fade-up-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+/* Modal: escala + fade */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity var(--duration-normal, 0.25s) var(--ease-in-out);
+}
+.modal-enter-active .base-modal,
+.modal-leave-active .base-modal {
+  transition: transform var(--duration-normal, 0.25s) var(--ease-out-expo);
+}
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+.modal-enter-from .base-modal,
+.modal-leave-to .base-modal {
+  transform: scale(0.96);
+}
+
+/* Tooltip: fade rápido */
+.tooltip-fade-enter-active,
+.tooltip-fade-leave-active {
+  transition: opacity var(--duration-fast, 0.15s) var(--ease-in-out);
+}
+.tooltip-fade-enter-from,
+.tooltip-fade-leave-to {
+  opacity: 0;
 }

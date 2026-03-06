@@ -1,33 +1,29 @@
-import Echo from 'laravel-echo'
-import Pusher from 'pusher-js'
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 import { useSessionsStore } from '@/stores/sessions.store'
 import type { MetricsUpdatedEvent } from '@/types/websocket.types'
 
-declare global {
-  interface Window {
-    Pusher: typeof Pusher
-  }
-}
-
-if (typeof window !== 'undefined') {
-  window.Pusher = Pusher
-}
-
 const isConnected = ref(false)
-let echo: Echo<'reverb'> | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let echo: any = null
 
 export function useWebSocket() {
   const authStore = useAuthStore()
   const analyticsStore = useAnalyticsStore()
 
-  function connect(userId: string) {
+  async function connect(userId: string) {
     if (typeof window === 'undefined') return
     if (import.meta.env.VITE_REVERB_ENABLED === 'false') return
 
     disconnect()
+
+    const [{ default: Echo }, { default: Pusher }] = await Promise.all([
+      import('laravel-echo'),
+      import('pusher-js'),
+    ])
+
+    window.Pusher = Pusher
 
     const sessionsStore = useSessionsStore()
     const scheme = import.meta.env.VITE_REVERB_SCHEME || 'http'

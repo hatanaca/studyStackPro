@@ -10,7 +10,7 @@ defineEmits<{
 
 <template>
   <Teleport to="body">
-    <Transition name="fade">
+    <Transition name="modal">
       <div
         v-if="show"
         class="base-modal-overlay"
@@ -25,6 +25,7 @@ defineEmits<{
               {{ title }}
             </h3>
             <button
+              type="button"
               class="base-modal__close"
               aria-label="Fechar"
               @click="$emit('close')"
@@ -45,43 +46,80 @@ defineEmits<{
 .base-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: color-mix(in srgb, var(--color-bg) 55%, transparent);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: var(--spacing-md);
 }
 .base-modal {
-  background: #fff;
-  border-radius: 0.5rem;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
   max-width: 90vw;
   max-height: 90vh;
   overflow: auto;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
+  width: 100%;
+}
+@media (min-width: 481px) {
+  .base-modal {
+    width: auto;
+    min-width: 360px;
+  }
+}
+@media (max-width: 480px) {
+  .base-modal {
+    max-width: 95vw;
+    max-height: 95vh;
+  }
+  .base-modal__body {
+    padding: var(--widget-padding);
+  }
+  .base-modal__header {
+    padding: var(--spacing-md) var(--widget-padding);
+  }
 }
 .base-modal__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  padding: var(--widget-padding) calc(var(--widget-padding) + 0.2rem);
+  border-bottom: 1px solid var(--color-border);
 }
 .base-modal__title {
-  font-size: 1.125rem;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
   margin: 0;
+  color: var(--color-text);
 }
 .base-modal__close {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 1.25rem;
   cursor: pointer;
-  color: #64748b;
+  color: var(--color-text-muted);
   line-height: 1;
+  transition: color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    background var(--duration-fast) ease;
 }
 .base-modal__close:hover {
-  color: #1e293b;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
 }
 .base-modal__body {
-  padding: 1.5rem;
+  padding: var(--widget-padding) calc(var(--widget-padding) + 0.2rem);
 }
 </style>

@@ -68,65 +68,80 @@ const emit = defineEmits<{
 
 <style scoped>
 .session-card {
-  background: #fff;
-  border-radius: 0.5rem;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  transition: box-shadow var(--duration-normal) var(--ease-in-out), border-color var(--duration-fast) ease;
+}
+.session-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: color-mix(in srgb, var(--color-primary) 25%, var(--color-border));
 }
 .session-card__bar {
-  height: 4px;
+  height: 3px;
 }
 .session-card__content {
-  padding: 1rem;
+  padding: var(--widget-padding);
 }
 .session-card__main {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 0.25rem;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+  flex-wrap: wrap;
 }
 .session-card__tech {
   font-weight: 600;
-  color: #1e293b;
+  font-size: var(--text-sm);
+  color: var(--color-text);
 }
 .session-card__duration {
-  font-size: 0.875rem;
-  color: #64748b;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
 }
 .session-card__meta {
-  font-size: 0.8125rem;
-  color: #64748b;
-  margin-bottom: 0.5rem;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-sm);
 }
 .session-card__meta .mood {
-  margin-left: 0.5rem;
+  margin-left: var(--spacing-sm);
 }
 .session-card__notes {
-  font-size: 0.875rem;
-  color: #475569;
-  margin: 0.5rem 0 0;
-  line-height: 1.4;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: var(--spacing-sm) 0 0;
+  line-height: 1.45;
+  word-break: break-word;
 }
 .session-card__actions {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-md);
+  flex-wrap: wrap;
 }
 .btn {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8125rem;
-  border: none;
-  border-radius: 0.25rem;
+  padding: 0.3rem 0.6rem;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   background: transparent;
-  color: #64748b;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease;
 }
 .btn--ghost:hover {
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--color-bg-soft);
+  color: var(--color-text);
 }
 .btn--danger:hover {
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--color-error-soft);
+  color: var(--color-error);
 }
 </style>

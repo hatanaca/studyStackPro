@@ -38,12 +38,19 @@ function onSubmit(e: Event) {
 
 <style scoped>
 .session-form button {
-  padding: 0.5rem 1rem;
-  background: #3b82f6;
-  color: #fff;
+  min-height: var(--input-height-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast, #fff);
   border: none;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
+  transition: background var(--duration-fast) ease, transform var(--duration-fast) ease;
+}
+.session-form button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
 }
 .session-form button:disabled {
   opacity: 0.7;
