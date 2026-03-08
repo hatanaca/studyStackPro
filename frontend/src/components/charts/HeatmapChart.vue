@@ -26,22 +26,23 @@ defineProps<{
 
 <style scoped>
 .heatmap-chart {
-  background: #fff;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
 }
 .chart-title {
-  font-size: 0.875rem;
-  margin-bottom: 0.75rem;
-  color: #64748b;
+  font-size: var(--widget-title-size);
+  font-weight: var(--widget-title-weight);
+  margin-bottom: var(--spacing-sm);
+  color: var(--widget-title-color);
 }
 .chart-placeholder {
-  min-height: 120px;
+  min-height: var(--widget-chart-min-height-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #94a3b8;
-  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
 }
 </style>

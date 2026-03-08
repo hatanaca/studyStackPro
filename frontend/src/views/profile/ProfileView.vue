@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import BaseBreadcrumb from '@/components/ui/BaseBreadcrumb.vue'
+import PageView from '@/components/layout/PageView.vue'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -159,27 +159,21 @@ function formatDate(iso: string | null): string {
 </script>
 
 <template>
-  <div class="profile-view">
-    <BaseBreadcrumb
-      :items="[{ label: 'Dashboard', to: '/' }, { label: 'Configurações' }]"
-      class="profile-view__breadcrumb"
-    />
-    <header class="profile-view__header">
-      <BaseAvatar
-        :name="authStore.user?.name"
-        size="xl"
-        class="profile-view__avatar"
-      />
-      <div class="profile-view__header-text">
-        <h1 class="profile-view__title">
-          Configurações
-        </h1>
-        <p class="profile-view__subtitle">
-          Gerencie seu perfil, senha e dispositivos conectados.
-        </p>
+  <PageView
+    :breadcrumb="[{ label: 'Dashboard', to: '/' }, { label: 'Perfil' }]"
+    title="Perfil"
+    subtitle="Gerencie seu perfil, senha e dispositivos conectados."
+    narrow
+  >
+    <div class="profile-view">
+      <div class="profile-view__avatar-wrap">
+        <BaseAvatar
+          :name="authStore.user?.name"
+          size="xl"
+          class="profile-view__avatar"
+        />
       </div>
-    </header>
-    <BaseTabs
+      <BaseTabs
       v-model="activeTab"
       :tabs="profileTabs"
       variant="pill"
@@ -315,46 +309,21 @@ function formatDate(iso: string | null): string {
         </BaseCard>
       </template>
     </BaseTabs>
-  </div>
+    </div>
+  </PageView>
 </template>
 
 <style scoped>
 .profile-view {
-  max-width: var(--page-max-width-narrow);
-  margin: 0 auto;
+  max-width: 100%;
 }
-.profile-view__breadcrumb {
-  margin-bottom: var(--page-breadcrumb-margin-bottom);
-}
-.profile-view__header {
+.profile-view__avatar-wrap {
+  margin-bottom: var(--spacing-md);
   display: flex;
-  align-items: center;
-  gap: var(--spacing-lg);
-  margin-bottom: var(--page-header-margin-bottom);
-  padding: var(--spacing-lg);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  justify-content: center;
 }
 .profile-view__avatar {
   flex-shrink: 0;
-}
-.profile-view__header-text {
-  min-width: 0;
-}
-.profile-view__title {
-  font-size: var(--text-xl);
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  color: var(--color-text);
-  margin: 0 0 var(--page-header-gap);
-}
-.profile-view__subtitle {
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  margin: 0;
-  line-height: 1.5;
 }
 .profile-view__tabs {
   margin-bottom: var(--spacing-md);
@@ -425,15 +394,5 @@ function formatDate(iso: string | null): string {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   padding: var(--spacing-md) 0;
-}
-@media (max-width: 480px) {
-  .profile-view__header {
-    flex-direction: column;
-    text-align: center;
-    padding: var(--spacing-md);
-  }
-  .profile-view__title {
-    font-size: var(--text-lg);
-  }
 }
 </style>

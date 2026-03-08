@@ -1,13 +1,9 @@
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
-import { visualizer } from 'rollup-plugin-visualizer'
 
-export default defineConfig(({ mode }) => ({
-  plugins: [
-    vue(),
-    ...(mode === 'analyze' ? [visualizer({ open: false, gzipSize: true, filename: 'dist/stats.html' })] : []),
-  ],
+export default defineConfig({
+  plugins: [vue()],
   test: {
     globals: true,
     environment: 'happy-dom',
@@ -25,9 +21,6 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('chart.js') || id.includes('vue-chartjs')) {
-            return 'chart-vendor'
-          }
           if (id.includes('pusher-js') || id.includes('laravel-echo')) {
             return 'ws-vendor'
           }
@@ -53,5 +46,5 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true
       }
     }
-  }
-}))
+  },
+})

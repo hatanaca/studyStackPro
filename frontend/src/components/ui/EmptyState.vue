@@ -25,18 +25,28 @@ function handleAction() {
 </script>
 
 <template>
-  <div class="empty-state">
+  <section
+    class="empty-state"
+    role="status"
+    aria-live="polite"
+    aria-labelledby="empty-state-title"
+    :aria-describedby="(description || $slots.description) ? 'empty-state-desc' : undefined"
+  >
     <div
       class="empty-state__icon"
       aria-hidden="true"
     >
       {{ icon }}
     </div>
-    <h3 class="empty-state__title">
+    <h3
+      id="empty-state-title"
+      class="empty-state__title"
+    >
       {{ title }}
     </h3>
     <p
       v-if="description || $slots.description"
+      id="empty-state-desc"
       class="empty-state__description"
     >
       <slot name="description">
@@ -58,7 +68,7 @@ function handleAction() {
         </button>
       </slot>
     </div>
-  </div>
+  </section>
 </template>
 
 <style scoped>
@@ -72,10 +82,10 @@ function handleAction() {
   background: color-mix(in srgb, var(--color-bg-soft) 50%, var(--color-bg-card));
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-md);
-  min-height: 10rem;
+  min-height: var(--empty-state-min-height);
 }
 .empty-state__icon {
-  font-size: 2.25rem;
+  font-size: var(--empty-state-icon-size);
   line-height: 1;
   margin-bottom: var(--spacing-sm);
   opacity: 0.85;
@@ -91,22 +101,28 @@ function handleAction() {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   margin: 0 0 var(--spacing-md);
-  max-width: 28rem;
+  max-width: var(--empty-state-max-width);
   line-height: 1.5;
 }
 .empty-state__action {
   margin-top: var(--spacing-xs);
 }
 .empty-state__button {
-  padding: 0.5rem 1rem;
+  padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--text-sm);
   font-weight: 600;
-  color: #fff;
+  color: var(--color-primary-contrast);
   background: var(--color-primary);
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, transform var(--duration-fast) ease;
+  transition: background var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-out-expo);
+}
+.empty-state__button:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 .empty-state__button:hover {
   background: var(--color-primary-hover);

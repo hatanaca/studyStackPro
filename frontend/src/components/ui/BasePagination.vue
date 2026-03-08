@@ -135,10 +135,10 @@ function goTo(p: number) {
   padding: 0;
 }
 .base-pagination__btn {
-  min-width: 2.25rem;
+  min-width: var(--avatar-size-md);
   min-height: var(--input-height-sm);
-  height: 2.25rem;
-  padding: 0 0.5rem;
+  height: var(--avatar-size-md);
+  padding: 0 var(--spacing-sm);
   font-size: var(--text-sm);
   font-weight: 500;
   color: var(--color-text);
@@ -146,7 +146,13 @@ function goTo(p: number) {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease;
+  transition: background var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+}
+.base-pagination__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 .base-pagination__btn:hover:not(:disabled) {
   background: var(--color-bg-soft);
@@ -160,11 +166,11 @@ function goTo(p: number) {
 .base-pagination__btn--current {
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: #fff;
+  color: var(--color-primary-contrast);
 }
 .base-pagination__btn--current:hover:not(:disabled) {
   background: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
-  color: #fff;
+  color: var(--color-primary-contrast);
 }
 </style>

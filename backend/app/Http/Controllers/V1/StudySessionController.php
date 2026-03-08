@@ -27,19 +27,19 @@ class StudySessionController extends Controller
     public function index(Request $request): JsonResponse
     {
         $filterDto = StudySessionFilterDTO::fromArray($request->query());
-
         $paginator = $this->studySessionService->listForUser($request->user()->id, $filterDto);
 
-        return response()->json([
-            'success' => true,
-            'data' => StudySessionResource::collection($paginator->items()),
-            'meta' => [
+        return $this->success(
+            StudySessionResource::collection($paginator->items()),
+            '',
+            200,
+            [
                 'current_page' => $paginator->currentPage(),
                 'last_page' => $paginator->lastPage(),
                 'per_page' => $paginator->perPage(),
                 'total' => $paginator->total(),
-            ],
-        ]);
+            ]
+        );
     }
 
     public function store(StoreStudySessionRequest $request): JsonResponse
@@ -82,11 +82,7 @@ class StudySessionController extends Controller
 
     public function active(Request $request): JsonResponse
     {
-        $session = $request->user()
-            ->studySessions()
-            ->whereNull('ended_at')
-            ->with('technology')
-            ->first();
+        $session = $this->studySessionService->getActiveForUser($request->user()->id);
 
         if (! $session) {
             return $this->success(null);
@@ -103,8 +99,7 @@ class StudySessionController extends Controller
     public function start(StartStudySessionRequest $request): JsonResponse
     {
         $user = $request->user();
-        $existing = $user->studySessions()->whereNull('ended_at')->first();
-        if ($existing) {
+        if ($this->studySessionService->getActiveForUser($user->id)) {
             throw new ConcurrentSessionException('O usuário já possui uma sessão ativa.');
         }
 

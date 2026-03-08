@@ -107,10 +107,14 @@ studyTrackPro/
 - **Event-driven:** controllers disparam eventos; listeners invalidam cache e enfileiram jobs. Lógica de negócio isolada nos Services.
 - **Cache com tags:** `Cache::tags(['analytics', "user:{$id}"])` permite flush por usuário sem listar chaves.
 - **Trigger de sessão concorrente:** garantia no banco (máx 1 sessão ativa por usuário) além da validação no app.
+- **Metas (Goals):** funcionalidade apenas no frontend; persistência em localStorage. Não há API de goals. Ver `docs/GOALS-FRONTEND-ONLY.md`.
 
 ## Documentação do projeto
 
-A documentação técnica (arquitetura, endpoints, modelagem, plano de 12 semanas) está na pasta `projeto/` em PDF.
+- **Checklist e prompts:** `docs/CHECKLIST-E-PROMPTS.md` (checklist de entrega, exemplos de prompt para agentes, referência de throttles).
+- **Goals (metas):** `docs/GOALS-FRONTEND-ONLY.md` (metas são apenas frontend; sem API).
+- Coleção Postman: `docs/StudyTrack_API_Collection.postman.json`.
+- Variáveis de ambiente: `backend/.env.example`, `frontend/.env.example` e `.env.example` na raiz (copiar para `.env` no primeiro setup).
 
 ## Licença
 

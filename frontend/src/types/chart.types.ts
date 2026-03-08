@@ -1,5 +1,5 @@
 /**
- * Tipos para componentes de gráficos Chart.js
+ * Tipos para componentes de gráficos (ApexCharts e dados de API).
  */
 
 export interface ChartDataset {

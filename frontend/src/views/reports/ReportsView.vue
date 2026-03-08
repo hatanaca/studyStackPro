@@ -7,14 +7,6 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import PageView from '@/components/layout/PageView.vue'
 
 const dateRange = ref<{ start: string; end: string } | null>(null)
-const generating = ref(false)
-
-async function generateReport() {
-  if (!dateRange.value) return
-  generating.value = true
-  await new Promise(r => setTimeout(r, 1500))
-  generating.value = false
-}
 </script>
 
 <template>
@@ -25,7 +17,7 @@ async function generateReport() {
     narrow
   >
     <template #hint>
-      Selecione o período e clique em Gerar. Em breve você poderá baixar um PDF com resumo e gráficos.
+      Esta página é um placeholder. Em breve: download em PDF com resumo e gráficos por período.
     </template>
     <BaseCard
       title="Relatório de atividades"
@@ -41,15 +33,15 @@ async function generateReport() {
           />
         </div>
         <BaseButton
-          :disabled="!dateRange?.start || !dateRange?.end || generating"
-          @click="generateReport"
+          disabled
+          :aria-disabled="true"
         >
-          {{ generating ? 'Gerando...' : 'Gerar relatório' }}
+          Gerar relatório (em breve)
         </BaseButton>
       </div>
       <EmptyState
-        title="Relatórios em desenvolvimento"
-        description="Em breve você poderá baixar um resumo em PDF do seu estudo no período selecionado, com totais por tecnologia e evolução semanal."
+        title="Em breve: download em PDF"
+        description="A geração de relatórios em PDF com resumo por período e gráficos está em desenvolvimento. Por enquanto, use a página Exportar para baixar dados em CSV ou JSON."
         icon="📄"
       />
     </BaseCard>

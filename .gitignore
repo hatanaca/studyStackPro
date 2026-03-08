@@ -8,6 +8,7 @@ backend/storage/framework/views/*
 backend/bootstrap/cache/*
 frontend/node_modules/
 frontend/dist/
+frontend/vite.config.js
 .env
 .env.local
 .env.*.local

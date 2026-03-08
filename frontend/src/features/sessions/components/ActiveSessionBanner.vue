@@ -56,7 +56,7 @@ async function endSession() {
   align-items: center;
   padding: var(--spacing-md) var(--widget-padding);
   background: var(--gradient-primary);
-  color: #fff;
+  color: var(--color-primary-contrast);
   border-radius: var(--radius-md);
   margin-bottom: var(--spacing-md);
   gap: var(--spacing-sm);
@@ -88,11 +88,11 @@ async function endSession() {
   opacity: 0.95;
 }
 .active-session-banner__btn {
-  min-height: var(--input-height-sm);
-  padding: 0.35rem 0.75rem;
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  min-height: 2.75rem; /* >= 44px área de toque a11y */
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: color-mix(in srgb, var(--color-primary-contrast) 20%, transparent);
+  color: var(--color-primary-contrast);
+  border: 1px solid color-mix(in srgb, var(--color-primary-contrast) 40%, transparent);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
   font-weight: 600;
@@ -100,9 +100,13 @@ async function endSession() {
   white-space: nowrap;
   transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease;
 }
+.active-session-banner__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
 .active-session-banner__btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: color-mix(in srgb, var(--color-primary-contrast) 30%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary-contrast) 50%, transparent);
 }
 .active-session-banner__btn:disabled {
   opacity: 0.75;

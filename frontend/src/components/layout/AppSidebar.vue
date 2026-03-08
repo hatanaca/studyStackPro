@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, inject, watch } from 'vue'
+import { computed, inject, useAttrs, watch } from 'vue'
+
+defineOptions({ inheritAttrs: false })
 import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
@@ -7,6 +9,7 @@ import { useAnalyticsStore } from '@/stores/analytics.store'
 import RealtimeBadge from '@/features/dashboard/components/RealtimeBadge.vue'
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 
+const attrs = useAttrs()
 const authStore = useAuthStore()
 const uiStore = useUiStore()
 const route = useRoute()
@@ -32,9 +35,9 @@ const sidebarSummary = computed(() => {
   const m = analyticsStore.userMetrics
   if (!m) return []
   return [
-    { label: 'Total de horas', value: formatHours(m.total_hours ?? 0), color: '#8b5cf6' },
-    { label: 'Sessões', value: String(m.total_sessions ?? 0), color: '#22c55e' },
-    { label: 'Streak', value: `${m.current_streak_days ?? 0} dias`, color: '#f59e0b' },
+    { label: 'Total de horas', value: formatHours(m.total_hours ?? 0), color: 'var(--color-primary)' },
+    { label: 'Sessões', value: String(m.total_sessions ?? 0), color: 'var(--color-success)' },
+    { label: 'Streak', value: `${m.current_streak_days ?? 0} dias`, color: 'var(--color-warning)' },
   ]
 })
 
@@ -64,7 +67,7 @@ async function handleLogout() {
   </Teleport>
   <aside
     class="app-sidebar"
-    :class="{ 'app-sidebar--open': uiStore.mobileSidebarOpen }"
+    :class="[attrs.class, { 'app-sidebar--open': uiStore.mobileSidebarOpen }]"
   >
     <div class="app-sidebar__top">
       <div class="app-sidebar__brand">
@@ -392,13 +395,13 @@ async function handleLogout() {
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-          ><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.73l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle
+          ><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle
             cx="12"
-            cy="12"
-            r="3"
+            cy="7"
+            r="4"
           /></svg>
         </span>
-        Configurações
+        Perfil
       </RouterLink>
     </nav>
     <template v-if="stakentStyle?.value">
@@ -509,8 +512,18 @@ async function handleLogout() {
 }
 .app-sidebar__pill.active {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-primary-contrast);
   border-color: var(--color-primary);
+}
+.app-sidebar__link:focus-visible,
+.app-sidebar__pill:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+.app-sidebar__close:focus-visible,
+.app-sidebar__logout:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 .app-sidebar__summary {
   margin-top: auto;
@@ -545,8 +558,8 @@ async function handleLogout() {
 .app-sidebar__cta {
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(124, 58, 237, 0.15));
-  border: 1px solid rgba(139, 92, 246, 0.35);
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
   margin-bottom: var(--spacing-md);
 }
 .app-sidebar__cta-icon {

@@ -6,39 +6,23 @@ use App\Models\StudySession;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
+/**
+ * Cria sessões de demonstração para o usuário dev (dev@studytrack.local).
+ * Depende de UserSeeder e TechnologySeeder já terem sido executados.
+ */
 class DemoDataSeeder extends Seeder
 {
+    private const DEMO_USER_EMAIL = 'dev@studytrack.local';
+
     public function run(): void
     {
-        $user = User::firstOrCreate(
-            ['email' => 'demo@studytrack.local'],
-            [
-                'name' => 'Demo User',
-                'password' => Hash::make('password'),
-                'timezone' => 'America/Sao_Paulo',
-            ]
-        );
+        $user = User::where('email', self::DEMO_USER_EMAIL)->first();
+        if (! $user) {
+            return;
+        }
 
         $technologies = $user->technologies()->pluck('id')->toArray();
-        if (empty($technologies)) {
-            $techs = [
-                ['name' => 'JavaScript', 'color' => '#F7DF1E'],
-                ['name' => 'TypeScript', 'color' => '#3178C6'],
-                ['name' => 'Vue.js', 'color' => '#42B883'],
-                ['name' => 'Laravel', 'color' => '#FF2D20'],
-                ['name' => 'PostgreSQL', 'color' => '#4169E1'],
-            ];
-            foreach ($techs as $t) {
-                $tech = $user->technologies()->firstOrCreate(
-                    ['slug' => Str::slug($t['name'])],
-                    ['name' => $t['name'], 'color' => $t['color'], 'is_active' => true]
-                );
-                $technologies[] = $tech->id;
-            }
-        }
         if (empty($technologies)) {
             return;
         }

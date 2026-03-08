@@ -11,7 +11,7 @@ const props = withDefaults(
     chartData?: number[]
     color?: string
   }>(),
-  { change: undefined, changeLabel: undefined, tag: '', chartData: () => [], color: '#8b5cf6' }
+  { change: undefined, changeLabel: undefined, tag: '', chartData: () => [], color: undefined }
 )
 
 const hasPositiveChange = computed(() => (props.change ?? 0) > 0)
@@ -69,7 +69,7 @@ const changeText = computed(() => {
           <polyline
             :points="chartData.map((v, i) => `${(chartData.length > 1 ? i / (chartData.length - 1) : 0) * 100},${22 - ((Math.max(...chartData) ? v / Math.max(...chartData) : 0) * 20)}`).join(' ')"
             fill="none"
-            :stroke="color"
+            :stroke="color ?? 'var(--color-primary)'"
             stroke-width="1.5"
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -102,7 +102,7 @@ const changeText = computed(() => {
   pointer-events: none;
 }
 .stakent-metric-card:hover {
-  border-color: rgba(139, 92, 246, 0.3);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
   box-shadow: var(--shadow-card-hover, var(--shadow-md));
 }
 .stakent-metric-card__tag-row {

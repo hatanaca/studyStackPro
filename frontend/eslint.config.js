@@ -1,6 +1,7 @@
 import js from '@eslint/js'
 import pluginVue from 'eslint-plugin-vue'
 import tseslint from 'typescript-eslint'
+import eslintConfigPrettier from 'eslint-config-prettier'
 
 export default [
   { ignores: ['dist/**', 'node_modules/**', 'coverage/**', '**/*.config.ts', '**/*.config.js'] },
@@ -52,4 +53,5 @@ export default [
     files: ['src/components/ui/Callout.vue', 'src/components/ui/Divider.vue'],
     rules: { 'vue/multi-word-component-names': 'off' },
   },
+  eslintConfigPrettier,
 ]

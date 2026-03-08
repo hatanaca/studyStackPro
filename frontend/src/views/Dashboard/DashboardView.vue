@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { defineAsyncComponent, onMounted, watch, computed, inject } from 'vue'
+import { useApexChartTheme } from '@/composables/useApexChartTheme'
 import { useDashboardQuery } from '@/features/dashboard/composables/useDashboardQuery'
 import { useDashboard } from '@/features/dashboard/composables/useDashboard'
 import { useAnalyticsStore } from '@/stores/analytics.store'
@@ -32,6 +33,12 @@ const GoalsWidget = defineAsyncComponent(
 )
 
 const stakentStyle = inject<{ value: boolean }>('stakentStyle', { value: false })
+const { theme: chartTheme } = useApexChartTheme()
+const stakentMetricColors = computed(() => ({
+  primary: chartTheme.value.palette[0],
+  success: chartTheme.value.palette[1],
+  warning: chartTheme.value.palette[2],
+}))
 const dashboardQuery = useDashboardQuery()
 const { initDashboard } = useDashboard({
   refetchDashboard: () => dashboardQuery.refetch(),
@@ -100,19 +107,19 @@ async function retry() {
                   :value="formatHours(analyticsStore.userMetrics?.total_hours ?? 0)"
                   label="Tempo total de estudo"
                   :chart-data="stakentSparkline.length ? stakentSparkline : undefined"
-                  color="#8b5cf6"
+                  :color="stakentMetricColors.primary"
                 />
                 <StakentMetricCard
                   tag="Sessões"
                   :value="analyticsStore.userMetrics?.total_sessions ?? 0"
                   label="Total de sessões"
-                  color="#22c55e"
+                  :color="stakentMetricColors.success"
                 />
                 <StakentMetricCard
                   tag="Streak"
                   :value="`${analyticsStore.userMetrics?.current_streak_days ?? 0} dias`"
                   label="Sequência atual"
-                  color="#f59e0b"
+                  :color="stakentMetricColors.warning"
                 />
               </div>
             </div>
@@ -179,7 +186,7 @@ async function retry() {
           >
             <EmptyState
               title="Nenhum dado ainda"
-              description="Registre sua primeira sessão no card acima para desbloquear métricas, gráficos e metas. Use o período (7d, 30d, 90d) no gráfico para filtrar os dados."
+              description="Sua primeira sessão desbloqueia métricas e gráficos. Registre no card acima para ver totais, evolução e metas."
               icon="📊"
               hide-action
             />
@@ -242,17 +249,19 @@ async function retry() {
   max-width: var(--page-max-width);
   margin: 0 auto;
 }
-.widgets--animate .widgets__item {
-  animation: fadeUpIn var(--duration-slow) var(--ease-out-expo) backwards;
+@media (prefers-reduced-motion: no-preference) {
+  .widgets--animate .widgets__item {
+    animation: fadeUpIn var(--duration-slow) var(--ease-out-expo) backwards;
+  }
+  .widgets--animate .widgets__item--0 { animation-delay: 0.05s; }
+  .widgets--animate .widgets__item--1 { animation-delay: 0.08s; }
+  .widgets--animate .widgets__item--2 { animation-delay: 0.11s; }
+  .widgets--animate .widgets__item--3 { animation-delay: 0.14s; }
+  .widgets--animate .widgets__item--4 { animation-delay: 0.17s; }
+  .widgets--animate .widgets__item--5 { animation-delay: 0.2s; }
+  .widgets--animate .widgets__item--6 { animation-delay: 0.23s; }
+  .widgets--animate .widgets__item--7 { animation-delay: 0.26s; }
 }
-.widgets--animate .widgets__item--0 { animation-delay: 0.05s; }
-.widgets--animate .widgets__item--1 { animation-delay: 0.08s; }
-.widgets--animate .widgets__item--2 { animation-delay: 0.11s; }
-.widgets--animate .widgets__item--3 { animation-delay: 0.14s; }
-.widgets--animate .widgets__item--4 { animation-delay: 0.17s; }
-.widgets--animate .widgets__item--5 { animation-delay: 0.2s; }
-.widgets--animate .widgets__item--6 { animation-delay: 0.23s; }
-.widgets--animate .widgets__item--7 { animation-delay: 0.26s; }
 @keyframes fadeUpIn {
   from {
     opacity: 0;
@@ -297,7 +306,7 @@ async function retry() {
   grid-column: 1 / -1;
 }
 /* Tablet: 2 colunas com registro e lembretes lado a lado */
-@media (min-width: 640px) {
+@media (min-width: var(--screen-sm)) {
   .widgets {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--widget-gap);
@@ -319,7 +328,7 @@ async function retry() {
   }
 }
 /* Desktop: grid 12 colunas com register/reminders no topo */
-@media (min-width: 1024px) {
+@media (min-width: var(--screen-lg)) {
   .widgets {
     grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: var(--widget-gap);
@@ -426,7 +435,7 @@ async function retry() {
 }
 .stakent-dashboard__section-tag {
   font-size: var(--text-xs);
-  padding: 0.2rem 0.5rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: 9999px;
   background: var(--color-bg-soft);
   color: var(--color-text-muted);

@@ -39,6 +39,11 @@ class StudySessionService
         return $session;
     }
 
+    public function getActiveForUser(string $userId): ?StudySession
+    {
+        return $this->repository->findActiveByUser($userId);
+    }
+
     public function create(string $userId, StudySessionDTO $dto): StudySession
     {
         $session = $this->repository->create($dto);

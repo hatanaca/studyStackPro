@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Technologies\SearchTechnologyRequest;
 use App\Http\Requests\Technologies\StoreTechnologyRequest;
 use App\Http\Requests\Technologies\UpdateTechnologyRequest;
 use App\Http\Resources\TechnologyResource;
@@ -26,11 +27,13 @@ class TechnologyController extends Controller
         return $this->success(TechnologyResource::collection($technologies));
     }
 
-    public function search(Request $request): JsonResponse
+    public function search(SearchTechnologyRequest $request): JsonResponse
     {
-        $q = $request->query('q', '');
-        $limit = min((int) $request->query('limit', 10), 50);
-        $technologies = $this->technologyService->search($request->user()->id, $q, $limit);
+        $technologies = $this->technologyService->search(
+            $request->user()->id,
+            $request->getQuery(),
+            $request->getLimit()
+        );
 
         return $this->success(TechnologyResource::collection($technologies));
     }

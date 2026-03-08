@@ -87,7 +87,7 @@ defineEmits<{
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--widget-padding) calc(var(--widget-padding) + 0.2rem);
+  padding: var(--widget-padding) var(--spacing-lg);
   border-bottom: 1px solid var(--color-border);
 }
 .base-modal__title {
@@ -98,15 +98,15 @@ defineEmits<{
   color: var(--color-text);
 }
 .base-modal__close {
-  width: 2rem;
-  height: 2rem;
+  width: var(--icon-size-lg);
+  height: var(--icon-size-lg);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: transparent;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  font-size: 1.25rem;
+  font-size: var(--text-lg);
   cursor: pointer;
   color: var(--color-text-muted);
   line-height: 1;
@@ -114,12 +114,16 @@ defineEmits<{
     border-color var(--duration-fast) ease,
     background var(--duration-fast) ease;
 }
+.base-modal__close:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
 .base-modal__close:hover {
   color: var(--color-primary);
   border-color: var(--color-primary);
   background: var(--color-primary-soft);
 }
 .base-modal__body {
-  padding: var(--widget-padding) calc(var(--widget-padding) + 0.2rem);
+  padding: var(--widget-padding) var(--spacing-lg);
 }
 </style>

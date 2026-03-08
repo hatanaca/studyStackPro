@@ -1,6 +1,13 @@
 /* Design tokens: cores, espaçamentos, tipografia, motion */
-/* Breakpoints: 480px (xs), 640px (sm), 768px (md), 1024px (lg), 1280px (xl) */
+/* Breakpoints: 375px (mobile), 480px (xs), 640px (sm), 768px (md), 1024px (lg), 1280px (xl), 1440px (wide) */
 :root {
+  --viewport-min: 375px;
+  --viewport-max: 1440px;
+  --screen-xs: 480px;
+  --screen-sm: 640px;
+  --screen-md: 768px;
+  --screen-lg: 1024px;
+  --screen-xl: 1280px;
   --color-text: #0f172a;
   --color-text-muted: #64748b;
   --color-bg: #f8fafc;
@@ -11,6 +18,10 @@
   --color-primary-soft: #dbeafe;
   --color-border: #e2e8f0;
   --color-focus-ring: rgba(59, 130, 246, 0.45);
+  /** Foco acessível: anel visível em :focus-visible (controles interativos) */
+  --shadow-focus: 0 0 0 3px var(--color-focus-ring);
+  /** Contraste sobre fundo primary (botões, badges) */
+  --color-primary-contrast: #ffffff;
 
   --gradient-primary: linear-gradient(135deg, #3b82f6, #6366f1);
   --gradient-accent: linear-gradient(135deg, #22c55e, #0ea5e9);
@@ -56,8 +67,10 @@
   --widget-title-color: var(--color-text-muted);
   --widget-chart-min-height: 220px;
   --widget-chart-min-height-sm: 180px;
+  --widget-chart-min-height-tall: 260px;
   --widget-card-min-height: 100px;
   --widget-gap: var(--spacing-sm);
+  --chart-axis-font-size: var(--text-sm);
 
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --text-xs: 0.75rem;
@@ -102,6 +115,23 @@
   --avatar-size-xl: 4rem;
   --tooltip-offset: 0.5rem;
   --dropdown-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 4px 10px -5px rgba(15, 23, 42, 0.08);
+
+  /* Ícones e tamanhos fixos (evitar hardcode em componentes) */
+  --icon-size-sm: 1.25rem;
+  --icon-size-md: 1.5rem;
+  --icon-size-lg: 2rem;
+  --empty-state-icon-size: 2.25rem;
+  --empty-state-min-height: 10rem;
+  --empty-state-max-width: 28rem;
+}
+
+/* Respeitar preferência do usuário por menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0.01ms;
+    --duration-normal: 0.01ms;
+    --duration-slow: 0.01ms;
+  }
 }
 
 [data-theme='dark'] {
@@ -115,6 +145,8 @@
   --color-primary-soft: rgba(59, 130, 246, 0.2);
   --color-border: rgba(148, 163, 184, 0.2);
   --color-focus-ring: rgba(96, 165, 250, 0.45);
+  --shadow-focus: 0 0 0 3px var(--color-focus-ring);
+  --color-primary-contrast: #ffffff;
 
   --gradient-primary: radial-gradient(circle at top left, #334155, #0f172a 70%);
   --gradient-accent: radial-gradient(circle at top right, #1e3a5f, #0f172a 70%);
