@@ -11,8 +11,9 @@ export interface MetricsRecalculatingEvent {
 export interface SessionStartedEvent {
   session: {
     id: string
-    technology: { name: string; color: string }
+    technology?: { id: string; name: string; color: string }
     started_at: string
+    elapsed_seconds?: number
   }
 }
 

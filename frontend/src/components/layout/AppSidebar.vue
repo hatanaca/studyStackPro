@@ -1,14 +1,42 @@
 <script setup lang="ts">
-import { watch } from 'vue'
+import { computed, inject, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
+import { useAnalyticsStore } from '@/stores/analytics.store'
 import RealtimeBadge from '@/features/dashboard/components/RealtimeBadge.vue'
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 
 const authStore = useAuthStore()
 const uiStore = useUiStore()
 const route = useRoute()
+const analyticsStore = useAnalyticsStore()
+const stakentStyle = inject<{ value: boolean }>('stakentStyle', { value: false })
+
+const userInitials = computed(() => {
+  const name = authStore.user?.name?.trim()
+  if (!name) return 'ST'
+  const parts = name.split(/\s+/).filter(Boolean)
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return `${parts[0][0] ?? ''}${parts[parts.length - 1][0] ?? ''}`.toUpperCase()
+})
+
+function formatHours(h: number): string {
+  if (h <= 0) return '0h'
+  const int = Math.floor(h)
+  const m = Math.round((h - int) * 60)
+  return m === 0 ? `${int}h` : `${int}h ${m}min`
+}
+
+const sidebarSummary = computed(() => {
+  const m = analyticsStore.userMetrics
+  if (!m) return []
+  return [
+    { label: 'Total de horas', value: formatHours(m.total_hours ?? 0), color: '#8b5cf6' },
+    { label: 'Sessões', value: String(m.total_sessions ?? 0), color: '#22c55e' },
+    { label: 'Streak', value: `${m.current_streak_days ?? 0} dias`, color: '#f59e0b' },
+  ]
+})
 
 watch(() => route.path, () => {
   uiStore.closeMobileSidebar()
@@ -56,6 +84,53 @@ async function handleLogout() {
       >
         ✕
       </button>
+    </div>
+    <div
+      v-if="authStore.user && !stakentStyle?.value"
+      class="app-sidebar__profile"
+    >
+      <div class="app-sidebar__avatar-wrap">
+        <img
+          v-if="authStore.user.avatar_url"
+          :src="authStore.user.avatar_url"
+          alt="Foto de perfil"
+          class="app-sidebar__avatar"
+        >
+        <span
+          v-else
+          class="app-sidebar__avatar app-sidebar__avatar--fallback"
+          aria-hidden="true"
+        >
+          {{ userInitials }}
+        </span>
+      </div>
+      <div class="app-sidebar__profile-meta">
+        <p class="app-sidebar__profile-name">
+          {{ authStore.user.name }}
+        </p>
+        <p class="app-sidebar__profile-email">
+          {{ authStore.user.email }}
+        </p>
+      </div>
+    </div>
+    <div
+      v-if="stakentStyle?.value"
+      class="app-sidebar__pills"
+    >
+      <RouterLink
+        to="/"
+        class="app-sidebar__pill"
+        :class="{ active: route.path === '/' }"
+      >
+        Estudo
+      </RouterLink>
+      <RouterLink
+        to="/goals"
+        class="app-sidebar__pill"
+        :class="{ active: route.path.startsWith('/goals') }"
+      >
+        Metas
+      </RouterLink>
     </div>
     <RealtimeBadge class="app-sidebar__realtime" />
     <nav class="app-sidebar__nav">
@@ -326,6 +401,29 @@ async function handleLogout() {
         Configurações
       </RouterLink>
     </nav>
+    <template v-if="stakentStyle?.value">
+      <div class="app-sidebar__summary">
+        <div
+          v-for="s in sidebarSummary"
+          :key="s.label"
+          class="app-sidebar__summary-row"
+        >
+          <span
+            class="app-sidebar__summary-dot"
+            :style="{ background: s.color }"
+          />
+          <span class="app-sidebar__summary-label">{{ s.label }}</span>
+          <span class="app-sidebar__summary-value">{{ s.value }}</span>
+        </div>
+      </div>
+      <div class="app-sidebar__cta">
+        <span class="app-sidebar__cta-icon">⚡</span>
+        <strong class="app-sidebar__cta-title">Ativar Super</strong>
+        <p class="app-sidebar__cta-desc">
+          Desbloqueie todos os recursos no StudyTrack Pro
+        </p>
+      </div>
+    </template>
     <div class="app-sidebar__footer">
       <button
         type="button"
@@ -343,7 +441,7 @@ async function handleLogout() {
   width: var(--sidebar-width);
   background: var(--color-bg);
   color: var(--color-text);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-md);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -354,7 +452,7 @@ async function handleLogout() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
 }
 .app-sidebar__brand {
   display: flex;
@@ -384,13 +482,147 @@ async function handleLogout() {
   color: var(--color-text);
 }
 .app-sidebar__realtime {
+  margin-bottom: var(--spacing-md);
+}
+.app-sidebar__pills {
+  display: flex;
+  gap: var(--spacing-2xs);
+  padding: var(--spacing-xs) 0;
   margin-bottom: var(--spacing-sm);
+}
+.app-sidebar__pill {
+  flex: 1;
+  text-align: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: 9999px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--color-text-muted);
+  background: var(--color-bg-soft);
+  border: 1px solid transparent;
+  transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+}
+.app-sidebar__pill:hover {
+  color: var(--color-text);
+  background: var(--color-bg-card);
+}
+.app-sidebar__pill.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+.app-sidebar__summary {
+  margin-top: auto;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  margin-bottom: var(--spacing-sm);
+}
+.app-sidebar__summary-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) 0;
+  font-size: var(--text-xs);
+}
+.app-sidebar__summary-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.app-sidebar__summary-label {
+  flex: 1;
+  color: var(--color-text-muted);
+}
+.app-sidebar__summary-value {
+  font-weight: 600;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+.app-sidebar__cta {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(124, 58, 237, 0.15));
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  margin-bottom: var(--spacing-md);
+}
+.app-sidebar__cta-icon {
+  font-size: 1.25rem;
+  display: block;
+  margin-bottom: var(--spacing-xs);
+}
+.app-sidebar__cta-title {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  margin-bottom: var(--spacing-2xs);
+}
+.app-sidebar__cta-desc {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+.app-sidebar__profile {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+  background: color-mix(in srgb, var(--color-bg-soft) 70%, transparent);
+}
+.app-sidebar__avatar-wrap {
+  flex-shrink: 0;
+}
+.app-sidebar__avatar {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  object-fit: cover;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary-soft) 55%, var(--color-bg-card));
+}
+.app-sidebar__avatar--fallback {
+  color: var(--color-primary);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+.app-sidebar__profile-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.app-sidebar__profile-name {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-sidebar__profile-email {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .app-sidebar__nav {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2xs);
+  gap: var(--spacing-xs);
   flex: 1;
+  padding-inline: var(--spacing-2xs);
 }
 .app-sidebar__link {
   display: flex;
@@ -399,6 +631,7 @@ async function handleLogout() {
   color: var(--color-text-muted);
   text-decoration: none;
   padding: var(--spacing-xs) var(--spacing-sm);
+  min-height: 2.25rem;
   border-radius: var(--radius-md);
   white-space: nowrap;
   font-size: var(--text-sm);
@@ -430,6 +663,7 @@ async function handleLogout() {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
 }
 .app-sidebar__logout {
   padding: var(--spacing-xs) var(--spacing-sm);

@@ -182,7 +182,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   min-height: var(--widget-card-min-height);
-  max-height: 420px;
+  height: 100%;
   background: var(--color-bg-card);
   border-radius: var(--widget-radius);
   padding: var(--widget-padding);
@@ -217,11 +217,12 @@ onMounted(() => {
   display: flex;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-sm);
+  align-items: stretch;
 }
 .reminders-input__field {
   flex: 1;
   min-width: 0;
-  min-height: var(--input-height-sm);
+  min-height: 2rem;
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
@@ -243,10 +244,11 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-  margin-top: var(--spacing-xs);
+  margin-top: var(--spacing-2xs);
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 .reminders-item {
   flex-shrink: 0;
@@ -256,7 +258,7 @@ onMounted(() => {
   border: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm);
   transition: border-color var(--duration-fast) ease;
 }
 .reminders-item:hover {
@@ -293,6 +295,7 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-xs);
+  justify-content: flex-end;
 }
 .reminders-chip {
   border: none;
@@ -337,6 +340,11 @@ onMounted(() => {
     flex-direction: column;
     align-items: stretch;
   }
+}
+
+.reminders-input :deep(.base-button) {
+  min-width: 6.5rem;
+  min-height: 2rem;
 }
 </style>
 

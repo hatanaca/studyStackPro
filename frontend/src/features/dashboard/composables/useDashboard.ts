@@ -6,9 +6,15 @@ const POLLING_INTERVAL_MS = 120_000
 const DISCONNECTED_POLLING_DELAY_MS = 5000
 const VISIBILITY_COOLDOWN_MS = 10_000
 
-export function useDashboard() {
+export interface UseDashboardOptions {
+  /** Refetch do dashboard (ex.: query.refetch do useDashboardQuery). Usado no polling e ao voltar à aba. */
+  refetchDashboard?: () => Promise<unknown>
+}
+
+export function useDashboard(options?: UseDashboardOptions) {
   const authStore = useAuthStore()
   const analyticsStore = useAnalyticsStore()
+  const refetchDashboard = options?.refetchDashboard
 
   const wsIsConnected = ref(false)
 
@@ -18,11 +24,16 @@ export function useDashboard() {
   let lastVisibilityFetchAt = 0
   let consecutiveErrors = 0
 
+  function getFetchFn() {
+    return refetchDashboard ?? (() => analyticsStore.fetchDashboard(true))
+  }
+
   function startPolling() {
     if (pollingIntervalId) return
+    const doFetch = getFetchFn()
     pollingIntervalId = setInterval(async () => {
       try {
-        await analyticsStore.fetchDashboard(true)
+        await doFetch()
         consecutiveErrors = 0
       } catch {
         consecutiveErrors++
@@ -48,34 +59,37 @@ export function useDashboard() {
     lastVisibilityFetchAt = now
 
     try {
-      await analyticsStore.fetchDashboard(true)
+      await getFetchFn()()
       consecutiveErrors = 0
     } catch {
       consecutiveErrors++
     }
   }
 
-  onMounted(async () => {
+  onMounted(() => {
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     try {
-      const { useWebSocket } = await import('@/composables/useWebSocket')
-      const ws = useWebSocket()
-      wsIsConnected.value = ws.isConnected.value
-
-      reconnectCheckId = setInterval(() => {
+      import('@/composables/useWebSocket').then(({ useWebSocket }) => {
+        const ws = useWebSocket()
         wsIsConnected.value = ws.isConnected.value
-        if (wsIsConnected.value) {
-          lastConnectedAt = Date.now()
-          consecutiveErrors = 0
-          stopPolling()
-        } else if (authStore.user?.id && consecutiveErrors < 3) {
-          const disconnectedFor = Date.now() - lastConnectedAt
-          if (disconnectedFor > DISCONNECTED_POLLING_DELAY_MS) {
-            startPolling()
+
+        reconnectCheckId = setInterval(() => {
+          wsIsConnected.value = ws.isConnected.value
+          if (wsIsConnected.value) {
+            lastConnectedAt = Date.now()
+            consecutiveErrors = 0
+            stopPolling()
+          } else if (authStore.user?.id && consecutiveErrors < 3) {
+            const disconnectedFor = Date.now() - lastConnectedAt
+            if (disconnectedFor > DISCONNECTED_POLLING_DELAY_MS) {
+              startPolling()
+            }
           }
-        }
-      }, 5000)
+        }, 5000)
+      }).catch(() => {
+        startPolling()
+      })
     } catch {
       startPolling()
     }
@@ -90,9 +104,11 @@ export function useDashboard() {
     }
   })
 
+  /**
+   * Inicializa dados secundários do dashboard (heatmap, weekly, time series).
+   * O dashboard principal é carregado via useDashboardQuery (TanStack Query).
+   */
   async function initDashboard() {
-    await analyticsStore.fetchDashboard()
-
     analyticsStore.fetchHeatmap().catch(() => {})
     analyticsStore.fetchWeekly().catch(() => {})
 

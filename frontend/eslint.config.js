@@ -31,9 +31,25 @@ export default [
         Event: 'readonly',
         HTMLFormElement: 'readonly',
         FormData: 'readonly',
-        confirm: 'readonly'
+        confirm: 'readonly',
+        localStorage: 'readonly',
+        sessionStorage: 'readonly',
+        HTMLElement: 'readonly',
+        HTMLImageElement: 'readonly',
+        Node: 'readonly',
+        MouseEvent: 'readonly',
+        KeyboardEvent: 'readonly',
+        requestAnimationFrame: 'readonly',
+        navigator: 'readonly',
+        crypto: 'readonly',
+        Blob: 'readonly',
+        URL: 'readonly',
       }
     }
   }
-  )
+  ),
+  {
+    files: ['src/components/ui/Callout.vue', 'src/components/ui/Divider.vue'],
+    rules: { 'vue/multi-word-component-names': 'off' },
+  },
 ]

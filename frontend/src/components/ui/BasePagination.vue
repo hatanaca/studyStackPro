@@ -10,7 +10,7 @@ const props = withDefaults(
     showFirstLast?: boolean
     maxVisible?: number
   }>(),
-  { showFirstLast: true, maxVisible: 5 }
+  { totalItems: undefined, pageSize: undefined, showFirstLast: true, maxVisible: 5 }
 )
 
 const emit = defineEmits<{

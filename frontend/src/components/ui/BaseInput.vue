@@ -28,10 +28,10 @@ const inputId = computed(() => props.id ?? props.name ?? undefined)
       :for="inputId"
     >{{ label }}</label>
     <input
+      :id="inputId"
       :type="type ?? 'text'"
       :value="modelValue"
       :placeholder="placeholder"
-      :id="inputId"
       :name="name"
       :disabled="disabled"
       :autocomplete="autocomplete"

@@ -1,5 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import { VueQueryPlugin } from '@tanstack/vue-query'
+import VueApexCharts from 'vue3-apexcharts'
 import App from './App.vue'
 import router from './router'
 import './assets/styles/main.css'
@@ -18,5 +20,7 @@ document.documentElement.setAttribute('data-theme', savedTheme)
 
 const app = createApp(App)
 app.use(createPinia())
+app.use(VueQueryPlugin)
 app.use(router)
+app.use(VueApexCharts)
 app.mount('#app')
