@@ -44,6 +44,15 @@ class EloquentStudySessionRepository implements StudySessionRepositoryInterface
         return $query->paginate($perPage);
     }
 
+    public function findActiveByUser(string $userId): ?StudySession
+    {
+        return StudySession::where('user_id', $userId)
+            ->whereNull('ended_at')
+            ->with('technology')
+            ->orderByDesc('started_at')
+            ->first();
+    }
+
     public function findById(string $id): ?StudySession
     {
         return StudySession::with('technology')->find($id);

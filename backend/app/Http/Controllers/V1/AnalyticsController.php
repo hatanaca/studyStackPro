@@ -4,6 +4,8 @@ namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Analytics\ExportAnalyticsRequest;
+use App\Http\Requests\Analytics\HeatmapRequest;
+use App\Http\Requests\Analytics\TimeSeriesRequest;
 use App\Http\Resources\DashboardResource;
 use App\Modules\Analytics\Services\AnalyticsService;
 use App\Traits\HasApiResponse;
@@ -39,10 +41,9 @@ class AnalyticsController extends Controller
         return $this->success($data);
     }
 
-    public function timeSeries(Request $request): JsonResponse
+    public function timeSeries(TimeSeriesRequest $request): JsonResponse
     {
-        $days = min(90, max(7, (int) $request->query('days', 30)));
-        $data = $this->analyticsService->getTimeSeries($request->user()->id, $days);
+        $data = $this->analyticsService->getTimeSeries($request->user()->id, $request->getDays());
 
         return $this->success($data);
     }
@@ -54,10 +55,9 @@ class AnalyticsController extends Controller
         return $this->success($data);
     }
 
-    public function heatmap(Request $request): JsonResponse
+    public function heatmap(HeatmapRequest $request): JsonResponse
     {
-        $year = $request->query('year') ? (int) $request->query('year') : null;
-        $data = $this->analyticsService->getHeatmap($request->user()->id, $year);
+        $data = $this->analyticsService->getHeatmap($request->user()->id, $request->getYear());
 
         return $this->success($data);
     }

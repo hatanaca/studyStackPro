@@ -10,6 +10,8 @@ interface StudySessionRepositoryInterface
 {
     public function findByUser(string $userId, array $filters): LengthAwarePaginator;
 
+    public function findActiveByUser(string $userId): ?StudySession;
+
     public function findById(string $id): ?StudySession;
 
     public function create(StudySessionDTO $dto): StudySession;

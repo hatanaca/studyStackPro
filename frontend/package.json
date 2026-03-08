@@ -6,25 +6,25 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "build:analyze": "vue-tsc -b && vite build --mode analyze",
+    "build:analyze": "vue-tsc -b && vite build --config vite.config.analyze.ts",
     "preview": "vite preview",
     "test:run": "vitest run",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "type-check": "vue-tsc --noEmit",
-    "lint": "eslint . --fix"
+    "lint": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.{ts,vue,js,css,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,vue,js,css,json}\""
   },
   "dependencies": {
     "@tanstack/vue-query": "^5.59.0",
     "@vueuse/core": "^14.2.0",
     "apexcharts": "^5.10.3",
     "axios": "^1.6.0",
-    "chart.js": "^4.4.0",
     "laravel-echo": "^2.3.0",
     "pinia": "^2.1.0",
     "pusher-js": "^8.4.0",
     "vue": "^3.4.0",
-    "vue-chartjs": "^5.3.0",
     "vue-router": "^4.2.0",
     "vue3-apexcharts": "^1.11.1",
     "zod": "^3.23.0"
@@ -42,6 +42,8 @@
     "vite": "^5.0.0",
     "vitest": "^1.0.0",
     "vue-tsc": "^2.0.0",
-    "rollup-plugin-visualizer": "^5.12.0"
+    "rollup-plugin-visualizer": "^5.12.0",
+    "prettier": "^3.3.0",
+    "eslint-config-prettier": "^9.1.0"
   }
 }

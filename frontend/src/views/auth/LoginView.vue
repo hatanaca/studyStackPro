@@ -78,4 +78,9 @@ h1 {
   color: var(--color-primary-hover);
   text-decoration: underline;
 }
+.footer a:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-sm);
+}
 </style>

@@ -1,67 +1,59 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  type ChartOptions
-} from 'chart.js'
-import { Bar } from 'vue-chartjs'
-import { useChartTheme } from '@/composables/useChartTheme'
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
+import type { ApexOptions } from 'apexcharts'
+import { useApexChartTheme } from '@/composables/useApexChartTheme'
 
 const props = defineProps<{
   data?: { labels: string[]; values: number[] }
   title?: string
+  /** Orientação: vertical (padrão) ou horizontal */
+  orientation?: 'vertical' | 'horizontal'
 }>()
 
-const { themeColors } = useChartTheme()
+const { baseOptions, theme } = useApexChartTheme()
 
-const chartData = computed(() => {
-  const { primary } = themeColors.value
-  return {
-    labels: props.data?.labels ?? [],
-    datasets: [
-      {
-        label: 'Minutos',
-        data: props.data?.values ?? [],
-        backgroundColor: primary,
-        borderColor: primary,
-        borderWidth: 1,
-      },
-    ],
-  }
-})
+const series = computed(() => [
+  {
+    name: 'Minutos',
+    data: props.data?.values ?? [],
+  },
+])
 
-const options = computed<ChartOptions<'bar'>>(() => {
-  const { textColor, gridColor } = themeColors.value
+const chartOptions = computed<ApexOptions>(() => {
+  const isHorizontal = props.orientation === 'horizontal'
   return {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (ctx) => `${ctx.parsed.y} min`,
-        },
+    ...baseOptions.value,
+    chart: {
+      ...baseOptions.value.chart,
+      type: 'bar',
+      background: 'transparent',
+      toolbar: { show: false },
+    },
+    colors: [theme.value.palette[0]],
+    plotOptions: {
+      bar: {
+        horizontal: isHorizontal,
+        columnWidth: '60%',
+        borderRadius: 4,
+        dataLabels: { position: 'top' as const },
       },
     },
-    scales: {
-      x: {
-        grid: { color: gridColor },
-        ticks: { color: textColor },
-      },
-      y: {
-        beginAtZero: true,
-        grid: { color: gridColor },
-        ticks: { color: textColor },
-      },
+    dataLabels: {
+      enabled: false,
+      formatter: (val: number) => `${val} min`,
+    },
+    xaxis: {
+      ...baseOptions.value.xaxis,
+      categories: props.data?.labels ?? [],
+    },
+    yaxis: {
+      ...baseOptions.value.yaxis,
+      min: 0,
+    },
+    legend: { show: false },
+    tooltip: {
+      ...baseOptions.value.tooltip,
+      y: { formatter: (val: number) => `${val} min` },
     },
   }
 })
@@ -79,9 +71,11 @@ const options = computed<ChartOptions<'bar'>>(() => {
       v-if="data?.values?.length"
       class="chart-wrap"
     >
-      <Bar
-        :data="chartData"
-        :options="options"
+      <apexchart
+        type="bar"
+        :options="chartOptions"
+        :series="series"
+        class="apex-bar"
       />
     </div>
     <div
@@ -116,6 +110,10 @@ const options = computed<ChartOptions<'bar'>>(() => {
     height: var(--widget-chart-min-height);
     min-height: var(--widget-chart-min-height);
   }
+}
+.apex-bar {
+  width: 100%;
+  height: 100%;
 }
 .chart-placeholder {
   min-height: var(--widget-chart-min-height-sm);

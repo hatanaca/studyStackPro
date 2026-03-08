@@ -107,7 +107,7 @@ function onStepClick(step: StepperStep, index: number) {
 .base-stepper__item {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
+  gap: var(--spacing-sm);
   position: relative;
   flex: 1;
   min-width: 0;
@@ -124,8 +124,8 @@ function onStepClick(step: StepperStep, index: number) {
 }
 .base-stepper__indicator {
   flex-shrink: 0;
-  width: 2rem;
-  height: 2rem;
+  width: var(--icon-size-lg);
+  height: var(--icon-size-lg);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -135,20 +135,22 @@ function onStepClick(step: StepperStep, index: number) {
   background: var(--color-bg-soft);
   color: var(--color-text-muted);
   border: 2px solid var(--color-border);
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease;
+  transition: background var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    color var(--duration-fast) ease;
 }
 .base-stepper__item--current .base-stepper__indicator {
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: #fff;
+  color: var(--color-primary-contrast);
 }
 .base-stepper__item--completed .base-stepper__indicator {
   background: var(--color-success);
   border-color: var(--color-success);
-  color: #fff;
+  color: var(--color-primary-contrast);
 }
 .base-stepper__check {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   line-height: 1;
 }
 .base-stepper__number {
@@ -157,12 +159,12 @@ function onStepClick(step: StepperStep, index: number) {
 .base-stepper__content {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: var(--spacing-2xs);
   min-width: 0;
-  padding-bottom: 1.5rem;
+  padding-bottom: var(--spacing-lg);
 }
 .base-stepper--vertical .base-stepper__content {
-  padding-bottom: 1rem;
+  padding-bottom: var(--spacing-md);
 }
 .base-stepper__item:last-child .base-stepper__content {
   padding-bottom: 0;
@@ -181,9 +183,9 @@ function onStepClick(step: StepperStep, index: number) {
 }
 .base-stepper__connector {
   position: absolute;
-  top: 1rem;
-  left: calc(1rem + 0.75rem + 0.5rem);
-  right: -0.5rem;
+  top: var(--spacing-md);
+  left: calc(var(--spacing-md) + var(--spacing-sm) + var(--spacing-xs));
+  right: calc(-1 * var(--spacing-xs));
   height: 2px;
   background: var(--color-border);
 }

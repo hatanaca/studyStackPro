@@ -1,6 +1,7 @@
 /**
  * API de metas (goals).
- * Endpoints podem ser implementados no backend; por ora retorna dados vazios ou de localStorage.
+ * Goals é apenas frontend: persistência em localStorage. Não há endpoints no backend.
+ * Ver docs/GOALS-FRONTEND-ONLY.md.
  */
 
 import type { Goal, CreateGoalPayload, UpdateGoalPayload } from '@/types/goals.types'
@@ -27,7 +28,6 @@ function setStoredGoals(goals: Goal[]) {
 
 export const goalsApi = {
   async list(): Promise<{ data: Goal[] }> {
-    // Se o backend tiver endpoint: return (await apiClient.get('/goals')).data
     const list = getStoredGoals()
     return { data: list }
   },

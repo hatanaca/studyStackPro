@@ -27,21 +27,25 @@ withDefaults(
   align-items: center;
   justify-content: center;
   gap: var(--spacing-xs);
-  padding: 0.5rem 0.95rem;
+  padding: var(--spacing-sm) var(--spacing-md);
   min-height: var(--input-height-sm);
-  border-radius: var(--radius-md, 0.375rem);
-  font-size: var(--text-sm, 0.875rem);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
   font-weight: 600;
   letter-spacing: 0.01em;
   line-height: 1;
   cursor: pointer;
   border: 1px solid transparent;
   box-shadow: var(--shadow-sm);
-  transition: background var(--duration-fast, 0.15s) ease,
-    color var(--duration-fast, 0.15s) ease,
-    border-color var(--duration-fast, 0.15s) ease,
-    box-shadow var(--duration-fast, 0.15s) ease,
-    transform var(--duration-fast, 0.15s) var(--ease-out-expo, ease);
+  transition: background var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-out-expo);
+}
+.base-button:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 .base-button:hover:not(:disabled) {
   transform: translateY(-1px);
@@ -53,7 +57,7 @@ withDefaults(
 .base-button--primary {
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: #fff;
+  color: var(--color-primary-contrast);
 }
 .base-button--primary:hover:not(:disabled) {
   background: var(--color-primary-hover);
@@ -82,11 +86,11 @@ withDefaults(
 .base-button--danger {
   background: var(--color-error);
   border-color: var(--color-error);
-  color: #fff;
+  color: var(--color-primary-contrast);
 }
 .base-button--danger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-error) 88%, #000);
-  border-color: color-mix(in srgb, var(--color-error) 88%, #000);
+  background: color-mix(in srgb, var(--color-error) 88%, black);
+  border-color: color-mix(in srgb, var(--color-error) 88%, black);
 }
 .base-button--outline {
   background: transparent;
@@ -100,18 +104,18 @@ withDefaults(
   color: var(--color-primary);
 }
 .base-button--sm {
-  min-height: 2rem;
-  padding: 0.25rem 0.7rem;
-  font-size: var(--text-xs, 0.8125rem);
+  min-height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--text-xs);
 }
 .base-button--md {
-  padding: 0.5rem 1rem;
+  padding: var(--spacing-sm) var(--spacing-md);
   min-height: var(--input-height-sm);
 }
 .base-button--lg {
   min-height: var(--input-height-md);
-  padding: 0.65rem 1.2rem;
-  font-size: var(--text-base, 1rem);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--text-base);
 }
 .base-button:disabled {
   opacity: 0.55;

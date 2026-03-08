@@ -4,9 +4,9 @@
 <template>
   <div class="auth-layout">
     <div class="auth-layout__bg" />
-    <div class="auth-layout__card">
+    <main class="auth-layout__card">
       <slot />
-    </div>
+    </main>
   </div>
 </template>
 

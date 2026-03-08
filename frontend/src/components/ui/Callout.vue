@@ -59,13 +59,13 @@ const variantIcon: Record<string, string> = {
 }
 .callout__icon {
   flex-shrink: 0;
-  width: 1.25rem;
-  height: 1.25rem;
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-weight: 700;
 }
 .callout__content {
@@ -88,7 +88,7 @@ const variantIcon: Record<string, string> = {
 }
 .callout--info .callout__icon {
   background: var(--color-info);
-  color: #fff;
+  color: var(--color-primary-contrast);
 }
 .callout--success {
   background: var(--color-success-soft);
@@ -97,7 +97,7 @@ const variantIcon: Record<string, string> = {
 }
 .callout--success .callout__icon {
   background: var(--color-success);
-  color: #fff;
+  color: var(--color-primary-contrast);
 }
 .callout--warning {
   background: var(--color-warning-soft);
@@ -106,7 +106,7 @@ const variantIcon: Record<string, string> = {
 }
 .callout--warning .callout__icon {
   background: var(--color-warning);
-  color: #fff;
+  color: var(--color-primary-contrast);
 }
 .callout--error {
   background: var(--color-error-soft);
@@ -115,6 +115,6 @@ const variantIcon: Record<string, string> = {
 }
 .callout--error .callout__icon {
   background: var(--color-error);
-  color: #fff;
+  color: var(--color-primary-contrast);
 }
 </style>
