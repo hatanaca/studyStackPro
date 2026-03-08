@@ -14,6 +14,15 @@ export function formatHours(minutes: number): string {
   return `${h}h`
 }
 
+/** Label para eixo Y e tooltip de gráficos: minutos → "1h", "2h", "1h 30min" */
+export function formatMinutesToHoursLabel(minutes: number): string {
+  if (minutes <= 0) return '0h'
+  const h = Math.floor(minutes / 60)
+  const m = Math.round(minutes % 60)
+  if (m === 0) return `${h}h`
+  return `${h}h ${m}min`
+}
+
 export function formatDate(dateStr: string | null | undefined, locale = 'pt-BR'): string {
   if (dateStr == null || dateStr === '') return '—'
   const d = new Date(dateStr)

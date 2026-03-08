@@ -3,14 +3,17 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getApiErrorMessage } from '@/api/client'
 import { sessionsApi } from '@/api/modules/sessions.api'
-import { useToast } from '@/composables/useToast'
 import { formatDateTime } from '@/utils/formatters'
+import PageView from '@/components/layout/PageView.vue'
+import BaseBadge from '@/components/ui/BaseBadge.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import ErrorCard from '@/components/ui/ErrorCard.vue'
 import KeyValueList from '@/components/ui/KeyValueList.vue'
+import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 import type { StudySession } from '@/types/domain.types'
 
 const route = useRoute()
 const router = useRouter()
-const toast = useToast()
 
 const session = ref<StudySession | null>(null)
 const loading = ref(true)
@@ -32,25 +35,36 @@ const sessionMetaItems = computed(() => {
   ]
 })
 
-onMounted(async () => {
+async function fetchSession() {
+  if (!id.value) return
+  loading.value = true
+  error.value = null
   try {
     const res = await sessionsApi.getOne(id.value)
     if (res.data?.success && res.data?.data) {
       session.value = res.data.data
     } else {
-      const msg = (res.data as { error?: { message?: string } })?.error?.message ?? 'Sessão não encontrada.'
+      const msg =
+        (res.data as { error?: { message?: string } })?.error?.message ?? 'Sessão não encontrada.'
       error.value = msg
-      toast.error(msg)
-      router.replace({ name: 'sessions' })
     }
   } catch (err: unknown) {
-    const msg = getApiErrorMessage(err) || 'Sessão não encontrada.'
-    error.value = msg
-    toast.error(msg)
-    router.replace({ name: 'sessions' })
+    error.value = getApiErrorMessage(err) || 'Sessão não encontrada.'
   } finally {
     loading.value = false
   }
+}
+
+onMounted(() => {
+  fetchSession()
+})
+
+const pageSubtitle = computed(() => {
+  const s = session.value
+  if (!s) return ''
+  const tech = s.technology?.name ?? 'Estudo'
+  const dur = s.duration_formatted ?? (s.duration_min != null ? `${s.duration_min} min` : '')
+  return dur ? `${tech} · ${dur}` : tech
 })
 
 function goBack() {
@@ -59,94 +73,135 @@ function goBack() {
 </script>
 
 <template>
-  <div class="session-detail">
+  <PageView
+    :breadcrumb="[
+      { label: 'Dashboard', to: '/' },
+      { label: 'Sessões', to: '/sessions' },
+      { label: 'Sessão de estudo' },
+    ]"
+    title="Sessão de estudo"
+    :subtitle="pageSubtitle"
+    narrow
+  >
     <div
       v-if="loading"
       class="session-detail__loading"
+      role="status"
+      aria-live="polite"
+      aria-label="Carregando sessão"
     >
-      Carregando...
+      <SkeletonLoader class="session-detail__skeleton" />
     </div>
-    <div
-      v-else-if="error"
-      class="session-detail__error"
-    >
-      {{ error }}
-    </div>
+    <template v-else-if="error">
+      <ErrorCard
+        :message="error"
+        :on-retry="fetchSession"
+      />
+      <BaseButton
+        variant="outline"
+        class="session-detail__back"
+        aria-label="Voltar para Sessões"
+        @click="goBack"
+      >
+        Voltar para Sessões
+      </BaseButton>
+    </template>
     <template v-else-if="session">
-      <div class="session-detail__header">
-        <button
-          type="button"
-          class="session-detail__back"
+      <div class="session-detail__actions">
+        <BaseButton
+          variant="ghost"
+          size="sm"
+          aria-label="Voltar para Sessões"
           @click="goBack"
         >
           ← Voltar
-        </button>
+        </BaseButton>
       </div>
-      <div class="session-detail__card">
-        <h2 class="session-detail__title">
-          Sessão de estudo
-        </h2>
-        <KeyValueList
-          :items="sessionMetaItems"
-          layout="row"
+      <article
+        class="session-detail__card"
+        :style="session.technology?.color ? { '--session-tech-color': session.technology.color } : undefined"
+      >
+        <div
+          v-if="session.technology?.color"
+          class="session-detail__card-bar"
+          aria-hidden="true"
         />
-      </div>
+        <div class="session-detail__card-inner">
+          <div
+            v-if="session.technology"
+            class="session-detail__badge-wrap"
+          >
+            <BaseBadge
+              :label="session.technology.name"
+              :color="session.technology.color"
+            />
+            <span
+              v-if="session.duration_formatted || session.duration_min != null"
+              class="session-detail__duration"
+            >
+              {{ session.duration_formatted ?? `${session.duration_min} min` }}
+            </span>
+          </div>
+          <KeyValueList
+            :items="sessionMetaItems"
+            layout="row"
+          />
+        </div>
+      </article>
     </template>
-  </div>
+  </PageView>
 </template>
 
 <style scoped>
-.session-detail {
-  padding: 0;
-  max-width: var(--page-max-width-narrow);
+.session-detail__loading {
+  padding: var(--spacing-md) 0;
 }
-.session-detail__header {
+.session-detail__skeleton {
+  min-height: 8rem;
+  border-radius: var(--radius-md);
+}
+.session-detail__actions {
   margin-bottom: var(--spacing-md);
 }
 .session-detail__back {
-  min-height: var(--input-height-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  box-shadow: var(--shadow-sm);
-  transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease;
-}
-.session-detail__back:hover {
-  background: var(--color-bg-soft);
-  color: var(--color-primary);
-  border-color: var(--color-primary);
+  margin-top: var(--spacing-md);
 }
 .session-detail__card {
   background: var(--color-bg-card);
   border-radius: var(--radius-md);
-  padding: var(--spacing-lg) var(--spacing-xl);
+  overflow: hidden;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
+  transition: box-shadow var(--duration-normal) var(--ease-in-out);
 }
-.session-detail__title {
-  font-size: var(--text-xl);
-  font-weight: 600;
-  margin-bottom: var(--spacing-md);
+.session-detail__card:hover {
+  box-shadow: var(--shadow-md);
+}
+.session-detail__card-bar {
+  height: 4px;
+  background: var(--session-tech-color, var(--color-primary));
+}
+.session-detail__card-inner {
+  padding: var(--spacing-lg) var(--spacing-xl);
+}
+.session-detail__badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+.session-detail__duration {
+  font-size: var(--text-lg);
+  font-weight: 700;
   color: var(--color-text);
-  letter-spacing: -0.01em;
-}
-.session-detail__loading,
-.session-detail__error {
-  padding: var(--spacing-xl);
-  text-align: center;
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-  background: color-mix(in srgb, var(--color-bg-soft) 50%, var(--color-bg-card));
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-md);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 @media (max-width: 480px) {
-  .session-detail__card {
+  .session-detail__card-inner {
     padding: var(--spacing-md);
   }
 }

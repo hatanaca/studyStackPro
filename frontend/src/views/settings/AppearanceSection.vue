@@ -231,7 +231,7 @@ function reset() {
   border-color: var(--color-primary);
 }
 .appearance-section__text {
-  padding: 0.35rem 0.5rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
@@ -251,7 +251,7 @@ function reset() {
 }
 .appearance-section__select {
   min-height: var(--input-height-sm);
-  padding: 0.45rem 0.75rem;
+  padding: var(--spacing-sm) var(--spacing-lg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);

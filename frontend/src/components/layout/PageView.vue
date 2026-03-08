@@ -88,7 +88,7 @@ withDefaults(
   gap: var(--page-section-gap);
   padding-block: var(--page-content-padding-block);
 }
-@media (max-width: 640px) {
+@media (max-width: var(--screen-sm)) {
   .page-view__header {
     padding: var(--spacing-sm);
   }

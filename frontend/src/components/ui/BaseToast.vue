@@ -31,14 +31,14 @@ const { toasts, dismiss } = useToast()
 <style scoped>
 .toast-container {
   position: fixed;
-  top: 0.9rem;
-  right: 0.9rem;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
   z-index: 9999;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
   max-width: 380px;
-  width: calc(100% - 2rem);
+  width: calc(100% - var(--spacing-xl));
 }
 @media (min-width: 481px) {
   .toast-container {
@@ -50,7 +50,7 @@ const { toasts, dismiss } = useToast()
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--spacing-sm);
-  padding: 0.65rem 0.75rem;
+  padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   border: 1px solid transparent;
@@ -79,17 +79,22 @@ const { toasts, dismiss } = useToast()
   background: none;
   border: none;
   color: var(--color-text-muted);
-  font-size: 1rem;
+  font-size: var(--text-base);
   cursor: pointer;
   opacity: 1;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: var(--icon-size-md);
+  height: var(--icon-size-md);
   border-radius: 9999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  transition: color var(--duration-fast) ease, background var(--duration-fast) ease;
+  transition: color var(--duration-fast) ease,
+    background var(--duration-fast) ease;
+}
+.close:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 .close:hover {
   color: var(--color-text);
@@ -97,7 +102,8 @@ const { toasts, dismiss } = useToast()
 }
 .toast-enter-active,
 .toast-leave-active {
-  transition: all 0.3s ease;
+  transition: opacity var(--duration-normal) var(--ease-in-out),
+    transform var(--duration-normal) var(--ease-in-out);
 }
 .toast-enter-from,
 .toast-leave-to {

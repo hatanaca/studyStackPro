@@ -36,4 +36,10 @@ const router = createRouter({
 
 router.beforeEach(setupAuthGuard)
 
+const APP_TITLE = 'StudyTrack Pro'
+router.afterEach((to) => {
+  const title = to.meta?.title as string | undefined
+  document.title = title ? `${title} · ${APP_TITLE}` : APP_TITLE
+})
+
 export default router

@@ -6,14 +6,23 @@ defineProps<{
 </script>
 
 <template>
-  <div class="error-card">
-    <p class="message">
+  <div
+    class="error-card"
+    role="alert"
+    aria-live="assertive"
+    aria-atomic="true"
+  >
+    <p
+      id="error-card-message"
+      class="message"
+    >
       {{ message || 'Ocorreu um erro ao carregar os dados.' }}
     </p>
     <button
       v-if="onRetry"
       type="button"
       class="retry"
+      aria-describedby="error-card-message"
       @click="onRetry"
     >
       Tentar novamente
@@ -37,19 +46,25 @@ defineProps<{
 }
 .retry {
   min-height: var(--input-height-sm);
-  padding: 0.5rem 1rem;
+  padding: var(--spacing-sm) var(--spacing-md);
   background: var(--color-error);
-  color: #fff;
+  color: var(--color-primary-contrast);
   border: 1px solid var(--color-error);
   border-radius: var(--radius-md);
   cursor: pointer;
   font-weight: 600;
   font-size: var(--text-sm);
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, transform var(--duration-fast) ease;
+  transition: background var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-out-expo);
+}
+.retry:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 .retry:hover {
-  background: color-mix(in srgb, var(--color-error) 88%, #000);
-  border-color: color-mix(in srgb, var(--color-error) 88%, #000);
+  background: color-mix(in srgb, var(--color-error) 88%, black);
+  border-color: color-mix(in srgb, var(--color-error) 88%, black);
   transform: translateY(-1px);
 }
 </style>

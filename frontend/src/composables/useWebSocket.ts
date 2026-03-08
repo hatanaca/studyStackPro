@@ -90,7 +90,7 @@ export function useWebSocket() {
             user_id: userId,
             technology_id: s.technology?.id ?? '',
             technology: s.technology
-              ? { ...s.technology, slug: s.technology.id, is_active: true }
+              ? { ...s.technology, is_active: true }
               : undefined,
             started_at: s.started_at,
             ended_at: null,

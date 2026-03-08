@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
+import { useApexChartTheme } from '@/composables/useApexChartTheme'
+import { truncate } from '@/utils/formatters'
 import type { TechnologyMetric } from '@/types/domain.types'
 import type { ApexOptions } from 'apexcharts'
 
@@ -35,19 +37,24 @@ const line2Visible = ref(false)
 const card1Visible = ref(false)
 const card2Visible = ref(false)
 
-/** Paleta sofisticada e de alto contraste */
-const FALLBACK_COLORS = [
-  '#FF6B6B', '#4ECDC4', '#FFD93D', '#6BCB77', '#4D96FF', '#C77DFF',
-]
+const { theme: chartTheme } = useApexChartTheme()
+/** Paleta do design system quando tecnologia não tem cor; com muitas fatias usa só 6 tons para evitar arco-íris */
+const FALLBACK_COLORS = computed(() => {
+  const p = chartTheme.value.palette
+  return p.length > 6 ? p.slice(0, 6) : p
+})
 
-/** Dados fictícios quando não há metrics (pelo menos 5 fatias) */
-const MOCK_SLICES: ChartSlice[] = [
-  { label: 'JavaScript', value: 120, color: '#FF6B6B', info1: { label: 'Horas totais', value: '120h' }, info2: { label: 'Sessões', value: '45' } },
-  { label: 'Laravel', value: 85, color: '#4ECDC4', info1: { label: 'Horas totais', value: '85h' }, info2: { label: 'Sessões', value: '32' } },
-  { label: 'Vue.js', value: 72, color: '#FFD93D', info1: { label: 'Horas totais', value: '72h' }, info2: { label: 'Sessões', value: '28' } },
-  { label: 'PostgreSQL', value: 48, color: '#6BCB77', info1: { label: 'Horas totais', value: '48h' }, info2: { label: 'Sessões', value: '18' } },
-  { label: 'Docker', value: 35, color: '#4D96FF', info1: { label: 'Horas totais', value: '35h' }, info2: { label: 'Sessões', value: '12' } },
-]
+/** Dados fictícios quando não há metrics (pelo menos 5 fatias); cores do tema */
+const MOCK_SLICES = computed<ChartSlice[]>(() => {
+  const p = chartTheme.value.palette
+  return [
+    { label: 'JavaScript', value: 120, color: p[0], info1: { label: 'Horas totais', value: '120h' }, info2: { label: 'Sessões', value: '45' } },
+    { label: 'Laravel', value: 85, color: p[1], info1: { label: 'Horas totais', value: '85h' }, info2: { label: 'Sessões', value: '32' } },
+    { label: 'Vue.js', value: 72, color: p[2], info1: { label: 'Horas totais', value: '72h' }, info2: { label: 'Sessões', value: '28' } },
+    { label: 'PostgreSQL', value: 48, color: p[3], info1: { label: 'Horas totais', value: '48h' }, info2: { label: 'Sessões', value: '18' } },
+    { label: 'Docker', value: 35, color: p[4], info1: { label: 'Horas totais', value: '35h' }, info2: { label: 'Sessões', value: '12' } },
+  ]
+})
 
 function toHours(minutes: number): number {
   const n = Number(minutes)
@@ -58,11 +65,12 @@ function toHours(minutes: number): number {
 /** Converte metrics da API em ChartSlice[]; se vazio, usa mock */
 const slices = computed<ChartSlice[]>(() => {
   const list = [...(props.metrics ?? [])].sort((a, b) => (b.total_minutes ?? 0) - (a.total_minutes ?? 0))
-  if (!list.length) return MOCK_SLICES
+  const fallback = FALLBACK_COLORS.value
+  if (!list.length) return MOCK_SLICES.value
   return list.map((m, i) => ({
     label: m.technology?.name ?? 'Sem nome',
     value: toHours(m.total_minutes ?? 0),
-    color: m.technology?.color || FALLBACK_COLORS[i % FALLBACK_COLORS.length],
+    color: m.technology?.color || fallback[i % fallback.length],
     info1: { label: 'Sessões', value: String(m.session_count ?? 0) },
     info2: { label: 'Última vez', value: m.last_studied_at ? new Date(m.last_studied_at).toLocaleDateString('pt-BR') : '—' },
   }))
@@ -85,11 +93,8 @@ const isPieOrDoughnut = computed(() => currentType.value === 'pie' || currentTyp
 const OUTER_R = 160
 const INNER_R = 80
 
-/** Paleta ApexCharts (cores das fatias) */
-const APEX_COLORS = [
-  '#FF6B6B', '#4ECDC4', '#FFD93D', '#6BCB77', '#4D96FF', '#C77DFF',
-]
-const APEX_GRADIENT_TO = ['#FF8E8E', '#72EDE4', '#FFE566', '#8FDB93', '#74AEFF', '#D9A0FF']
+/** Cores das fatias para ApexCharts (usa cor da tech ou paleta do tema) */
+const apexColors = computed(() => slices.value.map((s, i) => s.color || chartTheme.value.palette[i % chartTheme.value.palette.length]))
 
 /** Série para ApexCharts pie/donut: array de valores */
 const apexSeries = computed(() => slices.value.map(s => s.value))
@@ -107,9 +112,9 @@ const apexChartOptions = computed<ApexOptions>(() => {
         },
       },
     },
-    colors: slices.value.map((s, i) => s.color || APEX_COLORS[i % APEX_COLORS.length]),
+    colors: apexColors.value,
     labels: slices.value.map(s => s.label),
-    stroke: { width: 3, colors: ['#0d0d18'] },
+    stroke: { width: 5, colors: [chartTheme.value.background] },
     states: {
       hover: { filter: { type: 'lighten', value: 0.15 } as { type: string; value: number } },
       active: { filter: { type: 'darken', value: 0.35 } as { type: string; value: number } },
@@ -119,20 +124,12 @@ const apexChartOptions = computed<ApexOptions>(() => {
       top: 4,
       left: 0,
       blur: 20,
-      opacity: 0.35,
-      color: '#000',
+      opacity: 0.2,
+      color: chartTheme.value.textColor,
     },
     fill: {
-      type: 'gradient',
-      gradient: {
-        shade: 'dark',
-        type: 'horizontal',
-        shadeIntensity: 0.4,
-        gradientToColors: APEX_GRADIENT_TO,
-        opacityFrom: 1,
-        opacityTo: 0.88,
-        stops: [0, 100],
-      },
+      type: 'solid',
+      opacity: 1,
     },
     dataLabels: { enabled: false },
     animations: {
@@ -144,21 +141,13 @@ const apexChartOptions = computed<ApexOptions>(() => {
     },
     tooltip: {
       theme: 'dark',
-      style: { fontSize: '13px', fontFamily: 'DM Sans, sans-serif' },
+      style: { fontSize: chartTheme.value.fontSize, fontFamily: chartTheme.value.fontFamily },
       fillSeriesColor: true,
       y: {
         formatter: (val: number) => `${Number(val).toFixed(1)}h`,
       },
     },
-    legend: {
-      show: true,
-      position: 'bottom',
-      fontFamily: 'DM Sans, sans-serif',
-      fontSize: '12px',
-      labels: { colors: 'rgba(255,255,255,0.6)' },
-      markers: { size: 5, strokeWidth: 0 },
-      itemMargin: { horizontal: 12 },
-    },
+    legend: { show: false },
     plotOptions: {
       pie: {
         expandOnClick: false,
@@ -172,26 +161,26 @@ const apexChartOptions = computed<ApexOptions>(() => {
                   show: true,
                   name: {
                     show: true,
-                    fontFamily: 'Syne, sans-serif',
-                    fontSize: '13px',
-                    color: 'rgba(255,255,255,0.5)',
+                    fontFamily: chartTheme.value.fontFamily,
+                    fontSize: chartTheme.value.fontSize,
+                    color: chartTheme.value.textMuted,
                     offsetY: -8,
                   },
                   value: {
                     show: true,
-                    fontFamily: 'Syne, sans-serif',
-                    fontSize: '26px',
+                    fontFamily: chartTheme.value.fontFamily,
+                    fontSize: '1.25rem',
                     fontWeight: 700,
-                    color: '#ffffff',
+                    color: chartTheme.value.textColor,
                     offsetY: 8,
                     formatter: (val: string | number) => `${Number(val).toFixed(1)}h`,
                   },
                   total: {
                     show: true,
                     label: 'Total',
-                    fontFamily: 'DM Sans, sans-serif',
-                    fontSize: '12px',
-                    color: 'rgba(255,255,255,0.4)',
+                    fontFamily: chartTheme.value.fontFamily,
+                    fontSize: chartTheme.value.fontSize,
+                    color: chartTheme.value.textMuted,
                     formatter: () => `${total.toFixed(1)}h`,
                   },
                 },
@@ -399,9 +388,13 @@ function handleDismiss() {
   }, 450)
 }
 
-watch(currentType, () => {
+watch(currentType, (t) => {
   selectedSlice.value = null
   phase.value = 'idle'
+  if (t === 'bar') {
+    barChartMounted.value = false
+    nextTick(() => { setTimeout(() => { barChartMounted.value = true }, 80) })
+  }
 })
 
 /** Lista ordenada para o painel lateral (compatível com metrics) */
@@ -416,12 +409,25 @@ function goToTech(metric: TechnologyMetric) {
   if (metric.technology?.id) router.push(`/sessions?technology_id=${metric.technology.id}`)
 }
 
-// --- Bar chart (SVG nativo)
+// --- Bar chart (SVG nativo): altura/gap por token; área rolável
+const barBarHeight = 30
+const barGap = 12
+const barLabelWidth = 120
+const barChartWidth = 320
+const barAreaWidth = barChartWidth - barLabelWidth - 20
+
 const barMax = computed(() => Math.max(...slices.value.map(s => s.value), 1))
-const barWidth = 24
-const barGap = 8
-const barChartHeight = computed(() => slices.value.length * (barWidth + barGap) - barGap)
-const barChartWidth = 280
+const barChartHeight = computed(() => slices.value.length * (barBarHeight + barGap) - barGap)
+const barChartHeightPx = computed(() => barChartHeight.value + 40)
+
+const barChartMounted = ref(false)
+onMounted(() => {
+  nextTick(() => { setTimeout(() => { barChartMounted.value = true }, 50) })
+})
+
+function barLabelDisplay(label: string): string {
+  return truncate(label, 18)
+}
 </script>
 
 <template>
@@ -486,12 +492,17 @@ const barChartWidth = 280
 
       <div class="chart-and-list">
         <div class="chart-area">
-          <!-- Gráfico Pizza (Pie) e Rosquinha (Donut) via ApexCharts + overlay/explosão/linhas/cards -->
-          <div
-            v-if="isPieOrDoughnut"
-            class="chart-wrap chart-wrap--svg"
-            :class="{ 'chart-wrap--has-selection': selectedSlice !== null }"
+          <Transition
+            name="chart-switch"
+            mode="out-in"
           >
+            <!-- Gráfico Pizza (Pie) e Rosquinha (Donut) via ApexCharts + overlay/explosão/linhas/cards -->
+            <div
+              v-if="isPieOrDoughnut"
+              key="pie"
+              class="chart-wrap chart-wrap--svg"
+              :class="{ 'chart-wrap--has-selection': selectedSlice !== null }"
+            >
             <div class="apex-chart-container">
               <apexchart
                 :type="currentType === 'doughnut' ? 'donut' : 'pie'"
@@ -551,7 +562,7 @@ const barChartWidth = 280
                   :d="slicePath(selectedSlice!)"
                   :fill="`url(#clone-${gradientId(selectedSlice!)})`"
                   class="slice-path slice-path--exploded"
-                  stroke="#0d0d18"
+                  stroke="currentColor"
                   stroke-width="2.5"
                   stroke-linejoin="round"
                 />
@@ -636,48 +647,62 @@ const barChartWidth = 280
                 </div>
               </foreignObject>
             </svg>
-          </div>
+            </div>
 
-          <!-- Gráfico de barras: SVG nativo -->
-          <div
-            v-else
-            class="chart-wrap chart-wrap--bar"
-          >
-            <svg
-              class="bar-svg"
-              :viewBox="`0 0 ${barChartWidth} ${barChartHeight + 40}`"
-              preserveAspectRatio="xMidYMid meet"
+            <!-- Gráfico de barras: SVG nativo, área rolável, barras animadas -->
+            <div
+              v-else
+              key="bar"
+              class="chart-wrap chart-wrap--bar"
+              :class="{ 'bar-chart--mounted': barChartMounted }"
             >
-              <g
-                v-for="(sl, i) in slices"
-                :key="i"
-                class="bar-row"
-              >
-                <text
-                  class="bar-label"
-                  :y="i * (barWidth + barGap) + barWidth / 2 + 4"
-                  x="0"
+              <div class="bar-chart-scroll">
+                <svg
+                  class="bar-svg"
+                  :viewBox="`0 0 ${barChartWidth} ${barChartHeightPx}`"
+                  :height="barChartHeightPx"
+                  preserveAspectRatio="xMinYMin meet"
                 >
-                  {{ sl.label }}
-                </text>
-                <rect
-                  :x="60"
-                  :y="i * (barWidth + barGap)"
-                  :width="(sl.value / barMax) * (barChartWidth - 80)"
-                  :height="barWidth"
-                  :fill="sl.color"
-                  rx="4"
-                />
-                <text
-                  class="bar-value"
-                  :y="i * (barWidth + barGap) + barWidth / 2 + 4"
-                  :x="68 + (sl.value / barMax) * (barChartWidth - 80)"
-                >
-                  {{ sl.value }}h
-                </text>
-              </g>
-            </svg>
-          </div>
+                  <g
+                    v-for="(sl, i) in slices"
+                    :key="i"
+                    class="bar-row"
+                  >
+                    <title>{{ sl.label }}</title>
+                    <text
+                      class="bar-label"
+                      :y="i * (barBarHeight + barGap) + barBarHeight / 2 + 4"
+                      x="0"
+                    >
+                      {{ barLabelDisplay(sl.label) }}
+                    </text>
+                    <g
+                      class="bar-rect-wrap"
+                      :style="{ transform: `translate(${barLabelWidth}px, ${i * (barBarHeight + barGap)}px)` }"
+                    >
+                      <rect
+                        class="bar-rect"
+                        x="0"
+                        y="0"
+                        :width="(sl.value / barMax) * barAreaWidth"
+                        :height="barBarHeight"
+                        :fill="sl.color"
+                        rx="4"
+                        :style="{ transitionDelay: `${i * 40}ms` }"
+                      />
+                    </g>
+                    <text
+                      class="bar-value"
+                      :y="i * (barBarHeight + barGap) + barBarHeight / 2 + 4"
+                      :x="barLabelWidth + (sl.value / barMax) * barAreaWidth + 8"
+                    >
+                      {{ sl.value }}h
+                    </text>
+                  </g>
+                </svg>
+              </div>
+            </div>
+          </Transition>
 
           <p class="hint">
             Clique em uma fatia para destacá-la. Passe o mouse para detalhes. Use a lista para ver sessões.
@@ -692,6 +717,7 @@ const barChartWidth = 280
             type="button"
             class="tech-panel-toggle"
             :aria-expanded="showTechList"
+            :aria-label="showTechList ? 'Recolher lista de tecnologias' : 'Expandir lista de tecnologias'"
             @click="showTechList = !showTechList"
           >
             <span>Tecnologias ({{ listForPanel.length }})</span>
@@ -735,11 +761,11 @@ const barChartWidth = 280
 
 <style scoped>
 .tech-dist-widget {
-  background: #0d0d18;
+  background: var(--color-bg-card);
   border-radius: var(--widget-radius);
   padding: var(--widget-padding);
-  box-shadow: none;
-  border: none;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
   overflow: visible;
   min-height: var(--widget-chart-min-height);
   max-height: 520px;
@@ -754,6 +780,7 @@ const barChartWidth = 280
   border-radius: inherit;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
   pointer-events: none;
+  opacity: 0.6;
 }
 
 .widget-header { margin-bottom: var(--spacing-md); flex-shrink: 0; }
@@ -764,24 +791,50 @@ const barChartWidth = 280
   font-weight: 700;
   margin: 0;
   letter-spacing: -0.01em;
-  background: linear-gradient(135deg, #fff 0%, rgba(160, 140, 255, 0.9) 100%);
+  color: var(--color-text);
+  background: linear-gradient(135deg, var(--color-text) 0%, var(--color-primary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-.total-badge { font-size: var(--text-xs); font-weight: 600; color: var(--color-text-muted); background: rgba(255,255,255,0.06); padding: var(--spacing-xs) var(--spacing-sm); border-radius: var(--radius-md); }
+.total-badge {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-bg-soft);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
 
 .chart-type-toggle { display: inline-flex; padding: var(--spacing-2xs); border-radius: var(--radius-md); background: var(--color-bg-soft); border: 1px solid var(--color-border); gap: var(--spacing-2xs); }
-.chart-type-toggle__btn { border: none; background: transparent; min-height: var(--input-height-sm); padding: 0.35rem 0.7rem; font-size: var(--text-xs); font-weight: 600; color: var(--color-text-muted); border-radius: var(--radius-sm); cursor: pointer; transition: background var(--duration-fast) ease, color var(--duration-fast) ease; }
+.chart-type-toggle__btn {
+  border: none;
+  background: transparent;
+  min-height: var(--input-height-sm);
+  padding: 0.35rem 0.7rem;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--duration-fast) ease, color var(--duration-fast) ease;
+}
 .chart-type-toggle__btn:hover { color: var(--color-text); background: var(--color-bg-card); }
-.chart-type-toggle__btn.active { background: var(--color-primary); color: #fff; box-shadow: var(--shadow-sm); }
+.chart-type-toggle__btn:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.chart-type-toggle__btn.active {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  box-shadow: var(--shadow-sm);
+}
+.chart-type-toggle__btn.active:focus-visible { box-shadow: var(--shadow-focus); }
 
 .chart-skeleton { min-height: var(--widget-chart-min-height-sm); display: flex; flex-direction: column; gap: var(--spacing-sm); padding: var(--spacing-md) 0; }
 .skeleton-item { width: 70%; }
 
-.chart-and-list { display: flex; flex-direction: column; gap: var(--widget-gap); min-height: 0; flex: 1; overflow: visible; }
+.chart-and-list { display: flex; flex-direction: column; gap: var(--spacing-md); min-height: 0; flex: 1; overflow: visible; }
 @media (min-width: 900px) {
-  .chart-and-list { flex-direction: row; align-items: stretch; gap: var(--spacing-lg); height: calc(360px + 2.5rem); flex: 0 0 auto; }
+  .chart-and-list { flex-direction: row; align-items: stretch; gap: var(--spacing-xl); height: calc(360px + 2.5rem); flex: 0 0 auto; }
   .chart-area { flex: 1; min-width: 0; min-height: 0; height: 100%; }
   .tech-panel { width: 260px; flex-shrink: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
   .tech-panel:not(.tech-panel--collapsed) { height: 100%; max-height: 100%; }
@@ -794,18 +847,60 @@ const barChartWidth = 280
 /* Container do gráfico: wrapper premium (ApexCharts) */
 .chart-wrap {
   position: relative;
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   overflow: visible;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
   min-height: 320px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 60px rgba(0, 0, 0, 0.5), 0 0 120px rgba(80, 60, 180, 0.06);
+  box-shadow: var(--shadow-md);
 }
 .chart-wrap--svg { height: 360px; max-height: 360px; }
-.chart-wrap--bar { height: 340px; }
+.chart-wrap--bar { min-height: 320px; display: flex; flex-direction: column; }
+.bar-chart-scroll {
+  max-height: 360px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: var(--radius-md);
+  flex: 1;
+  min-height: 200px;
+}
+.bar-rect-wrap { transform-origin: 0 0; }
+.bar-rect {
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  transition: transform 0.35s var(--ease-out-expo);
+}
+.bar-chart--mounted .bar-rect {
+  transform: scaleX(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bar-rect {
+    transform: scaleX(1);
+    transition-duration: 0.01ms;
+    transition-delay: 0;
+  }
+}
+
+/* Transição ao trocar tipo de gráfico (Pizza / Rosquinha / Barras) */
+.chart-switch-enter-active,
+.chart-switch-leave-active {
+  transition: opacity var(--duration-normal) var(--ease-out-expo),
+    transform var(--duration-normal) var(--ease-out-expo);
+}
+.chart-switch-enter-from,
+.chart-switch-leave-to {
+  opacity: 0;
+  transform: scale(0.98);
+}
+@media (prefers-reduced-motion: reduce) {
+  .chart-switch-enter-active,
+  .chart-switch-leave-active {
+    transition-duration: 0.01ms;
+  }
+}
 .apex-chart-container {
   position: absolute;
   inset: 0;
@@ -823,7 +918,7 @@ const barChartWidth = 280
   max-height: 400px;
   cursor: pointer;
 }
-.pie-svg--clone { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; max-width: 400px; max-height: 400px; pointer-events: none; }
+.pie-svg--clone { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; max-width: 400px; max-height: 400px; pointer-events: none; color: var(--color-border); }
 
 /* Overlay do centro (total ou label + % da fatia selecionada) */
 .center-label-overlay {
@@ -880,7 +975,7 @@ const barChartWidth = 280
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(0, 0, 0, 0.75);
+  background: color-mix(in srgb, var(--color-bg) 25%, transparent);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   cursor: pointer;
@@ -926,15 +1021,15 @@ const barChartWidth = 280
 .info-card-fo { opacity: 0; transition: opacity 300ms ease-out; }
 .info-card-fo--visible { opacity: 1; }
 
-/* Cards: DM Sans + Syne, gradiente, sombra, barra vertical */
+/* Cards: tokens para tema claro/escuro, barra de destaque da tech */
 .info-card {
   box-sizing: border-box;
   width: 100%;
   height: 100%;
-  padding: 14px 18px;
-  background: linear-gradient(135deg, rgba(18,18,28,0.96), rgba(28,18,38,0.96));
-  border: 1px solid;
-  border-radius: 12px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -942,12 +1037,7 @@ const barChartWidth = 280
   gap: 0;
   max-width: 155px;
   width: 155px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow:
-    0 0 0 1px rgba(var(--card-color-rgb, 99 102 241), 0.1),
-    0 8px 32px rgba(0,0,0,0.4),
-    inset 0 2px 8px rgba(var(--card-color-rgb, 99 102 241), 0.15);
+  box-shadow: var(--shadow-md);
 }
 .info-card__accent {
   position: absolute;
@@ -956,50 +1046,101 @@ const barChartWidth = 280
   bottom: 0;
   width: 3px;
   border-radius: 3px 0 0 3px;
+  background: var(--card-color, var(--color-primary));
 }
 .info-card__label {
   display: block;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 10px;
+  font-family: 'DM Sans', var(--font-sans), sans-serif;
+  font-size: var(--text-xs);
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
 }
 .info-card__sep {
   border: none;
   height: 1px;
-  background: rgba(255,255,255,0.08);
-  margin: 6px 0;
+  background: var(--color-border);
+  margin: var(--spacing-xs) 0;
 }
 .info-card__value {
   display: block;
-  font-family: 'Syne', sans-serif;
-  font-size: 22px;
+  font-family: 'Syne', var(--font-sans), sans-serif;
+  font-size: var(--text-xl);
   font-weight: 700;
   line-height: 1.2;
+  color: var(--color-text);
 }
 
 /* Bar chart */
-.bar-svg { width: 100%; height: 100%; }
+.bar-svg { display: block; min-width: 100%; }
 .bar-row { }
-.bar-label { font-size: var(--text-xs); fill: var(--color-text); }
-.bar-value { font-size: var(--text-xs); fill: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+.bar-label {
+  font-size: var(--text-sm);
+  fill: var(--color-text);
+}
+.bar-value {
+  font-size: var(--text-xs);
+  fill: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
 
-.hint { font-size: var(--text-xs); color: var(--color-text-muted); margin: 0; line-height: 1.4; }
+.hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin: var(--spacing-xs) 0 0;
+  line-height: 1.4;
+}
 
 .tech-panel { border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; background: var(--color-bg-soft); padding: var(--spacing-2xs); }
-.tech-panel-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: var(--spacing-sm); background: var(--color-bg-card); border: none; cursor: pointer; font-size: var(--text-xs); font-weight: 600; color: var(--color-text-muted); transition: background var(--duration-fast) ease, color var(--duration-fast) ease; }
+.tech-panel-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm);
+  background: var(--color-bg-card);
+  border: none;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  transition: background var(--duration-fast) ease, color var(--duration-fast) ease;
+}
 .tech-panel-toggle:hover { background: var(--color-bg-soft); color: var(--color-primary); }
+.tech-panel-toggle:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
 .tech-panel-toggle__icon { font-size: 0.6rem; color: var(--color-text-muted); }
-.tech-list { max-height: 280px; overflow-y: auto; overflow-x: hidden; padding: var(--spacing-xs); background: var(--color-bg-card); scrollbar-width: thin; border-radius: var(--radius-sm); }
+.tech-list {
+  max-height: 280px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--spacing-md);
+  background: var(--color-bg-card);
+  scrollbar-width: thin;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
 .tech-list::-webkit-scrollbar { width: 6px; }
 .tech-list::-webkit-scrollbar-track { background: var(--color-bg-soft); border-radius: var(--radius-sm); }
 .tech-list::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: var(--radius-sm); }
-.tech-list-item { display: flex; align-items: center; gap: var(--spacing-sm); width: 100%; padding: var(--spacing-sm); border: none; background: transparent; cursor: pointer; font-size: var(--text-xs); text-align: left; color: var(--color-text); transition: background var(--duration-fast) ease; }
+.tech-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-xs);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  text-align: left;
+  color: var(--color-text);
+  transition: background var(--duration-fast) ease;
+  border-radius: var(--radius-sm);
+}
 .tech-list-item:hover { background: var(--color-bg-soft); }
 .tech-list-item__dot { flex-shrink: 0; width: 0.5rem; height: 0.5rem; border-radius: 50%; }
-.tech-list-item__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tech-list-item__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-sm); }
 .tech-list-item__hours { flex-shrink: 0; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--color-text-muted); font-size: var(--text-xs); }
 
 .slide-enter-active, .slide-leave-active { transition: max-height var(--duration-normal) var(--ease-in-out), opacity var(--duration-fast) ease; }

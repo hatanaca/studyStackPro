@@ -113,11 +113,13 @@ async function doExport() {
           placeholder-end="Data final"
         />
       </FormSection>
-      <FormSection
-        title="Formato"
-        description="Formato do arquivo gerado."
-        grouped
-      >
+      <fieldset class="export-view__fieldset">
+        <legend class="export-view__legend">
+          Formato
+        </legend>
+        <p class="export-view__fieldset-desc">
+          Formato do arquivo gerado.
+        </p>
         <div class="export-view__format">
           <label class="export-view__radio-label">
             <input
@@ -138,7 +140,7 @@ async function doExport() {
             JSON
           </label>
         </div>
-      </FormSection>
+      </fieldset>
       <div class="export-view__actions">
         <BaseButton
           :disabled="!canExport || exporting"
@@ -176,6 +178,25 @@ async function doExport() {
   margin-top: 0;
   border-radius: var(--radius-md);
   overflow: hidden;
+}
+.export-view__fieldset {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin: 0 0 var(--spacing-md);
+}
+.export-view__legend {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  padding: 0 var(--spacing-xs);
+  margin: 0 0 var(--spacing-xs);
+}
+.export-view__fieldset-desc {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--spacing-sm);
+  line-height: 1.4;
 }
 .export-view__format {
   display: flex;

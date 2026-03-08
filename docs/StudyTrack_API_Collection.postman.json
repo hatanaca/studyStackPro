@@ -66,7 +66,8 @@
         { "name": "Time Series", "request": { "method": "GET", "url": "{{base_url}}/analytics/time-series?days=30" } },
         { "name": "Weekly", "request": { "method": "GET", "url": "{{base_url}}/analytics/weekly" } },
         { "name": "Heatmap", "request": { "method": "GET", "url": "{{base_url}}/analytics/heatmap?year=2025" } },
-        { "name": "Recalculate", "request": { "method": "POST", "url": "{{base_url}}/analytics/recalculate" } }
+        { "name": "Recalculate", "request": { "method": "POST", "url": "{{base_url}}/analytics/recalculate" } },
+        { "name": "Export", "request": { "method": "GET", "url": "{{base_url}}/analytics/export?start=2025-01-01&end=2025-01-31", "description": "Exporta dados agregados por dia no período. Parâmetros: start (YYYY-MM-DD), end (YYYY-MM-DD). Máx 366 dias. Throttle: 30/min." } }
       ]
     },
     {
