@@ -3,6 +3,6 @@ export const profileRoutes = [
     path: 'profile',
     name: 'profile',
     component: () => import('@/views/profile/ProfileView.vue'),
-    meta: { title: 'Configurações' },
+    meta: { title: 'Perfil' },
   },
 ]

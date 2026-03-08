@@ -70,4 +70,8 @@ function select(period: TimeSeriesPeriod) {
   border-color: var(--color-primary);
   color: #fff;
 }
+.period-btn:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
 </style>

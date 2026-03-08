@@ -45,23 +45,23 @@ class TechnologyController extends Controller
         return $this->success(new TechnologyResource($tech), 'Tecnologia criada.', 201);
     }
 
-    public function show(Request $request, string $id): JsonResponse
+    public function show(Request $request, string $technology): JsonResponse
     {
-        $tech = $this->technologyService->findForUser($id, $request->user()->id);
+        $tech = $this->technologyService->findForUser($technology, $request->user()->id);
 
         return $this->success(new TechnologyResource($tech));
     }
 
-    public function update(UpdateTechnologyRequest $request, string $id): JsonResponse
+    public function update(UpdateTechnologyRequest $request, string $technology): JsonResponse
     {
-        $tech = $this->technologyService->update($id, $request->user()->id, $request->validated());
+        $tech = $this->technologyService->update($technology, $request->user()->id, $request->validated());
 
         return $this->success(new TechnologyResource($tech), 'Tecnologia atualizada.');
     }
 
-    public function destroy(Request $request, string $id): JsonResponse
+    public function destroy(Request $request, string $technology): JsonResponse
     {
-        $this->technologyService->deactivate($id, $request->user()->id);
+        $this->technologyService->deactivate($technology, $request->user()->id);
 
         return $this->success(null, 'Tecnologia desativada.');
     }

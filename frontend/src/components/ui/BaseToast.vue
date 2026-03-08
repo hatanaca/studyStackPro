@@ -1,17 +1,7 @@
 <script setup lang="ts">
 import { useToast } from '@/composables/useToast'
-import { setApiToast } from '@/api/client'
-import { onMounted } from 'vue'
 
-const { toasts, success, error, info, dismiss } = useToast()
-
-onMounted(() => {
-  setApiToast((msg, type = 'success') => {
-    if (type === 'error') error(msg)
-    else if (type === 'info') info(msg)
-    else success(msg)
-  })
-})
+const { toasts, dismiss } = useToast()
 </script>
 
 <template>

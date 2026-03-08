@@ -1,13 +1,18 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { RouterView } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
+import AppTopBar from '@/components/layout/AppTopBar.vue'
 import ActiveSessionBanner from '@/features/sessions/components/ActiveSessionBanner.vue'
 
 const authStore = useAuthStore()
 const uiStore = useUiStore()
+
+const useStakentStyle = computed(() => uiStore.theme === 'dark')
+
+provide('stakentStyle', useStakentStyle)
 
 const wsModule = ref<{ connect: (id: string) => Promise<void>; disconnect: () => void } | null>(null)
 
@@ -34,27 +39,62 @@ watch(
 </script>
 
 <template>
-  <div class="app-layout">
+  <div
+    class="app-layout"
+    :class="{ 'stakent-style': useStakentStyle }"
+  >
     <AppSidebar class="app-layout__sidebar" />
-    <main class="app-layout__main">
-      <header class="app-layout__mobile-header">
-        <button
-          type="button"
-          class="app-layout__nav-trigger"
-          aria-label="Abrir navegação"
-          @click="uiStore.openMobileSidebar()"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
-          </svg>
-        </button>
-        <span class="app-layout__mobile-title">StudyTrack Pro</span>
-      </header>
-      <ActiveSessionBanner />
-      <div class="app-layout__content">
-        <RouterView />
-      </div>
-    </main>
+    <div class="app-layout__main-wrap">
+      <AppTopBar
+        v-if="useStakentStyle"
+        class="app-layout__topbar"
+      />
+      <main class="app-layout__main">
+        <header class="app-layout__mobile-header">
+          <button
+            type="button"
+            class="app-layout__nav-trigger"
+            aria-label="Abrir navegação"
+            @click="uiStore.openMobileSidebar()"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <line
+                x1="4"
+                y1="6"
+                x2="20"
+                y2="6"
+              /><line
+                x1="4"
+                y1="12"
+                x2="20"
+                y2="12"
+              /><line
+                x1="4"
+                y1="18"
+                x2="20"
+                y2="18"
+              />
+            </svg>
+          </button>
+          <span class="app-layout__mobile-title">StudyTrack Pro</span>
+        </header>
+        <ActiveSessionBanner />
+        <div class="app-layout__content">
+          <RouterView />
+        </div>
+      </main>
+    </div>
   </div>
 </template>
 
@@ -62,6 +102,15 @@ watch(
 .app-layout {
   display: flex;
   min-height: 100vh;
+}
+.app-layout__main-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.app-layout__topbar {
+  flex-shrink: 0;
 }
 .app-layout__main {
   flex: 1;
@@ -78,6 +127,9 @@ watch(
   pointer-events: none;
   z-index: 0;
 }
+.app-layout.stakent-style .app-layout__main::before {
+  background: var(--gradient-mesh, radial-gradient(at 40% 20%, #1a1f2e 0%, transparent 50%));
+}
 .app-layout__main > * {
   position: relative;
   z-index: 1;
@@ -89,13 +141,19 @@ watch(
   width: 100%;
   padding-block: var(--page-content-padding-block);
 }
+.app-layout.stakent-style .app-layout__content {
+  max-width: none;
+  padding: var(--spacing-lg);
+}
 .app-layout__mobile-header {
   display: none;
 }
 
 @media (min-width: 769px) {
-  .app-layout__main {
+  .app-layout__main-wrap {
     margin-left: var(--sidebar-width);
+  }
+  .app-layout__main {
     padding: var(--spacing-md) var(--spacing-lg);
   }
 }

@@ -76,6 +76,16 @@ class AnalyticsService
     }
 
     /**
+     * Dados para exportação no intervalo [start, end]. Sem cache para refletir dados atuais.
+     *
+     * @return array<int, array{date: string, total_minutes: int, session_count: int}>
+     */
+    public function getExportData(string $userId, string $start, string $end): array
+    {
+        return $this->repository->getDailyMinutesByRange($userId, $start, $end);
+    }
+
+    /**
      * @return array{job_id: string}
      */
     public function dispatchRecalculate(string $userId): array
@@ -89,11 +99,14 @@ class AnalyticsService
 
     private function buildDashboardData(string $userId): array
     {
+        $technologyMetrics = $this->repository->getTechnologyMetrics($userId);
+        $topTechnologies = array_slice($technologyMetrics, 0, 5);
+
         return [
             'user_metrics' => $this->repository->getUserMetrics($userId),
-            'technology_metrics' => $this->repository->getTechnologyMetrics($userId),
+            'technology_metrics' => $technologyMetrics,
             'time_series_30d' => $this->repository->getTimeSeries30d($userId),
-            'top_technologies' => [],
+            'top_technologies' => $topTechnologies,
         ];
     }
 }

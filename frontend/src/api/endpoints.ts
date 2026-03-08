@@ -35,5 +35,6 @@ export const ENDPOINTS = {
     weekly: '/analytics/weekly',
     heatmap: '/analytics/heatmap',
     recalculate: '/analytics/recalculate',
+    export: '/analytics/export',
   },
 } as const

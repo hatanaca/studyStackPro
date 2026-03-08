@@ -18,8 +18,18 @@ const hasActivity = computed(() => analyticsStore.todayMinutes > 0)
 </script>
 
 <template>
-  <section class="today-summary">
-    <h3 class="today-summary__title">
+  <section
+    class="today-summary"
+    aria-labelledby="today-summary-title"
+  >
+    <h3
+      id="today-summary-title"
+      class="today-summary__title"
+    >
+      <span
+        class="today-summary__title-icon"
+        aria-hidden="true"
+      >📅</span>
       Resumo de Hoje
     </h3>
 
@@ -86,12 +96,19 @@ const hasActivity = computed(() => analyticsStore.todayMinutes > 0)
   box-shadow: var(--shadow-md);
 }
 .today-summary__title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
   font-size: var(--widget-title-size);
   font-weight: var(--widget-title-weight);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--widget-title-color);
   margin: 0 0 var(--spacing-sm);
+}
+.today-summary__title-icon {
+  font-size: 1rem;
+  opacity: 0.9;
 }
 .today-summary__content {
   display: flex;

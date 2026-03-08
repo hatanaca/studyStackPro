@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { useMediaQuery as useMediaQueryVueUse } from '@vueuse/core'
 
 /** Breakpoints do projeto (px) */
 export const BREAKPOINTS = {
@@ -10,29 +10,11 @@ export const BREAKPOINTS = {
 } as const
 
 /**
- * Reage a uma media query (ex: "(min-width: 768px)").
+ * Reage a uma media query (VueUse).
  * Retorna ref<boolean> que indica se a query bate.
  */
 export function useMediaQuery(query: string) {
-  const matches = ref(false)
-  let mediaQuery: MediaQueryList | null = null
-
-  function update(e?: MediaQueryListEvent) {
-    matches.value = e ? e.matches : (mediaQuery?.matches ?? false)
-  }
-
-  onMounted(() => {
-    if (typeof window === 'undefined') return
-    mediaQuery = window.matchMedia(query)
-    matches.value = mediaQuery.matches
-    mediaQuery.addEventListener('change', update)
-  })
-
-  onUnmounted(() => {
-    mediaQuery?.removeEventListener('change', update)
-  })
-
-  return matches
+  return useMediaQueryVueUse(query)
 }
 
 /**

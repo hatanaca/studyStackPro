@@ -1,25 +1,10 @@
-import { ref, watch } from 'vue'
+import { useStorage } from '@vueuse/core'
 
 /**
- * Persistência tipada no localStorage com reatividade
+ * Persistência tipada no localStorage com reatividade (VueUse).
+ * @param key Chave no localStorage
+ * @param defaultValue Valor inicial quando não há dado salvo
  */
 export function useLocalStorage<T>(key: string, defaultValue: T) {
-  const raw = localStorage.getItem(key)
-  const data = ref<T>(
-    raw ? (JSON.parse(raw) as T) : defaultValue
-  ) as { value: T }
-
-  watch(
-    data,
-    (v) => {
-      try {
-        localStorage.setItem(key, JSON.stringify(v))
-      } catch {
-        // quota exceeded ou localStorage desabilitado
-      }
-    },
-    { deep: true }
-  )
-
-  return data
+  return useStorage(key, defaultValue, localStorage, { serializer: { read: JSON.parse, write: JSON.stringify } })
 }

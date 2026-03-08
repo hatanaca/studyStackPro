@@ -5,9 +5,8 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseDateRangePicker from '@/components/ui/BaseDateRangePicker.vue'
 import FormSection from '@/components/ui/FormSection.vue'
 import PageView from '@/components/layout/PageView.vue'
-import { useAnalyticsStore } from '@/stores/analytics.store'
+import { analyticsApi } from '@/api/modules/analytics.api'
 
-const analyticsStore = useAnalyticsStore()
 const dateRange = ref<{ start: string; end: string } | null>(null)
 const format = ref<'csv' | 'json'>('csv')
 const exporting = ref(false)
@@ -16,25 +15,19 @@ const exportError = ref<string | null>(null)
 
 const canExport = computed(() => !!dateRange.value?.start && !!dateRange.value?.end)
 
-/** Filtra e ordena dias do time series dentro do intervalo selecionado */
-function getDataInRange() {
-  const start = dateRange.value?.start
-  const end = dateRange.value?.end
-  if (!start || !end) return []
-  const all = analyticsStore.timeSeriesData['30d'] ?? analyticsStore.timeSeriesData['7d'] ?? []
-  return all
-    .filter(d => d.date >= start && d.date <= end)
-    .sort((a, b) => a.date.localeCompare(b.date))
-}
+type ExportRow = { date: string; total_minutes: number; session_count?: number }
 
-function buildCSV(rows: { date: string; total_minutes: number; session_count?: number }[]): string {
+function buildCSV(rows: ExportRow[]): string {
   const header = 'Data,Minutos,Sessões'
   const lines = rows.map(r => `${r.date},${r.total_minutes ?? 0},${r.session_count ?? 0}`)
   return [header, ...lines].join('\n')
 }
 
-function buildJSON(rows: { date: string; total_minutes: number; session_count?: number }[]): string {
-  return JSON.stringify({ exported_at: new Date().toISOString(), period: dateRange.value, data: rows }, null, 2)
+function buildJSON(
+  rows: ExportRow[],
+  meta: { exported_at: string; period: { start: string; end: string } }
+): string {
+  return JSON.stringify({ ...meta, data: rows }, null, 2)
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -52,18 +45,41 @@ async function doExport() {
   exportDone.value = false
   exportError.value = null
   try {
-    const rows = getDataInRange()
+    const res = await analyticsApi.getExport({
+      start: dateRange.value.start,
+      end: dateRange.value.end,
+    })
+    // API retorna { success, data: { exported_at, period, data } }
+    const payload = res.data?.data as
+      | { exported_at: string; period: { start: string; end: string }; data: ExportRow[] }
+      | undefined
+    if (!payload?.data) {
+      throw new Error('Resposta inválida da API')
+    }
+    const rows: ExportRow[] = payload.data
     const filename = `studytrack-${dateRange.value.start}-${dateRange.value.end}.${format.value}`
     if (format.value === 'csv') {
       const csv = buildCSV(rows)
       downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), filename)
     } else {
-      const json = buildJSON(rows)
+      const json = buildJSON(rows, {
+        exported_at: payload.exported_at ?? new Date().toISOString(),
+        period: payload.period ?? dateRange.value,
+      })
       downloadBlob(new Blob([json], { type: 'application/json' }), filename)
     }
     exportDone.value = true
-  } catch (e) {
-    exportError.value = e instanceof Error ? e.message : 'Erro ao gerar exportação'
+  } catch (e: unknown) {
+    let msg: string | null = null
+    if (e && typeof e === 'object' && 'response' in e && e.response && typeof e.response === 'object' && 'data' in e.response) {
+      const data = (e.response as { data?: Record<string, unknown> }).data as Record<string, unknown> | undefined
+      const err = data?.error as { message?: string } | undefined
+      const firstError = data?.errors && typeof data.errors === 'object'
+        ? (Object.values(data.errors as Record<string, string[]>) as string[][])[0]?.[0]
+        : null
+      msg = err?.message ?? (data?.message as string) ?? firstError ?? null
+    }
+    exportError.value = msg ?? (e instanceof Error ? e.message : 'Erro ao gerar exportação')
   } finally {
     exporting.value = false
   }
@@ -78,11 +94,13 @@ async function doExport() {
     narrow
   >
     <template #hint>
-      O arquivo inclui data, minutos e quantidade de sessões por dia no intervalo escolhido.
+      Os dados são buscados no servidor para o período escolhido. O arquivo inclui data, minutos e quantidade de sessões por dia.
     </template>
     <BaseCard
       title="Opções de exportação"
       class="export-view__card"
+      :aria-busy="exporting"
+      aria-live="polite"
     >
       <FormSection
         title="Período"
@@ -124,9 +142,11 @@ async function doExport() {
       <div class="export-view__actions">
         <BaseButton
           :disabled="!canExport || exporting"
+          :aria-busy="exporting"
+          aria-live="polite"
           @click="doExport"
         >
-          {{ exporting ? 'Exportando...' : 'Gerar exportação' }}
+          {{ exporting ? 'Buscando dados no servidor…' : 'Gerar exportação' }}
         </BaseButton>
       </div>
       <div
@@ -135,7 +155,10 @@ async function doExport() {
         role="status"
         aria-live="polite"
       >
-        <span class="export-view__success-icon" aria-hidden="true">✓</span>
+        <span
+          class="export-view__success-icon"
+          aria-hidden="true"
+        >✓</span>
         <span>Exportação gerada. O download foi iniciado. Verifique a pasta de downloads do navegador.</span>
       </div>
       <p

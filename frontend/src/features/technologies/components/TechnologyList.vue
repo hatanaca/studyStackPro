@@ -1,21 +1,20 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed } from 'vue'
 import TechnologyCard from './TechnologyCard.vue'
 import TechnologyForm from './TechnologyForm.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { useTechnologiesStore } from '@/stores/technologies.store'
+import { useTechnologiesQuery, useInvalidateTechnologies } from '@/features/technologies/composables/useTechnologiesQuery'
 import type { Technology } from '@/types/domain.types'
 
+const technologiesQuery = useTechnologiesQuery()
 const store = useTechnologiesStore()
+const invalidateTechnologies = useInvalidateTechnologies()
 const editingTech = ref<Technology | null>(null)
 const showForm = ref(false)
 
 const technologies = computed(() => store.technologies)
-const loading = computed(() => store.loading)
-
-onMounted(() => {
-  store.fetchTechnologies()
-})
+const loading = computed(() => technologiesQuery.isPending.value)
 
 function openCreate() {
   editingTech.value = null
@@ -27,18 +26,19 @@ function openEdit(tech: Technology) {
   showForm.value = true
 }
 
-function handleSubmit(payload: {
+async function handleSubmit(payload: {
   name: string
   color: string
   description?: string
 }) {
   if (editingTech.value) {
-    store.updateTechnology(editingTech.value.id, payload)
+    await store.updateTechnology(editingTech.value.id, payload)
   } else {
-    store.createTechnology(payload)
+    await store.createTechnology(payload)
   }
   showForm.value = false
   editingTech.value = null
+  await invalidateTechnologies()
 }
 
 function handleCancel() {
@@ -49,6 +49,7 @@ function handleCancel() {
 async function handleDelete(tech: Technology) {
   if (!confirm(`Excluir "${tech.name}"?`)) return
   await store.deleteTechnology(tech.id)
+  await invalidateTechnologies()
 }
 </script>
 

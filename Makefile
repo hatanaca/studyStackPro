@@ -27,7 +27,7 @@ test-db-setup:
 test: test-back test-front
 
 test-back: test-db-setup
-	docker compose exec php-fpm php artisan test
+	docker compose exec -e DB_HOST=postgres php-fpm php artisan test
 
 test-front:
 	cd frontend && npm run test:run
