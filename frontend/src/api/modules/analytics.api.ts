@@ -23,4 +23,13 @@ export const analyticsApi = {
     ),
   recalculate: () =>
     apiClient.post<ApiResponse<{ job_id: string }>>(ENDPOINTS.analytics.recalculate),
+
+  getExport: (params: { start: string; end: string }) =>
+    apiClient.get<
+      ApiResponse<{
+        exported_at: string
+        period: { start: string; end: string }
+        data: Array<{ date: string; total_minutes: number; session_count: number }>
+      }>
+    >(ENDPOINTS.analytics.export, { params }),
 }

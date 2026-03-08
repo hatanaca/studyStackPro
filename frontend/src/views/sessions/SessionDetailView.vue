@@ -18,6 +18,20 @@ const error = ref<string | null>(null)
 
 const id = computed(() => route.params.id as string)
 
+const sessionMetaItems = computed(() => {
+  const s = session.value
+  if (!s) return []
+  const duration = s.duration_formatted ?? (s.duration_min != null ? `${s.duration_min} min` : '—')
+  return [
+    { label: 'Tecnologia', value: s.technology?.name ?? '—' },
+    { label: 'Início', value: s.started_at ? formatDateTime(s.started_at) : '—' },
+    { label: 'Fim', value: s.ended_at ? formatDateTime(s.ended_at) : '—' },
+    { label: 'Duração', value: duration },
+    ...(s.notes ? [{ label: 'Notas', value: s.notes }] : []),
+    ...(s.mood != null ? [{ label: 'Humor', value: String(s.mood) }] : []),
+  ]
+})
+
 onMounted(async () => {
   try {
     const res = await sessionsApi.getOne(id.value)

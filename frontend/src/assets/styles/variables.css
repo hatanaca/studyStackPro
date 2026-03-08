@@ -140,6 +140,27 @@
   --dropdown-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
+/* Tema Stakent: dark + roxo, cards com glow (aplicado quando layout tem .stakent-style em tema dark) */
+[data-theme='dark'] .app-layout.stakent-style {
+  --color-bg: #0c0f1a;
+  --color-bg-soft: #151922;
+  --color-bg-card: #1a1f2e;
+  --color-primary: #8b5cf6;
+  --color-primary-hover: #a78bfa;
+  --color-primary-soft: rgba(139, 92, 246, 0.18);
+  --color-border: rgba(148, 163, 184, 0.12);
+  --color-text: #e2e8f0;
+  --color-text-muted: #94a3b8;
+  --gradient-primary: linear-gradient(135deg, #6d28d9, #7c3aed);
+  --gradient-card-glow: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(139, 92, 246, 0.15), transparent 70%);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35);
+  --shadow-card-hover: 0 8px 32px rgba(139, 92, 246, 0.12);
+  --shadow-glow: 0 0 40px rgba(139, 92, 246, 0.08);
+  --radius-card: 0.75rem;
+  --header-height: 4rem;
+  --sidebar-width: 260px;
+}
+
 /* Scrollbar global no tema escuro */
 [data-theme='dark'] ::-webkit-scrollbar {
   width: 10px;

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Analytics\ExportAnalyticsRequest;
 use App\Http\Resources\DashboardResource;
 use App\Modules\Analytics\Services\AnalyticsService;
 use App\Traits\HasApiResponse;
@@ -66,5 +67,18 @@ class AnalyticsController extends Controller
         $result = $this->analyticsService->dispatchRecalculate($request->user()->id);
 
         return $this->success($result, 'Recálculo agendado. Dashboard atualiza em alguns segundos.', 202);
+    }
+
+    public function export(ExportAnalyticsRequest $request): JsonResponse
+    {
+        $start = $request->validated('start');
+        $end = $request->validated('end');
+        $data = $this->analyticsService->getExportData($request->user()->id, $start, $end);
+
+        return $this->success([
+            'exported_at' => now()->toIso8601String(),
+            'period' => ['start' => $start, 'end' => $end],
+            'data' => $data,
+        ]);
     }
 }

@@ -34,6 +34,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
                 Route::get('time-series', [\App\Http\Controllers\V1\AnalyticsController::class, 'timeSeries']);
                 Route::get('weekly', [\App\Http\Controllers\V1\AnalyticsController::class, 'weekly']);
                 Route::get('heatmap', [\App\Http\Controllers\V1\AnalyticsController::class, 'heatmap']);
+                Route::middleware('throttle:export')->group(function () {
+                    Route::get('export', [\App\Http\Controllers\V1\AnalyticsController::class, 'export'])->name('export');
+                });
             });
         });
 

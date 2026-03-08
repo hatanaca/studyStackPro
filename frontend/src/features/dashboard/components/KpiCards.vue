@@ -1,33 +1,61 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import StatCard from '@/components/ui/StatCard.vue'
 import type { UserMetrics } from '@/types/domain.types'
 
 const props = defineProps<{
   metrics: UserMetrics | null
 }>()
 
-const items = computed(() => [
-  { label: 'Total de sessões', value: props.metrics?.total_sessions ?? 0 },
-  { label: 'Total de horas', value: props.metrics?.total_hours ?? 0 },
-  {
-    label: 'Streak atual',
-    value: props.metrics?.current_streak_days != null
-      ? `${props.metrics.current_streak_days} dias`
-      : '0 dias',
-  },
-])
+function formatHours(hours: number): string {
+  if (hours <= 0) return '0h'
+  const h = Math.floor(hours)
+  const m = Math.round((hours - h) * 60)
+  if (m === 0) return `${h}h`
+  return `${h}h ${m}min`
+}
+
+type StatVariant = 'default' | 'primary' | 'success' | 'warning' | 'error'
+
+const items = computed(() => {
+  const streakDays = props.metrics?.current_streak_days ?? 0
+  const streakVariant: StatVariant = streakDays > 0 ? 'success' : 'default'
+  return [
+    {
+      label: 'Total de sessões',
+      value: props.metrics?.total_sessions ?? 0,
+      icon: '📚',
+      variant: 'default' as StatVariant,
+    },
+    {
+      label: 'Total de horas',
+      value: formatHours(props.metrics?.total_hours ?? 0),
+      icon: '⏱',
+      variant: 'primary' as StatVariant,
+    },
+    {
+      label: 'Streak atual',
+      value: streakDays > 0 ? `${streakDays} ${streakDays === 1 ? 'dia' : 'dias'}` : '0 dias',
+      icon: '🔥',
+      variant: streakVariant,
+    },
+  ]
+})
 </script>
 
 <template>
-  <section class="kpi-cards">
-    <div
+  <section
+    class="kpi-cards"
+    aria-label="Métricas principais"
+  >
+    <StatCard
       v-for="(item, i) in items"
       :key="i"
-      class="kpi-card"
-    >
-      <span class="label">{{ item.label }}</span>
-      <span class="value">{{ item.value }}</span>
-    </div>
+      :label="item.label"
+      :value="item.value"
+      :icon="item.icon"
+      :variant="item.variant"
+    />
   </section>
 </template>
 
@@ -40,55 +68,30 @@ const items = computed(() => [
 @media (min-width: 480px) {
   .kpi-cards {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--widget-gap);
   }
 }
-.kpi-card {
-  background: var(--color-bg-card);
-  padding: var(--widget-padding);
+.kpi-cards :deep(.stat-card) {
+  min-height: var(--widget-card-min-height);
   border-radius: var(--widget-radius);
   box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
-  min-height: var(--widget-card-min-height);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
   transition: box-shadow var(--duration-normal) var(--ease-in-out),
     border-color var(--duration-fast) ease,
     transform var(--duration-fast) var(--ease-out-expo);
 }
-.kpi-card:hover {
+.kpi-cards :deep(.stat-card:hover) {
   box-shadow: var(--shadow-md);
-  border-color: var(--color-primary-soft);
   transform: translateY(-2px);
 }
-.kpi-card .label {
-  display: block;
-  font-size: var(--widget-title-size);
-  color: var(--widget-title-color);
-  margin-bottom: var(--spacing-xs);
-  font-weight: var(--widget-title-weight);
-}
-.kpi-card .value {
-  font-size: var(--text-xl);
-  font-weight: 700;
-  color: var(--color-text);
-  letter-spacing: -0.02em;
-  line-height: 1.25;
-}
 @media (max-width: 479px) {
-  .kpi-card {
+  .kpi-cards :deep(.stat-card) {
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
     min-height: auto;
     padding: var(--widget-padding-sm);
   }
-  .kpi-card .label {
-    margin-bottom: 0;
-  }
-  .kpi-card .value {
-    font-size: var(--text-lg);
+  .kpi-cards :deep(.stat-card__content) {
+    flex: 1;
+    min-width: 0;
   }
 }
 </style>

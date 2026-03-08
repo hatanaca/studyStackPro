@@ -18,4 +18,11 @@ interface AnalyticsRepositoryInterface
 
     /** @return array<int, array{date: string, total_minutes: int}> */
     public function getHeatmapData(string $userId, int $year): array;
+
+    /**
+     * Dados diários agregados para exportação em um intervalo de datas.
+     *
+     * @return array<int, array{date: string, total_minutes: int, session_count: int}>
+     */
+    public function getDailyMinutesByRange(string $userId, string $start, string $end): array;
 }

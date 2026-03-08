@@ -2,8 +2,9 @@
 
 namespace App\Providers;
 
-use Illuminate\Contracts\Foundation\ExceptionHandler;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Foundation\ExceptionHandler;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -17,10 +18,13 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Model::shouldBeStrict(! app()->isProduction());
+
         RateLimiter::for('auth', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
         RateLimiter::for('sensitive', fn (Request $request) => Limit::perMinute(5)->by($request->user()?->id ?? $request->ip()));
         RateLimiter::for('search', fn (Request $request) => Limit::perMinute(120)->by($request->user()?->id ?? $request->ip()));
         RateLimiter::for('recalculate', fn (Request $request) => Limit::perMinute(2)->by($request->user()?->id ?? $request->ip()));
+        RateLimiter::for('export', fn (Request $request) => Limit::perMinute(30)->by($request->user()?->id ?? $request->ip()));
         RateLimiter::for('health', fn (Request $request) => Limit::perMinute(300)->by($request->ip()));
         $this->loadMigrationsFrom([
             database_path('migrations'),

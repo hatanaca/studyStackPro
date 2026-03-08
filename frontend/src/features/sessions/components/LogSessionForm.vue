@@ -176,6 +176,9 @@ function onCancel() {
           {{ errors.date }}
         </p>
       </div>
+    </div>
+
+    <div class="log-session-form__row log-session-form__row--duration-notes">
       <div class="log-session-form__field">
         <label
           for="log-duration"
@@ -201,22 +204,21 @@ function onCancel() {
           {{ errors.duration }}
         </p>
       </div>
-    </div>
-
-    <div class="log-session-form__field">
-      <label
-        for="log-notes"
-        class="log-session-form__label"
-      >
-        Observações (opcional)
-      </label>
-      <textarea
-        id="log-notes"
-        v-model="notes"
-        class="log-session-form__textarea"
-        rows="2"
-        placeholder="O que você estudou..."
-      />
+      <div class="log-session-form__field">
+        <label
+          for="log-notes"
+          class="log-session-form__label"
+        >
+          Lembretes (opcional)
+        </label>
+        <textarea
+          id="log-notes"
+          v-model="notes"
+          class="log-session-form__textarea"
+          rows="2"
+          placeholder="Ex.: revisar ponto X, praticar exercícios..."
+        />
+      </div>
     </div>
 
     <div class="log-session-form__actions">
@@ -294,6 +296,7 @@ function onCancel() {
   background: var(--color-bg-card);
   color: var(--color-text);
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  min-height: var(--input-height-sm);
 }
 .log-session-form__textarea:focus {
   border-color: var(--color-primary);

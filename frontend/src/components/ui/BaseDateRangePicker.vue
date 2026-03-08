@@ -12,6 +12,8 @@ const props = withDefaults(
   }>(),
   {
     modelValue: null,
+    minDate: undefined,
+    maxDate: undefined,
     placeholderStart: 'Data inicial',
     placeholderEnd: 'Data final',
     disabled: false,

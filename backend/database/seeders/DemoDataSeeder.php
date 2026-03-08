@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\StudySession;
-use App\Models\Technology;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;

@@ -1,9 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User } from '@/types/domain.types'
-import { apiClient } from '@/api/client'
-import { ENDPOINTS } from '@/api/endpoints'
-import type { ApiResponse } from '@/types/api.types'
+import { authApi } from '@/api/modules/auth.api'
 
 const TOKEN_KEY = 'studytrack_token'
 const USER_KEY = 'studytrack_user'
@@ -24,33 +22,29 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!token.value)
 
   async function login(email: string, password: string) {
-    const { data } = await apiClient.post<ApiResponse<{ user: User; token: string; token_type: string }>>(ENDPOINTS.auth.login, {
-      email,
-      password
-    })
+    const { data } = await authApi.login(email, password)
     if (data.success && data.data) {
-      token.value = data.data.token
-      user.value = data.data.user
-      localStorage.setItem(TOKEN_KEY, data.data.token)
-      localStorage.setItem(USER_KEY, JSON.stringify(data.data.user))
+      const { user: u, token: t } = data.data
+      token.value = t
+      user.value = u
+      localStorage.setItem(TOKEN_KEY, t)
+      localStorage.setItem(USER_KEY, JSON.stringify(u))
     }
   }
 
   async function register(name: string, email: string, password: string, passwordConfirmation: string, timezone = 'UTC') {
-    const { data } = await apiClient.post<ApiResponse<User>>(ENDPOINTS.auth.register, {
+    await authApi.register({
       name,
       email,
       password,
       password_confirmation: passwordConfirmation,
-      timezone
+      timezone,
     })
-    if (data.success && data.data) {
-      await login(email, password)
-    }
+    await login(email, password)
   }
 
   async function fetchMe() {
-    const { data } = await apiClient.get<ApiResponse<User>>(ENDPOINTS.auth.me)
+    const { data } = await authApi.me()
     if (data.success && data.data) {
       user.value = data.data
       localStorage.setItem(USER_KEY, JSON.stringify(data.data))
@@ -64,7 +58,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function logout() {
     try {
-      await apiClient.post(ENDPOINTS.auth.logout)
+      await authApi.logout()
     } finally {
       token.value = null
       user.value = null

@@ -12,3 +12,6 @@ frontend/dist/
 .env.local
 .env.*.local
 projeto/
+
+# Windows reserved device names (cannot be created as files; ignore if present)
+nul

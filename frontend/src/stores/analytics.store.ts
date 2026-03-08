@@ -301,6 +301,18 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     }
   }
 
+  /** Atualiza o dashboard a partir de dados (ex.: TanStack Query). */
+  function setDashboard(data: DashboardData | null) {
+    dashboard.value = data
+    if (data) {
+      lastFetchAt.value = new Date()
+      if (data.time_series_30d?.length) {
+        timeSeriesData.value = { ...timeSeriesData.value, '30d': data.time_series_30d }
+      }
+      reconcilePending()
+    }
+  }
+
   function updateFromWebSocket(data: DashboardData) {
     dashboard.value = data
     lastFetchAt.value = new Date()
@@ -344,6 +356,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     todaySessions,
     todayTechnologies,
     addLocalTodaySession,
+    setDashboard,
     fetchDashboard,
     fetchHeatmap,
     fetchWeekly,

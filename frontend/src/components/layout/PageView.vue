@@ -9,7 +9,7 @@ withDefaults(
     subtitle?: string
     narrow?: boolean
   }>(),
-  { narrow: false }
+  { breadcrumb: () => [], title: '', subtitle: '', narrow: false }
 )
 </script>
 

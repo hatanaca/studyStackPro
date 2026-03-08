@@ -140,4 +140,19 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
             'total_minutes' => (int) $r->total_minutes,
         ])->all();
     }
+
+    public function getDailyMinutesByRange(string $userId, string $start, string $end): array
+    {
+        $rows = DB::table('analytics.daily_minutes')
+            ->where('user_id', $userId)
+            ->whereBetween('study_date', [$start, $end])
+            ->orderBy('study_date')
+            ->get(['study_date', 'total_minutes', 'session_count']);
+
+        return $rows->map(fn ($r) => [
+            'date' => $r->study_date,
+            'total_minutes' => (int) $r->total_minutes,
+            'session_count' => (int) ($r->session_count ?? 0),
+        ])->values()->all();
+    }
 }

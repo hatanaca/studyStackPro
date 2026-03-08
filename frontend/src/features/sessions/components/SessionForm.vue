@@ -7,16 +7,31 @@ const emit = defineEmits<{
   submit: [payload: { technology_id: string; started_at: string; ended_at?: string; notes?: string; mood?: number }]
 }>()
 
+function getString(fd: FormData, key: string): string | undefined {
+  const v = fd.get(key)
+  return typeof v === 'string' ? v.trim() || undefined : undefined
+}
+
+function getNumber(fd: FormData, key: string): number | undefined {
+  const s = getString(fd, key)
+  if (s === undefined) return undefined
+  const n = Number(s)
+  return Number.isNaN(n) ? undefined : n
+}
+
 function onSubmit(e: Event) {
   e.preventDefault()
   const form = e.target as HTMLFormElement
   const fd = new FormData(form)
+  const technology_id = getString(fd, 'technology_id')
+  const started_at = getString(fd, 'started_at')
+  if (!technology_id || !started_at) return
   emit('submit', {
-    technology_id: fd.get('technology_id') as string,
-    started_at: fd.get('started_at') as string,
-    ended_at: (fd.get('ended_at') as string) || undefined,
-    notes: (fd.get('notes') as string) || undefined,
-    mood: fd.get('mood') ? Number(fd.get('mood')) : undefined
+    technology_id,
+    started_at,
+    ended_at: getString(fd, 'ended_at'),
+    notes: getString(fd, 'notes'),
+    mood: getNumber(fd, 'mood'),
   })
 }
 </script>

@@ -2,11 +2,25 @@ import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 import { useSessionsStore } from '@/stores/sessions.store'
-import type { MetricsUpdatedEvent } from '@/types/websocket.types'
+import type { ActiveSessionResponse } from '@/api/modules/sessions.api'
+import type { MetricsUpdatedEvent, SessionStartedEvent } from '@/types/websocket.types'
+
+/** Interface mínima do Laravel Echo usada neste composable (evita dependência de tipos do pacote). */
+interface EchoChannel {
+  listen: (event: string, callback: (e: unknown) => void) => EchoChannel
+}
+interface EchoInstance {
+  disconnect: () => void
+  private: (channel: string) => EchoChannel
+  connector: {
+    pusher: {
+      connection: { bind: (event: string, callback: () => void) => void }
+    }
+  }
+}
 
 const isConnected = ref(false)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let echo: any = null
+let echo: EchoInstance | null = null
 
 export function useWebSocket() {
   const authStore = useAuthStore()
@@ -47,7 +61,7 @@ export function useWebSocket() {
           Accept: 'application/json'
         }
       }
-    })
+    }) as EchoInstance
 
     echo.connector.pusher.connection.bind('connected', () => {
       isConnected.value = true
@@ -60,25 +74,33 @@ export function useWebSocket() {
     })
 
     echo.private(`dashboard.${userId}`)
-      .listen('.metrics.updated', (e: MetricsUpdatedEvent) => {
-        if (e.dashboard) analyticsStore.updateFromWebSocket(e.dashboard)
+      .listen('.metrics.updated', (e: unknown) => {
+        const ev = e as MetricsUpdatedEvent
+        if (ev.dashboard) analyticsStore.updateFromWebSocket(ev.dashboard)
       })
       .listen('.metrics.recalculating', () => {
         analyticsStore.setRecalculating(true)
       })
-      .listen('.session.started', (e: { session: { id: string; technology?: { id: string; name: string; color: string }; started_at: string; elapsed_seconds?: number } }) => {
-        if (e.session) {
-          sessionsStore.setActiveSession({
-            id: e.session.id,
+      .listen('.session.started', (e: unknown) => {
+        const ev = e as SessionStartedEvent
+        if (ev.session) {
+          const s = ev.session
+          const payload: ActiveSessionResponse = {
+            id: s.id,
             user_id: userId,
-            technology_id: e.session.technology?.id ?? '',
-            technology: e.session.technology,
-            started_at: e.session.started_at,
+            technology_id: s.technology?.id ?? '',
+            technology: s.technology
+              ? { ...s.technology, slug: s.technology.id, is_active: true }
+              : undefined,
+            started_at: s.started_at,
             ended_at: null,
             duration_min: null,
-            created_at: e.session.started_at,
-            elapsed_seconds: e.session.elapsed_seconds ?? 0,
-          } as import('@/api/modules/sessions.api').ActiveSessionResponse)
+            created_at: s.started_at,
+            elapsed_seconds: s.elapsed_seconds ?? 0,
+            notes: null,
+            mood: null,
+          }
+          sessionsStore.setActiveSession(payload)
         }
       })
       .listen('.session.ended', () => {

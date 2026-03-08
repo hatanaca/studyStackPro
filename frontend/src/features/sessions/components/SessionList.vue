@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import SessionCard from './SessionCard.vue'
 import SessionFilters from './SessionFilters.vue'
 import LogSessionForm from './LogSessionForm.vue'
@@ -9,10 +10,13 @@ import { getApiErrorMessage } from '@/api/client'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import { useTechnologiesStore } from '@/stores/technologies.store'
 import { useToast } from '@/composables/useToast'
+import { useSessionsListQuery, useInvalidateSessions } from '@/features/sessions/composables/useSessionsListQuery'
 import type { StudySession } from '@/types/domain.types'
 
+const route = useRoute()
 const toast = useToast()
 const technologiesStore = useTechnologiesStore()
+const invalidateSessions = useInvalidateSessions()
 
 const showAddModal = ref(false)
 
@@ -24,47 +28,34 @@ const filters = ref<{
   mood?: number
 }>({})
 
-const sessions = ref<StudySession[]>([])
-const meta = ref<{ current_page: number; last_page: number; per_page: number; total: number } | null>(null)
-const loading = ref(false)
 const currentPage = ref(1)
 
-async function fetchSessions() {
-  loading.value = true
-  try {
-    const params: Record<string, string | number | undefined> = {
-      page: currentPage.value,
-      per_page: 15,
-    }
-    if (filters.value.technology_id) params.technology_id = filters.value.technology_id
-    if (filters.value.date_from) params.date_from = filters.value.date_from
-    if (filters.value.date_to) params.date_to = filters.value.date_to
-    if (filters.value.min_duration != null) params.min_duration = filters.value.min_duration
-    if (filters.value.mood != null) params.mood = filters.value.mood
+const listParams = computed(() => ({
+  page: currentPage.value,
+  per_page: 15,
+  ...(filters.value.technology_id && { technology_id: filters.value.technology_id }),
+  ...(filters.value.date_from && { date_from: filters.value.date_from }),
+  ...(filters.value.date_to && { date_to: filters.value.date_to }),
+  ...(filters.value.min_duration != null && { min_duration: filters.value.min_duration }),
+  ...(filters.value.mood != null && { mood: filters.value.mood }),
+}))
 
-    const { data } = await sessionsApi.list(params as Parameters<typeof sessionsApi.list>[0])
-    if (data.success && Array.isArray(data.data)) {
-      sessions.value = data.data
-      meta.value = (data as { meta?: typeof meta.value }).meta ?? null
-    }
-  } finally {
-    loading.value = false
-  }
-}
+const sessionsListQuery = useSessionsListQuery(listParams)
+const sessions = sessionsListQuery.sessions
+const meta = sessionsListQuery.meta
+const loading = sessionsListQuery.isPending
 
 function onFiltersChange() {
   currentPage.value = 1
-  fetchSessions()
 }
 
 function goToPage(page: number) {
   currentPage.value = page
-  fetchSessions()
 }
 
-function onSessionCreated() {
+async function onSessionCreated() {
   showAddModal.value = false
-  fetchSessions()
+  await invalidateSessions()
 }
 
 // --- Edit ---
@@ -104,7 +95,7 @@ async function saveEdit() {
     toast.success('Sessão atualizada!')
     showEditModal.value = false
     editingSession.value = null
-    fetchSessions()
+    await invalidateSessions()
   } catch (err: unknown) {
     toast.error(getApiErrorMessage(err) || 'Erro ao atualizar sessão')
   } finally {
@@ -130,7 +121,7 @@ async function confirmDelete() {
     toast.success('Sessão excluída!')
     showDeleteConfirm.value = false
     deletingSession.value = null
-    fetchSessions()
+    await invalidateSessions()
   } catch (err: unknown) {
     toast.error(getApiErrorMessage(err) || 'Erro ao excluir sessão')
   } finally {
@@ -143,7 +134,12 @@ function cancelDelete() {
   deletingSession.value = null
 }
 
-onMounted(() => fetchSessions())
+onMounted(() => {
+  const techId = route.query.technology_id
+  if (typeof techId === 'string' && techId) {
+    filters.value = { ...filters.value, technology_id: techId }
+  }
+})
 </script>
 
 <template>

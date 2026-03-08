@@ -1,36 +1,20 @@
-import { ref, watch, type Ref } from 'vue'
+import type { Ref } from 'vue'
+import { useDebounce as useDebounceVueUse, useDebounceFn as useDebounceFnVueUse } from '@vueuse/core'
 
 /**
- * Debounce de um valor reativo: value debounced atualiza após `delay` ms sem mudanças.
+ * Debounce de um valor reativo (VueUse).
+ * value debounced atualiza após `delayMs` ms sem mudanças.
  */
 export function useDebounce<T>(source: Ref<T>, delayMs: number): Ref<T> {
-  const debounced = ref(source.value) as Ref<T>
-  let timeoutId: ReturnType<typeof setTimeout> | null = null
-
-  watch(source, (newVal) => {
-    if (timeoutId) clearTimeout(timeoutId)
-    timeoutId = setTimeout(() => {
-      debounced.value = newVal
-      timeoutId = null
-    }, delayMs)
-  }, { immediate: false })
-
-  return debounced
+  return useDebounceVueUse(source, delayMs)
 }
 
 /**
- * Função debounced: executa fn após `delay` ms da última chamada.
+ * Função debounced (VueUse): executa fn após `delayMs` ms da última chamada.
  */
 export function useDebounceFn<T extends (...args: unknown[]) => unknown>(
   fn: T,
   delayMs: number
 ): (...args: Parameters<T>) => void {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null
-  return (...args: Parameters<T>) => {
-    if (timeoutId) clearTimeout(timeoutId)
-    timeoutId = setTimeout(() => {
-      fn(...args)
-      timeoutId = null
-    }, delayMs)
-  }
+  return useDebounceFnVueUse(fn, delayMs) as (...args: Parameters<T>) => void
 }

@@ -1,0 +1,17 @@
+---
+description: Especialista backend StudyTrackPro — Laravel 11, PHP 8.2, event-driven, módulos, Horizon, Reverb, boas práticas e sugestões de evolução
+globs: backend/**/*
+alwaysApply: false
+---
+
+# Agente Backend StudyTrackPro
+
+Atue como **especialista backend** do StudyTrackPro. Siga o prompt completo em `docs/prompt-agente-backend-studytrackpro.md`.
+
+## Resumo obrigatório
+
+- **Stack:** Laravel 11, PHP 8.2+, Sanctum 4, Reverb 1, Horizon 5, PostgreSQL 16 (public + analytics), Redis 7, PHPUnit.
+- **Arquitetura:** Event-driven (Controller → Service → Event → Listener → Job); módulos em `app/Modules/` (Auth, StudySessions, Technologies, Analytics) com Services, DTOs e Repositories (Contracts + Eloquent).
+- **Regras:** Controller thin; validação em Form Request; banco apenas via Repository; Events no passado; Listeners rápidos (cache/job); cache com tags; rate limiting (auth, search, sensitive, recalculate, health).
+- **Consultor:** Sugira evoluções (Laravel Data, Pest, Laravel Actions, Enums, Telescope, PHPStan, etc.) com ganho, esforço e se é incremental ou disruptiva.
+- **Checklist:** Thin controller, Form Request, Repository com interface, DTO readonly, Event/Listener/Job, rate limit, cache tags, channels.php se broadcast, testes Feature + Unit, contrato API alinhado ao frontend.

@@ -14,6 +14,12 @@ export const useTechnologiesStore = defineStore('technologies', () => {
     return Date.now() - lastFetchedAt.value < CACHE_FRESH_MS
   })
 
+  /** Atualiza a lista a partir de dados externos (ex.: TanStack Query). */
+  function setTechnologies(list: Technology[]) {
+    technologies.value = list
+    lastFetchedAt.value = Date.now()
+  }
+
   async function fetchTechnologies(force = false) {
     if (isFresh.value && !force) return technologies.value
     loading.value = true
@@ -97,6 +103,7 @@ export const useTechnologiesStore = defineStore('technologies', () => {
     technologies,
     loading,
     isFresh,
+    setTechnologies,
     fetchTechnologies,
     searchLocal,
     searchFromApi,

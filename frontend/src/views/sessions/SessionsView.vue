@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
 import SessionList from '@/features/sessions/components/SessionList.vue'
 import TechnologyStudyWidget from '@/features/sessions/components/TechnologyStudyWidget.vue'
 import PageView from '@/components/layout/PageView.vue'
 import SectionHeader from '@/components/ui/SectionHeader.vue'
 import { useTechnologiesStore } from '@/stores/technologies.store'
+import { useTechnologiesQuery } from '@/features/technologies/composables/useTechnologiesQuery'
 
+useTechnologiesQuery()
 const technologiesStore = useTechnologiesStore()
-
-onMounted(() => {
-  technologiesStore.fetchTechnologies()
-})
 </script>
 
 <template>
