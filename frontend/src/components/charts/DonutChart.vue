@@ -16,7 +16,15 @@ const props = withDefaults(
     /** Exibir toolbar com export */
     showToolbar?: boolean
   }>(),
-  { series: () => [], labels: () => [], colors: () => [], centerLabel: 'Total', showDataLabels: true, showToolbar: false }
+  {
+    series: () => [],
+    labels: () => [],
+    colors: () => [],
+    title: undefined,
+    centerLabel: 'Total',
+    showDataLabels: true,
+    showToolbar: false,
+  }
 )
 
 const { baseOptions, palette, theme } = useApexChartTheme()

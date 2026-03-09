@@ -24,7 +24,18 @@ const props = withDefaults(
     /** Título do eixo Y (opcional) */
     yAxisTitle?: string
   }>(),
-  { valueUnit: 'min', showDataLabels: true, borderRadius: 6, showToolbar: false, gradientFill: true }
+  {
+    data: undefined,
+    title: undefined,
+    orientation: 'vertical',
+    valueUnit: 'min',
+    showDataLabels: true,
+    borderRadius: 6,
+    showToolbar: false,
+    gradientFill: true,
+    xAxisTitle: undefined,
+    yAxisTitle: undefined,
+  }
 )
 
 const { baseOptions, theme } = useApexChartTheme()

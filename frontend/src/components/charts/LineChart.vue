@@ -18,7 +18,14 @@ const props = withDefaults(
     /** Usar altura maior no desktop (--widget-chart-min-height-tall) */
     tall?: boolean
   }>(),
-  { filled: true, valueUnit: 'minutes', ariaLabel: 'Gráfico de evolução', tall: false }
+  {
+    data: undefined,
+    title: undefined,
+    filled: true,
+    valueUnit: 'minutes',
+    ariaLabel: 'Gráfico de evolução',
+    tall: false,
+  }
 )
 
 const { baseOptions, theme } = useApexChartTheme()
