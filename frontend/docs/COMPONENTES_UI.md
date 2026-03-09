@@ -114,7 +114,7 @@ Alternância de tema claro/escuro; variante `sidebar` para fundo escuro.
 
 ## Charts (components/charts)
 
-- **LineChart**, **BarChart**, **PieChart**: wrappers para Chart.js.
+- **LineChart**, **BarChart**, **PieChart**, **DonutChart**: wrappers para ApexCharts (vue3-apexcharts).
 - **HeatmapChart**: heatmap de atividade por dia.
 
 ---

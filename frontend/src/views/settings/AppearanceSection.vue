@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import FormSection from '@/components/ui/FormSection.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import Fieldset from 'primevue/fieldset'
+import Button from 'primevue/button'
 import { useUiStore } from '@/stores/ui.store'
 import type { CustomThemeOptions } from '@/stores/ui.store'
 
@@ -39,11 +39,10 @@ function reset() {
 </script>
 
 <template>
-  <FormSection
-    title="Aparência"
-    description="Personalize cores e fonte. O tema claro/escuro fica no menu principal (ícone Menu)."
-    grouped
-  >
+  <Fieldset legend="Aparência">
+    <p class="appearance-section__desc">
+      Personalize cores e fonte. O tema claro/escuro fica no menu principal (ícone Menu).
+    </p>
     <p class="appearance-section__hint">
       Altere o tema (claro/escuro) pelo menu principal. Abaixo, customize cores e fonte.
     </p>
@@ -168,19 +167,20 @@ function reset() {
         </select>
       </div>
       <div class="appearance-section__actions">
-        <BaseButton
-          variant="outline"
-          size="sm"
+        <Button
+          label="Resetar estilo"
+          severity="secondary"
+          variant="outlined"
+          size="small"
           @click="reset"
-        >
-          Resetar estilo
-        </BaseButton>
+        />
       </div>
     </div>
-  </FormSection>
+  </Fieldset>
 </template>
 
 <style scoped>
+.appearance-section__desc,
 .appearance-section__hint {
   font-size: var(--text-sm);
   color: var(--color-text-muted);

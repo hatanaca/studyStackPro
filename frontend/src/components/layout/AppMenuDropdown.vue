@@ -2,15 +2,16 @@
 import { ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
-import BaseDropdown from '@/components/ui/BaseDropdown.vue'
+import Button from 'primevue/button'
+import OverlayPanel from 'primevue/overlaypanel'
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 
 const authStore = useAuthStore()
 const route = useRoute()
-const dropdownRef = ref<InstanceType<typeof BaseDropdown> | null>(null)
+const op = ref<InstanceType<typeof OverlayPanel> | null>(null)
 
 function closeDropdown() {
-  dropdownRef.value?.close?.()
+  op.value?.hide()
 }
 
 async function handleLogout() {
@@ -40,28 +41,23 @@ function isActive(path: string) {
 </script>
 
 <template>
-  <BaseDropdown
-    align="left"
-    class="app-menu-dropdown"
+  <Button
+    type="button"
+    text
+    severity="secondary"
+    class="app-menu-dropdown__trigger"
+    aria-label="Abrir menu"
+    aria-haspopup="true"
+    @click="op?.toggle($event)"
   >
-    <template #trigger>
-      <button
-        type="button"
-        class="app-menu-dropdown__trigger"
-        aria-label="Abrir menu"
-        aria-haspopup="true"
-      >
-        <span
-          class="app-menu-dropdown__hamburger"
-          aria-hidden="true"
-        >
-          <span />
-          <span />
-          <span />
-        </span>
-        <span class="app-menu-dropdown__label">Menu</span>
-      </button>
-    </template>
+    <span class="app-menu-dropdown__hamburger" aria-hidden="true">
+      <span />
+      <span />
+      <span />
+    </span>
+    <span class="app-menu-dropdown__label">Menu</span>
+  </Button>
+  <OverlayPanel ref="op" class="app-menu-dropdown__overlay">
     <div class="app-menu-dropdown__panel">
       <nav
         class="app-menu-dropdown__nav"
@@ -92,7 +88,7 @@ function isActive(path: string) {
         </button>
       </div>
     </div>
-  </BaseDropdown>
+  </OverlayPanel>
 </template>
 
 <style scoped>

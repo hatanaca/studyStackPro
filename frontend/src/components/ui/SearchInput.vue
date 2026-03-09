@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import BaseInput from '@/components/ui/BaseInput.vue'
+import InputText from 'primevue/inputtext'
 import { useDebounceFn } from '@/composables/useDebounce'
 
 const props = withDefaults(
@@ -35,7 +35,7 @@ watch(local, (v) => {
 </script>
 
 <template>
-  <BaseInput
+  <InputText
     v-model="local"
     type="search"
     :placeholder="placeholder"

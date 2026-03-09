@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 import { useDashboard } from '@/features/dashboard/composables/useDashboard'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import Button from 'primevue/button'
 import NotificationCenter from '@/features/notifications/components/NotificationCenter.vue'
 import PeriodSelector from './PeriodSelector.vue'
 import type { TimeSeriesPeriod } from '@/stores/analytics.store'
@@ -99,15 +99,15 @@ function onPeriodChange(period: TimeSeriesPeriod) {
           />
           Atualizando...
         </span>
-        <BaseButton
-          variant="outline"
-          size="sm"
+        <Button
+          label="Atualizar"
+          severity="secondary"
+          variant="outlined"
+          size="small"
           :disabled="analyticsStore.isRecalculating"
           aria-label="Atualizar dados do dashboard"
           @click="handleRefresh"
-        >
-          Atualizar
-        </BaseButton>
+        />
       </div>
     </div>
   </header>

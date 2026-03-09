@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
+import Skeleton from 'primevue/skeleton'
 
 export interface HeatmapDay {
   date: string
@@ -84,7 +84,7 @@ const years = computed(() => {
       v-if="loading"
       class="heatmap-skeleton"
     >
-      <SkeletonLoader
+      <Skeleton
         v-for="i in 10"
         :key="i"
         height="0.75rem"

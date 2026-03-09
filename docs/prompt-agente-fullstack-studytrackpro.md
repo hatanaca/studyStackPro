@@ -8,7 +8,7 @@ Atue de forma coerente em tarefas que envolvam backend e frontend, API, eventos,
 
 ## Stack (resumo)
 
-- **Frontend:** Vue 3 (Composition API, `<script setup>`), TypeScript 5.4, Vite 5, Pinia 2.1, Vue Router 4.2, Axios 1.6, Chart.js + vue-chartjs, Laravel Echo + Pusher-js.
+- **Frontend:** Vue 3 (Composition API, `<script setup>`), TypeScript 5.4, Vite 5, Pinia 2.1, Vue Router 4.2, Axios 1.6, ApexCharts + vue3-apexcharts, Laravel Echo + Pusher-js.
 - **Backend:** Laravel 11, PHP 8.2+, Laravel Sanctum 4, Laravel Reverb 1, Laravel Horizon 5.
 - **Banco de dados:** PostgreSQL 16 com schemas `public` (transacional) e `analytics` (métricas pré-calculadas).
 - **Infra:** Redis 7 (cache, filas, sessões), Docker Compose (Nginx, PHP-FPM, Reverb, Horizon, Postgres, Redis, node).

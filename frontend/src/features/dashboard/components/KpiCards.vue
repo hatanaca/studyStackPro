@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import StatCard from '@/components/ui/StatCard.vue'
+import Card from 'primevue/card'
 import type { UserMetrics } from '@/types/domain.types'
 
 const props = defineProps<{
@@ -48,14 +48,22 @@ const items = computed(() => {
     class="kpi-cards"
     aria-label="Métricas principais"
   >
-    <StatCard
+    <Card
       v-for="(item, i) in items"
       :key="i"
-      :label="item.label"
-      :value="item.value"
-      :icon="item.icon"
-      :variant="item.variant"
-    />
+      class="kpi-card"
+      :class="`kpi-card--${item.variant}`"
+    >
+      <template #content>
+        <div class="kpi-card__inner">
+          <span v-if="item.icon" class="kpi-card__icon" aria-hidden="true">{{ item.icon }}</span>
+          <div class="kpi-card__content">
+            <span class="kpi-card__label">{{ item.label }}</span>
+            <span class="kpi-card__value">{{ item.value }}</span>
+          </div>
+        </div>
+      </template>
+    </Card>
   </section>
 </template>
 
@@ -70,7 +78,7 @@ const items = computed(() => {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
-.kpi-cards :deep(.stat-card) {
+.kpi-card {
   min-height: var(--widget-card-min-height);
   border-radius: var(--widget-radius);
   box-shadow: var(--shadow-sm);
@@ -78,20 +86,26 @@ const items = computed(() => {
     border-color var(--duration-fast) ease,
     transform var(--duration-fast) var(--ease-out-expo);
 }
-.kpi-cards :deep(.stat-card:hover) {
+.kpi-card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
+.kpi-card__inner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+}
+.kpi-card__icon { font-size: 1.25rem; line-height: 1; opacity: 0.9; }
+.kpi-card__content { display: flex; flex-direction: column; gap: var(--spacing-xs); min-width: 0; }
+.kpi-card__label { font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600; }
+.kpi-card__value { font-size: var(--text-xl); font-weight: 700; color: var(--color-text); letter-spacing: -0.02em; line-height: 1.2; }
+.kpi-card--primary .kpi-card__value { color: var(--color-primary); }
+.kpi-card--success .kpi-card__value { color: var(--color-success); }
+.kpi-card--warning .kpi-card__value { color: var(--color-warning); }
+.kpi-card--error .kpi-card__value { color: var(--color-error); }
 @media (max-width: 479px) {
-  .kpi-cards :deep(.stat-card) {
-    flex-direction: row;
-    align-items: center;
-    min-height: auto;
-    padding: var(--widget-padding-sm);
-  }
-  .kpi-cards :deep(.stat-card__content) {
-    flex: 1;
-    min-width: 0;
-  }
+  .kpi-card__inner { flex-direction: row; align-items: center; }
+  .kpi-card { min-height: auto; padding: var(--widget-padding-sm); }
+  .kpi-card__content { flex: 1; min-width: 0; }
 }
 </style>

@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import BaseCard from '@/components/ui/BaseCard.vue'
-import BaseDateRangePicker from '@/components/ui/BaseDateRangePicker.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
-import EmptyState from '@/components/ui/EmptyState.vue'
+import Card from 'primevue/card'
+import Button from 'primevue/button'
+import Message from 'primevue/message'
 import PageView from '@/components/layout/PageView.vue'
 
-const dateRange = ref<{ start: string; end: string } | null>(null)
+const dateRange = ref<{ start: string; end: string }>({ start: '', end: '' })
 </script>
 
 <template>
@@ -19,32 +18,42 @@ const dateRange = ref<{ start: string; end: string } | null>(null)
     <template #hint>
       Esta página é um placeholder. Em breve: download em PDF com resumo e gráficos por período.
     </template>
-    <BaseCard
-      title="Relatório de atividades"
-      class="reports-view__card"
-    >
-      <div class="reports-view__form">
-        <div class="reports-view__field">
-          <label class="reports-view__label">Período</label>
-          <BaseDateRangePicker
-            v-model="dateRange"
-            placeholder-start="Data inicial"
-            placeholder-end="Data final"
+    <Card class="reports-view__card">
+      <template #title>Relatório de atividades</template>
+      <template #content>
+        <div class="reports-view__form">
+          <div class="reports-view__field">
+            <label class="reports-view__label">Período</label>
+            <div class="reports-view__dates">
+              <input
+                v-model="dateRange.start"
+                type="date"
+                class="p-inputtext p-component"
+                aria-label="Data inicial"
+              >
+              <span class="reports-view__sep">até</span>
+              <input
+                v-model="dateRange.end"
+                type="date"
+                class="p-inputtext p-component"
+                aria-label="Data final"
+              >
+            </div>
+          </div>
+          <Button
+            label="Gerar relatório (em breve)"
+            disabled
           />
         </div>
-        <BaseButton
-          disabled
-          :aria-disabled="true"
+        <Message
+          severity="info"
+          :closable="false"
         >
-          Gerar relatório (em breve)
-        </BaseButton>
-      </div>
-      <EmptyState
-        title="Em breve: download em PDF"
-        description="A geração de relatórios em PDF com resumo por período e gráficos está em desenvolvimento. Por enquanto, use a página Exportar para baixar dados em CSV ou JSON."
-        icon="📄"
-      />
-    </BaseCard>
+          <strong>Em breve: download em PDF</strong><br>
+          A geração de relatórios em PDF com resumo por período e gráficos está em desenvolvimento. Por enquanto, use a página Exportar para baixar dados em CSV ou JSON.
+        </Message>
+      </template>
+    </Card>
   </PageView>
 </template>
 
@@ -74,4 +83,12 @@ const dateRange = ref<{ start: string; end: string } | null>(null)
   font-weight: 600;
   color: var(--color-text-muted);
 }
+.reports-view__dates {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+.reports-view__dates input { min-width: 140px; }
+.reports-view__sep { font-size: var(--text-sm); color: var(--color-text-muted); }
 </style>

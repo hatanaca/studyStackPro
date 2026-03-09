@@ -71,6 +71,11 @@
   --widget-card-min-height: 100px;
   --widget-gap: var(--spacing-sm);
   --chart-axis-font-size: var(--text-sm);
+  /* Gráfico de barras (ex.: TechDistributionWidget): altura por barra, gap e área rolável */
+  --chart-bar-height: 30px;
+  --chart-bar-gap: 12px;
+  --chart-bar-label-width: 120px;
+  --chart-bar-scroll-max-height: 360px;
 
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --text-xs: 0.75rem;

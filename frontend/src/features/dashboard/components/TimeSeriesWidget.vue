@@ -2,8 +2,9 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import LineChart from '@/components/charts/LineChart.vue'
-import EmptyState from '@/components/ui/EmptyState.vue'
-import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
+import Skeleton from 'primevue/skeleton'
+import Message from 'primevue/message'
+import Button from 'primevue/button'
 import { formatMinutesToHoursLabel } from '@/utils/formatters'
 import { formatShortDate } from '@/utils/formatters'
 import { useAnalyticsStore } from '@/stores/analytics.store'
@@ -73,7 +74,7 @@ function goToRegisterSession() {
       v-if="analyticsStore.timeSeriesLoading || analyticsStore.isRecalculating"
       class="chart-skeleton"
     >
-      <SkeletonLoader
+      <Skeleton
         v-for="i in 8"
         :key="i"
         height="1.25rem"
@@ -87,15 +88,16 @@ function goToRegisterSession() {
       tall
       aria-label="Gráfico de tempo estudado por dia no período selecionado"
     />
-    <EmptyState
+    <Message
       v-else
-      title="Nenhum registro neste período"
-      description="Registre sessões para ver sua evolução aqui. O gráfico mostra as horas estudadas por dia."
-      icon="📈"
-      action-label="Registrar sessão"
-      :hide-action="false"
-      @action="goToRegisterSession"
-    />
+      severity="info"
+      :closable="false"
+      class="time-series-empty"
+    >
+      <strong>Nenhum registro neste período</strong><br>
+      Registre sessões para ver sua evolução aqui. O gráfico mostra as horas estudadas por dia.
+      <Button label="Registrar sessão" size="small" class="mt-2" @click="goToRegisterSession" />
+    </Message>
   </div>
 </template>
 

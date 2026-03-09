@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import BaseInput from '@/components/ui/BaseInput.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import InputText from 'primevue/inputtext'
+import Button from 'primevue/button'
 import type { Technology } from '@/types/domain.types'
 
 const props = defineProps<{
@@ -79,13 +79,17 @@ defineExpose({ reset, setError: (msg: string) => { errors.value = { name: msg } 
     class="technology-form"
     @submit.prevent="onSubmit"
   >
-    <BaseInput
-      v-model="name"
-      type="text"
-      placeholder="Ex: JavaScript"
-      label="Nome"
-      :error="errors.name"
-    />
+    <div class="p-field">
+      <label for="tech-name">Nome</label>
+      <InputText
+        id="tech-name"
+        v-model="name"
+        placeholder="Ex: JavaScript"
+        class="w-full"
+        :class="{ 'p-invalid': errors.name }"
+      />
+      <small v-if="errors.name" class="p-error">{{ errors.name }}</small>
+    </div>
     <div class="field">
       <label class="label">Cor</label>
       <div class="color-input">
@@ -102,23 +106,18 @@ defineExpose({ reset, setError: (msg: string) => { errors.value = { name: msg } 
         >
       </div>
     </div>
-    <BaseInput
-      v-model="description"
-      type="text"
-      placeholder="Descrição (opcional)"
-      label="Descrição"
-    />
+    <div class="p-field">
+      <label for="tech-desc">Descrição</label>
+      <InputText
+        id="tech-desc"
+        v-model="description"
+        placeholder="Descrição (opcional)"
+        class="w-full"
+      />
+    </div>
     <div class="actions">
-      <BaseButton type="submit">
-        {{ modelValue ? 'Salvar' : 'Criar' }}
-      </BaseButton>
-      <BaseButton
-        type="button"
-        variant="secondary"
-        @click="onCancel"
-      >
-        Cancelar
-      </BaseButton>
+      <Button type="submit" :label="modelValue ? 'Salvar' : 'Criar'" />
+      <Button type="button" label="Cancelar" severity="secondary" @click="onCancel" />
     </div>
   </form>
 </template>
@@ -173,6 +172,9 @@ defineExpose({ reset, setError: (msg: string) => { errors.value = { name: msg } 
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
+.p-field { display: flex; flex-direction: column; gap: 0.25rem; }
+.p-field label { font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); }
+.w-full { width: 100%; }
 .actions {
   display: flex;
   gap: var(--spacing-sm);

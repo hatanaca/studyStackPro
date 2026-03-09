@@ -9,10 +9,14 @@ const props = withDefaults(
     labels?: string[]
     colors?: string[]
     title?: string
-    /** Texto no centro do donut (ex.: total) */
+    /** Texto no centro do donut (ex.: "Total") */
     centerLabel?: string
+    /** Exibir dataLabels nas fatias (valor + %) */
+    showDataLabels?: boolean
+    /** Exibir toolbar com export */
+    showToolbar?: boolean
   }>(),
-  { series: () => [], labels: () => [], colors: () => [], centerLabel: '' }
+  { series: () => [], labels: () => [], colors: () => [], centerLabel: 'Total', showDataLabels: true, showToolbar: false }
 )
 
 const { baseOptions, palette, theme } = useApexChartTheme()
@@ -27,45 +31,130 @@ const total = computed(() => chartSeries.value.reduce((a, b) => a + b, 0))
 
 const chartOptions = computed<ApexOptions>(() => {
   const colors = props.colors.length ? props.colors : palette.value
+  const t = theme.value
   return {
     ...baseOptions.value,
     chart: {
       ...baseOptions.value.chart,
       type: 'donut',
       background: 'transparent',
+      toolbar: {
+        show: props.showToolbar,
+        tools: { download: true, selection: false, zoom: false, zoomin: false, zoomout: false, pan: false, reset: false },
+        export: { csv: { headerCategory: 'Categoria', headerValue: 'Valor' }, svg: {}, png: {} },
+      },
+      animations: {
+        enabled: true,
+        easing: 'easeinout',
+        speed: 800,
+        animateGradually: { enabled: true, delay: 120 },
+        dynamicAnimation: { enabled: true, speed: 350 },
+      },
+      dropShadow: {
+        enabled: true,
+        top: 3,
+        left: 0,
+        blur: 14,
+        opacity: 0.18,
+        color: t.textColor,
+      },
     },
     colors: labels.value.map((_, i) => colors[i % colors.length]),
     labels: labels.value,
+    stroke: { width: 2, colors: [t.background] },
+    states: {
+      hover: { filter: { type: 'lighten', value: 0.1 } as { type: string; value: number } },
+      active: { filter: { type: 'darken', value: 0.25 } as { type: string; value: number } },
+    },
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shadeIntensity: 0.5,
+        opacityFrom: 0.85,
+        opacityTo: 0.7,
+        stops: [0, 100],
+      },
+    },
+    dataLabels: {
+      enabled: props.showDataLabels,
+      formatter: (val: number, opts: { w?: { globals?: { seriesTotals?: number[] } } }) => {
+        const w = opts?.w
+        const sum = w?.globals?.seriesTotals?.reduce((a, b) => a + b, 0) ?? total.value
+        const pct = sum ? ((Number(val) / sum) * 100).toFixed(1) : '0'
+        return `${Number(val).toFixed(1)}\n(${pct}%)`
+      },
+      style: { fontSize: t.fontSize, fontFamily: t.fontFamily },
+      dropShadow: { enabled: false },
+      offset: 2,
+    },
     legend: {
       ...baseOptions.value.legend,
       show: true,
       position: 'bottom',
+      fontSize: t.fontSize,
+      markers: { size: 6, strokeWidth: 0 },
+      itemMargin: { horizontal: 10, vertical: 6 },
     },
-    dataLabels: { enabled: false },
-    stroke: { width: 2, colors: [theme.value.background] },
     plotOptions: {
       pie: {
         expandOnClick: true,
+        expandRadius: 2,
+        startAngle: -90,
+        endAngle: 270,
         donut: {
-          size: '65%',
+          size: '62%',
+          background: 'transparent',
           labels: {
             show: true,
-            name: { show: !!props.centerLabel, color: theme.value.textMuted },
-            value: { show: true, color: theme.value.textColor, fontSize: '1.25rem', fontWeight: 700 },
+            name: {
+              show: true,
+              color: t.textMuted,
+              fontSize: t.fontSize,
+              fontFamily: t.fontFamily,
+              offsetY: -10,
+            },
+            value: {
+              show: true,
+              color: t.textColor,
+              fontSize: '1.35rem',
+              fontWeight: 700,
+              fontFamily: t.fontFamily,
+              offsetY: 6,
+              formatter: (val: string | number) => String(Number(val).toFixed(1)),
+            },
             total: {
-              show: !!props.centerLabel,
+              show: true,
               label: props.centerLabel,
-              color: theme.value.textMuted,
-              formatter: () => String(total.value),
+              color: t.textMuted,
+              fontSize: t.fontSize,
+              fontFamily: t.fontFamily,
+              formatter: () => String(total.value.toFixed(1)),
             },
           },
         },
+        dataLabels: { offset: -12 },
       },
     },
     tooltip: {
       ...baseOptions.value.tooltip,
-      y: { formatter: (val: number) => String(val) },
+      fillSeriesColor: true,
+      shared: true,
+      followCursor: true,
+      y: {
+        formatter: (val: number, opts: { w?: { globals?: { seriesTotals?: number[] } }; seriesIndex?: number }) => {
+          const w = opts?.w
+          const sum = w?.globals?.seriesTotals?.reduce((a, b) => a + b, 0) ?? total.value
+          const pct = sum ? ((Number(val) / sum) * 100).toFixed(1) : '0'
+          const label = labels.value[opts?.seriesIndex ?? 0] ?? ''
+          return `${label}\n${Number(val).toFixed(1)} (${pct}%)`
+        },
+        title: { formatter: () => 'Valor' },
+      },
     },
+    responsive: [
+      { breakpoint: 520, options: { chart: { height: 300 }, plotOptions: { pie: { donut: { size: '60%' } } } } },
+      { breakpoint: 380, options: { chart: { height: 260 }, plotOptions: { pie: { donut: { size: '55%' } } }, legend: { markers: { size: 4 } } } },
+    ],
   }
 })
 </script>

@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import PageView from '@/components/layout/PageView.vue'
-import BaseCard from '@/components/ui/BaseCard.vue'
-import BaseInput from '@/components/ui/BaseInput.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
-import BaseTabs from '@/components/ui/BaseTabs.vue'
-import BaseAvatar from '@/components/ui/BaseAvatar.vue'
+import Card from 'primevue/card'
+import InputText from 'primevue/inputtext'
+import Button from 'primevue/button'
+import Tabs from 'primevue/tabs'
+import TabList from 'primevue/tablist'
+import Tab from 'primevue/tab'
+import TabPanels from 'primevue/tabpanels'
+import TabPanel from 'primevue/tabpanel'
+import Avatar from 'primevue/avatar'
 import { useAuthStore } from '@/stores/auth.store'
 import { authApi, type TokenInfo } from '@/api/modules/auth.api'
 import { useToast } from '@/composables/useToast'
@@ -16,11 +20,17 @@ const router = useRouter()
 const toast = useToast()
 
 const profileTabs = [
-  { id: 'profile', label: 'Perfil', disabled: false },
-  { id: 'password', label: 'Senha', disabled: false },
-  { id: 'sessions', label: 'Sessões', disabled: false },
+  { id: 'profile', label: 'Perfil' },
+  { id: 'password', label: 'Senha' },
+  { id: 'sessions', label: 'Sessões' },
 ]
 const activeTab = ref('profile')
+const avatarLabel = computed(() => {
+  const name = authStore.user?.name ?? ''
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  return name.slice(0, 2).toUpperCase() || '?'
+})
 
 const profileLoading = ref(false)
 const profileForm = ref({ name: '', timezone: 'UTC' })
@@ -167,148 +177,177 @@ function formatDate(iso: string | null): string {
   >
     <div class="profile-view">
       <div class="profile-view__avatar-wrap">
-        <BaseAvatar
-          :name="authStore.user?.name"
-          size="xl"
+        <Avatar
+          :label="avatarLabel"
+          size="xlarge"
           class="profile-view__avatar"
         />
       </div>
-      <BaseTabs
-      v-model="activeTab"
-      :tabs="profileTabs"
-      variant="pill"
-      align="start"
-      class="profile-view__tabs"
-    >
-      <template #default="{ activeId }">
-        <BaseCard class="profile-view__card">
-          <template v-if="activeId === 'profile'">
-            <h2 class="section-title">
-              Dados do perfil
-            </h2>
-            <form
-              class="profile-form"
-              @submit.prevent="saveProfile"
-            >
-              <BaseInput
-                v-model="profileForm.name"
-                label="Nome"
-                placeholder="Seu nome"
-                :error="profileErrors.name"
-              />
-              <BaseInput
-                v-model="profileForm.timezone"
-                label="Fuso horário"
-                placeholder="UTC"
-                :error="profileErrors.timezone"
-              />
-              <BaseButton
-                type="submit"
-                :disabled="profileLoading"
-              >
-                {{ profileLoading ? 'Salvando...' : 'Salvar perfil' }}
-              </BaseButton>
-            </form>
-          </template>
-          <template v-else-if="activeId === 'password'">
-            <h2 class="section-title">
-              Alterar senha
-            </h2>
-            <p class="section-desc">
-              Após alterar a senha, você será desconectado de todos os dispositivos.
-            </p>
-            <form
-              class="profile-form"
-              @submit.prevent="changePassword"
-            >
-              <!-- Campo oculto para acessibilidade em formulários de senha -->
-              <input
-                type="text"
-                name="username"
-                autocomplete="username"
-                style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0"
-                tabindex="-1"
-                aria-hidden="true"
-              >
-              <BaseInput
-                v-model="passwordForm.current_password"
-                type="password"
-                label="Senha atual"
-                placeholder="••••••••"
-                :error="passwordErrors.current_password"
-                autocomplete="current-password"
-              />
-              <BaseInput
-                v-model="passwordForm.password"
-                type="password"
-                label="Nova senha"
-                placeholder="••••••••"
-                :error="passwordErrors.password"
-                autocomplete="new-password"
-              />
-              <BaseInput
-                v-model="passwordForm.password_confirmation"
-                type="password"
-                label="Confirmar nova senha"
-                placeholder="••••••••"
-                :error="passwordErrors.password_confirmation"
-                autocomplete="new-password"
-              />
-              <BaseButton
-                type="submit"
-                :disabled="passwordLoading"
-              >
-                {{ passwordLoading ? 'Alterando...' : 'Alterar senha' }}
-              </BaseButton>
-            </form>
-          </template>
-          <template v-else-if="activeId === 'sessions'">
-            <h2 class="section-title">
-              Sessões ativas
-            </h2>
-            <p class="section-desc">
-              Gerencie os dispositivos onde você está logado.
-            </p>
-            <div
-              v-if="tokensLoading"
-              class="loading-msg"
-            >
-              Carregando...
-            </div>
-            <template v-else>
-              <ul
-                v-if="tokens.length"
-                class="tokens-list"
-              >
-                <li
-                  v-for="t in tokens"
-                  :key="t.id"
-                  class="token-item"
+      <Tabs
+        v-model:value="activeTab"
+        class="profile-view__tabs"
+      >
+        <TabList>
+          <Tab
+            v-for="tab in profileTabs"
+            :key="tab.id"
+            :value="tab.id"
+          >
+            {{ tab.label }}
+          </Tab>
+        </TabList>
+        <TabPanels>
+          <TabPanel value="profile">
+            <Card class="profile-view__card">
+              <template #content>
+                <h2 class="section-title">Dados do perfil</h2>
+                <form
+                  class="profile-form"
+                  @submit.prevent="saveProfile"
                 >
-                  <span class="token-name">{{ t.name }}</span>
-                  <span class="token-date">Criado: {{ formatDate(t.created_at) }}</span>
-                  <span class="token-date">Último uso: {{ formatDate(t.last_used_at) }}</span>
-                </li>
-              </ul>
-              <p
-                v-else
-                class="no-tokens"
-              >
-                Nenhuma sessão ativa.
-              </p>
-              <BaseButton
-                class="revoke-btn"
-                variant="danger"
-                :disabled="revokeLoading || tokens.length <= 1"
-                @click="revokeAllTokens"
-              >
-                {{ revokeLoading ? 'Revogando...' : 'Sair de todos os dispositivos' }}
-              </BaseButton>
-            </template>
-          </template>
-        </BaseCard>
-      </template>
-    </BaseTabs>
+                  <div class="p-field">
+                    <label for="profile-name">Nome</label>
+                    <InputText
+                      id="profile-name"
+                      v-model="profileForm.name"
+                      placeholder="Seu nome"
+                      class="w-full"
+                      :class="{ 'p-invalid': profileErrors.name }"
+                    />
+                    <small v-if="profileErrors.name" class="p-error">{{ profileErrors.name }}</small>
+                  </div>
+                  <div class="p-field">
+                    <label for="profile-timezone">Fuso horário</label>
+                    <InputText
+                      id="profile-timezone"
+                      v-model="profileForm.timezone"
+                      placeholder="UTC"
+                      class="w-full"
+                      :class="{ 'p-invalid': profileErrors.timezone }"
+                    />
+                    <small v-if="profileErrors.timezone" class="p-error">{{ profileErrors.timezone }}</small>
+                  </div>
+                  <Button
+                    type="submit"
+                    :label="profileLoading ? 'Salvando...' : 'Salvar perfil'"
+                    :loading="profileLoading"
+                  />
+                </form>
+              </template>
+            </Card>
+          </TabPanel>
+          <TabPanel value="password">
+            <Card class="profile-view__card">
+              <template #content>
+                <h2 class="section-title">Alterar senha</h2>
+                <p class="section-desc">
+                  Após alterar a senha, você será desconectado de todos os dispositivos.
+                </p>
+                <form
+                  class="profile-form"
+                  @submit.prevent="changePassword"
+                >
+                  <input
+                    type="text"
+                    name="username"
+                    autocomplete="username"
+                    style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0"
+                    tabindex="-1"
+                    aria-hidden="true"
+                  >
+                  <div class="p-field">
+                    <label>Senha atual</label>
+                    <InputText
+                      v-model="passwordForm.current_password"
+                      type="password"
+                      placeholder="••••••••"
+                      autocomplete="current-password"
+                      class="w-full"
+                      :class="{ 'p-invalid': passwordErrors.current_password }"
+                    />
+                    <small v-if="passwordErrors.current_password" class="p-error">{{ passwordErrors.current_password }}</small>
+                  </div>
+                  <div class="p-field">
+                    <label>Nova senha</label>
+                    <InputText
+                      v-model="passwordForm.password"
+                      type="password"
+                      placeholder="••••••••"
+                      autocomplete="new-password"
+                      class="w-full"
+                      :class="{ 'p-invalid': passwordErrors.password }"
+                    />
+                    <small v-if="passwordErrors.password" class="p-error">{{ passwordErrors.password }}</small>
+                  </div>
+                  <div class="p-field">
+                    <label>Confirmar nova senha</label>
+                    <InputText
+                      v-model="passwordForm.password_confirmation"
+                      type="password"
+                      placeholder="••••••••"
+                      autocomplete="new-password"
+                      class="w-full"
+                      :class="{ 'p-invalid': passwordErrors.password_confirmation }"
+                    />
+                    <small v-if="passwordErrors.password_confirmation" class="p-error">{{ passwordErrors.password_confirmation }}</small>
+                  </div>
+                  <Button
+                    type="submit"
+                    :label="passwordLoading ? 'Alterando...' : 'Alterar senha'"
+                    :loading="passwordLoading"
+                  />
+                </form>
+              </template>
+            </Card>
+          </TabPanel>
+          <TabPanel value="sessions">
+            <Card class="profile-view__card">
+              <template #content>
+                <h2 class="section-title">Sessões ativas</h2>
+                <p class="section-desc">
+                  Gerencie os dispositivos onde você está logado.
+                </p>
+                <div
+                  v-if="tokensLoading"
+                  class="loading-msg"
+                >
+                  Carregando...
+                </div>
+                <template v-else>
+                  <ul
+                    v-if="tokens.length"
+                    class="tokens-list"
+                  >
+                    <li
+                      v-for="t in tokens"
+                      :key="t.id"
+                      class="token-item"
+                    >
+                      <span class="token-name">{{ t.name }}</span>
+                      <span class="token-date">Criado: {{ formatDate(t.created_at) }}</span>
+                      <span class="token-date">Último uso: {{ formatDate(t.last_used_at) }}</span>
+                    </li>
+                  </ul>
+                  <p
+                    v-else
+                    class="no-tokens"
+                  >
+                    Nenhuma sessão ativa.
+                  </p>
+                  <Button
+                    class="revoke-btn"
+                    severity="danger"
+                    :label="revokeLoading ? 'Revogando...' : 'Sair de todos os dispositivos'"
+                    :loading="revokeLoading"
+                    :disabled="tokens.length <= 1"
+                    @click="revokeAllTokens"
+                  />
+                </template>
+              </template>
+            </Card>
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
     </div>
   </PageView>
 </template>
@@ -395,4 +434,12 @@ function formatDate(iso: string | null): string {
   color: var(--color-text-muted);
   padding: var(--spacing-md) 0;
 }
+.p-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: var(--spacing-md);
+}
+.p-field label { font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); }
+.w-full { width: 100%; }
 </style>

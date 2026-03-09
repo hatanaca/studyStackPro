@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import BaseCard from '@/components/ui/BaseCard.vue'
-import BaseProgress from '@/components/ui/BaseProgress.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import Card from 'primevue/card'
+import ProgressBar from 'primevue/progressbar'
+import Button from 'primevue/button'
 import type { Goal } from '@/types/goals.types'
 import { GOAL_TYPE_LABELS, GOAL_STATUS_LABELS } from '@/types/goals.types'
 import { useGoalsStore } from '@/stores/goals.store'
@@ -34,44 +34,33 @@ function formatValue(): string {
 </script>
 
 <template>
-  <BaseCard class="goal-card">
-    <template #actions>
-      <BaseButton
-        variant="ghost"
-        size="sm"
-        @click="emit('edit', goal)"
-      >
-        Editar
-      </BaseButton>
-      <BaseButton
-        variant="ghost"
-        size="sm"
-        @click="emit('delete', goal)"
-      >
-        Excluir
-      </BaseButton>
+  <Card class="goal-card">
+    <template #title>{{ typeLabel }}</template>
+    <template #header>
+      <span class="goal-card__actions">
+        <Button label="Editar" link size="small" severity="secondary" @click="emit('edit', goal)" />
+        <Button label="Excluir" link size="small" severity="secondary" @click="emit('delete', goal)" />
+      </span>
     </template>
-    <div class="goal-card__body">
-      <div class="goal-card__meta">
-        <span class="goal-card__type">{{ typeLabel }}</span>
-        <span class="goal-card__status">{{ statusLabel }}</span>
+    <template #content>
+      <div class="goal-card__body">
+        <div class="goal-card__meta">
+          <span class="goal-card__status">{{ statusLabel }}</span>
+        </div>
+        <p class="goal-card__value">{{ formatValue() }}</p>
+        <ProgressBar
+          :value="progress"
+          :show-value="true"
+          :severity="isCompleted ? 'success' : 'primary'"
+          class="goal-card__progress"
+        />
       </div>
-      <p class="goal-card__value">
-        {{ formatValue() }}
-      </p>
-      <BaseProgress
-        :value="progress"
-        :max="100"
-        size="md"
-        :variant="isCompleted ? 'success' : 'primary'"
-        show-label
-        class="goal-card__progress"
-      />
-    </div>
-  </BaseCard>
+    </template>
+  </Card>
 </template>
 
 <style scoped>
+.goal-card__actions { display: flex; gap: var(--spacing-xs); }
 .goal-card__body {
   display: flex;
   flex-direction: column;
@@ -81,11 +70,6 @@ function formatValue(): string {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-}
-.goal-card__type {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-text);
 }
 .goal-card__status {
   font-size: var(--text-xs);

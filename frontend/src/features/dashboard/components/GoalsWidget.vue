@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import BaseCard from '@/components/ui/BaseCard.vue'
-import BaseProgress from '@/components/ui/BaseProgress.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import Card from 'primevue/card'
+import ProgressBar from 'primevue/progressbar'
+import Button from 'primevue/button'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 import { useGoalsStore } from '@/stores/goals.store'
 const analyticsStore = useAnalyticsStore()
@@ -37,35 +37,34 @@ function formatMinutes(m: number): string {
 </script>
 
 <template>
-  <BaseCard
-    title="Meta semanal"
-    class="goals-widget"
-  >
-    <template #actions>
-      <RouterLink to="/goals">
-        <BaseButton
-          variant="ghost"
-          size="sm"
-        >
-          {{ hasCustomGoal ? 'Gerenciar' : 'Criar meta' }}
-        </BaseButton>
-      </RouterLink>
+  <Card class="goals-widget">
+    <template #title>
+      <span class="goals-widget__title-row">
+        Meta semanal
+        <RouterLink to="/goals" class="goals-widget__link">
+          <Button
+            :label="hasCustomGoal ? 'Gerenciar' : 'Criar meta'"
+            link
+            size="small"
+            severity="secondary"
+          />
+        </RouterLink>
+      </span>
     </template>
-    <div class="goals-widget__content">
-      <p class="goals-widget__desc">
-        Esta semana você estudou
-        <strong>{{ formatMinutes(currentWeekMinutes) }}</strong>
-        de uma meta de
-        <strong>{{ formatMinutes(weeklyGoalMinutes) }}</strong>.
-      </p>
-      <BaseProgress
-        :value="progressPercent"
-        :max="100"
-        size="lg"
-        :variant="goalReached ? 'success' : 'primary'"
-        show-label
-        class="goals-widget__progress"
-      />
+    <template #content>
+      <div class="goals-widget__content">
+        <p class="goals-widget__desc">
+          Esta semana você estudou
+          <strong>{{ formatMinutes(currentWeekMinutes) }}</strong>
+          de uma meta de
+          <strong>{{ formatMinutes(weeklyGoalMinutes) }}</strong>.
+        </p>
+        <ProgressBar
+          :value="progressPercent"
+          :show-value="true"
+          :severity="goalReached ? 'success' : 'primary'"
+          class="goals-widget__progress"
+        />
       <p
         v-if="!goalReached && remainingMinutes > 0"
         class="goals-widget__remaining"
@@ -84,14 +83,20 @@ function formatMinutes(m: number): string {
       >
         Crie uma meta em Metas para personalizar seu objetivo.
       </p>
-    </div>
-  </BaseCard>
+      </div>
+    </template>
+  </Card>
 </template>
 
 <style scoped>
-.goals-widget :deep(.base-card__body) {
-  padding: var(--widget-padding);
+.goals-widget__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  width: 100%;
 }
+.goals-widget__link { text-decoration: none; }
 .goals-widget__content {
   display: flex;
   flex-direction: column;

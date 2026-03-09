@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import BaseTabs from '@/components/ui/BaseTabs.vue'
-import BaseCard from '@/components/ui/BaseCard.vue'
+import Tabs from 'primevue/tabs'
+import TabList from 'primevue/tablist'
+import Tab from 'primevue/tab'
+import TabPanels from 'primevue/tabpanels'
+import TabPanel from 'primevue/tabpanel'
+import Card from 'primevue/card'
 import PageView from '@/components/layout/PageView.vue'
 import AppearanceSection from '@/views/settings/AppearanceSection.vue'
 import DataSection from '@/views/settings/DataSection.vue'
 import { ref } from 'vue'
 
-const tabs = [
-  { id: 'appearance', label: 'Aparência', disabled: false },
-  { id: 'data', label: 'Dados', disabled: false },
-]
 const activeTab = ref('appearance')
 </script>
 
@@ -23,19 +23,28 @@ const activeTab = ref('appearance')
     <template #hint>
       Alterações em Aparência são salvas automaticamente. Em Dados você pode limpar cache ou exportar.
     </template>
-    <BaseTabs
-      v-model="activeTab"
-      :tabs="tabs"
-      variant="pill"
-      align="start"
-    >
-      <template #default="{ activeId }">
-        <BaseCard class="settings-view__card">
-          <AppearanceSection v-if="activeId === 'appearance'" />
-          <DataSection v-else-if="activeId === 'data'" />
-        </BaseCard>
-      </template>
-    </BaseTabs>
+    <Tabs v-model:value="activeTab" class="settings-view__tabs">
+      <TabList>
+        <Tab value="appearance">Aparência</Tab>
+        <Tab value="data">Dados</Tab>
+      </TabList>
+      <TabPanels>
+        <TabPanel value="appearance">
+          <Card class="settings-view__card">
+            <template #content>
+              <AppearanceSection />
+            </template>
+          </Card>
+        </TabPanel>
+        <TabPanel value="data">
+          <Card class="settings-view__card">
+            <template #content>
+              <DataSection />
+            </template>
+          </Card>
+        </TabPanel>
+      </TabPanels>
+    </Tabs>
   </PageView>
 </template>
 

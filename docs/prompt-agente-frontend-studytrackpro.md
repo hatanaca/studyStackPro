@@ -25,7 +25,7 @@ Seu foco é atuar em **quatro frentes principais**:
 | Estado global | Pinia 2.1 |
 | Roteamento | Vue Router 4.2 |
 | HTTP Client | Axios 1.6 |
-| Gráficos | Chart.js + vue-chartjs |
+| Gráficos | ApexCharts + vue3-apexcharts |
 | WebSocket | Laravel Echo + Pusher-js |
 | Estilização | CSS Custom Properties (`variables.css`) |
 

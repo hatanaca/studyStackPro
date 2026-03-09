@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useConfirm } from 'primevue/useconfirm'
 import GoalCard from './GoalCard.vue'
-import EmptyState from '@/components/ui/EmptyState.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
-import BaseModal from '@/components/ui/BaseModal.vue'
-import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import Message from 'primevue/message'
+import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
 import GoalForm from './GoalForm.vue'
 import type { Goal } from '@/types/goals.types'
 import type { CreateGoalPayload } from '@/types/goals.types'
@@ -14,10 +14,13 @@ import { GOAL_TYPE_LABELS } from '@/types/goals.types'
 
 const goalsStore = useGoalsStore()
 const toast = useToast()
+const confirm = useConfirm()
 const showForm = ref(false)
 const goalToEdit = ref<Goal | null>(null)
-const goalToDelete = ref<Goal | null>(null)
-const deleteLoading = ref(false)
+const showEditModal = computed({
+  get: () => !!goalToEdit.value,
+  set: (v) => { if (!v) goalToEdit.value = null },
+})
 
 onMounted(() => {
   goalsStore.fetchGoals()
@@ -34,21 +37,21 @@ async function handleCreate(payload: CreateGoalPayload) {
 }
 
 function confirmDelete(goal: Goal) {
-  goalToDelete.value = goal
-}
-
-async function doDelete() {
-  if (!goalToDelete.value) return
-  deleteLoading.value = true
-  try {
-    await goalsStore.deleteGoal(goalToDelete.value.id)
-    toast.success('Meta excluída.')
-    goalToDelete.value = null
-  } catch {
-    toast.error(goalsStore.error ?? 'Erro ao excluir.')
-  } finally {
-    deleteLoading.value = false
-  }
+  confirm.require({
+    header: 'Excluir meta',
+    message: 'Tem certeza que deseja excluir esta meta? Esta ação não pode ser desfeita.',
+    acceptLabel: 'Excluir',
+    rejectLabel: 'Cancelar',
+    acceptClass: 'p-button-danger',
+    accept: async () => {
+      try {
+        await goalsStore.deleteGoal(goal.id)
+        toast.success('Meta excluída.')
+      } catch {
+        toast.error(goalsStore.error ?? 'Erro ao excluir.')
+      }
+    },
+  })
 }
 
 function openEdit(goal: Goal) {
@@ -69,11 +72,7 @@ async function handleUpdate(payload: { id: string; target_value: number }) {
 <template>
   <div class="goal-list">
     <div class="goal-list__toolbar">
-      <BaseButton
-        @click="showForm = true"
-      >
-        Nova meta
-      </BaseButton>
+      <Button label="Nova meta" @click="showForm = true" />
     </div>
     <div
       v-if="goalsStore.loading"
@@ -94,33 +93,38 @@ async function handleUpdate(payload: { id: string; target_value: number }) {
           @delete="confirmDelete"
         />
       </div>
-      <EmptyState
+      <Message
         v-else
-        title="Nenhuma meta"
-        description="Crie uma meta de estudo para acompanhar seu progresso."
-        icon="🎯"
-        action-label="Nova meta"
-        :hide-action="false"
-        @action="showForm = true"
-      />
+        severity="info"
+        :closable="false"
+        class="goal-list__empty"
+      >
+        <strong>Nenhuma meta</strong><br>
+        Crie uma meta de estudo para acompanhar seu progresso.
+        <Button label="Nova meta" size="small" class="mt-2" @click="showForm = true" />
+      </Message>
     </template>
 
-    <BaseModal
-      :show="showForm"
-      title="Nova meta"
-      @close="showForm = false"
+    <Dialog
+      v-model:visible="showForm"
+      header="Nova meta"
+      modal
+      :style="{ width: '28rem' }"
+      @hide="showForm = false"
     >
       <GoalForm
         :loading="false"
         @submit="handleCreate"
         @cancel="showForm = false"
       />
-    </BaseModal>
+    </Dialog>
 
-    <BaseModal
-      :show="!!goalToEdit"
-      :title="goalToEdit ? `Editar: ${GOAL_TYPE_LABELS[goalToEdit.type]}` : ''"
-      @close="goalToEdit = null"
+    <Dialog
+      v-model:visible="showEditModal"
+      :header="goalToEdit ? `Editar: ${GOAL_TYPE_LABELS[goalToEdit.type]}` : ''"
+      modal
+      :style="{ width: '28rem' }"
+      @hide="goalToEdit = null"
     >
       <GoalForm
         v-if="goalToEdit"
@@ -129,19 +133,7 @@ async function handleUpdate(payload: { id: string; target_value: number }) {
         @update="handleUpdate"
         @cancel="goalToEdit = null"
       />
-    </BaseModal>
-
-    <ConfirmDialog
-      :show="!!goalToDelete"
-      title="Excluir meta"
-      message="Tem certeza que deseja excluir esta meta? Esta ação não pode ser desfeita."
-      confirm-label="Excluir"
-      cancel-label="Cancelar"
-      variant="danger"
-      :loading="deleteLoading"
-      @close="goalToDelete = null"
-      @confirm="doDelete"
-    />
+    </Dialog>
   </div>
 </template>
 

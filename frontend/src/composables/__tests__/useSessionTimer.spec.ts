@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { defineComponent } from 'vue'
 import { setActivePinia, createPinia } from 'pinia'
 import { useSessionTimer } from '@/features/sessions/composables/useSessionTimer'
 import { sessionsApi } from '@/api/modules/sessions.api'
@@ -9,12 +11,23 @@ vi.mock('@/api/modules/sessions.api', () => ({
   }
 }))
 
-vi.useFakeTimers()
+/** Wrapper que usa o composable dentro de um componente para que onMounted/onUnmounted tenham contexto. */
+const SessionTimerWrapper = defineComponent({
+  setup() {
+    return useSessionTimer()
+  },
+  template: '<div></div>'
+})
 
 describe('useSessionTimer', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    vi.useFakeTimers()
+    // Mock padrão: sem sessão ativa, para onMounted não quebrar ao montar o wrapper
+    vi.mocked(sessionsApi.getActive).mockResolvedValue({
+      data: { success: true, data: null }
+    } as never)
   })
 
   afterEach(() => {
@@ -22,12 +35,12 @@ describe('useSessionTimer', () => {
   })
 
   it('retorna activeSession, elapsedSeconds, formattedTime e refresh', () => {
-    const { activeSession, elapsedSeconds, formattedTime, refresh } = useSessionTimer()
+    const wrapper = mount(SessionTimerWrapper)
 
-    expect(activeSession).toBeDefined()
-    expect(elapsedSeconds).toBeDefined()
-    expect(formattedTime).toBeDefined()
-    expect(typeof refresh).toBe('function')
+    expect(wrapper.vm.activeSession).toBeDefined()
+    expect(wrapper.vm.elapsedSeconds).toBeDefined()
+    expect(wrapper.vm.formattedTime).toBeDefined()
+    expect(typeof wrapper.vm.refresh).toBe('function')
   })
 
   it('refresh com elapsed_seconds do servidor preenche o store', async () => {
@@ -42,8 +55,8 @@ describe('useSessionTimer', () => {
       }
     } as never)
 
-    const { refresh } = useSessionTimer()
-    await refresh()
+    const wrapper = mount(SessionTimerWrapper)
+    await wrapper.vm.refresh()
 
     const { useSessionsStore } = await import('@/stores/sessions.store')
     const store = useSessionsStore()

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
+import Toast from 'primevue/toast'
+import ConfirmDialog from 'primevue/confirmdialog'
 import { setApiToast } from '@/api/client'
-import BaseToast from '@/components/ui/BaseToast.vue'
 import { useToast } from '@/composables/useToast'
 
 const { success, error, info } = useToast()
@@ -18,7 +19,8 @@ onMounted(() => {
 
 <template>
   <RouterView />
-  <BaseToast />
+  <Toast />
+  <ConfirmDialog />
 </template>
 
 <style>

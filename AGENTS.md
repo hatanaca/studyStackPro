@@ -20,7 +20,7 @@ Com isso, a regra **Frontend StudyTrackPro** é aplicada automaticamente e o Com
 
 **Escopo do agente:**
 
-- Vue 3 (Composition API, `<script setup>`), TypeScript 5.4, Vite 5, Pinia, Vue Router, Axios, Chart.js, Laravel Echo
+- Vue 3 (Composition API, `<script setup>`), TypeScript 5.4, Vite 5, Pinia, Vue Router, Axios, ApexCharts (vue3-apexcharts), Laravel Echo
 - Melhorias, boas práticas, debug e implementação; consultor proativo (sugestões de evolução: TanStack Query, VeeValidate+Zod, VueUse, Radix Vue, etc.)
 - UI/UX: layout, estados (loading/erro/vazio), acessibilidade, design tokens (`variables.css`)
 - Contratos de API com Laravel 11; canais WebSocket via Reverb; estrutura `api/`, `components/ui`, `layout/`, `composables/`, `stores/`, `types/`

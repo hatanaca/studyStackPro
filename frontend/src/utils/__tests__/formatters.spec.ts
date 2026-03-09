@@ -4,7 +4,8 @@ import {
   formatHours,
   formatDate,
   formatShortDate,
-  formatDateTime
+  formatDateTime,
+  truncate
 } from '../formatters'
 
 describe('formatters', () => {
@@ -64,6 +65,20 @@ describe('formatters', () => {
     it('retorna — para string de data inválida', () => {
       expect(formatDate('invalid')).toBe('—')
       expect(formatDateTime('invalid')).toBe('—')
+    })
+  })
+
+  describe('truncate', () => {
+    it('retorna o texto inteiro quando menor ou igual a maxLength', () => {
+      expect(truncate('ab', 5)).toBe('ab')
+      expect(truncate('hello', 5)).toBe('hello')
+    })
+    it('trunca com reticências quando maior que maxLength', () => {
+      expect(truncate('hello world', 8)).toBe('hello...')
+    })
+    it('não usa índice negativo quando maxLength é pequeno', () => {
+      expect(truncate('hello', 2)).toBe('...')
+      expect(truncate('hello', 3)).toBe('...')
     })
   })
 })

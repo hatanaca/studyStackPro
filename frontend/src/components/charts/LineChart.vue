@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { ApexOptions } from 'apexcharts'
 import { useApexChartTheme } from '@/composables/useApexChartTheme'
+import { useMediaQuery } from '@/composables/useMediaQuery'
 import { formatMinutesToHoursLabel } from '@/utils/formatters'
 
 const props = withDefaults(
@@ -21,6 +22,7 @@ const props = withDefaults(
 )
 
 const { baseOptions, theme } = useApexChartTheme()
+const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
 
 const series = computed(() => [
   {
@@ -42,7 +44,7 @@ const chartOptions = computed<ApexOptions>(() => ({
     zoom: { enabled: false },
     stacked: false,
     animations: {
-      enabled: true,
+      enabled: !prefersReducedMotion.value,
       easing: 'easeinout',
       speed: 400,
     },

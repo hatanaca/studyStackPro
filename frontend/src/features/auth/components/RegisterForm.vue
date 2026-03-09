@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import BaseInput from '@/components/ui/BaseInput.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import InputText from 'primevue/inputtext'
+import Button from 'primevue/button'
 
 const props = withDefaults(
   defineProps<{
@@ -69,45 +69,64 @@ defineExpose({
     class="register-form"
     @submit.prevent="onSubmit"
   >
-    <BaseInput
-      v-model="name"
-      type="text"
-      placeholder="Nome"
-      label="Nome"
-      :error="nameError"
-      autocomplete="name"
-    />
-    <BaseInput
-      v-model="email"
-      type="email"
-      placeholder="E-mail"
-      label="E-mail"
-      :error="emailError"
-      autocomplete="email"
-    />
-    <BaseInput
-      v-model="password"
-      type="password"
-      placeholder="Senha (mín. 8 caracteres)"
-      label="Senha"
-      :error="passwordError"
-      autocomplete="new-password"
-    />
-    <BaseInput
-      v-model="passwordConfirmation"
-      type="password"
-      placeholder="Confirmar senha"
-      label="Confirmar senha"
-      :error="passwordConfirmationError"
-      autocomplete="new-password"
-    />
-    <BaseButton
+    <div class="p-field">
+      <label for="reg-name">Nome</label>
+      <InputText
+        id="reg-name"
+        v-model="name"
+        type="text"
+        placeholder="Nome"
+        autocomplete="name"
+        class="w-full"
+        :class="{ 'p-invalid': nameError }"
+      />
+      <small v-if="nameError" class="p-error">{{ nameError }}</small>
+    </div>
+    <div class="p-field">
+      <label for="reg-email">E-mail</label>
+      <InputText
+        id="reg-email"
+        v-model="email"
+        type="email"
+        placeholder="E-mail"
+        autocomplete="email"
+        class="w-full"
+        :class="{ 'p-invalid': emailError }"
+      />
+      <small v-if="emailError" class="p-error">{{ emailError }}</small>
+    </div>
+    <div class="p-field">
+      <label for="reg-password">Senha</label>
+      <InputText
+        id="reg-password"
+        v-model="password"
+        type="password"
+        placeholder="Senha (mín. 8 caracteres)"
+        autocomplete="new-password"
+        class="w-full"
+        :class="{ 'p-invalid': passwordError }"
+      />
+      <small v-if="passwordError" class="p-error">{{ passwordError }}</small>
+    </div>
+    <div class="p-field">
+      <label for="reg-password-confirm">Confirmar senha</label>
+      <InputText
+        id="reg-password-confirm"
+        v-model="passwordConfirmation"
+        type="password"
+        placeholder="Confirmar senha"
+        autocomplete="new-password"
+        class="w-full"
+        :class="{ 'p-invalid': passwordConfirmationError }"
+      />
+      <small v-if="passwordConfirmationError" class="p-error">{{ passwordConfirmationError }}</small>
+    </div>
+    <Button
       type="submit"
-      :disabled="props.loading"
+      :label="props.loading ? 'Registrando...' : 'Registrar'"
+      :loading="props.loading"
       class="w-full"
-    >
-      {{ props.loading ? 'Registrando...' : 'Registrar' }}
-    </BaseButton>
+    />
   </form>
 </template>
 
@@ -117,7 +136,11 @@ defineExpose({
   flex-direction: column;
   gap: var(--spacing-md);
 }
-.w-full {
-  width: 100%;
+.p-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
+.p-field label { font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); }
+.w-full { width: 100%; }
 </style>

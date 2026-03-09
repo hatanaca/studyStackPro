@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import TechnologyCard from './TechnologyCard.vue'
 import TechnologyForm from './TechnologyForm.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import Button from 'primevue/button'
 import { useTechnologiesStore } from '@/stores/technologies.store'
 import { useTechnologiesQuery, useInvalidateTechnologies } from '@/features/technologies/composables/useTechnologiesQuery'
 import type { Technology } from '@/types/domain.types'
@@ -57,12 +57,11 @@ async function handleDelete(tech: Technology) {
   <div class="technology-list">
     <div class="technology-list__header">
       <h2>Tecnologias</h2>
-      <BaseButton
+      <Button
         v-if="!showForm"
+        label="Nova tecnologia"
         @click="openCreate"
-      >
-        Nova tecnologia
-      </BaseButton>
+      />
     </div>
 
     <TechnologyForm

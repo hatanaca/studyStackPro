@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
-import FormSection from '@/components/ui/FormSection.vue'
+import Button from 'primevue/button'
+import Fieldset from 'primevue/fieldset'
 
 const exporting = ref(false)
 function handleExport() {
@@ -11,24 +11,23 @@ function handleExport() {
 </script>
 
 <template>
-  <FormSection
-    title="Dados"
-    description="Exporte ou limpe dados locais (ex.: metas salvas no navegador)."
-    grouped
-  >
+  <Fieldset legend="Dados">
+    <p class="data-section__desc">
+      Exporte ou limpe dados locais (ex.: metas salvas no navegador).
+    </p>
     <div class="data-section">
-      <BaseButton
-        variant="outline"
-        :disabled="exporting"
+      <Button
+        :label="exporting ? 'Preparando...' : 'Exportar dados locais'"
+        severity="secondary"
+        variant="outlined"
+        :loading="exporting"
         @click="handleExport"
-      >
-        {{ exporting ? 'Preparando...' : 'Exportar dados locais' }}
-      </BaseButton>
+      />
       <p class="data-section__hint">
         Isso exporta metas e preferências armazenadas no seu navegador. As sessões de estudo vêm do servidor.
       </p>
     </div>
-  </FormSection>
+  </Fieldset>
 </template>
 
 <style scoped>
@@ -36,6 +35,12 @@ function handleExport() {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+}
+.data-section__desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--spacing-sm);
+  line-height: 1.45;
 }
 .data-section__hint {
   font-size: var(--text-xs);

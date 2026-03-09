@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import BaseCard from '@/components/ui/BaseCard.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
-import BaseDateRangePicker from '@/components/ui/BaseDateRangePicker.vue'
-import FormSection from '@/components/ui/FormSection.vue'
+import Card from 'primevue/card'
+import Button from 'primevue/button'
+import Fieldset from 'primevue/fieldset'
+import Message from 'primevue/message'
 import PageView from '@/components/layout/PageView.vue'
 import { analyticsApi } from '@/api/modules/analytics.api'
 
-const dateRange = ref<{ start: string; end: string } | null>(null)
+const dateRange = ref<{ start: string; end: string }>({ start: '', end: '' })
 const format = ref<'csv' | 'json'>('csv')
 const exporting = ref(false)
 const exportDone = ref(false)
@@ -96,61 +96,69 @@ async function doExport() {
     <template #hint>
       Os dados são buscados no servidor para o período escolhido. O arquivo inclui data, minutos e quantidade de sessões por dia.
     </template>
-    <BaseCard
-      title="Opções de exportação"
+    <Card
       class="export-view__card"
       :aria-busy="exporting"
       aria-live="polite"
     >
-      <FormSection
-        title="Período"
-        description="Selecione o intervalo de datas para incluir no export."
-        grouped
-      >
-        <BaseDateRangePicker
-          v-model="dateRange"
-          placeholder-start="Data inicial"
-          placeholder-end="Data final"
-        />
-      </FormSection>
-      <fieldset class="export-view__fieldset">
-        <legend class="export-view__legend">
-          Formato
-        </legend>
-        <p class="export-view__fieldset-desc">
-          Formato do arquivo gerado.
-        </p>
-        <div class="export-view__format">
-          <label class="export-view__radio-label">
-            <input
-              v-model="format"
-              type="radio"
-              value="csv"
-              name="export-format"
-            >
-            CSV (planilha)
-          </label>
-          <label class="export-view__radio-label">
-            <input
-              v-model="format"
-              type="radio"
-              value="json"
-              name="export-format"
-            >
-            JSON
-          </label>
+      <template #title>Opções de exportação</template>
+      <template #content>
+        <Fieldset legend="Período">
+          <p class="export-view__fieldset-desc">
+            Selecione o intervalo de datas para incluir no export.
+          </p>
+          <div class="export-view__dates">
+            <label class="p-field">
+              <span class="export-view__label">Data inicial</span>
+              <input
+                v-model="dateRange.start"
+                type="date"
+                class="p-inputtext p-component w-full"
+              >
+            </label>
+            <label class="p-field">
+              <span class="export-view__label">Data final</span>
+              <input
+                v-model="dateRange.end"
+                type="date"
+                class="p-inputtext p-component w-full"
+              >
+            </label>
+          </div>
+        </Fieldset>
+        <Fieldset legend="Formato">
+          <p class="export-view__fieldset-desc">
+            Formato do arquivo gerado.
+          </p>
+          <div class="export-view__format">
+            <label class="export-view__radio-label">
+              <input
+                v-model="format"
+                type="radio"
+                value="csv"
+                name="export-format"
+              >
+              CSV (planilha)
+            </label>
+            <label class="export-view__radio-label">
+              <input
+                v-model="format"
+                type="radio"
+                value="json"
+                name="export-format"
+              >
+              JSON
+            </label>
+          </div>
+        </Fieldset>
+        <div class="export-view__actions">
+          <Button
+            :label="exporting ? 'Buscando dados no servidor…' : 'Gerar exportação'"
+            :loading="exporting"
+            :disabled="!canExport"
+            @click="doExport"
+          />
         </div>
-      </fieldset>
-      <div class="export-view__actions">
-        <BaseButton
-          :disabled="!canExport || exporting"
-          :aria-busy="exporting"
-          aria-live="polite"
-          @click="doExport"
-        >
-          {{ exporting ? 'Buscando dados no servidor…' : 'Gerar exportação' }}
-        </BaseButton>
-      </div>
       <div
         v-if="exportDone"
         class="export-view__success"
@@ -163,13 +171,16 @@ async function doExport() {
         >✓</span>
         <span>Exportação gerada. O download foi iniciado. Verifique a pasta de downloads do navegador.</span>
       </div>
-      <p
-        v-if="exportError"
-        class="export-view__error"
-      >
-        {{ exportError }}
-      </p>
-    </BaseCard>
+        <Message
+          v-if="exportError"
+          severity="error"
+          :closable="false"
+          class="export-view__error-msg"
+        >
+          {{ exportError }}
+        </Message>
+      </template>
+    </Card>
   </PageView>
 </template>
 
@@ -179,19 +190,16 @@ async function doExport() {
   border-radius: var(--radius-md);
   overflow: hidden;
 }
-.export-view__fieldset {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-md);
-  margin: 0 0 var(--spacing-md);
+.export-view__dates {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
 }
-.export-view__legend {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-text);
-  padding: 0 var(--spacing-xs);
-  margin: 0 0 var(--spacing-xs);
-}
+.export-view__dates .p-field { margin-bottom: 0; }
+.export-view__dates .w-full { min-width: 140px; }
+.export-view__label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); margin-bottom: 0.25rem; }
+.p-field { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: var(--spacing-md); }
+.w-full { width: 100%; }
 .export-view__fieldset-desc {
   font-size: var(--text-xs);
   color: var(--color-text-muted);

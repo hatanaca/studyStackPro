@@ -139,9 +139,9 @@ Componentes em `ui/` são o **vocabulário visual** do produto. Devem ser:
 - Para tecnologias, status de sessão, streaks.
 - Cores semânticas (não arbitrárias).
 
-**`<Chart>`** (wrapper sobre vue-chartjs)
-- Paleta de cores dos gráficos deve respeitar o design system.
-- Estilos de grid, tooltips e legendas customizados — não usar defaults do Chart.js.
+**`<Chart>`** (wrappers sobre ApexCharts)
+- Paleta de cores dos gráficos deve respeitar o design system (`useApexChartTheme`).
+- Estilos de grid, tooltips e legendas customizados — não usar defaults do ApexCharts sem mapear para tokens.
 
 **`<EmptyState>`**
 - Para quando não há sessões, sem dados de analytics, etc.

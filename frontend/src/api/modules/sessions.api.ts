@@ -1,23 +1,21 @@
 import { apiClient } from '@/api/client'
 import { ENDPOINTS } from '@/api/endpoints'
-import type { ApiResponse } from '@/types/api.types'
+import type { ApiResponse, SessionListFilters } from '@/types/api.types'
 import type { StudySession } from '@/types/domain.types'
 
 export interface ActiveSessionResponse extends StudySession {
   elapsed_seconds: number
 }
 
+export interface SessionsListParams extends SessionListFilters {
+  page?: number
+  per_page?: number
+  status?: string
+}
+
 export const sessionsApi = {
-  list: (params?: {
-    page?: number
-    per_page?: number
-    technology_id?: string
-    date_from?: string
-    date_to?: string
-    min_duration?: number
-    mood?: number
-    status?: string
-  }) => apiClient.get<ApiResponse<StudySession[]>>(ENDPOINTS.sessions.list, { params }),
+  list: (params?: SessionsListParams) =>
+    apiClient.get<ApiResponse<StudySession[]>>(ENDPOINTS.sessions.list, { params }),
   getOne: (id: string) =>
     apiClient.get<ApiResponse<StudySession>>(ENDPOINTS.sessions.one(id)),
   getActive: () =>

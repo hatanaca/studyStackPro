@@ -1,32 +1,33 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
 import SessionCard from './SessionCard.vue'
 import SessionFilters from './SessionFilters.vue'
 import LogSessionForm from './LogSessionForm.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
-import BaseModal from '@/components/ui/BaseModal.vue'
-import { getApiErrorMessage } from '@/api/client'
-import { sessionsApi } from '@/api/modules/sessions.api'
 import { useTechnologiesStore } from '@/stores/technologies.store'
-import { useToast } from '@/composables/useToast'
 import { useSessionsListQuery, useInvalidateSessions } from '@/features/sessions/composables/useSessionsListQuery'
-import type { StudySession } from '@/types/domain.types'
+import { useSessionEdit } from '@/features/sessions/composables/useSessionEdit'
+import { useSessionDelete } from '@/features/sessions/composables/useSessionDelete'
+import type { SessionListFilters } from '@/types/api.types'
 
 const route = useRoute()
-const toast = useToast()
 const technologiesStore = useTechnologiesStore()
 const invalidateSessions = useInvalidateSessions()
+const sessionEdit = useSessionEdit()
+const sessionDelete = useSessionDelete()
+
+const showEditModal = sessionEdit.showEditModal
+const showDeleteConfirm = sessionDelete.showDeleteConfirm
+const deletingSession = sessionDelete.deletingSession
+const editForm = sessionEdit.editForm
+const editLoading = sessionEdit.editLoading
+const deleteLoading = sessionDelete.deleteLoading
 
 const showAddModal = ref(false)
 
-const filters = ref<{
-  technology_id?: string
-  date_from?: string
-  date_to?: string
-  min_duration?: number
-  mood?: number
-}>({})
+const filters = ref<SessionListFilters>({})
 
 const currentPage = ref(1)
 
@@ -58,82 +59,6 @@ async function onSessionCreated() {
   await invalidateSessions()
 }
 
-// --- Edit ---
-const showEditModal = ref(false)
-const editingSession = ref<StudySession | null>(null)
-const editForm = ref({ technology_id: '', date: '', duration: 0, notes: '' })
-const editLoading = ref(false)
-
-function onEdit(session: StudySession) {
-  editingSession.value = session
-  editForm.value = {
-    technology_id: session.technology_id ?? session.technology?.id ?? '',
-    date: session.started_at?.slice(0, 10) ?? '',
-    duration: session.duration_min ?? 0,
-    notes: session.notes ?? '',
-  }
-  showEditModal.value = true
-  technologiesStore.fetchTechnologies()
-}
-
-async function saveEdit() {
-  if (!editingSession.value || editLoading.value) return
-  if (!editForm.value.technology_id || !editForm.value.date || editForm.value.duration < 1) {
-    toast.error('Preencha todos os campos obrigatórios')
-    return
-  }
-  editLoading.value = true
-  try {
-    const startedAt = new Date(`${editForm.value.date}T12:00:00`)
-    const endedAt = new Date(startedAt.getTime() + editForm.value.duration * 60 * 1000)
-    await sessionsApi.update(editingSession.value.id, {
-      technology_id: editForm.value.technology_id,
-      started_at: startedAt.toISOString(),
-      ended_at: endedAt.toISOString(),
-      notes: editForm.value.notes.trim() || undefined,
-    } as Partial<StudySession>)
-    toast.success('Sessão atualizada!')
-    showEditModal.value = false
-    editingSession.value = null
-    await invalidateSessions()
-  } catch (err: unknown) {
-    toast.error(getApiErrorMessage(err) || 'Erro ao atualizar sessão')
-  } finally {
-    editLoading.value = false
-  }
-}
-
-// --- Delete ---
-const showDeleteConfirm = ref(false)
-const deletingSession = ref<StudySession | null>(null)
-const deleteLoading = ref(false)
-
-function onDelete(session: StudySession) {
-  deletingSession.value = session
-  showDeleteConfirm.value = true
-}
-
-async function confirmDelete() {
-  if (!deletingSession.value || deleteLoading.value) return
-  deleteLoading.value = true
-  try {
-    await sessionsApi.delete(deletingSession.value.id)
-    toast.success('Sessão excluída!')
-    showDeleteConfirm.value = false
-    deletingSession.value = null
-    await invalidateSessions()
-  } catch (err: unknown) {
-    toast.error(getApiErrorMessage(err) || 'Erro ao excluir sessão')
-  } finally {
-    deleteLoading.value = false
-  }
-}
-
-function cancelDelete() {
-  showDeleteConfirm.value = false
-  deletingSession.value = null
-}
-
 onMounted(() => {
   const techId = route.query.technology_id
   if (typeof techId === 'string' && techId) {
@@ -146,12 +71,11 @@ onMounted(() => {
   <div class="session-list">
     <div class="session-list__header">
       <h2>Sessões de estudo</h2>
-      <BaseButton
-        size="sm"
+      <Button
+        label="Nova sessão"
+        size="small"
         @click="showAddModal = true"
-      >
-        Nova sessão
-      </BaseButton>
+      />
     </div>
 
     <SessionFilters
@@ -173,8 +97,8 @@ onMounted(() => {
         v-for="s in sessions"
         :key="s.id"
         :session="s"
-        @edit="onEdit"
-        @delete="onDelete"
+        @edit="sessionEdit.openEdit"
+        @delete="sessionDelete.openDelete"
       />
     </div>
     <p
@@ -212,27 +136,31 @@ onMounted(() => {
     </div>
 
     <!-- Add modal -->
-    <BaseModal
-      :show="showAddModal"
-      title="Registrar sessão"
-      @close="showAddModal = false"
+    <Dialog
+      v-model:visible="showAddModal"
+      header="Registrar sessão"
+      modal
+      :style="{ width: 'min(90vw, 420px)' }"
+      @hide="showAddModal = false"
     >
       <LogSessionForm
         show-cancel
         @success="onSessionCreated"
         @cancel="showAddModal = false"
       />
-    </BaseModal>
+    </Dialog>
 
     <!-- Edit modal -->
-    <BaseModal
-      :show="showEditModal"
-      title="Editar sessão"
-      @close="showEditModal = false"
+    <Dialog
+      v-model:visible="showEditModal"
+      header="Editar sessão"
+      modal
+      :style="{ width: 'min(90vw, 420px)' }"
+      @hide="sessionEdit.closeEdit"
     >
       <form
         class="edit-form"
-        @submit.prevent="saveEdit"
+        @submit.prevent="sessionEdit.saveEdit"
       >
         <div class="edit-form__field">
           <label class="edit-form__label">Tecnologia</label>
@@ -287,28 +215,28 @@ onMounted(() => {
         </div>
 
         <div class="edit-form__actions">
-          <BaseButton
+          <Button
             type="submit"
-            :disabled="editLoading"
-          >
-            {{ editLoading ? 'Salvando...' : 'Salvar' }}
-          </BaseButton>
-          <BaseButton
-            type="button"
-            variant="outline"
-            @click="showEditModal = false"
-          >
-            Cancelar
-          </BaseButton>
+            :label="editLoading ? 'Salvando...' : 'Salvar'"
+            :loading="editLoading"
+          />
+          <Button
+            label="Cancelar"
+            severity="secondary"
+            variant="outlined"
+            @click="sessionEdit.closeEdit"
+          />
         </div>
       </form>
-    </BaseModal>
+    </Dialog>
 
     <!-- Delete confirm modal -->
-    <BaseModal
-      :show="showDeleteConfirm"
-      title="Excluir sessão"
-      @close="cancelDelete"
+    <Dialog
+      v-model:visible="showDeleteConfirm"
+      header="Excluir sessão"
+      modal
+      :style="{ width: 'min(90vw, 400px)' }"
+      @hide="sessionDelete.closeDelete"
     >
       <div class="delete-confirm">
         <p class="delete-confirm__msg">
@@ -322,21 +250,21 @@ onMounted(() => {
           <button
             type="button"
             class="delete-confirm__btn delete-confirm__btn--danger"
-            :disabled="deleteLoading"
-            @click="confirmDelete"
+            :loading="deleteLoading"
+            @click="sessionDelete.confirmDelete"
           >
             {{ deleteLoading ? 'Excluindo...' : 'Excluir' }}
           </button>
           <button
             type="button"
             class="delete-confirm__btn"
-            @click="cancelDelete"
+            @click="sessionDelete.closeDelete"
           >
             Cancelar
           </button>
         </div>
       </div>
-    </BaseModal>
+    </Dialog>
   </div>
 </template>
 
@@ -516,11 +444,11 @@ onMounted(() => {
 .delete-confirm__btn--danger {
   background: var(--color-error);
   border-color: var(--color-error);
-  color: #fff;
+  color: var(--color-primary-contrast);
 }
 .delete-confirm__btn--danger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-error) 88%, #000);
-  border-color: color-mix(in srgb, var(--color-error) 88%, #000);
+  background: color-mix(in srgb, var(--color-error) 88%, var(--color-bg));
+  border-color: color-mix(in srgb, var(--color-error) 88%, var(--color-bg));
 }
 .delete-confirm__btn--danger:disabled {
   opacity: 0.6;
