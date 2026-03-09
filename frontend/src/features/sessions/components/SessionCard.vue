@@ -16,7 +16,7 @@ const emit = defineEmits<{
   <div class="session-card">
     <div
       class="session-card__bar"
-      :style="{ background: session.technology?.color ?? '#94a3b8' }"
+      :style="{ background: session.technology?.color ?? 'var(--color-text-muted)' }"
     />
     <div class="session-card__content">
       <div class="session-card__main">

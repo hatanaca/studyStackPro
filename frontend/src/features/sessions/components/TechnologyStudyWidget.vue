@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import BaseCard from '@/components/ui/BaseCard.vue'
+import Card from 'primevue/card'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import { formatHours } from '@/utils/formatters'
 import type { Technology } from '@/types/domain.types'
@@ -40,35 +40,25 @@ watch(() => props.technology.id, loadTotal)
 </script>
 
 <template>
-  <BaseCard
+  <Card
     class="technology-study-widget"
     :style="{ '--tech-color': technology.color }"
   >
-    <div class="technology-study-widget__bar" />
-    <div class="technology-study-widget__content">
-      <h3 class="technology-study-widget__name">
-        {{ technology.name }}
-      </h3>
-      <p
-        v-if="loading"
-        class="technology-study-widget__total"
-      >
-        ...
-      </p>
-      <p
-        v-else
-        class="technology-study-widget__total"
-      >
-        {{ totalHoursLabel }}
-      </p>
-      <RouterLink
-        :to="{ name: 'sessions-by-technology', params: { id: technology.id } }"
-        class="technology-study-widget__link"
-      >
-        Ver por dia
-      </RouterLink>
-    </div>
-  </BaseCard>
+    <template #content>
+      <div class="technology-study-widget__bar" />
+      <div class="technology-study-widget__content">
+        <h3 class="technology-study-widget__name">{{ technology.name }}</h3>
+        <p v-if="loading" class="technology-study-widget__total">...</p>
+        <p v-else class="technology-study-widget__total">{{ totalHoursLabel }}</p>
+        <RouterLink
+          :to="{ name: 'sessions-by-technology', params: { id: technology.id } }"
+          class="technology-study-widget__link"
+        >
+          Ver por dia
+        </RouterLink>
+      </div>
+    </template>
+  </Card>
 </template>
 
 <style scoped>

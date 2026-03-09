@@ -353,6 +353,7 @@ async function handleLogout() {
         to="/settings"
         active-class="active"
         class="app-sidebar__link"
+        aria-label="Ir para Configurações"
       >
         <span
           class="app-sidebar__icon"
@@ -380,6 +381,7 @@ async function handleLogout() {
         to="/profile"
         active-class="active"
         class="app-sidebar__link"
+        aria-label="Ir para Perfil"
       >
         <span
           class="app-sidebar__icon"

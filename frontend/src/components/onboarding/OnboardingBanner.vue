@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import Button from 'primevue/button'
 
 const emit = defineEmits<{
   dismiss: []
@@ -41,14 +41,14 @@ function dismiss() {
           <strong>Bem-vindo ao StudyTrack Pro.</strong>
           Registre suas sessões de estudo acima e acompanhe seu progresso no dashboard.
         </div>
-        <BaseButton
-          variant="ghost"
-          size="sm"
+        <Button
+          label="Entendi"
+          variant="text"
+          size="small"
+          severity="secondary"
           class="onboarding-banner__dismiss"
           @click="dismiss"
-        >
-          Entendi
-        </BaseButton>
+        />
       </div>
     </div>
   </Transition>

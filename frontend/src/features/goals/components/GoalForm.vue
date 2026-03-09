@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import BaseInput from '@/components/ui/BaseInput.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
-import FormSection from '@/components/ui/FormSection.vue'
+import InputNumber from 'primevue/inputnumber'
+import Button from 'primevue/button'
+import Fieldset from 'primevue/fieldset'
 import type { CreateGoalPayload, GoalType } from '@/types/goals.types'
 import { GOAL_TYPE_LABELS } from '@/types/goals.types'
 
@@ -24,6 +24,10 @@ const emit = defineEmits<{
 
 const type = ref<GoalType>(props.initialGoal?.type ?? props.defaultType)
 const targetValue = ref(String(props.initialGoal?.target_value ?? ''))
+const targetValueNum = computed({
+  get: () => (targetValue.value === '' ? null : Number(targetValue.value)),
+  set: (v) => { targetValue.value = v == null ? '' : String(v) },
+})
 const startDate = ref(props.initialGoal?.start_date ?? new Date().toISOString().slice(0, 10))
 const errors = ref<Record<string, string>>({})
 
@@ -65,11 +69,8 @@ function submit() {
     class="goal-form"
     @submit.prevent="submit"
   >
-    <FormSection
-      title="Tipo e valor"
-      description="Escolha o tipo de meta e o valor alvo."
-      grouped
-    >
+    <Fieldset legend="Tipo e valor">
+      <p class="goal-form__desc">Escolha o tipo de meta e o valor alvo.</p>
       <div class="goal-form__row">
         <label class="goal-form__label">Tipo</label>
         <select
@@ -86,42 +87,47 @@ function submit() {
           </option>
         </select>
       </div>
-      <BaseInput
-        v-model="targetValue"
-        type="number"
-        label="Valor alvo"
-        placeholder="Ex: 300"
-        :error="errors.target_value"
-        min="1"
-        step="1"
-      />
-    </FormSection>
-    <FormSection
-      title="Período"
-      description="Data de início da meta."
-      grouped
-    >
-      <BaseInput
-        v-model="startDate"
-        type="date"
-        label="Data inicial"
-        :error="errors.start_date"
-      />
-    </FormSection>
+      <div class="p-field">
+        <label for="goal-target">Valor alvo</label>
+        <InputNumber
+          id="goal-target"
+          v-model="targetValueNum"
+          placeholder="Ex: 300"
+          :min="1"
+          :max-fraction-digits="0"
+          class="w-full"
+          :class="{ 'p-invalid': errors.target_value }"
+        />
+        <small v-if="errors.target_value" class="p-error">{{ errors.target_value }}</small>
+      </div>
+    </Fieldset>
+    <Fieldset legend="Período">
+      <p class="goal-form__desc">Data de início da meta.</p>
+      <div class="p-field">
+        <label for="goal-start">Data inicial</label>
+        <input
+          id="goal-start"
+          v-model="startDate"
+          type="date"
+          class="p-inputtext p-component w-full"
+          :class="{ 'p-invalid': errors.start_date }"
+        >
+        <small v-if="errors.start_date" class="p-error">{{ errors.start_date }}</small>
+      </div>
+    </Fieldset>
     <div class="goal-form__actions">
-      <BaseButton
+      <Button
         type="button"
-        variant="ghost"
+        label="Cancelar"
+        severity="secondary"
+        variant="text"
         @click="emit('cancel')"
-      >
-        Cancelar
-      </BaseButton>
-      <BaseButton
+      />
+      <Button
         type="submit"
-        :disabled="loading"
-      >
-        {{ loading ? 'Salvando...' : (initialGoal ? 'Salvar alterações' : 'Criar meta') }}
-      </BaseButton>
+        :label="loading ? 'Salvando...' : (initialGoal ? 'Salvar alterações' : 'Criar meta')"
+        :loading="loading"
+      />
     </div>
   </form>
 </template>
@@ -154,6 +160,10 @@ function submit() {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
+.goal-form__desc { font-size: var(--text-sm); color: var(--color-text-muted); margin: 0 0 var(--spacing-sm); }
+.p-field { margin-bottom: var(--spacing-md); display: flex; flex-direction: column; gap: 0.25rem; }
+.p-field label { font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); }
+.w-full { width: 100%; }
 .goal-form__actions {
   display: flex;
   justify-content: flex-end;

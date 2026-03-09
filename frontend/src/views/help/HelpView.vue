@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import BaseCard from '@/components/ui/BaseCard.vue'
-import BaseAccordion from '@/components/ui/BaseAccordion.vue'
+import Card from 'primevue/card'
+import Accordion from 'primevue/accordion'
+import AccordionPanel from 'primevue/accordionpanel'
+import AccordionHeader from 'primevue/accordionheader'
+import AccordionContent from 'primevue/accordioncontent'
 import PageView from '@/components/layout/PageView.vue'
 
 const faqItems = [
@@ -9,8 +12,6 @@ const faqItems = [
   { id: 'export', title: 'Como exportar meus dados?', description: 'Acesse Exportar no menu. Selecione o período e o formato (CSV ou JSON). O arquivo será gerado para download.' },
   { id: 'theme', title: 'Como mudar o tema (claro/escuro)?', description: 'Use o ícone de sol/lua no header ou na sidebar para alternar entre tema claro e escuro. A preferência é salva no navegador.' },
 ]
-
-const accordionItems = faqItems.map(({ id, title }) => ({ id, title }))
 </script>
 
 <template>
@@ -23,33 +24,31 @@ const accordionItems = faqItems.map(({ id, title }) => ({ id, title }))
     <template #hint>
       Expanda os itens abaixo para ver as respostas. Em caso de problema, use o bloco Contato ao final.
     </template>
-    <BaseCard
-      title="Perguntas frequentes"
-      class="help-view__card"
-    >
-      <BaseAccordion
-        :items="accordionItems"
-        :default-open="[]"
-      >
-        <template
-          v-for="item in faqItems"
-          :key="item.id"
-          #[item.id]
-        >
-          <p class="help-view__answer">
-            {{ item.description }}
-          </p>
-        </template>
-      </BaseAccordion>
-    </BaseCard>
-    <BaseCard
-      title="Contato"
-      class="help-view__card"
-    >
-      <p class="help-view__text">
-        Encontrou um bug ou tem uma sugestão? Abra uma issue no repositório do projeto ou entre em contato com o time de desenvolvimento.
-      </p>
-    </BaseCard>
+    <Card class="help-view__card">
+      <template #title>Perguntas frequentes</template>
+      <template #content>
+        <Accordion :multiple="true">
+          <AccordionPanel
+            v-for="item in faqItems"
+            :key="item.id"
+            :value="item.id"
+          >
+            <AccordionHeader>{{ item.title }}</AccordionHeader>
+            <AccordionContent>
+              <p class="help-view__answer">{{ item.description }}</p>
+            </AccordionContent>
+          </AccordionPanel>
+        </Accordion>
+      </template>
+    </Card>
+    <Card class="help-view__card">
+      <template #title>Contato</template>
+      <template #content>
+        <p class="help-view__text">
+          Encontrou um bug ou tem uma sugestão? Abra uma issue no repositório do projeto ou entre em contato com o time de desenvolvimento.
+        </p>
+      </template>
+    </Card>
   </PageView>
 </template>
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import Button from 'primevue/button'
 
 const props = defineProps<{
   technologyId: string
@@ -102,13 +102,12 @@ watch(() => props.technologyId, loadFromStorage)
         :disabled="atLimit"
         @keyup.enter.prevent="addReminder"
       >
-      <BaseButton
-        size="sm"
+      <Button
+        label="Adicionar"
+        size="small"
         :disabled="!newReminder.trim() || atLimit"
         @click="addReminder"
-      >
-        Adicionar
-      </BaseButton>
+      />
     </div>
     <ul
       v-if="reminders.length"
@@ -135,28 +134,17 @@ watch(() => props.technologyId, loadFromStorage)
         </p>
         <div class="tech-reminders__actions">
           <template v-if="editingId === r.id">
-            <BaseButton
-              size="sm"
-              @click="saveEdit(r)"
-            >
-              Salvar
-            </BaseButton>
-            <BaseButton
-              size="sm"
-              variant="ghost"
-              @click="cancelEdit"
-            >
-              Cancelar
-            </BaseButton>
+            <Button label="Salvar" size="small" @click="saveEdit(r)" />
+            <Button label="Cancelar" size="small" variant="text" severity="secondary" @click="cancelEdit" />
           </template>
-          <BaseButton
+          <Button
             v-else
-            size="sm"
-            variant="ghost"
+            label="Remover"
+            size="small"
+            variant="text"
+            severity="secondary"
             @click="deleteReminder(r)"
-          >
-            Remover
-          </BaseButton>
+          />
         </div>
       </li>
     </ul>

@@ -59,8 +59,8 @@ _Vue Router
 biblioteca oficial de rotas do Vue.js
 Responsável por mudar url, conteudo porém pagina não recarrega
 
-_Chart.js
-Biblioteca utilizada para criar gráficos, 
+_ApexCharts (vue3-apexcharts)
+Biblioteca utilizada para criar gráficos no frontend. 
 
 _Socket.IO <- no lado do cliente, no lado do server -> Socket.IO
 biblioteca que permite comunicação em tempo real

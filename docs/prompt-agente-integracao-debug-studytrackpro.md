@@ -138,7 +138,7 @@ useAnalyticsStore.fetch()
                             → AnalyticsDashboardResource
   ← response 200
   → store.metrics = data
-  → Chart.js renderiza gráficos
+  → ApexCharts renderiza gráficos
 ```
 
 **Pontos de falha neste fluxo:**

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import Button from 'primevue/button'
 import { useTechnologiesStore } from '@/stores/technologies.store'
 import { getApiErrorMessage } from '@/api/client'
 import { sessionsApi } from '@/api/modules/sessions.api'
@@ -79,17 +79,19 @@ async function onSubmit(e: Event) {
     })
     toast.success('Sessão registrada com sucesso!')
     const tech = technologiesStore.technologies.find(t => t.id === technologyId.value)
+    const savedTechId = technologyId.value
     const savedDate = date.value
     const savedDuration = durationMinutes.value
+    technologyId.value = technologiesStore.technologies.length ? technologiesStore.technologies[0].id : ''
     date.value = today.value
     durationMinutes.value = 30
     notes.value = ''
     emit('success', {
       date: savedDate,
       durationMinutes: savedDuration,
-      technologyId: technologyId.value,
+      technologyId: savedTechId,
       technologyName: tech?.name ?? '',
-      technologyColor: tech?.color ?? '#3b82f6',
+      technologyColor: tech?.color ?? 'var(--color-primary)',
     })
   } catch (err: unknown) {
     const msg = getApiErrorMessage(err) || 'Erro ao registrar sessão'
@@ -222,20 +224,18 @@ function onCancel() {
     </div>
 
     <div class="log-session-form__actions">
-      <BaseButton
+      <Button
         type="submit"
-        :disabled="loading"
-      >
-        {{ loading ? 'Salvando...' : 'Registrar sessão' }}
-      </BaseButton>
-      <BaseButton
+        :label="loading ? 'Salvando...' : 'Registrar sessão'"
+        :loading="loading"
+      />
+      <Button
         v-if="showCancel"
-        type="button"
-        variant="outline"
+        label="Cancelar"
+        severity="secondary"
+        variant="outlined"
         @click="onCancel"
-      >
-        Cancelar
-      </BaseButton>
+      />
     </div>
   </form>
 </template>

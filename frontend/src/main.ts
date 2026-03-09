@@ -2,9 +2,13 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { VueQueryPlugin } from '@tanstack/vue-query'
 import VueApexCharts from 'vue3-apexcharts'
+import PrimeVue from 'primevue/config'
+import ConfirmationService from 'primevue/confirmationservice'
+import Aura from '@primeuix/themes/aura'
 import App from './App.vue'
 import router from './router'
 import './assets/styles/main.css'
+import 'primeicons/primeicons.css'
 
 // Aplicar tema salvo antes do primeiro render (login e app)
 const savedTheme = (() => {
@@ -23,4 +27,10 @@ app.use(createPinia())
 app.use(VueQueryPlugin)
 app.use(router)
 app.use(VueApexCharts)
+app.use(PrimeVue, {
+  theme: {
+    preset: Aura,
+  },
+})
+app.use(ConfirmationService)
 app.mount('#app')

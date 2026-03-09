@@ -4,9 +4,9 @@ import { useApexChartTheme } from '@/composables/useApexChartTheme'
 import { useDashboardQuery } from '@/features/dashboard/composables/useDashboardQuery'
 import { useDashboard } from '@/features/dashboard/composables/useDashboard'
 import { useAnalyticsStore } from '@/stores/analytics.store'
-import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
-import ErrorCard from '@/components/ui/ErrorCard.vue'
-import EmptyState from '@/components/ui/EmptyState.vue'
+import Skeleton from 'primevue/skeleton'
+import Message from 'primevue/message'
+import Button from 'primevue/button'
 import DashboardHeader from '@/features/dashboard/components/DashboardHeader.vue'
 import KpiCards from '@/features/dashboard/components/KpiCards.vue'
 import TodaySummaryCard from '@/features/dashboard/components/TodaySummaryCard.vue'
@@ -87,11 +87,12 @@ async function retry() {
 <template>
   <div class="dashboard">
     <DashboardHeader v-if="!stakentStyle?.value" />
-    <ErrorCard
-      v-if="hasError"
-      message="Não foi possível carregar o dashboard."
-      :on-retry="retry"
-    />
+    <template v-if="hasError">
+      <Message severity="error" :closable="false">
+        Não foi possível carregar o dashboard.
+      </Message>
+      <Button label="Tentar novamente" severity="secondary" variant="outlined" @click="retry" />
+    </template>
     <template v-else>
       <template v-if="stakentStyle?.value">
         <section class="stakent-dashboard">
@@ -147,15 +148,8 @@ async function retry() {
                 :key="i"
                 class="kpi-card-skeleton"
               >
-                <SkeletonLoader
-                  width="60%"
-                  height="0.875rem"
-                />
-                <SkeletonLoader
-                  width="80%"
-                  height="1.5rem"
-                  class="mt-2"
-                />
+                <Skeleton width="60%" height="0.875rem" />
+                <Skeleton width="80%" height="1.5rem" class="mt-2" />
               </div>
             </section>
           </div>
@@ -184,12 +178,10 @@ async function retry() {
             v-else
             class="widgets__item widgets__item--3 widgets__item--full dashboard__empty"
           >
-            <EmptyState
-              title="Nenhum dado ainda"
-              description="Sua primeira sessão desbloqueia métricas e gráficos. Registre no card acima para ver totais, evolução e metas."
-              icon="📊"
-              hide-action
-            />
+            <Message severity="info" :closable="false" class="dashboard__empty-msg">
+              <strong>Nenhum dado ainda</strong><br>
+              Sua primeira sessão desbloqueia métricas e gráficos. Registre no card acima para ver totais, evolução e metas.
+            </Message>
           </div>
           <div class="widgets__item widgets__item--4">
             <GoalsWidget />
@@ -215,11 +207,8 @@ async function retry() {
 </template>
 
 <style scoped>
-/* Card "Registrar estudo" usa o mesmo padding dos demais widgets */
-.dashboard-register :deep(.base-card__header) {
-  padding: var(--widget-padding) var(--widget-padding) 0;
-}
-.dashboard-register :deep(.base-card__body) {
+.dashboard-register :deep(.p-card-body),
+.dashboard-register :deep(.p-card-content) {
   padding: var(--widget-padding);
 }
 .dashboard__content {
@@ -231,12 +220,11 @@ async function retry() {
 .dashboard__empty {
   min-height: var(--widget-card-min-height);
 }
-.dashboard__empty :deep(.empty-state) {
+.dashboard__empty-msg {
   background: var(--color-bg-card);
   border: 1px dashed var(--color-border);
   border-radius: var(--widget-radius);
   padding: var(--spacing-xl);
-  box-shadow: var(--shadow-sm);
 }
 .widgets {
   display: grid;
@@ -286,13 +274,13 @@ async function retry() {
   flex-direction: column;
   align-items: stretch;
 }
-.widgets__item--0 :deep(.base-card) {
+.widgets__item--0 :deep(.p-card) {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
 }
-.widgets__item--0 :deep(.base-card__body) {
+.widgets__item--0 :deep(.p-card-content) {
   flex: 1;
   min-height: 0;
 }

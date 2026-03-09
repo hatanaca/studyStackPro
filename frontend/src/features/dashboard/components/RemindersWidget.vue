@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import Button from 'primevue/button'
 
 interface Reminder {
   id: string
@@ -106,13 +106,12 @@ onMounted(() => {
         :disabled="atLimit"
         @keyup.enter.prevent="addReminder"
       >
-      <BaseButton
-        size="sm"
+      <Button
+        label="Adicionar"
+        size="small"
         :disabled="!newReminder.trim() || atLimit"
         @click="addReminder"
-      >
-        Adicionar
-      </BaseButton>
+      />
     </div>
 
     <div

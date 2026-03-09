@@ -9,7 +9,7 @@ Frontend Vue 3 + TypeScript do **StudyTrack Pro**, aplicação para acompanhamen
 - **Vue Router**
 - **Pinia**
 - **Vite**
-- **Chart.js** (gráficos)
+- **ApexCharts** (vue3-apexcharts, gráficos)
 - **Axios** (HTTP)
 
 ## Estrutura

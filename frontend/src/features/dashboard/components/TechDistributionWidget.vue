@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
+import Skeleton from 'primevue/skeleton'
 import { useApexChartTheme } from '@/composables/useApexChartTheme'
 import { truncate } from '@/utils/formatters'
 import type { TechnologyMetric } from '@/types/domain.types'
@@ -79,8 +79,10 @@ const slices = computed<ChartSlice[]>(() => {
 const totalValue = computed(() => slices.value.reduce((s, sl) => s + sl.value, 0))
 /** Percentual da fatia no total (para centro do donut) */
 function slicePct(i: number): string {
+  const list = slices.value
+  if (i < 0 || i >= list.length) return '0'
   const total = totalValue.value || 1
-  return ((slices.value[i].value / total) * 100).toFixed(1)
+  return ((list[i].value / total) * 100).toFixed(1)
 }
 const totalHoursLabel = computed(() => {
   const v = totalValue.value
@@ -102,56 +104,90 @@ const apexSeries = computed(() => slices.value.map(s => s.value))
 /** Opções ApexCharts: compartilhadas + específicas por tipo (pie / donut) */
 const apexChartOptions = computed<ApexOptions>(() => {
   const total = totalValue.value || 1
+  const t = chartTheme.value
   const base = {
     chart: {
       type: currentType.value === 'doughnut' ? 'donut' : 'pie',
       background: 'transparent',
+      toolbar: {
+        show: true,
+        offsetX: 0,
+        offsetY: 0,
+        tools: { download: true, selection: false, zoom: false, zoomin: false, zoomout: false, pan: false, reset: false },
+        export: { csv: { headerCategory: 'Tecnologia', headerValue: 'Horas' }, svg: {}, png: {} },
+      },
       events: {
         dataPointSelection: (_event: unknown, _chartContext: unknown, config: { dataPointIndex?: number }) => {
           if (config?.dataPointIndex != null) handleSliceClick(config.dataPointIndex)
         },
       },
+      dropShadow: {
+        enabled: true,
+        top: 4,
+        left: 0,
+        blur: 22,
+        opacity: 0.22,
+        color: t.textColor,
+      },
     },
     colors: apexColors.value,
     labels: slices.value.map(s => s.label),
-    stroke: { width: 5, colors: [chartTheme.value.background] },
+    stroke: { width: 4, colors: [t.background] },
     states: {
-      hover: { filter: { type: 'lighten', value: 0.15 } as { type: string; value: number } },
-      active: { filter: { type: 'darken', value: 0.35 } as { type: string; value: number } },
-    },
-    dropShadow: {
-      enabled: true,
-      top: 4,
-      left: 0,
-      blur: 20,
-      opacity: 0.2,
-      color: chartTheme.value.textColor,
+      hover: { filter: { type: 'lighten', value: 0.12 } as { type: string; value: number } },
+      active: { filter: { type: 'darken', value: 0.3 } as { type: string; value: number } },
     },
     fill: {
-      type: 'solid',
-      opacity: 1,
+      type: 'gradient',
+      gradient: {
+        shadeIntensity: 0.6,
+        opacityFrom: 0.92,
+        opacityTo: 0.78,
+        stops: [0, 100],
+      },
     },
-    dataLabels: { enabled: false },
+    dataLabels: {
+      enabled: true,
+      formatter: (val: number, opts: { w?: { globals?: { seriesTotals?: number[] } } }) => {
+        const w = opts?.w
+        const sum = w?.globals?.seriesTotals?.reduce((a, b) => a + b, 0) ?? total
+        const pct = sum ? (Number(val) / sum) * 100 : 0
+        if (pct < 6) return ''
+        return `${Number(val).toFixed(1)}h\n(${pct.toFixed(1)}%)`
+      },
+      style: { fontSize: t.fontSize, fontFamily: t.fontFamily },
+      dropShadow: { enabled: false },
+      offset: 2,
+    },
     animations: {
       enabled: true,
       easing: 'easeinout',
       speed: 900,
-      animateGradually: { enabled: true, delay: 120 },
+      animateGradually: { enabled: true, delay: 100 },
       dynamicAnimation: { enabled: true, speed: 400 },
     },
     tooltip: {
       theme: 'dark',
-      style: { fontSize: chartTheme.value.fontSize, fontFamily: chartTheme.value.fontFamily },
+      style: { fontSize: t.fontSize, fontFamily: t.fontFamily },
       fillSeriesColor: true,
+      shared: true,
+      followCursor: true,
       y: {
-        formatter: (val: number) => `${Number(val).toFixed(1)}h`,
+        formatter: (val: number, opts: { seriesIndex?: number }) => {
+          const pct = total ? ((Number(val) / total) * 100).toFixed(1) : '0'
+          const label = slices.value[opts?.seriesIndex ?? 0]?.label ?? ''
+          return `${label}\n${Number(val).toFixed(1)}h (${pct}%)\nClique para detalhes`
+        },
+        title: { formatter: () => 'Horas' },
       },
     },
     legend: { show: false },
     plotOptions: {
       pie: {
         expandOnClick: false,
-        dataLabels: { offset: -10 },
+        startAngle: -90,
+        endAngle: 270,
+        dataLabels: { offset: -6 },
         ...(currentType.value === 'doughnut'
           ? {
               donut: {
@@ -161,26 +197,26 @@ const apexChartOptions = computed<ApexOptions>(() => {
                   show: true,
                   name: {
                     show: true,
-                    fontFamily: chartTheme.value.fontFamily,
-                    fontSize: chartTheme.value.fontSize,
-                    color: chartTheme.value.textMuted,
-                    offsetY: -8,
+                    fontFamily: t.fontFamily,
+                    fontSize: t.fontSize,
+                    color: t.textMuted,
+                    offsetY: -10,
                   },
                   value: {
                     show: true,
-                    fontFamily: chartTheme.value.fontFamily,
-                    fontSize: '1.25rem',
+                    fontFamily: t.fontFamily,
+                    fontSize: '1.3rem',
                     fontWeight: 700,
-                    color: chartTheme.value.textColor,
+                    color: t.textColor,
                     offsetY: 8,
                     formatter: (val: string | number) => `${Number(val).toFixed(1)}h`,
                   },
                   total: {
                     show: true,
                     label: 'Total',
-                    fontFamily: chartTheme.value.fontFamily,
-                    fontSize: chartTheme.value.fontSize,
-                    color: chartTheme.value.textMuted,
+                    fontFamily: t.fontFamily,
+                    fontSize: t.fontSize,
+                    color: t.textMuted,
                     formatter: () => `${total.toFixed(1)}h`,
                   },
                 },
@@ -189,6 +225,11 @@ const apexChartOptions = computed<ApexOptions>(() => {
           : {}),
       },
     },
+    responsive: [
+      { breakpoint: 480, options: { chart: { height: 340 }, dataLabels: { offset: 0, style: { fontSize: '11px' } } } },
+      { breakpoint: 400, options: { chart: { height: 320 }, dataLabels: { style: { fontSize: '10px' } } } },
+      { breakpoint: 340, options: { chart: { height: 280 } } },
+    ],
   }
   return base as ApexOptions
 })
@@ -205,11 +246,15 @@ const chartViewBox = computed(() => {
 
 /** Ângulo inicial no topo (12h), sentido horário; radianos */
 function getAngles(sliceIndex: number): { start: number; end: number; mid: number } {
+  const list = slices.value
+  if (sliceIndex < 0 || sliceIndex >= list.length) {
+    return { start: 0, end: 0, mid: 0 }
+  }
   const total = totalValue.value || 1
   let acc = 0
-  for (let i = 0; i < sliceIndex; i++) acc += slices.value[i].value
+  for (let i = 0; i < sliceIndex; i++) acc += list[i].value
   const start = (-Math.PI / 2) + (2 * Math.PI * acc / total)
-  const span = (2 * Math.PI * slices.value[sliceIndex].value) / total
+  const span = (2 * Math.PI * list[sliceIndex].value) / total
   const end = start + span
   const mid = start + span / 2
   return { start, end, mid }
@@ -397,6 +442,18 @@ watch(currentType, (t) => {
   }
 })
 
+/** Quando a lista de fatias diminui, limpa seleção se o índice ficar fora dos limites */
+watch(
+  () => slices.value.length,
+  (len) => {
+    const idx = selectedSlice.value
+    if (idx != null && idx >= len) {
+      selectedSlice.value = null
+      phase.value = 'idle'
+    }
+  }
+)
+
 /** Lista ordenada para o painel lateral (compatível com metrics) */
 const sorted = computed(() =>
   [...(props.metrics ?? [])].sort((a, b) => (b.total_minutes ?? 0) - (a.total_minutes ?? 0))
@@ -409,10 +466,10 @@ function goToTech(metric: TechnologyMetric) {
   if (metric.technology?.id) router.push(`/sessions?technology_id=${metric.technology.id}`)
 }
 
-// --- Bar chart (SVG nativo): altura/gap por token; área rolável
-const barBarHeight = 30
-const barGap = 12
-const barLabelWidth = 120
+// --- Bar chart (SVG nativo): valores alinhados a --chart-bar-* (variables.css); área rolável
+const barBarHeight = 30 // --chart-bar-height
+const barGap = 12 // --chart-bar-gap
+const barLabelWidth = 120 // --chart-bar-label-width
 const barChartWidth = 320
 const barAreaWidth = barChartWidth - barLabelWidth - 20
 
@@ -439,11 +496,17 @@ function barLabelDisplay(label: string): string {
         </h3>
         <span class="total-badge">{{ totalHoursLabel }}</span>
       </div>
-      <div class="chart-type-toggle">
+      <div
+        class="chart-type-toggle"
+        role="group"
+        aria-label="Tipo de gráfico"
+      >
         <button
           type="button"
           class="chart-type-toggle__btn"
           :class="{ active: currentType === 'pie' }"
+          aria-label="Visualização em pizza"
+          :aria-pressed="currentType === 'pie'"
           @click="currentType = 'pie'"
         >
           Pizza
@@ -452,6 +515,8 @@ function barLabelDisplay(label: string): string {
           type="button"
           class="chart-type-toggle__btn"
           :class="{ active: currentType === 'doughnut' }"
+          aria-label="Visualização em rosquinha"
+          :aria-pressed="currentType === 'doughnut'"
           @click="currentType = 'doughnut'"
         >
           Rosquinha
@@ -460,6 +525,8 @@ function barLabelDisplay(label: string): string {
           type="button"
           class="chart-type-toggle__btn"
           :class="{ active: currentType === 'bar' }"
+          aria-label="Visualização em barras"
+          :aria-pressed="currentType === 'bar'"
           @click="currentType = 'bar'"
         >
           Barras
@@ -471,7 +538,7 @@ function barLabelDisplay(label: string): string {
       v-if="loading"
       class="chart-skeleton"
     >
-      <SkeletonLoader
+      <Skeleton
         v-for="i in 6"
         :key="i"
         height="1.25rem"
@@ -860,7 +927,7 @@ function barLabelDisplay(label: string): string {
 .chart-wrap--svg { height: 360px; max-height: 360px; }
 .chart-wrap--bar { min-height: 320px; display: flex; flex-direction: column; }
 .bar-chart-scroll {
-  max-height: 360px;
+  max-height: var(--chart-bar-scroll-max-height);
   overflow-y: auto;
   overflow-x: hidden;
   border-radius: var(--radius-md);

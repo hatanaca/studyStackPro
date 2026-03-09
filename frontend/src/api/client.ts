@@ -1,17 +1,29 @@
-import axios from 'axios'
+import axios, { type AxiosError } from 'axios'
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth.store'
 
 const baseURL = `${import.meta.env.VITE_API_URL || ''}/api/v1`
 
+/** Formato de erro da API (Laravel). */
+interface ApiErrorBody {
+  error?: { message?: string }
+  message?: string
+}
+
+function getErrorBody(error: unknown): ApiErrorBody | undefined {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const response = (error as AxiosError<ApiErrorBody>).response
+    const data = response?.data
+    if (data && typeof data === 'object') return data
+  }
+  return undefined
+}
+
 /** Extrai mensagem de erro da resposta da API (formato { success: false, error: { message } }). */
 export function getApiErrorMessage(error: unknown): string {
-  const data = error && typeof error === 'object' && 'response' in error
-    ? (error as { response?: { data?: { error?: { message?: string }; message?: string } } }).response?.data
-    : undefined
-  if (data && typeof data === 'object') {
-    const msg = (data as { error?: { message?: string }; message?: string }).error?.message
-      ?? (data as { message?: string }).message
+  const data = getErrorBody(error)
+  if (data) {
+    const msg = data.error?.message ?? data.message
     if (typeof msg === 'string') return msg
   }
   return 'Erro na comunicação com o servidor.'

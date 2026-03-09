@@ -89,8 +89,8 @@ withDefaults(
   color: var(--color-primary-contrast);
 }
 .base-button--danger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-error) 88%, black);
-  border-color: color-mix(in srgb, var(--color-error) 88%, black);
+  background: color-mix(in srgb, var(--color-error) 88%, var(--color-bg));
+  border-color: color-mix(in srgb, var(--color-error) 88%, var(--color-bg));
 }
 .base-button--outline {
   background: transparent;

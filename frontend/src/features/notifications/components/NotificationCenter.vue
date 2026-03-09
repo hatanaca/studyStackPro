@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
-import BaseDropdown from '@/components/ui/BaseDropdown.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import { ref, computed, watch } from 'vue'
+import OverlayPanel from 'primevue/overlaypanel'
+import Button from 'primevue/button'
 import type { NotificationType } from '@/stores/notifications.store'
 import { useNotificationsStore } from '@/stores/notifications.store'
+
+const op = ref<InstanceType<typeof OverlayPanel> | null>(null)
 
 const notificationsStore = useNotificationsStore()
 
@@ -30,33 +32,35 @@ function typeClass(type: NotificationType): string {
 </script>
 
 <template>
-  <BaseDropdown align="right">
-    <template #trigger>
-      <button
-        type="button"
-        class="notification-center__trigger"
-        aria-label="Notificações"
-      >
-        <span class="notification-center__icon">🔔</span>
-        <span
-          v-if="unreadCount > 0"
-          class="notification-center__badge"
-        >
-          {{ unreadCount > 99 ? '99+' : unreadCount }}
-        </span>
-      </button>
-    </template>
+  <Button
+    type="button"
+    text
+    rounded
+    severity="secondary"
+    class="notification-center__trigger"
+    aria-label="Notificações"
+    @click="op?.toggle($event)"
+  >
+    <span class="notification-center__icon">🔔</span>
+    <span
+      v-if="unreadCount > 0"
+      class="notification-center__badge"
+    >
+      {{ unreadCount > 99 ? '99+' : unreadCount }}
+    </span>
+  </Button>
+  <OverlayPanel ref="op" class="notification-center__overlay">
     <div class="notification-center__panel">
       <div class="notification-center__header">
         <span class="notification-center__title">Notificações</span>
-        <BaseButton
+        <Button
           v-if="unreadCount > 0"
-          variant="ghost"
-          size="sm"
+          label="Marcar todas como lidas"
+          link
+          size="small"
+          severity="secondary"
           @click="notificationsStore.markAllRead()"
-        >
-          Marcar todas como lidas
-        </BaseButton>
+        />
       </div>
       <div class="notification-center__list">
         <template v-if="notificationsStore.items.length">
@@ -76,14 +80,15 @@ function typeClass(type: NotificationType): string {
                 {{ n.message }}
               </p>
             </div>
-            <BaseButton
-              variant="ghost"
-              size="sm"
+            <Button
+              icon="pi pi-times"
+              text
+              rounded
+              size="small"
+              severity="secondary"
               aria-label="Fechar"
               @click="notificationsStore.remove(n.id)"
-            >
-              ×
-            </BaseButton>
+            />
           </div>
         </template>
         <p
@@ -94,7 +99,7 @@ function typeClass(type: NotificationType): string {
         </p>
       </div>
     </div>
-  </BaseDropdown>
+  </OverlayPanel>
 </template>
 
 <style scoped>

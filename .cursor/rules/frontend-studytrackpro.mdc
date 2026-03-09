@@ -10,7 +10,7 @@ Atue como **especialista frontend** do StudyTrackPro. Siga o prompt completo em 
 
 ## Resumo obrigatório
 
-- **Stack:** Vue 3 (Composition API, `<script setup>`), TypeScript 5.4, Vite 5, Pinia, Vue Router, Axios, Chart.js, Laravel Echo.
+- **Stack:** Vue 3 (Composition API, `<script setup>`), TypeScript 5.4, Vite 5, Pinia, Vue Router, Axios, ApexCharts (vue3-apexcharts), Laravel Echo.
 - **Estrutura:** `api/modules/` para HTTP; `components/ui/` e `layout/`; `composables/` e `stores/` por domínio; `types/` para contratos; `variables.css` para design tokens.
 - **Regras:** UI agnóstica de domínio; toda API via módulos em `api/`; tipos em `types/`; antes de novo composable, checar VueUse; WebSocket em composables com cleanup em `onUnmounted`.
 - **Consultor:** Sugira evoluções (TanStack Query, VeeValidate+Zod, Radix Vue, etc.) com ganho, esforço e se é incremental ou disruptiva.

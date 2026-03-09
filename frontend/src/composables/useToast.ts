@@ -1,53 +1,51 @@
-import { ref } from 'vue'
+import { useToast as usePrimeToast } from 'primevue/usetoast'
 
-export interface ToastMessage {
-  id: number
-  message: string
-  type: 'success' | 'error' | 'info'
-  duration?: number
-}
-
-const toasts = ref<ToastMessage[]>([])
-let nextId = 0
-let dismissTimer: ReturnType<typeof setTimeout> | null = null
 const DEFAULT_DURATION = 4000
 
+/** Adapter que delega para o Toast do PrimeVue. Mantém a API existente (success, error, info). */
 export function useToast() {
-  function show(message: string, type: ToastMessage['type'] = 'info', duration = DEFAULT_DURATION) {
-    const id = ++nextId
-    toasts.value = [...toasts.value, { id, message, type, duration }]
+  const toast = usePrimeToast()
 
-    if (dismissTimer) clearTimeout(dismissTimer)
-    dismissTimer = setTimeout(() => {
-      dismiss(id)
-      dismissTimer = null
-    }, duration)
-
-    return id
+  function add(
+    message: string,
+    type: 'success' | 'error' | 'info',
+    duration = DEFAULT_DURATION
+  ) {
+    toast.add({
+      severity: type === 'error' ? 'error' : type === 'success' ? 'success' : 'info',
+      detail: message,
+      life: duration,
+    })
   }
 
-  function dismiss(id: number) {
-    toasts.value = toasts.value.filter((t) => t.id !== id)
+  function show(
+    message: string,
+    type: 'success' | 'error' | 'info' = 'info',
+    duration = DEFAULT_DURATION
+  ) {
+    add(message, type, duration)
   }
 
   function success(message: string, duration?: number) {
-    return show(message, 'success', duration)
+    add(message, 'success', duration ?? DEFAULT_DURATION)
   }
 
   function error(message: string, duration?: number) {
-    return show(message, 'error', duration ?? 6000)
+    add(message, 'error', duration ?? 6000)
   }
 
   function info(message: string, duration?: number) {
-    return show(message, 'info', duration)
+    add(message, 'info', duration ?? DEFAULT_DURATION)
   }
 
   return {
-    toasts,
     show,
-    dismiss,
     success,
     error,
     info,
+    /** @deprecated Use PrimeVue Toast; mantido para compatibilidade. */
+    toasts: [] as { id: number; message: string; type: string }[],
+    /** @deprecated Use PrimeVue Toast; mantido para compatibilidade. */
+    dismiss: (_id: number) => {},
   }
 }

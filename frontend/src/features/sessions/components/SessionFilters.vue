@@ -1,41 +1,84 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import TechnologyPicker from '@/features/technologies/components/TechnologyPicker.vue'
+import { useTechnologiesStore } from '@/stores/technologies.store'
 import type { Technology } from '@/types/domain.types'
+import type { SessionListFilters } from '@/types/api.types'
 
-const props = defineProps<{
-  modelValue: {
-    technology_id?: string
-    date_from?: string
-    date_to?: string
-    min_duration?: number
-    mood?: number
-  }
-}>()
+const props = withDefaults(
+  defineProps<{
+    modelValue?: SessionListFilters
+  }>(),
+  { modelValue: () => ({}) }
+)
 
 const emit = defineEmits<{
-  'update:modelValue': [typeof props.modelValue]
+  'update:modelValue': [value: SessionListFilters]
   change: []
 }>()
 
+const technologiesStore = useTechnologiesStore()
 const technology = ref<Technology | null>(null)
-const dateFrom = ref(props.modelValue.date_from ?? '')
-const dateTo = ref(props.modelValue.date_to ?? '')
-const minDuration = ref(props.modelValue.min_duration?.toString() ?? '')
-const mood = ref(props.modelValue.mood?.toString() ?? '')
+const dateFrom = ref(props.modelValue?.date_from ?? '')
+const dateTo = ref(props.modelValue?.date_to ?? '')
+const minDuration = ref(props.modelValue?.min_duration?.toString() ?? '')
+const mood = ref(props.modelValue?.mood?.toString() ?? '')
+
+function filtersEqual(a: SessionListFilters, b: SessionListFilters): boolean {
+  return (
+    (a.technology_id ?? '') === (b.technology_id ?? '') &&
+    (a.date_from ?? '') === (b.date_from ?? '') &&
+    (a.date_to ?? '') === (b.date_to ?? '') &&
+    (a.min_duration ?? undefined) === (b.min_duration ?? undefined) &&
+    (a.mood ?? undefined) === (b.mood ?? undefined)
+  )
+}
+
+function getTechnologyById(id: string): Technology | null {
+  return technologiesStore.technologies.find((t) => t.id === id) ?? null
+}
+
+function syncFromModelValue(val: SessionListFilters | undefined) {
+  const v = val ?? {}
+  const techId = v.technology_id
+  technology.value = techId ? getTechnologyById(techId) : null
+  dateFrom.value = v.date_from ?? ''
+  dateTo.value = v.date_to ?? ''
+  minDuration.value = v.min_duration != null ? String(v.min_duration) : ''
+  mood.value = v.mood != null ? String(v.mood) : ''
+}
+
+watch(
+  () => props.modelValue,
+  (val) => syncFromModelValue(val),
+  { immediate: true, deep: true }
+)
+
+watch(
+  () => technologiesStore.technologies,
+  () => {
+    const techId = props.modelValue?.technology_id
+    if (techId && !technology.value) {
+      technology.value = getTechnologyById(techId)
+    }
+  },
+  { deep: true }
+)
 
 watch(
   () => [technology.value, dateFrom.value, dateTo.value, minDuration.value, mood.value],
   () => {
-    const filters = {
+    const filters: SessionListFilters = {
       technology_id: technology.value?.id,
       date_from: dateFrom.value || undefined,
       date_to: dateTo.value || undefined,
       min_duration: minDuration.value ? parseInt(minDuration.value, 10) : undefined,
       mood: mood.value ? parseInt(mood.value, 10) : undefined
     }
-    emit('update:modelValue', filters)
-    emit('change')
+    if (!filtersEqual(filters, props.modelValue ?? {})) {
+      emit('update:modelValue', filters)
+      emit('change')
+    }
   },
   { deep: true }
 )
@@ -46,7 +89,6 @@ function clear() {
   dateTo.value = ''
   minDuration.value = ''
   mood.value = ''
-  emit('change')
 }
 </script>
 

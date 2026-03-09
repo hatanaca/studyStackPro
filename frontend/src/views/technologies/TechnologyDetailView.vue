@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import BaseButton from '@/components/ui/BaseButton.vue'
-import BaseCard from '@/components/ui/BaseCard.vue'
-import ErrorCard from '@/components/ui/ErrorCard.vue'
+import Button from 'primevue/button'
+import Card from 'primevue/card'
+import Message from 'primevue/message'
 import PageView from '@/components/layout/PageView.vue'
-import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
+import Skeleton from 'primevue/skeleton'
 import TechnologyDetailMural from '@/features/technologies/components/TechnologyDetailMural.vue'
 import TechnologyDetailReminders from '@/features/technologies/components/TechnologyDetailReminders.vue'
 import { sessionsApi } from '@/api/modules/sessions.api'
@@ -93,21 +93,18 @@ function goBack() {
       aria-live="polite"
       aria-label="Carregando tecnologia"
     >
-      <SkeletonLoader class="technology-detail__skeleton" />
+      <Skeleton class="technology-detail__skeleton" height="10rem" />
     </div>
     <template v-else-if="error">
-      <ErrorCard
-        :message="error"
-        :on-retry="fetchData"
-      />
-      <BaseButton
-        variant="outline"
+      <Message severity="error" :closable="false">{{ error }}</Message>
+      <Button label="Tentar novamente" severity="secondary" variant="outlined" @click="fetchData" />
+      <Button
+        label="Voltar para Tecnologias"
+        severity="secondary"
+        variant="outlined"
         class="technology-detail__back"
-        aria-label="Voltar para Tecnologias"
         @click="goBack"
-      >
-        Voltar para Tecnologias
-      </BaseButton>
+      />
     </template>
     <template v-else-if="technology">
       <div
@@ -115,14 +112,14 @@ function goBack() {
         :style="technology ? { '--tech-color': technology.color } : {}"
       >
         <div class="technology-detail__total">
-          <BaseCard class="technology-detail__card">
-            <h2 class="technology-detail__card-title">
-              Total de horas
-            </h2>
-            <p class="technology-detail__total-value">
-              {{ totalHoursLabel }}
-            </p>
-          </BaseCard>
+          <Card class="technology-detail__card">
+            <template #content>
+              <h2 class="technology-detail__card-title">Total de horas</h2>
+              <p class="technology-detail__total-value">
+                {{ totalHoursLabel }}
+              </p>
+            </template>
+          </Card>
         </div>
         <div class="technology-detail__sections">
           <TechnologyDetailReminders :technology-id="technology.id" />

@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import BaseBreadcrumb from '@/components/ui/BaseBreadcrumb.vue'
-import type { BreadcrumbItem } from '@/components/ui/BaseBreadcrumb.vue'
+import Breadcrumb from 'primevue/breadcrumb'
+
+export interface BreadcrumbItem {
+  label: string
+  to?: string
+  href?: string
+}
 
 withDefaults(
   defineProps<{
@@ -18,9 +23,9 @@ withDefaults(
     class="page-view"
     :class="{ 'page-view--narrow': narrow }"
   >
-    <BaseBreadcrumb
+    <Breadcrumb
       v-if="breadcrumb?.length"
-      :items="breadcrumb"
+      :model="breadcrumb.map((item) => ({ label: item.label, to: item.to }))"
       class="page-view__breadcrumb"
     />
     <header

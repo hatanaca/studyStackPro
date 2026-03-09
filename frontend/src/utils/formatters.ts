@@ -76,7 +76,8 @@ export function formatCurrency(value: number, currency = 'BRL'): string {
 /** Texto truncado com reticências */
 export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text
-  return text.slice(0, maxLength - 3) + '...'
+  const keep = Math.max(0, maxLength - 3)
+  return text.slice(0, keep) + '...'
 }
 
 /** Iniciais a partir de um nome (ex: "João Silva" → "JS") */

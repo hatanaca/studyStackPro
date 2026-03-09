@@ -5,11 +5,10 @@ import { getApiErrorMessage } from '@/api/client'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import { formatDateTime } from '@/utils/formatters'
 import PageView from '@/components/layout/PageView.vue'
-import BaseBadge from '@/components/ui/BaseBadge.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
-import ErrorCard from '@/components/ui/ErrorCard.vue'
-import KeyValueList from '@/components/ui/KeyValueList.vue'
-import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
+import Tag from 'primevue/tag'
+import Button from 'primevue/button'
+import Message from 'primevue/message'
+import Skeleton from 'primevue/skeleton'
 import type { StudySession } from '@/types/domain.types'
 
 const route = useRoute()
@@ -90,32 +89,40 @@ function goBack() {
       aria-live="polite"
       aria-label="Carregando sessão"
     >
-      <SkeletonLoader class="session-detail__skeleton" />
+      <Skeleton class="session-detail__skeleton" height="8rem" />
     </div>
     <template v-else-if="error">
-      <ErrorCard
-        :message="error"
-        :on-retry="fetchSession"
-      />
-      <BaseButton
-        variant="outline"
-        class="session-detail__back"
-        aria-label="Voltar para Sessões"
-        @click="goBack"
+      <Message
+        severity="error"
+        :closable="false"
+        class="session-detail__message"
       >
-        Voltar para Sessões
-      </BaseButton>
+        {{ error }}
+      </Message>
+      <Button
+        label="Tentar novamente"
+        severity="secondary"
+        variant="outlined"
+        class="session-detail__retry"
+        @click="fetchSession"
+      />
+      <Button
+        label="Voltar para Sessões"
+        severity="secondary"
+        variant="outlined"
+        class="session-detail__back"
+        @click="goBack"
+      />
     </template>
     <template v-else-if="session">
       <div class="session-detail__actions">
-        <BaseButton
-          variant="ghost"
-          size="sm"
-          aria-label="Voltar para Sessões"
+        <Button
+          label="← Voltar"
+          severity="secondary"
+          variant="text"
+          size="small"
           @click="goBack"
-        >
-          ← Voltar
-        </BaseButton>
+        />
       </div>
       <article
         class="session-detail__card"
@@ -131,9 +138,9 @@ function goBack() {
             v-if="session.technology"
             class="session-detail__badge-wrap"
           >
-            <BaseBadge
-              :label="session.technology.name"
-              :color="session.technology.color"
+            <Tag
+              :value="session.technology.name"
+              :style="{ background: session.technology.color, color: 'var(--color-primary-contrast)' }"
             />
             <span
               v-if="session.duration_formatted || session.duration_min != null"
@@ -142,10 +149,16 @@ function goBack() {
               {{ session.duration_formatted ?? `${session.duration_min} min` }}
             </span>
           </div>
-          <KeyValueList
-            :items="sessionMetaItems"
-            layout="row"
-          />
+          <dl class="session-detail__meta key-value-list">
+            <div
+              v-for="(item, index) in sessionMetaItems"
+              :key="index"
+              class="key-value-list__row"
+            >
+              <dt class="key-value-list__term">{{ item.label }}</dt>
+              <dd class="key-value-list__value">{{ item.value }}</dd>
+            </div>
+          </dl>
         </div>
       </article>
     </template>
@@ -163,9 +176,23 @@ function goBack() {
 .session-detail__actions {
   margin-bottom: var(--spacing-md);
 }
+.session-detail__message { margin-bottom: var(--spacing-md); }
+.session-detail__retry { margin-right: var(--spacing-sm); }
 .session-detail__back {
   margin-top: var(--spacing-md);
 }
+.key-value-list { margin: 0; display: flex; flex-direction: column; gap: 0; }
+.key-value-list__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  align-items: baseline;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.key-value-list__row:last-child { border-bottom: none; }
+.key-value-list__term { font-size: var(--text-xs); font-weight: 600; color: var(--color-text-muted); margin: 0; }
+.key-value-list__value { font-size: var(--text-sm); color: var(--color-text); margin: 0; word-break: break-word; }
 .session-detail__card {
   background: var(--color-bg-card);
   border-radius: var(--radius-md);

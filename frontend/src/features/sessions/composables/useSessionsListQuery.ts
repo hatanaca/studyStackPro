@@ -5,23 +5,18 @@ import { sessionsApi } from '@/api/modules/sessions.api'
 import { queryKeys } from '@/api/queryKeys'
 import { parseSessionsListResponse } from '@/types/schemas/api.schemas'
 import type { StudySession } from '@/types/domain.types'
-import type { PaginationMeta } from '@/types/api.types'
+import type { PaginationMeta, SessionListFilters } from '@/types/api.types'
 
-export interface SessionsListParams {
+export interface SessionsListParams extends SessionListFilters {
   page?: number
   per_page?: number
-  technology_id?: string
-  date_from?: string
-  date_to?: string
-  min_duration?: number
-  mood?: number
 }
 
 const STALE_MS = 60 * 1000 // 1 min
 
 /**
  * Query da lista de sessões com filtros e paginação.
- * Retorna sessions, meta, isLoading, error e refetch.
+ * Retorna sessions, meta, isPending, error e refetch.
  */
 export function useSessionsListQuery(params: MaybeRefOrGetter<SessionsListParams | undefined>) {
   const queryKey = computed(() => queryKeys.sessions.list(toValue(params) as Record<string, unknown> | undefined))

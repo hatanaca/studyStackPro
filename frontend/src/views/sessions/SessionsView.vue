@@ -2,7 +2,6 @@
 import SessionList from '@/features/sessions/components/SessionList.vue'
 import TechnologyStudyWidget from '@/features/sessions/components/TechnologyStudyWidget.vue'
 import PageView from '@/components/layout/PageView.vue'
-import SectionHeader from '@/components/ui/SectionHeader.vue'
 import { useTechnologiesStore } from '@/stores/technologies.store'
 import { useTechnologiesQuery } from '@/features/technologies/composables/useTechnologiesQuery'
 
@@ -23,10 +22,12 @@ const technologiesStore = useTechnologiesStore()
       v-if="technologiesStore.technologies.length"
       class="sessions-view__by-tech"
     >
-      <SectionHeader
-        title="Por tecnologia"
-        description="Acesso rápido ao tempo estudado por tecnologia e filtros na lista."
-      />
+      <header class="sessions-view__section-header">
+        <h2 class="sessions-view__section-title">Por tecnologia</h2>
+        <p class="sessions-view__section-desc">
+          Acesso rápido ao tempo estudado por tecnologia e filtros na lista.
+        </p>
+      </header>
       <div class="sessions-view__widgets">
         <TechnologyStudyWidget
           v-for="tech in technologiesStore.technologies"
@@ -42,6 +43,19 @@ const technologiesStore = useTechnologiesStore()
 <style scoped>
 .sessions-view__by-tech {
   margin-bottom: var(--page-section-gap);
+}
+.sessions-view__section-header { margin-bottom: var(--spacing-md); }
+.sessions-view__section-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 var(--spacing-xs);
+}
+.sessions-view__section-desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.45;
 }
 .sessions-view__widgets {
   display: grid;

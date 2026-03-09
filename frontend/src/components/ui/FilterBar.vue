@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
-import BaseInput from '@/components/ui/BaseInput.vue'
-import BaseDateRangePicker from '@/components/ui/BaseDateRangePicker.vue'
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
 
 export interface FilterBarState {
   search?: string
@@ -31,12 +30,16 @@ const emit = defineEmits<{
 }>()
 
 const search = ref(props.modelValue?.search ?? '')
-const dateRange = ref<{ start: string; end: string } | null>(props.modelValue?.dateRange ?? null)
+const dateRange = ref<{ start: string; end: string }>({
+  start: props.modelValue?.dateRange?.start ?? '',
+  end: props.modelValue?.dateRange?.end ?? '',
+})
 
 function emitState() {
+  const dr = dateRange.value.start && dateRange.value.end ? { ...dateRange.value } : null
   const state: FilterBarState = {
     search: search.value || undefined,
-    dateRange: dateRange.value ?? undefined,
+    dateRange: dr ?? undefined,
   }
   emit('update:modelValue', state)
   emit('filter', state)
@@ -47,10 +50,17 @@ watch(search, () => {
   emitState()
 })
 watch(dateRange, emitState, { deep: true })
+watch(() => props.modelValue?.dateRange, (dr) => {
+  if (dr) {
+    dateRange.value = { start: dr.start ?? '', end: dr.end ?? '' }
+  } else {
+    dateRange.value = { start: '', end: '' }
+  }
+}, { immediate: true })
 
 function clearFilters() {
   search.value = ''
-  dateRange.value = null
+  dateRange.value = { start: '', end: '' }
   emitState()
 }
 </script>
@@ -61,7 +71,7 @@ function clearFilters() {
       v-if="showSearch"
       class="filter-bar__search"
     >
-      <BaseInput
+      <InputText
         v-model="search"
         type="search"
         :placeholder="searchPlaceholder"
@@ -73,20 +83,27 @@ function clearFilters() {
       v-if="showDateRange"
       class="filter-bar__dates"
     >
-      <BaseDateRangePicker
-        v-model="dateRange"
-        placeholder-start="Início"
-        placeholder-end="Fim"
-      />
+      <input
+        v-model="dateRange.start"
+        type="date"
+        class="p-inputtext p-component"
+        aria-label="Início"
+      >
+      <input
+        v-model="dateRange.end"
+        type="date"
+        class="p-inputtext p-component"
+        aria-label="Fim"
+      >
     </div>
-    <BaseButton
-      variant="ghost"
-      size="sm"
+    <Button
+      label="Limpar filtros"
+      variant="text"
+      size="small"
+      severity="secondary"
       class="filter-bar__clear"
       @click="clearFilters"
-    >
-      Limpar filtros
-    </BaseButton>
+    />
   </div>
 </template>
 

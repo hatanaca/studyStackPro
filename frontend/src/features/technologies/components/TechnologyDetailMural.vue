@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import Button from 'primevue/button'
 
 const props = defineProps<{
   technologyId: string
@@ -89,20 +89,20 @@ watch(() => props.technologyId, loadFromStorage)
     </p>
 
     <div class="tech-mural__add">
-      <BaseButton
-        size="sm"
-        variant="outline"
+      <Button
+        :label="showAddImage ? 'Cancelar' : '+ Imagem'"
+        size="small"
+        variant="outlined"
+        severity="secondary"
         @click="showAddImage = !showAddImage; showAddQuote = false"
-      >
-        {{ showAddImage ? 'Cancelar' : '+ Imagem' }}
-      </BaseButton>
-      <BaseButton
-        size="sm"
-        variant="outline"
+      />
+      <Button
+        :label="showAddQuote ? 'Cancelar' : '+ Citação'"
+        size="small"
+        variant="outlined"
+        severity="secondary"
         @click="showAddQuote = !showAddQuote; showAddImage = false"
-      >
-        {{ showAddQuote ? 'Cancelar' : '+ Citação' }}
-      </BaseButton>
+      />
     </div>
 
     <div
@@ -116,13 +116,7 @@ watch(() => props.technologyId, loadFromStorage)
         placeholder="https://..."
         @keyup.enter.prevent="addImage"
       >
-      <BaseButton
-        size="sm"
-        :disabled="!newUrl.trim()"
-        @click="addImage"
-      >
-        Adicionar
-      </BaseButton>
+      <Button label="Adicionar" size="small" :disabled="!newUrl.trim()" @click="addImage" />
     </div>
     <div
       v-if="showAddQuote"
@@ -135,13 +129,7 @@ watch(() => props.technologyId, loadFromStorage)
         placeholder="Digite uma citação..."
         @keydown.ctrl.enter.prevent="addQuote"
       />
-      <BaseButton
-        size="sm"
-        :disabled="!newQuote.trim()"
-        @click="addQuote"
-      >
-        Adicionar
-      </BaseButton>
+      <Button label="Adicionar" size="small" :disabled="!newQuote.trim()" @click="addQuote" />
     </div>
 
     <div

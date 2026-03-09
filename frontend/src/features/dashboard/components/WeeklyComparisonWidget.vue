@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import BarChart from '@/components/charts/BarChart.vue'
-import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
+import Skeleton from 'primevue/skeleton'
 import { formatShortDate } from '@/utils/formatters'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 
@@ -27,7 +27,7 @@ const chartData = computed(() => {
       v-if="analyticsStore.weeklyLoading"
       class="chart-skeleton"
     >
-      <SkeletonLoader
+      <Skeleton
         v-for="i in 6"
         :key="i"
         height="1.5rem"

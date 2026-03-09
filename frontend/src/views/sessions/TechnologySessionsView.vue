@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import BaseBreadcrumb from '@/components/ui/BaseBreadcrumb.vue'
-import BaseCard from '@/components/ui/BaseCard.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import Breadcrumb from 'primevue/breadcrumb'
+import Card from 'primevue/card'
+import Button from 'primevue/button'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import { technologiesApi } from '@/api/modules/technologies.api'
 import { formatDate } from '@/utils/formatters'
@@ -99,7 +99,7 @@ function formatMinutes(m: number) {
 
 <template>
   <div class="technology-sessions-view">
-    <BaseBreadcrumb :items="breadcrumbItems" />
+    <Breadcrumb :model="breadcrumbItems" />
     <div
       v-if="loading"
       class="technology-sessions-view__loading"
@@ -111,12 +111,12 @@ function formatMinutes(m: number) {
       class="technology-sessions-view__error"
     >
       <p>{{ error }}</p>
-      <BaseButton
-        variant="outline"
+      <Button
+        label="Voltar"
+        severity="secondary"
+        variant="outlined"
         @click="goBack"
-      >
-        Voltar
-      </BaseButton>
+      />
     </div>
     <template v-else-if="technology">
       <header class="technology-sessions-view__header">
@@ -132,7 +132,7 @@ function formatMinutes(m: number) {
         </h1>
       </header>
 
-      <BaseCard class="technology-sessions-view__card">
+      <Card class="technology-sessions-view__card">
         <table class="technology-sessions-view__table">
           <thead>
             <tr>
@@ -156,7 +156,7 @@ function formatMinutes(m: number) {
         >
           Nenhuma sessão registrada para esta tecnologia.
         </p>
-      </BaseCard>
+      </Card>
     </template>
   </div>
 </template>

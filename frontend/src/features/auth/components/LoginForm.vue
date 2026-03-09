@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import BaseInput from '@/components/ui/BaseInput.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import InputText from 'primevue/inputtext'
+import Button from 'primevue/button'
 
 const props = withDefaults(
   defineProps<{
@@ -52,29 +52,38 @@ defineExpose({
     class="login-form"
     @submit.prevent="onSubmit"
   >
-    <BaseInput
-      v-model="email"
-      type="email"
-      placeholder="E-mail"
-      label="E-mail"
-      :error="emailError"
-      autocomplete="email"
-    />
-    <BaseInput
-      v-model="password"
-      type="password"
-      placeholder="Senha"
-      label="Senha"
-      :error="passwordError"
-      autocomplete="current-password"
-    />
-    <BaseButton
+    <div class="p-field">
+      <label for="login-email">E-mail</label>
+      <InputText
+        id="login-email"
+        v-model="email"
+        type="email"
+        placeholder="E-mail"
+        autocomplete="email"
+        class="w-full"
+        :class="{ 'p-invalid': emailError }"
+      />
+      <small v-if="emailError" class="p-error">{{ emailError }}</small>
+    </div>
+    <div class="p-field">
+      <label for="login-password">Senha</label>
+      <InputText
+        id="login-password"
+        v-model="password"
+        type="password"
+        placeholder="Senha"
+        autocomplete="current-password"
+        class="w-full"
+        :class="{ 'p-invalid': passwordError }"
+      />
+      <small v-if="passwordError" class="p-error">{{ passwordError }}</small>
+    </div>
+    <Button
       type="submit"
-      :disabled="props.loading"
+      :label="props.loading ? 'Entrando...' : 'Entrar'"
+      :loading="props.loading"
       class="w-full"
-    >
-      {{ props.loading ? 'Entrando...' : 'Entrar' }}
-    </BaseButton>
+    />
   </form>
 </template>
 
@@ -84,7 +93,11 @@ defineExpose({
   flex-direction: column;
   gap: var(--spacing-md);
 }
-.w-full {
-  width: 100%;
+.p-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
+.p-field label { font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); }
+.w-full { width: 100%; }
 </style>
