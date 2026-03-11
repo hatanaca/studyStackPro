@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/** API Resource para payload do dashboard (user_metrics, technology_metrics, time_series_30d, top_technologies). */
 class DashboardResource extends JsonResource
 {
     public function toArray(Request $request): array

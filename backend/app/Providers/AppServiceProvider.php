@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Providers;
 
@@ -20,12 +20,22 @@ class AppServiceProvider extends ServiceProvider
     {
         Model::shouldBeStrict(! app()->isProduction());
 
+        // Authentication endpoints - strict rate limiting to prevent brute force
+        RateLimiter::for('login', fn (Request $request) => Limit::perMinute(3)->by($request->ip()));
+        RateLimiter::for('register', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
         RateLimiter::for('auth', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+        
+        // Sensitive operations - strict rate limiting
         RateLimiter::for('sensitive', fn (Request $request) => Limit::perMinute(5)->by($request->user()?->id ?? $request->ip()));
+        
+        // User operations - moderate rate limiting
         RateLimiter::for('search', fn (Request $request) => Limit::perMinute(120)->by($request->user()?->id ?? $request->ip()));
         RateLimiter::for('recalculate', fn (Request $request) => Limit::perMinute(2)->by($request->user()?->id ?? $request->ip()));
         RateLimiter::for('export', fn (Request $request) => Limit::perMinute(30)->by($request->user()?->id ?? $request->ip()));
+        
+        // Health check - high limit for monitoring
         RateLimiter::for('health', fn (Request $request) => Limit::perMinute(300)->by($request->ip()));
+        
         $this->loadMigrationsFrom([
             database_path('migrations'),
             database_path('migrations/transactional'),
@@ -43,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
                     return false;
                 }
 
+                // Only allow configured admin emails to access Horizon
                 $adminEmails = array_map('trim', explode(',', config('app.horizon_admin_emails', '')));
 
                 return in_array($user->email, $adminEmails, true);

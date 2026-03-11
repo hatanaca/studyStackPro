@@ -2,6 +2,11 @@
 
 namespace App\Modules\Auth\DTOs;
 
+/**
+ * DTO de login.
+ *
+ * Email, senha e flag remember (para sessões persistentes).
+ */
 final readonly class LoginDTO
 {
     public function __construct(

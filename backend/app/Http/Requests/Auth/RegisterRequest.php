@@ -5,6 +5,7 @@ namespace App\Http\Requests\Auth;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
+/** Validação do registro: name, email único, password (mín 8, confirmed), timezone opcional. */
 class RegisterRequest extends FormRequest
 {
     public function authorize(): bool

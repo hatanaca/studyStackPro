@@ -28,6 +28,15 @@ onMounted(() => {
   form.value = { ...uiStore.customTheme }
 })
 
+function safeHexColor(value: string | undefined, fallback: string): string {
+  return value && /^#[0-9A-Fa-f]{6}$/.test(value) ? value : fallback
+}
+
+function setColor(key: keyof CustomThemeOptions, value: string) {
+  form.value[key] = value
+  save()
+}
+
 function save() {
   uiStore.setCustomTheme(form.value)
 }
@@ -54,10 +63,10 @@ function reset() {
         <label class="appearance-section__field">
           <span>Primária</span>
           <input
-            v-model="form.primary"
+            :value="safeHexColor(form.primary, '#3b82f6')"
             type="color"
             class="appearance-section__color"
-            @change="save"
+            @input="setColor('primary', ($event.target as HTMLInputElement).value)"
           >
           <input
             v-model="form.primary"
@@ -70,10 +79,10 @@ function reset() {
         <label class="appearance-section__field">
           <span>Fundo</span>
           <input
-            v-model="form.bg"
+            :value="safeHexColor(form.bg, '#f8fafc')"
             type="color"
             class="appearance-section__color"
-            @change="save"
+            @input="setColor('bg', ($event.target as HTMLInputElement).value)"
           >
           <input
             v-model="form.bg"
@@ -86,10 +95,10 @@ function reset() {
         <label class="appearance-section__field">
           <span>Fundo card</span>
           <input
-            v-model="form.bgCard"
+            :value="safeHexColor(form.bgCard, '#ffffff')"
             type="color"
             class="appearance-section__color"
-            @change="save"
+            @input="setColor('bgCard', ($event.target as HTMLInputElement).value)"
           >
           <input
             v-model="form.bgCard"
@@ -102,10 +111,10 @@ function reset() {
         <label class="appearance-section__field">
           <span>Texto</span>
           <input
-            v-model="form.text"
+            :value="safeHexColor(form.text, '#0f172a')"
             type="color"
             class="appearance-section__color"
-            @change="save"
+            @input="setColor('text', ($event.target as HTMLInputElement).value)"
           >
           <input
             v-model="form.text"
@@ -118,10 +127,10 @@ function reset() {
         <label class="appearance-section__field">
           <span>Texto secundário</span>
           <input
-            v-model="form.textMuted"
+            :value="safeHexColor(form.textMuted, '#64748b')"
             type="color"
             class="appearance-section__color"
-            @change="save"
+            @input="setColor('textMuted', ($event.target as HTMLInputElement).value)"
           >
           <input
             v-model="form.textMuted"
@@ -134,10 +143,10 @@ function reset() {
         <label class="appearance-section__field">
           <span>Borda</span>
           <input
-            v-model="form.border"
+            :value="safeHexColor(form.border, '#e2e8f0')"
             type="color"
             class="appearance-section__color"
-            @change="save"
+            @input="setColor('border', ($event.target as HTMLInputElement).value)"
           >
           <input
             v-model="form.border"
@@ -257,7 +266,9 @@ function reset() {
   font-size: var(--text-sm);
   background: var(--color-bg-card);
   color: var(--color-text);
-  min-width: 200px;
+  min-width: clamp(10rem, 46vw, 16rem);
+  width: 100%;
+  max-width: 20rem;
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
 .appearance-section__select:focus {
@@ -267,5 +278,14 @@ function reset() {
 }
 .appearance-section__actions {
   margin-top: var(--spacing-sm);
+}
+@media (max-width: 640px) {
+  .appearance-section__font-row {
+    width: 100%;
+  }
+  .appearance-section__select {
+    min-width: 0;
+    max-width: none;
+  }
 }
 </style>

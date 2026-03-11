@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { defineAsyncComponent, onMounted, watch, computed, inject } from 'vue'
+/**
+ * View principal do dashboard. KPIs, resumo do dia, sessão ativa, widgets (distribuição, séries, weekly, metas, lembretes).
+ * Usa TanStack Query para dashboard. Lazy load de widgets pesados. Suporta tema stakent.
+ */
+import { defineAsyncComponent, onMounted, watch, computed, inject, ref } from 'vue'
 import { useApexChartTheme } from '@/composables/useApexChartTheme'
 import { useDashboardQuery } from '@/features/dashboard/composables/useDashboardQuery'
 import { useDashboard } from '@/features/dashboard/composables/useDashboard'
@@ -12,9 +16,9 @@ import KpiCards from '@/features/dashboard/components/KpiCards.vue'
 import TodaySummaryCard from '@/features/dashboard/components/TodaySummaryCard.vue'
 import LogSessionWidget from '@/features/sessions/components/LogSessionWidget.vue'
 import OnboardingBanner from '@/components/onboarding/OnboardingBanner.vue'
-import StakentMetricCard from '@/features/dashboard/components/StakentMetricCard.vue'
-import StakentFeatureCard from '@/features/dashboard/components/StakentFeatureCard.vue'
-import StakentActiveCard from '@/features/dashboard/components/StakentActiveCard.vue'
+const StakentMetricCard = defineAsyncComponent(() => import('@/features/dashboard/components/StakentMetricCard.vue'))
+const StakentFeatureCard = defineAsyncComponent(() => import('@/features/dashboard/components/StakentFeatureCard.vue'))
+const StakentActiveCard = defineAsyncComponent(() => import('@/features/dashboard/components/StakentActiveCard.vue'))
 
 const TechDistributionWidget = defineAsyncComponent(
   () => import('@/features/dashboard/components/TechDistributionWidget.vue')
@@ -45,6 +49,10 @@ const { initDashboard } = useDashboard({
 })
 const analyticsStore = useAnalyticsStore()
 const hasError = computed(() => dashboardQuery.isError.value)
+const showHeavyWidgets = ref(false)
+type IdleCapableGlobal = typeof globalThis & {
+  requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void
+}
 
 function formatHours(h: number): string {
   if (h <= 0) return '0h'
@@ -74,6 +82,17 @@ onMounted(async () => {
     await initDashboard()
   } catch {
     // initDashboard só carrega heatmap/weekly/timeSeries; erro de dashboard vem do query
+  }
+
+  const loadHeavyWidgets = () => {
+    showHeavyWidgets.value = true
+  }
+
+  const idleGlobal = globalThis as IdleCapableGlobal
+  if (typeof idleGlobal.requestIdleCallback === 'function') {
+    idleGlobal.requestIdleCallback(loadHeavyWidgets, { timeout: 1200 })
+  } else {
+    setTimeout(loadHeavyWidgets, 500)
   }
 })
 
@@ -186,18 +205,28 @@ async function retry() {
           <div class="widgets__item widgets__item--4">
             <GoalsWidget />
           </div>
-          <div class="widgets__item widgets__item--5 widget-full">
-            <TimeSeriesWidget />
-          </div>
-          <div class="widgets__item widgets__item--6 widget-full">
-            <WeeklyComparisonWidget />
-          </div>
-          <template v-if="analyticsStore.technologyMetrics?.length">
-            <div class="widgets__item widgets__item--7 widget-full">
-              <TechDistributionWidget
-                :metrics="analyticsStore.technologyMetrics"
-                :loading="analyticsStore.isRecalculating"
-              />
+          <template v-if="showHeavyWidgets">
+            <div class="widgets__item widgets__item--5 widget-full">
+              <TimeSeriesWidget />
+            </div>
+            <div class="widgets__item widgets__item--6 widget-full">
+              <WeeklyComparisonWidget />
+            </div>
+            <template v-if="analyticsStore.technologyMetrics?.length">
+              <div class="widgets__item widgets__item--7 widget-full">
+                <TechDistributionWidget
+                  :metrics="analyticsStore.technologyMetrics"
+                  :loading="analyticsStore.isRecalculating"
+                />
+              </div>
+            </template>
+          </template>
+          <template v-else>
+            <div class="widgets__item widgets__item--5 widget-full">
+              <section class="kpi-card-skeleton" aria-hidden="true">
+                <Skeleton width="45%" height="1rem" />
+                <Skeleton width="100%" height="14rem" class="mt-2" />
+              </section>
             </div>
           </template>
         </div>
@@ -232,6 +261,9 @@ async function retry() {
   gap: var(--widget-gap);
   align-items: start;
   grid-auto-rows: minmax(min-content, auto);
+}
+.widgets__item {
+  min-width: 0;
 }
 .dashboard {
   max-width: var(--page-max-width);
@@ -364,12 +396,12 @@ async function retry() {
   grid-template-columns: 1fr;
   gap: var(--widget-gap);
 }
-@media (min-width: 480px) {
+@media (min-width: var(--screen-xs)) {
   .kpi-skeleton {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
 }
-@media (min-width: 1024px) {
+@media (min-width: var(--screen-lg)) {
   .kpi-skeleton {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -403,7 +435,7 @@ async function retry() {
   grid-template-columns: 1fr;
   gap: var(--spacing-lg);
 }
-@media (min-width: 1024px) {
+@media (min-width: var(--screen-lg)) {
   .stakent-dashboard__top {
     grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
     align-items: start;
@@ -434,7 +466,7 @@ async function retry() {
   grid-template-columns: 1fr;
   gap: var(--spacing-md);
 }
-@media (min-width: 640px) {
+@media (min-width: var(--screen-sm)) {
   .stakent-dashboard__cards {
     grid-template-columns: repeat(3, 1fr);
   }

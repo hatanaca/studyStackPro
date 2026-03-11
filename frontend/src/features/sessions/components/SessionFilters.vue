@@ -185,7 +185,7 @@ function clear() {
   flex-direction: column;
   gap: var(--spacing-xs);
   flex: 1;
-  min-width: 140px;
+  min-width: clamp(8.75rem, 24vw, 12rem);
 }
 .filter-group label {
   font-size: var(--text-xs);
@@ -229,11 +229,18 @@ function clear() {
   border-color: var(--color-primary);
 }
 @media (max-width: 640px) {
+  .session-filters {
+    padding: var(--widget-padding-sm);
+  }
+  .session-filters__row {
+    align-items: stretch;
+  }
   .filter-group {
     min-width: 100%;
   }
   .btn-clear {
     width: 100%;
+    align-self: stretch;
   }
 }
 </style>

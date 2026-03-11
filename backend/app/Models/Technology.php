@@ -6,6 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Model de tecnologia (linguagem, ferramenta, framework).
+ *
+ * Pertence a um usuário. is_active permite soft delete.
+ * Relacionamentos: user, studySessions.
+ */
 class Technology extends BaseModel
 {
     use HasFactory;
@@ -20,6 +26,7 @@ class Technology extends BaseModel
         'is_active',
     ];
 
+    /** Casts de atributos */
     protected function casts(): array
     {
         return [
@@ -27,11 +34,13 @@ class Technology extends BaseModel
         ];
     }
 
+    /** Usuário proprietário da tecnologia */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** Sessões de estudo desta tecnologia */
     public function studySessions(): HasMany
     {
         return $this->hasMany(StudySession::class);

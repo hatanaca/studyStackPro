@@ -85,6 +85,7 @@ function goToRegisterSession() {
       v-else-if="hasData"
       :data="chartData"
       value-unit="hours"
+      preset="stock"
       tall
       aria-label="Gráfico de tempo estudado por dia no período selecionado"
     />
@@ -108,12 +109,15 @@ function goToRegisterSession() {
   padding: var(--widget-padding);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
+  min-height: calc(var(--widget-chart-min-height-sm) + 3rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
   overflow: hidden;
-  min-height: var(--widget-chart-min-height-sm);
 }
 @media (min-width: var(--screen-sm)) {
   .time-series-widget {
-    min-height: var(--widget-chart-min-height-tall);
+    min-height: calc(var(--widget-chart-min-height-tall) + 7rem);
   }
 }
 .header {
@@ -139,16 +143,17 @@ function goToRegisterSession() {
   font-variant-numeric: tabular-nums;
 }
 .chart-skeleton {
-  min-height: var(--widget-chart-min-height-sm);
+  min-height: var(--widget-chart-min-height);
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-  padding: var(--spacing-md) 0;
+  padding: var(--spacing-sm) 0;
 }
 .skeleton-line {
   width: 90%;
 }
-@media (max-width: 480px) {
+@media (max-width: var(--screen-xs)) {
   .time-series-widget {
     padding: var(--widget-padding-sm);
   }

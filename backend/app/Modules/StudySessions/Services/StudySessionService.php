@@ -11,12 +11,21 @@ use App\Modules\StudySessions\DTOs\StudySessionFilterDTO;
 use App\Modules\StudySessions\Repositories\Contracts\StudySessionRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
+/**
+ * Serviço de sessões de estudo.
+ *
+ * Orquestra CRUD, dispara eventos (Created/Updated/Deleted) para listeners que invalidam cache
+ * e disparam recálculo de métricas. Garante isolamento por usuário (findForUser).
+ */
 class StudySessionService
 {
     public function __construct(
         private StudySessionRepositoryInterface $repository,
     ) {}
 
+    /**
+     * Lista sessões do usuário com filtros e paginação.
+     */
     public function listForUser(string $userId, array|StudySessionFilterDTO $filters = []): LengthAwarePaginator
     {
         $filterArray = $filters instanceof StudySessionFilterDTO
@@ -26,6 +35,9 @@ class StudySessionService
         return $this->repository->findByUser($userId, $filterArray);
     }
 
+    /**
+     * Busca sessão por ID. Aborta 404 se não existir, 403 se não pertencer ao usuário.
+     */
     public function findForUser(string $id, string $userId): StudySession
     {
         $session = $this->repository->findById($id);
@@ -39,11 +51,17 @@ class StudySessionService
         return $session;
     }
 
+    /**
+     * Retorna a sessão ativa (ended_at null) do usuário, ou null.
+     */
     public function getActiveForUser(string $userId): ?StudySession
     {
         return $this->repository->findActiveByUser($userId);
     }
 
+    /**
+     * Cria sessão e dispara StudySessionCreated (listeners invalidam cache e disparam recálculo).
+     */
     public function create(string $userId, StudySessionDTO $dto): StudySession
     {
         $session = $this->repository->create($dto);
@@ -52,6 +70,9 @@ class StudySessionService
         return $session;
     }
 
+    /**
+     * Atualiza sessão e dispara StudySessionUpdated com campos alterados.
+     */
     public function update(string $id, string $userId, array $data): StudySession
     {
         $session = $this->findForUser($id, $userId);
@@ -61,6 +82,9 @@ class StudySessionService
         return $session;
     }
 
+    /**
+     * Remove sessão. Dispara StudySessionDeleted antes para que listeners atualizem analytics.
+     */
     public function delete(string $id, string $userId): void
     {
         $session = $this->findForUser($id, $userId);

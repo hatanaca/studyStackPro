@@ -6,8 +6,17 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
+/**
+ * Controlador de health check da API.
+ *
+ * Verifica conectividade com: banco (PostgreSQL), Redis, fila e WebSocket (Reverb).
+ * Usado por load balancers e monitoramento. Retorna 503 se algum serviço falhar.
+ */
 class HealthController extends Controller
 {
+    /**
+     * Executa o health check e retorna status de cada dependência.
+     */
     public function __invoke(): JsonResponse
     {
         $services = [];

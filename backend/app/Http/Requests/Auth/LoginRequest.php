@@ -4,6 +4,7 @@ namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/** Validação do login: email, password, remember opcional. */
 class LoginRequest extends FormRequest
 {
     public function authorize(): bool

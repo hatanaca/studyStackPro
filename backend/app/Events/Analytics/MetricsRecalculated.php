@@ -7,6 +7,10 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 
+/**
+ * Evento broadcast quando recálculo de métricas termina.
+ * Canal privado dashboard.{userId}. Payload: dashboard (objeto completo).
+ */
 class MetricsRecalculated implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets;

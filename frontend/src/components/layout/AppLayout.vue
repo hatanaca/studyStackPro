@@ -1,6 +1,11 @@
 <script setup lang="ts">
+/**
+ * Layout principal autenticado.
+ * Sidebar + área de conteúdo + ActiveSessionBanner. Conecta WebSocket no mount.
+ * Tema (stakent-style) e data-theme aplicados via uiStore.
+ */
 import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
-import { RouterView } from 'vue-router'
+import { RouterView, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
@@ -9,8 +14,10 @@ import ActiveSessionBanner from '@/features/sessions/components/ActiveSessionBan
 
 const authStore = useAuthStore()
 const uiStore = useUiStore()
+const route = useRoute()
 
 const useStakentStyle = computed(() => uiStore.theme === 'dark')
+const showActiveBanner = computed(() => route.name !== 'session-focus')
 
 provide('stakentStyle', useStakentStyle)
 
@@ -89,7 +96,7 @@ watch(
           </button>
           <span class="app-layout__mobile-title">StudyTrack Pro</span>
         </header>
-        <ActiveSessionBanner />
+        <ActiveSessionBanner v-if="showActiveBanner" />
         <div class="app-layout__content">
           <RouterView />
         </div>
@@ -102,10 +109,12 @@ watch(
 .app-layout {
   display: flex;
   min-height: 100vh;
+  min-height: var(--viewport-app-min-height);
 }
 .app-layout__main-wrap {
   flex: 1;
   min-width: 0;
+  min-height: var(--viewport-app-min-height);
   display: flex;
   flex-direction: column;
 }
@@ -149,7 +158,7 @@ watch(
   display: none;
 }
 
-@media (min-width: 769px) {
+@media (min-width: calc(var(--screen-md) + 1px)) {
   .app-layout__main-wrap {
     margin-left: var(--sidebar-width);
   }
@@ -158,7 +167,7 @@ watch(
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--screen-md)) {
   .app-layout__main {
     padding: var(--spacing-sm) var(--spacing-md);
   }
@@ -191,6 +200,10 @@ watch(
   }
   .app-layout__nav-trigger:active {
     transform: scale(0.98);
+  }
+  .app-layout__nav-trigger:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
   }
   .app-layout__mobile-title {
     font-weight: 600;

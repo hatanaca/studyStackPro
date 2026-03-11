@@ -1,16 +1,20 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { VueQueryPlugin } from '@tanstack/vue-query'
-import VueApexCharts from 'vue3-apexcharts'
 import PrimeVue from 'primevue/config'
 import ConfirmationService from 'primevue/confirmationservice'
+import ToastService from 'primevue/toastservice'
 import Aura from '@primeuix/themes/aura'
 import App from './App.vue'
 import router from './router'
 import './assets/styles/main.css'
 import 'primeicons/primeicons.css'
 
-// Aplicar tema salvo antes do primeiro render (login e app)
+/**
+ * Bootstrap da aplicação Vue.
+ * Plugins: Pinia, Vue Query, Router, PrimeVue (Aura), Confirmation, Toast.
+ * Tema (light/dark) aplicado no document antes do primeiro render.
+ */
 const savedTheme = (() => {
   try {
     const t = localStorage.getItem('studytrack.theme')
@@ -22,15 +26,16 @@ const savedTheme = (() => {
 })()
 document.documentElement.setAttribute('data-theme', savedTheme)
 
+/** Instância principal da aplicação */
 const app = createApp(App)
 app.use(createPinia())
 app.use(VueQueryPlugin)
 app.use(router)
-app.use(VueApexCharts)
 app.use(PrimeVue, {
   theme: {
     preset: Aura,
   },
 })
 app.use(ConfirmationService)
+app.use(ToastService)
 app.mount('#app')

@@ -3,6 +3,7 @@ import { ENDPOINTS } from '@/api/endpoints'
 import type { ApiResponse } from '@/types/api.types'
 import type { Technology } from '@/types/domain.types'
 
+/** Módulo de chamadas à API de tecnologias */
 export const technologiesApi = {
   list: (params?: { active_only?: boolean }) =>
     apiClient.get<ApiResponse<Technology[]>>(ENDPOINTS.technologies.list, { params }),

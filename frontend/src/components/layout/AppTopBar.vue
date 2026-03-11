@@ -1,4 +1,8 @@
 <script setup lang="ts">
+/**
+ * Barra superior (estilo stakent). Logo, título da página, NotificationCenter, ThemeToggle.
+ * Visível apenas quando stakentStyle=true.
+ */
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
@@ -14,6 +18,7 @@ const pageTitle = computed(() => {
   const map: Record<string, string> = {
     dashboard: 'Top Métricas de Estudo',
     sessions: 'Sessões',
+    'session-focus': 'Sessão ativa',
     technologies: 'Tecnologias',
     goals: 'Metas',
     export: 'Exportar',
@@ -163,6 +168,11 @@ const userInitials = computed(() => {
 .app-topbar__brand:hover {
   color: var(--color-primary);
 }
+.app-topbar__brand:focus-visible,
+.app-topbar__icon-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
 .app-topbar__pagetitle {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
@@ -219,12 +229,12 @@ const userInitials = computed(() => {
   max-width: 10rem;
 }
 .app-topbar__badge {
-  font-size: 0.65rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   padding: 0.1rem 0.35rem;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-primary-contrast);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -237,13 +247,13 @@ const userInitials = computed(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  min-width: 0;
 }
 .app-topbar__search {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
-  min-width: 10rem;
-  max-width: 14rem;
+  width: clamp(10rem, 24vw, 14rem);
   height: 2.25rem;
   padding: 0 var(--spacing-sm);
   border-radius: var(--radius-md);
@@ -283,12 +293,12 @@ const userInitials = computed(() => {
   color: var(--color-primary);
   background: var(--color-primary-soft);
 }
-@media (max-width: 900px) {
+@media (max-width: var(--screen-lg)) {
   .app-topbar__pagetitle { display: none; }
   .app-topbar__search { display: none; }
   .app-topbar__name { max-width: 6rem; }
 }
-@media (max-width: 640px) {
+@media (max-width: var(--screen-sm)) {
   .app-topbar__center { display: none; }
   .app-topbar { padding: 0 var(--spacing-md); }
 }

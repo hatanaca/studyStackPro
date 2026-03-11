@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ApexOptions } from 'apexcharts'
+import VueApexCharts from 'vue3-apexcharts'
 import { useApexChartTheme } from '@/composables/useApexChartTheme'
 
 const props = withDefaults(
   defineProps<{
-    data?: { labels: string[]; values: number[] }
+    data?: { labels: string[]; values: number[]; scores?: number[] }
     title?: string
     /** Orientação: vertical (padrão) ou horizontal */
     orientation?: 'vertical' | 'horizontal'
@@ -40,6 +41,47 @@ const props = withDefaults(
 
 const { baseOptions, theme } = useApexChartTheme()
 
+type Rgb = { r: number; g: number; b: number }
+
+const SCORE_MIN = 10
+const SCORE_MAX = 100
+const SCORE_LOW_COLOR: Rgb = { r: 101, g: 181, b: 129 } // #65B581
+const SCORE_MID_COLOR: Rgb = { r: 255, g: 206, b: 52 } // #FFCE34
+const SCORE_HIGH_COLOR: Rgb = { r: 253, g: 102, b: 95 } // #FD665F
+
+const hasScoreData = computed(() => {
+  const scores = props.data?.scores ?? []
+  const values = props.data?.values ?? []
+  return scores.length > 0 && scores.length === values.length
+})
+
+const clamp = (value: number, min: number, max: number): number => Math.min(Math.max(value, min), max)
+
+const mix = (from: Rgb, to: Rgb, factor: number): Rgb => ({
+  r: Math.round(from.r + (to.r - from.r) * factor),
+  g: Math.round(from.g + (to.g - from.g) * factor),
+  b: Math.round(from.b + (to.b - from.b) * factor),
+})
+
+const rgbToHex = ({ r, g, b }: Rgb): string =>
+  `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+
+const colorByScore = (score: number): string => {
+  const safeScore = clamp(score, SCORE_MIN, SCORE_MAX)
+  const ratio = (safeScore - SCORE_MIN) / (SCORE_MAX - SCORE_MIN)
+  const midpoint = 0.5
+
+  if (ratio <= midpoint) {
+    const factor = ratio / midpoint
+    return rgbToHex(mix(SCORE_LOW_COLOR, SCORE_MID_COLOR, factor))
+  }
+
+  const factor = (ratio - midpoint) / midpoint
+  return rgbToHex(mix(SCORE_MID_COLOR, SCORE_HIGH_COLOR, factor))
+}
+
+const scoreColors = computed(() => (props.data?.scores ?? []).map((score) => colorByScore(score)))
+
 const series = computed(() => [
   {
     name: props.valueUnit === 'h' ? 'Horas' : 'Minutos',
@@ -67,25 +109,18 @@ const chartOptions = computed<ApexOptions>(() => {
       animations: {
         enabled: true,
         easing: 'easeinout',
-        speed: 600,
-        animateGradually: { enabled: true, delay: 80 },
-        dynamicAnimation: { enabled: true, speed: 350 },
+        speed: 500,
+        animateGradually: { enabled: true, delay: 60 },
+        dynamicAnimation: { enabled: true, speed: 300 },
       },
-      dropShadow: {
-        enabled: true,
-        top: 2,
-        left: 0,
-        blur: 8,
-        opacity: 0.12,
-        color: t.textColor,
-      },
+      dropShadow: { enabled: false },
       zoom: { enabled: false },
       selection: { enabled: false },
     },
-    colors: props.gradientFill
-      ? undefined
-      : [t.palette[0]],
-    fill: props.gradientFill
+    colors: hasScoreData.value ? scoreColors.value : [t.palette[0]],
+    fill: hasScoreData.value
+      ? { type: 'solid' }
+      : props.gradientFill
       ? {
           type: 'gradient',
           gradient: {
@@ -105,8 +140,8 @@ const chartOptions = computed<ApexOptions>(() => {
     plotOptions: {
       bar: {
         horizontal: isHorizontal,
-        columnWidth: '55%',
-        barHeight: '70%',
+        columnWidth: '60%',
+        barHeight: isHorizontal ? '72%' : '75%',
         borderRadius: props.borderRadius,
         borderRadiusApplication: 'end',
         borderRadiusWhenStacked: 'last',
@@ -115,9 +150,11 @@ const chartOptions = computed<ApexOptions>(() => {
           hideOverflowingLabels: true,
           maxItems: 100,
         },
-        distributed: false,
+        distributed: hasScoreData.value,
         rangeBarOverlap: false,
-        ...(props.gradientFill ? { colors: { ranges: [{ from: 0, to: 1e9, color: t.palette[0] }] } } : {}),
+        ...(!hasScoreData.value && props.gradientFill
+          ? { colors: { ranges: [{ from: 0, to: 1e9, color: t.palette[0] }] } }
+          : {}),
       },
     },
     dataLabels: {
@@ -130,13 +167,13 @@ const chartOptions = computed<ApexOptions>(() => {
     grid: {
       ...baseOptions.value.grid,
       xaxis: { lines: { show: false } },
-      yaxis: {
-        lines: {
-          show: true,
-          strokeDashArray: 4,
-        },
+      yaxis: { lines: { show: true, strokeDashArray: 2 } },
+      padding: {
+        top: isHorizontal ? 4 : 12,
+        right: 12,
+        bottom: isHorizontal ? 12 : 36,
+        left: isHorizontal ? 4 : 12,
       },
-      padding: { top: 10, right: 10, bottom: 0, left: 8 },
     },
     xaxis: {
       ...baseOptions.value.xaxis,
@@ -146,22 +183,22 @@ const chartOptions = computed<ApexOptions>(() => {
       title: props.xAxisTitle ? { text: props.xAxisTitle, style: { color: t.textMuted, fontSize: t.fontSize } } : undefined,
       labels: {
         ...baseOptions.value.xaxis?.labels,
-        rotate: isHorizontal ? 0 : -45,
-        maxHeight: 80,
+        rotate: isHorizontal ? 0 : -40,
+        maxHeight: 72,
         trim: true,
       },
-      crosshairs: { show: true, width: 1, position: 'back', opacity: 0.3, stroke: { width: 0, color: t.gridColor } },
+      crosshairs: { show: false },
     },
     yaxis: {
-      min: 0,
-      tickAmount: 5,
-      forceNiceScale: true,
+      ...(isHorizontal ? {} : { min: 0, tickAmount: 5, forceNiceScale: true }),
       title: props.yAxisTitle ? { text: props.yAxisTitle, style: { color: t.textMuted, fontSize: t.fontSize } } : undefined,
       labels: {
         style: { colors: t.textMuted, fontSize: t.fontSizeAxis },
-        formatter: (val: number) => String(Math.round(val)),
+        align: isHorizontal ? 'left' : 'right',
+        offsetX: isHorizontal ? -10 : 0,
+        formatter: (val: number | string) => (isHorizontal ? String(val) : String(Math.round(Number(val)))),
       },
-      crosshairs: { show: true, position: 'back', stroke: { width: 1, color: t.gridColor, dashArray: 4 } },
+      crosshairs: { show: false },
     },
     legend: { show: false },
     tooltip: {
@@ -174,27 +211,6 @@ const chartOptions = computed<ApexOptions>(() => {
         title: { formatter: () => (props.valueUnit === 'h' ? 'Horas' : 'Minutos') },
       },
     },
-    annotations: (() => {
-      const vals = props.data?.values ?? []
-      if (vals.length < 2) return undefined
-      const avg = vals.reduce((a, b) => a + b, 0) / vals.length
-      return {
-        yaxis: [
-          {
-            y: avg,
-            borderColor: t.textMuted,
-            strokeDashArray: 4,
-            borderWidth: 1,
-            label: {
-              borderColor: t.textMuted,
-              style: { color: t.textMuted, fontSize: t.fontSize },
-              text: `Média: ${Math.round(avg)} ${props.valueUnit}`,
-              position: 'right',
-            },
-          },
-        ],
-      }
-    })(),
     responsive: [
       { breakpoint: 640, options: { chart: { height: 280 }, xaxis: { title: undefined } } },
       { breakpoint: 480, options: { chart: { height: 260 }, dataLabels: { style: { fontSize: '10px' } }, plotOptions: { bar: { columnWidth: '65%' } } } },
@@ -216,17 +232,14 @@ const chartOptions = computed<ApexOptions>(() => {
       v-if="data?.values?.length"
       class="chart-wrap"
     >
-      <apexchart
+      <VueApexCharts
         type="bar"
         :options="chartOptions"
         :series="series"
         class="apex-bar"
       />
     </div>
-    <div
-      v-else
-      class="chart-placeholder"
-    >
+    <div v-else-if="!data?.values?.length" class="chart-placeholder">
       Sem dados
     </div>
   </div>
@@ -238,6 +251,9 @@ const chartOptions = computed<ApexOptions>(() => {
   border-radius: var(--radius-md);
   padding: 0;
   min-height: var(--widget-chart-min-height-sm);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 .chart-title {
   font-size: var(--widget-title-size);
@@ -246,21 +262,27 @@ const chartOptions = computed<ApexOptions>(() => {
   color: var(--widget-title-color);
 }
 .chart-wrap {
-  height: var(--widget-chart-min-height-sm);
+  height: 100%;
   min-height: var(--widget-chart-min-height-sm);
   position: relative;
+  flex: 1 1 auto;
+  padding-bottom: 4px;
 }
-@media (min-width: 640px) {
+@media (min-width: var(--screen-sm)) {
   .chart-wrap {
-    height: var(--widget-chart-min-height);
     min-height: var(--widget-chart-min-height);
   }
 }
 .apex-bar {
   width: 100%;
   height: 100%;
+  display: block;
+}
+.apex-bar :deep(.apexcharts-canvas) {
+  margin: 0;
 }
 .chart-placeholder {
+  flex: 1 1 auto;
   min-height: var(--widget-chart-min-height-sm);
   display: flex;
   align-items: center;

@@ -3,9 +3,12 @@ import { ref, computed } from 'vue'
 import type { User } from '@/types/domain.types'
 import { authApi } from '@/api/modules/auth.api'
 
+/** Chave do localStorage para o token JWT */
 const TOKEN_KEY = 'studytrack_token'
+/** Chave do localStorage para cache do usuário (evita fetch inicial) */
 const USER_KEY = 'studytrack_user'
 
+/** Carrega usuário do cache local (para restauração após refresh) */
 function loadCachedUser(): User | null {
   try {
     const raw = localStorage.getItem(USER_KEY)
@@ -15,12 +18,18 @@ function loadCachedUser(): User | null {
   }
 }
 
+/**
+ * Store de autenticação. Gerencia token, usuário e persistência em localStorage.
+ * login, register, logout, fetchMe, updateUser.
+ */
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem(TOKEN_KEY))
   const user = ref<User | null>(loadCachedUser())
 
+  /** Computed: true se há token (usuário considerado autenticado) */
   const isAuthenticated = computed(() => !!token.value)
 
+  /** Autentica e persiste token + user no store e localStorage */
   async function login(email: string, password: string) {
     const { data } = await authApi.login(email, password)
     if (data.success && data.data) {
@@ -43,6 +52,7 @@ export const useAuthStore = defineStore('auth', () => {
     await login(email, password)
   }
 
+  /** Atualiza dados do usuário na API e sincroniza cache local */
   async function fetchMe() {
     const { data } = await authApi.me()
     if (data.success && data.data) {
@@ -51,11 +61,13 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /** Atualiza usuário no store e localStorage (sem chamar API) */
   function updateUser(updated: User) {
     user.value = updated
     localStorage.setItem(USER_KEY, JSON.stringify(updated))
   }
 
+  /** Revoga token na API e limpa store + localStorage */
   async function logout() {
     try {
       await authApi.logout()

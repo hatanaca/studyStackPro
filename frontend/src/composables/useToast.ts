@@ -1,8 +1,12 @@
 import { useToast as usePrimeToast } from 'primevue/usetoast'
 
+/** Duração padrão do toast em ms */
 const DEFAULT_DURATION = 4000
 
-/** Adapter que delega para o Toast do PrimeVue. Mantém a API existente (success, error, info). */
+/**
+ * Composables de Toast. Adaptador sobre PrimeVue useToast.
+ * success, error, info com duração configurável. Erros: 6s por padrão.
+ */
 export function useToast() {
   const toast = usePrimeToast()
 

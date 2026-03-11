@@ -2,6 +2,11 @@
 
 namespace App\Providers;
 
+/**
+ * Mapeamento de eventos e listeners.
+ * StudySession Created/Updated/Deleted: invalidam cache, disparam recálculo, broadcast (session started/ended, recalculating).
+ * MetricsRecalculated: UpdateCacheWithFreshData, BroadcastMetricsUpdate.
+ */
 use App\Events\Analytics\MetricsRecalculated;
 use App\Events\StudySession\StudySessionCreated;
 use App\Events\StudySession\StudySessionDeleted;

@@ -1,5 +1,11 @@
+# Docker Compose - StudyTrackPro
+# Serviços: nginx (proxy), php-fpm (Laravel), reverb (WebSocket), horizon (filas),
+# scheduler (cron), node (Vite dev), postgres, redis
+
 services:
+  # Proxy reverso: API, SPA, WebSocket, health, Horizon
   nginx:
+    container_name: nginx
     image: nginx:1.25-alpine
     ports:
       - "80:80"
@@ -10,7 +16,9 @@ services:
     depends_on:
       - php-fpm
 
+  # Laravel (API + frontend estático em produção)
   php-fpm:
+    container_name: php-fpm
     build: ./docker/php
     volumes:
       - ./backend:/var/www/html
@@ -22,7 +30,9 @@ services:
       - postgres
       - redis
 
+  # Laravel Reverb - WebSocket para dashboard em tempo real
   reverb:
+    container_name: reverb
     build:
       context: ./docker/php
       dockerfile: Dockerfile.cli
@@ -31,8 +41,11 @@ services:
       - ./backend:/var/www/html
     depends_on:
       - redis
+    restart: unless-stopped
 
+  # Laravel Horizon - processamento de filas (jobs, recálculo de métricas)
   horizon:
+    container_name: horizon
     build:
       context: ./docker/php
       dockerfile: Dockerfile.cli
@@ -44,7 +57,9 @@ services:
       - redis
     restart: unless-stopped
 
+  # Scheduler - substitui cron para tarefas agendadas (schedule:work)
   scheduler:
+    container_name: scheduler
     build:
       context: ./docker/php
       dockerfile: Dockerfile.cli
@@ -55,7 +70,9 @@ services:
       - postgres
       - redis
 
+  # Node - ambiente de desenvolvimento do frontend (Vite)
   node:
+    container_name: node
     build:
       context: ./frontend
       dockerfile: ../docker/node/Dockerfile.frontend
@@ -72,7 +89,9 @@ services:
       - PROXY_TARGET=http://nginx
     command: sh -c "find /app/node_modules -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null; npm install && npm run dev -- --host 0.0.0.0"
 
+  # PostgreSQL 16 - banco principal + schema analytics
   postgres:
+    container_name: postgres
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: studytrack
@@ -87,7 +106,9 @@ services:
       timeout: 5s
       retries: 5
 
+  # Redis 7 - cache, filas, sessões, Reverb
   redis:
+    container_name: redis
     image: redis:7-alpine
     command: redis-server /usr/local/etc/redis/redis.conf
     volumes:
@@ -99,6 +120,7 @@ services:
       timeout: 3s
       retries: 5
 
+# Volumes persistentes para dados entre restarts
 volumes:
   postgres_data:
   redis_data:

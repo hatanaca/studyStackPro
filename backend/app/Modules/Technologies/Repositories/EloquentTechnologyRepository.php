@@ -11,10 +11,15 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
+/**
+ * Implementação Eloquent do repositório de tecnologias.
+ * Usa cache com tags (technologies, user:{id}). Busca com ILIKE. Invalida cache em create/update.
+ */
 class EloquentTechnologyRepository implements TechnologyRepositoryInterface
 {
     private const CACHE_TTL_MINUTES = 5;
 
+    /** Lista tecnologias do usuário (cache 5min). activeOnly filtra is_active=true */
     public function listForUser(string $userId, bool $activeOnly = true): Collection
     {
         $cacheKey = "technologies:list:{$userId}:".($activeOnly ? 'active' : 'all');
@@ -33,6 +38,7 @@ class EloquentTechnologyRepository implements TechnologyRepositoryInterface
         );
     }
 
+    /** Busca por nome (ILIKE). Mínimo 2 caracteres. Não usa cache. */
     public function search(string $userId, string $query, int $limit = 10): Collection
     {
         $q = trim($query);
@@ -48,6 +54,7 @@ class EloquentTechnologyRepository implements TechnologyRepositoryInterface
             ->get();
     }
 
+    /** Busca por ID. ModelNotFoundException se não existir; AuthorizationException se não pertencer ao usuário */
     public function findForUser(string $id, string $userId): Technology
     {
         $tech = Technology::find($id);
@@ -61,6 +68,7 @@ class EloquentTechnologyRepository implements TechnologyRepositoryInterface
         return $tech;
     }
 
+    /** Cria tecnologia e invalida cache do usuário */
     public function create(TechnologyDTO $dto): Technology
     {
         $tech = Technology::create([
@@ -76,6 +84,7 @@ class EloquentTechnologyRepository implements TechnologyRepositoryInterface
         return $tech;
     }
 
+    /** Atualiza tecnologia. Recalcula slug se name mudar. Invalida cache. */
     public function update(Technology $technology, array $data): Technology
     {
         if (isset($data['name'])) {
@@ -87,6 +96,7 @@ class EloquentTechnologyRepository implements TechnologyRepositoryInterface
         return $technology->fresh();
     }
 
+    /** Limpa cache de tecnologias do usuário */
     public function invalidateCacheForUser(string $userId): void
     {
         Cache::tags(['technologies', "user:{$userId}"])->flush();

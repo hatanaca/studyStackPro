@@ -6,12 +6,21 @@ use App\Jobs\RecalculateMetricsJob;
 use App\Modules\Analytics\Repositories\Contracts\AnalyticsRepositoryInterface;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * Serviço de analytics e métricas.
+ *
+ * Agrega dados do repositório com cache por tags (analytics, user:{id}). Usa lock para
+ * evitar cache stampede no dashboard. TTLs: dashboard 5min, heatmap 1h, export sem cache.
+ */
 class AnalyticsService
 {
     public function __construct(
         private AnalyticsRepositoryInterface $repository
     ) {}
 
+    /**
+     * Dados completos do dashboard. Cache com lock (evita stampede). TTL 5min.
+     */
     public function getDashboardData(string $userId): array
     {
         $lockKey = 'dashboard:lock:'.$userId;
@@ -25,6 +34,9 @@ class AnalyticsService
         });
     }
 
+    /**
+     * Métricas gerais do usuário (tempo total, streaks). Cache 5min.
+     */
     public function getUserMetrics(string $userId): array
     {
         return Cache::tags(['analytics', "user:{$userId}"])->remember(
@@ -34,6 +46,9 @@ class AnalyticsService
         );
     }
 
+    /**
+     * Estatísticas por tecnologia. Cache 5min.
+     */
     public function getTechStats(string $userId): array
     {
         return Cache::tags(['analytics', "user:{$userId}"])->remember(
@@ -43,6 +58,9 @@ class AnalyticsService
         );
     }
 
+    /**
+     * Séries temporais (minutos por dia). Cache 15min.
+     */
     public function getTimeSeries(string $userId, int $days = 30): array
     {
         $key = "time-series:{$userId}:{$days}";
@@ -63,6 +81,9 @@ class AnalyticsService
         );
     }
 
+    /**
+     * Heatmap (horas por dia da semana). Ano atual se não informado. Cache 1h.
+     */
     public function getHeatmap(string $userId, ?int $year = null): array
     {
         $year = $year ?? (int) now()->format('Y');
@@ -97,6 +118,9 @@ class AnalyticsService
         return ['job_id' => method_exists($job, 'uuid') && $job->uuid() ? $job->uuid() : \Illuminate\Support\Str::uuid()->toString()];
     }
 
+    /**
+     * Monta payload completo do dashboard (métricas, tech, séries, top techs).
+     */
     private function buildDashboardData(string $userId): array
     {
         $technologyMetrics = $this->repository->getTechnologyMetrics($userId);

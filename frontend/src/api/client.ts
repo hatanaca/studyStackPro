@@ -2,14 +2,16 @@ import axios, { type AxiosError } from 'axios'
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth.store'
 
+/** Base URL da API (v1). Usa VITE_API_URL ou string vazia para same-origin. */
 const baseURL = `${import.meta.env.VITE_API_URL || ''}/api/v1`
 
-/** Formato de erro da API (Laravel). */
+/** Formato de erro da API (Laravel: success: false, error: { message }). */
 interface ApiErrorBody {
   error?: { message?: string }
   message?: string
 }
 
+/** Extrai o body da resposta de erro (se AxiosError com response.data) */
 function getErrorBody(error: unknown): ApiErrorBody | undefined {
   if (error && typeof error === 'object' && 'response' in error) {
     const response = (error as AxiosError<ApiErrorBody>).response
@@ -29,6 +31,9 @@ export function getApiErrorMessage(error: unknown): string {
   return 'Erro na comunicação com o servidor.'
 }
 
+/**
+ * Cliente Axios para a API. Interceptors: injeta Bearer token; 401 → logout + redirect; 429 → toast.
+ */
 export const apiClient = axios.create({
   baseURL,
   withCredentials: false,
@@ -38,6 +43,7 @@ export const apiClient = axios.create({
   }
 })
 
+/** Request interceptor: adiciona Authorization Bearer ao header se token existir */
 apiClient.interceptors.request.use((config) => {
   const token = useAuthStore().token
   if (token) {
@@ -46,14 +52,17 @@ apiClient.interceptors.request.use((config) => {
   return config
 })
 
+/** Tipo da função de toast para feedback de erros (ex: rate limit) */
 type ToastFn = (msg: string, type?: 'success' | 'error' | 'info') => void
 
 let toastFn: ToastFn | null = null
 
+/** Registra callback de toast para o interceptor de resposta (401/429) */
 export function setApiToast(fn: ToastFn) {
   toastFn = fn
 }
 
+/** Response interceptor: 401 → logout e redirect para /login; 429 → toast de rate limit */
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {

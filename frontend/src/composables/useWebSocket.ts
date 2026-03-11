@@ -5,6 +5,11 @@ import { useSessionsStore } from '@/stores/sessions.store'
 import type { ActiveSessionResponse } from '@/api/modules/sessions.api'
 import type { MetricsUpdatedEvent, SessionStartedEvent } from '@/types/websocket.types'
 
+/**
+ * Composables de WebSocket (Laravel Reverb).
+ * Conecta ao canal privado dashboard.{userId}. Escuta: metrics.updated, metrics.recalculating,
+ * session.started, session.ended. Atualiza analyticsStore e sessionsStore.
+ */
 /** Interface mínima do Laravel Echo usada neste composable (evita dependência de tipos do pacote). */
 interface EchoChannel {
   listen: (event: string, callback: (e: unknown) => void) => EchoChannel
@@ -19,6 +24,7 @@ interface EchoInstance {
   }
 }
 
+/** Estado global de conexão WS (compartilhado entre instâncias) */
 const isConnected = ref(false)
 let echo: EchoInstance | null = null
 
@@ -26,6 +32,7 @@ export function useWebSocket() {
   const authStore = useAuthStore()
   const analyticsStore = useAnalyticsStore()
 
+  /** Conecta ao Reverb e subscreve ao canal privado dashboard.{userId} */
   async function connect(userId: string) {
     if (typeof window === 'undefined') return
     if (import.meta.env.VITE_REVERB_ENABLED === 'false') return
@@ -108,6 +115,7 @@ export function useWebSocket() {
       })
   }
 
+  /** Desconecta do Reverb e limpa referências */
   function disconnect() {
     if (echo) {
       echo.disconnect()

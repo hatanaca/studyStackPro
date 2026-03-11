@@ -76,7 +76,8 @@ const dateRange = ref<{ start: string; end: string }>({ start: '', end: '' })
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  min-width: 200px;
+  min-width: clamp(12rem, 40vw, 18rem);
+  flex: 1 1 16rem;
 }
 .reports-view__label {
   font-size: var(--text-xs);
@@ -89,6 +90,24 @@ const dateRange = ref<{ start: string; end: string }>({ start: '', end: '' })
   gap: var(--spacing-sm);
   flex-wrap: wrap;
 }
-.reports-view__dates input { min-width: 140px; }
+.reports-view__dates input { min-width: clamp(8.75rem, 32vw, 12rem); }
 .reports-view__sep { font-size: var(--text-sm); color: var(--color-text-muted); }
+@media (max-width: 640px) {
+  .reports-view__form {
+    align-items: stretch;
+  }
+  .reports-view__field,
+  .reports-view__dates,
+  .reports-view__dates input {
+    min-width: 0;
+    width: 100%;
+  }
+  .reports-view__dates {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .reports-view__sep {
+    display: none;
+  }
+}
 </style>

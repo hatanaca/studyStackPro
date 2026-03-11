@@ -109,7 +109,7 @@ async function handleUpdate(payload: { id: string; target_value: number }) {
       v-model:visible="showForm"
       header="Nova meta"
       modal
-      :style="{ width: '28rem' }"
+      :style="{ width: 'min(92vw, 28rem)' }"
       @hide="showForm = false"
     >
       <GoalForm
@@ -123,7 +123,7 @@ async function handleUpdate(payload: { id: string; target_value: number }) {
       v-model:visible="showEditModal"
       :header="goalToEdit ? `Editar: ${GOAL_TYPE_LABELS[goalToEdit.type]}` : ''"
       modal
-      :style="{ width: '28rem' }"
+      :style="{ width: 'min(92vw, 28rem)' }"
       @hide="goalToEdit = null"
     >
       <GoalForm

@@ -57,6 +57,16 @@ function normalizeHexColor(hex: string): string {
   return '#' + (s + '0'.repeat(6)).slice(0, 6)
 }
 
+function safeHexColor(hex: string): string {
+  return /^#[0-9A-Fa-f]{6}$/.test(hex) ? hex : '#3498DB'
+}
+
+function onColorPickerInput(event: Event) {
+  const target = event.target as { value?: string } | null
+  if (!target) return
+  color.value = safeHexColor(target.value ?? '')
+}
+
 function onSubmit() {
   if (!validate()) return
   emit('submit', {
@@ -94,9 +104,10 @@ defineExpose({ reset, setError: (msg: string) => { errors.value = { name: msg } 
       <label class="label">Cor</label>
       <div class="color-input">
         <input
-          v-model="color"
+          :value="safeHexColor(color)"
           type="color"
           class="color-picker"
+          @input="onColorPickerInput"
         >
         <input
           v-model="color"

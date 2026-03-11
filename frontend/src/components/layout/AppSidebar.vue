@@ -1,4 +1,8 @@
 <script setup lang="ts">
+/**
+ * Sidebar de navegação. Links principais, resumo (horas, sessões, streak),
+ * ThemeToggle, RealtimeBadge. Fecha ao mudar rota (mobile). Teleport para overlay.
+ */
 import { computed, inject, useAttrs, watch } from 'vue'
 
 defineOptions({ inheritAttrs: false })
@@ -702,7 +706,7 @@ async function handleLogout() {
 }
 
 /* Desktop: sidebar sempre visível */
-@media (min-width: 769px) {
+@media (min-width: calc(var(--screen-md) + 1px)) {
   .app-sidebar {
     position: fixed;
     top: 0;
@@ -716,7 +720,7 @@ async function handleLogout() {
 }
 
 /* Mobile: hamburger drawer */
-@media (max-width: 768px) {
+@media (max-width: var(--screen-md)) {
   .app-sidebar {
     position: fixed;
     top: 0;
@@ -725,7 +729,9 @@ async function handleLogout() {
     z-index: 100;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
-    width: min(280px, 85vw);
+    width: var(--sidebar-drawer-width);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
   .app-sidebar--open {
     transform: translateX(0);
@@ -737,13 +743,13 @@ async function handleLogout() {
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--overlay-backdrop);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     z-index: 99;
   }
   .app-sidebar {
-    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--overlay-shadow);
   }
 }
 </style>

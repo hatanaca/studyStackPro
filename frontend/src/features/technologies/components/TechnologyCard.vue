@@ -79,15 +79,25 @@ const emit = defineEmits<{
   display: flex;
   align-items: baseline;
   gap: var(--spacing-sm);
+  min-width: 0;
 }
 .technology-card__name {
   font-weight: 600;
   font-size: var(--text-base);
   color: var(--color-text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
 }
 .technology-card__slug {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 50%;
 }
 .technology-card__desc {
   font-size: var(--text-sm);

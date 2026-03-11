@@ -6,6 +6,7 @@ use App\Models\StudySession;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
+/** Evento disparado ao atualizar sessão. changedFields lista os campos alterados (para recálculo condicional). */
 class StudySessionUpdated
 {
     use Dispatchable, SerializesModels;

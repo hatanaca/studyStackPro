@@ -7,15 +7,28 @@ import { useAnalyticsStore } from '@/stores/analytics.store'
 
 const analyticsStore = useAnalyticsStore()
 
+function resolveWeeklyScore(entry: Record<string, unknown>): number | undefined {
+  const candidateKeys = ['score', 'focus_score', 'avg_focus_score', 'study_score']
+  for (const key of candidateKeys) {
+    const value = entry[key]
+    if (typeof value === 'number' && Number.isFinite(value)) return value
+  }
+  return undefined
+}
+
 const chartData = computed(() => {
   const data = analyticsStore.weeklyComparison
   if (!data?.length) return undefined
   const sorted = [...data].reverse()
+  const scores = sorted.map((d) => resolveWeeklyScore(d as unknown as Record<string, unknown>))
+  const hasValidScores = scores.every((s): s is number => typeof s === 'number')
   return {
     labels: sorted.map((d) => formatShortDate(d.week_start)),
     values: sorted.map((d) => d.total_minutes),
+    ...(hasValidScores ? { scores } : {}),
   }
 })
+
 </script>
 
 <template>
@@ -50,6 +63,9 @@ const chartData = computed(() => {
   border: 1px solid var(--color-border);
   overflow: hidden;
   min-height: var(--widget-chart-min-height-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
 }
 @media (min-width: 640px) {
   .weekly-widget {
@@ -63,11 +79,12 @@ const chartData = computed(() => {
   margin: 0 0 var(--spacing-sm);
 }
 .chart-skeleton {
-  min-height: var(--widget-chart-min-height-sm);
+  min-height: var(--widget-chart-min-height);
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-  padding: var(--spacing-md) 0;
+  padding: var(--spacing-sm) 0;
 }
 .skeleton-bar {
   width: 80%;

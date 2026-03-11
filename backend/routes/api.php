@@ -3,25 +3,38 @@
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
+/**
+ * Rotas da API e canais de broadcast (WebSocket).
+ *
+ * v1: prefixo de versão. Auth: register/login sem auth; demais rotas com auth:sanctum.
+ * Throttle por grupo: login, register, search, sensitive, recalculate, health.
+ */
 Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
 Route::prefix('v1')->name('v1.')->group(function () {
-    Route::middleware('throttle:auth')->group(function () {
-        Route::post('auth/register', [\App\Http\Controllers\V1\AuthController::class, 'register']);
+    // Endpoints de autenticação - rate limit mais restritivo
+    Route::middleware('throttle:login')->group(function () {
+        Route::post('auth/register', [\App\Http\Controllers\V1\AuthController::class, 'register'])
+            ->middleware('throttle:register');
         Route::post('auth/login', [\App\Http\Controllers\V1\AuthController::class, 'login']);
     });
 
     Route::middleware(['auth:sanctum'])->group(function () {
+        // User info endpoints
         Route::middleware('throttle:60,1')->group(function () {
             Route::get('auth/me', [\App\Http\Controllers\V1\AuthController::class, 'me']);
             Route::get('auth/tokens', [\App\Http\Controllers\V1\AuthController::class, 'tokens']);
         });
+        
+        // Search endpoints - moderate throttling
         Route::middleware('throttle:search')->group(function () {
             Route::get('technologies/search', [\App\Http\Controllers\V1\TechnologyController::class, 'search'])
                 ->name('technologies.search');
             Route::get('study-sessions/active', [\App\Http\Controllers\V1\StudySessionController::class, 'active'])
                 ->name('study-sessions.active');
         });
+        
+        // Read operations
         Route::middleware('throttle:60,1')->group(function () {
             Route::get('technologies', [\App\Http\Controllers\V1\TechnologyController::class, 'index']);
             Route::get('technologies/{technology}', [\App\Http\Controllers\V1\TechnologyController::class, 'show']);
@@ -40,6 +53,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             });
         });
 
+        // Write operations
         Route::middleware('throttle:30,1')->group(function () {
             Route::post('auth/logout', [\App\Http\Controllers\V1\AuthController::class, 'logout']);
             Route::put('auth/me', [\App\Http\Controllers\V1\AuthController::class, 'updateProfile']);

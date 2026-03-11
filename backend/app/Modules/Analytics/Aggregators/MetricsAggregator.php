@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
  */
 class MetricsAggregator
 {
+    /** Recalcula métricas gerais do usuário e insere em analytics.user_metrics */
     public function recalculateUserMetrics(string $userId, string $userTimezone = 'UTC'): void
     {
         $row = DB::selectOne('
@@ -74,6 +75,7 @@ class MetricsAggregator
         ]);
     }
 
+    /** Recalcula métricas por tecnologia e upsert em analytics.technology_metrics */
     public function recalculateTechnologyMetrics(string $userId): void
     {
         DB::statement('
@@ -112,6 +114,7 @@ class MetricsAggregator
         ', [$userId, $userId]);
     }
 
+    /** Recalcula minutos por dia (schema analytics.daily_minutes). study_date no timezone do usuário. */
     public function recalculateDailyMinutes(string $userId, string $userTimezone = 'UTC'): void
     {
         DB::statement('
@@ -141,6 +144,7 @@ class MetricsAggregator
         ', [$userTimezone, $userId]);
     }
 
+    /** Calcula streak atual (dias consecutivos até hoje) */
     private function calculateCurrentStreak(string $userId, string $userTimezone = 'UTC'): int
     {
         $dates = DB::select('
@@ -174,6 +178,7 @@ class MetricsAggregator
         return $streak;
     }
 
+    /** Calcula o maior streak histórico */
     private function calculateMaxStreak(string $userId, string $userTimezone = 'UTC'): int
     {
         $dates = DB::select('

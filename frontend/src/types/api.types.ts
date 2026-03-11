@@ -1,3 +1,4 @@
+/** Resposta padrão da API: success, data, message opcional, meta (paginação) */
 export interface ApiResponse<T> {
   success: boolean
   data: T
@@ -5,6 +6,7 @@ export interface ApiResponse<T> {
   meta?: PaginationMeta
 }
 
+/** Metadados de paginação */
 export interface PaginationMeta {
   current_page: number
   last_page: number
@@ -12,6 +14,7 @@ export interface PaginationMeta {
   total: number
 }
 
+/** Resposta de erro da API */
 export interface ApiErrorResponse {
   success: false
   error: {

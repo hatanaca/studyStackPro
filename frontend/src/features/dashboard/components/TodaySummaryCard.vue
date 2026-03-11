@@ -60,7 +60,7 @@ const hasActivity = computed(() => analyticsStore.todayMinutes > 0)
             v-for="tm in analyticsStore.todayTechnologies"
             :key="tm.technology.id"
             class="today-summary__chip"
-            :style="{ '--chip-color': tm.technology.color || '#3b82f6' }"
+            :style="{ '--chip-color': tm.technology.color || 'var(--color-primary)' }"
           >
             {{ tm.technology.name }}
           </span>
@@ -171,7 +171,7 @@ const hasActivity = computed(() => analyticsStore.todayMinutes > 0)
   margin: 0;
   line-height: 1.5;
 }
-@media (max-width: 479px) {
+@media (max-width: calc(var(--screen-xs) - 1px)) {
   .today-summary {
     padding: var(--widget-padding-sm);
   }

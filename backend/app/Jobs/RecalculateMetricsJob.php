@@ -15,6 +15,13 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Job de recálculo de métricas.
+ *
+ * Executa em transação: user_metrics, technology_metrics, daily_minutes.
+ * Flush do cache analytics e dispara MetricsRecalculated (WebSocket).
+ * ShouldBeUnique por userId para evitar recálculos concorrentes.
+ */
 class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
@@ -27,6 +34,7 @@ class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 5;
 
+    /** Identificador único para ShouldBeUnique (um job por usuário) */
     public function uniqueId(): string
     {
         return $this->userId;
@@ -57,6 +65,7 @@ class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
         event(new \App\Events\Analytics\MetricsRecalculated($this->userId, $dashboardData));
     }
 
+    /** Callback de falha: log para debug */
     public function failed(\Throwable $e): void
     {
         Log::error('RecalculateMetricsJob failed', [

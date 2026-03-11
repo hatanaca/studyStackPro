@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, defineAsyncComponent } from 'vue'
 import { useAnalyticsStore } from '@/stores/analytics.store'
-import LogSessionWidget from '@/features/sessions/components/LogSessionWidget.vue'
-import TechDistributionWidget from '@/features/dashboard/components/TechDistributionWidget.vue'
-import TimeSeriesWidget from '@/features/dashboard/components/TimeSeriesWidget.vue'
-import GoalsWidget from '@/features/dashboard/components/GoalsWidget.vue'
+const LogSessionWidget = defineAsyncComponent(() => import('@/features/sessions/components/LogSessionWidget.vue'))
+const TechDistributionWidget = defineAsyncComponent(() => import('@/features/dashboard/components/TechDistributionWidget.vue'))
+const TimeSeriesWidget = defineAsyncComponent(() => import('@/features/dashboard/components/TimeSeriesWidget.vue'))
+const GoalsWidget = defineAsyncComponent(() => import('@/features/dashboard/components/GoalsWidget.vue'))
 
 const analyticsStore = useAnalyticsStore()
 const activeTab = ref('overview')
@@ -24,6 +24,7 @@ const lastUpdate = computed(() => {
   if (diff < 60) return `${Math.floor(diff)} min atrás`
   return `${Math.floor(diff / 60)} h atrás`
 })
+
 </script>
 
 <template>
@@ -66,16 +67,10 @@ const lastUpdate = computed(() => {
       </button>
     </div>
     <div class="stakent-active__body">
-      <div
-        v-show="activeTab === 'overview'"
-        class="stakent-active__panel"
-      >
+      <div v-if="activeTab === 'overview'" class="stakent-active__panel">
         <LogSessionWidget />
       </div>
-      <div
-        v-show="activeTab === 'tech'"
-        class="stakent-active__panel"
-      >
+      <div v-else-if="activeTab === 'tech'" class="stakent-active__panel">
         <TechDistributionWidget
           v-if="analyticsStore.technologyMetrics?.length"
           :metrics="analyticsStore.technologyMetrics"
@@ -88,16 +83,10 @@ const lastUpdate = computed(() => {
           Nenhum dado ainda. Registre sessões para ver a distribuição por tecnologia.
         </p>
       </div>
-      <div
-        v-show="activeTab === 'period'"
-        class="stakent-active__panel"
-      >
+      <div v-else-if="activeTab === 'period'" class="stakent-active__panel">
         <TimeSeriesWidget />
       </div>
-      <div
-        v-show="activeTab === 'goals'"
-        class="stakent-active__panel"
-      >
+      <div v-else-if="activeTab === 'goals'" class="stakent-active__panel">
         <GoalsWidget />
       </div>
     </div>

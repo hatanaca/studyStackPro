@@ -5,8 +5,13 @@ namespace App\Modules\Analytics\Repositories;
 use App\Modules\Analytics\Repositories\Contracts\AnalyticsRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Implementação do repositório de analytics.
+ * Lê do schema analytics (user_metrics, technology_metrics, daily_minutes).
+ */
 class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
 {
+    /** Métricas gerais do usuário (sessões, minutos, streaks, etc.) */
     public function getUserMetrics(string $userId): array
     {
         $row = DB::table('analytics.user_metrics')->where('user_id', $userId)->first();
@@ -41,6 +46,7 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
         ];
     }
 
+    /** Métricas por tecnologia (minutos, sessões, porcentagem) */
     public function getTechnologyMetrics(string $userId): array
     {
         $rows = DB::table('analytics.technology_metrics as tm')

@@ -195,8 +195,12 @@ async function doExport() {
   gap: var(--spacing-md);
   flex-wrap: wrap;
 }
-.export-view__dates .p-field { margin-bottom: 0; }
-.export-view__dates .w-full { min-width: 140px; }
+.export-view__dates .p-field {
+  margin-bottom: 0;
+  min-width: clamp(12rem, 40vw, 18rem);
+  flex: 1 1 16rem;
+}
+.export-view__dates .w-full { min-width: clamp(8.75rem, 32vw, 12rem); }
 .export-view__label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); margin-bottom: 0.25rem; }
 .p-field { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: var(--spacing-md); }
 .w-full { width: 100%; }
@@ -250,5 +254,15 @@ async function doExport() {
   font-size: var(--text-sm);
   color: var(--color-error);
   line-height: 1.45;
+}
+@media (max-width: 640px) {
+  .export-view__dates {
+    flex-direction: column;
+  }
+  .export-view__dates .p-field,
+  .export-view__dates .w-full {
+    min-width: 0;
+    width: 100%;
+  }
 }
 </style>

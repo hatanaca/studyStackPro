@@ -2,24 +2,29 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Technology } from '@/types/domain.types'
 import { technologiesApi } from '@/api/modules/technologies.api'
-const CACHE_FRESH_MS = 60_000 // 1 minuto
 
+/** TTL para considerar lista de tecnologias "fresca" (1 min) */
+const CACHE_FRESH_MS = 60_000
+
+/** Store de tecnologias: CRUD, busca local e na API */
 export const useTechnologiesStore = defineStore('technologies', () => {
   const technologies = ref<Technology[]>([])
   const lastFetchedAt = ref<number | null>(null)
   const loading = ref(false)
 
+  /** True se fetch foi feito há menos de CACHE_FRESH_MS */
   const isFresh = computed(() => {
     if (!lastFetchedAt.value) return false
     return Date.now() - lastFetchedAt.value < CACHE_FRESH_MS
   })
 
-  /** Atualiza a lista a partir de dados externos (ex.: TanStack Query). */
+  /** Atualiza lista a partir de dados externos (ex.: TanStack Query) */
   function setTechnologies(list: Technology[]) {
     technologies.value = list
     lastFetchedAt.value = Date.now()
   }
 
+  /** Busca tecnologias na API. Usa cache se isFresh e !force */
   async function fetchTechnologies(force = false) {
     if (isFresh.value && !force) return technologies.value
     loading.value = true
@@ -35,6 +40,7 @@ export const useTechnologiesStore = defineStore('technologies', () => {
     }
   }
 
+  /** Busca local na lista em memória (name ou slug) */
   function searchLocal(query: string): Technology[] {
     const q = query.trim().toLowerCase()
     if (!q) return technologies.value
@@ -52,6 +58,7 @@ export const useTechnologiesStore = defineStore('technologies', () => {
     return []
   }
 
+  /** Cria tecnologia e atualiza store */
   async function createTechnology(data: {
     name: string
     color?: string
@@ -89,12 +96,14 @@ export const useTechnologiesStore = defineStore('technologies', () => {
     throw new Error('Falha ao atualizar tecnologia')
   }
 
+  /** Remove tecnologia (soft delete na API) e filtra da lista local */
   async function deleteTechnology(id: string) {
     await technologiesApi.delete(id)
     technologies.value = technologies.value.filter((t) => t.id !== id)
     lastFetchedAt.value = Date.now()
   }
 
+  /** Invalida cache (próximo fetch não usará cache) */
   function invalidate() {
     lastFetchedAt.value = null
   }

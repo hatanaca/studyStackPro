@@ -177,7 +177,7 @@ function onRowClick(row: unknown) {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  overflow: visible;
 }
 .base-data-table__loading {
   display: flex;
@@ -200,11 +200,14 @@ function onRowClick(row: unknown) {
   to { transform: rotate(360deg); }
 }
 .base-data-table__scroll {
+  border-radius: inherit;
   overflow-x: auto;
   overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
 }
 .base-data-table__table {
   width: 100%;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: var(--text-sm);
 }
