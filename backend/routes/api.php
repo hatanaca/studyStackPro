@@ -25,7 +25,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('auth/me', [\App\Http\Controllers\V1\AuthController::class, 'me']);
             Route::get('auth/tokens', [\App\Http\Controllers\V1\AuthController::class, 'tokens']);
         });
-        
+
         // Search endpoints - moderate throttling
         Route::middleware('throttle:search')->group(function () {
             Route::get('technologies/search', [\App\Http\Controllers\V1\TechnologyController::class, 'search'])
@@ -33,7 +33,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('study-sessions/active', [\App\Http\Controllers\V1\StudySessionController::class, 'active'])
                 ->name('study-sessions.active');
         });
-        
+
         // Read operations
         Route::middleware('throttle:60,1')->group(function () {
             Route::get('technologies', [\App\Http\Controllers\V1\TechnologyController::class, 'index']);
