@@ -1,18 +1,51 @@
-backend/.env
+# === DEPENDÊNCIAS ===
+node_modules/
 backend/vendor/
-backend/node_modules/
+
+# === AMBIENTE ===
+.env
+.env.local
+.env.*.local
+backend/.env
+backend/.env.production
+backend/.env.staging
+backend/.env.testing
+
+# === BUILD / DIST ===
+frontend/dist/
+frontend/coverage/
+frontend/vite.config.js
+frontend/vite.config.d.ts
+*.tsbuildinfo
+
+# === BACKEND LARAVEL ===
 backend/storage/logs/*
 backend/storage/framework/cache/*
 backend/storage/framework/sessions/*
 backend/storage/framework/views/*
 backend/bootstrap/cache/*
-frontend/node_modules/
-frontend/dist/
-frontend/vite.config.js
-.env
-.env.local
-.env.*.local
-projeto/
+backend/.phpunit.result.cache
+backend/.pint.cache
 
-# Windows reserved device names (cannot be created as files; ignore if present)
+# === LOGS ===
+*.log
+errorLog.txt
+logServer.txt
+logsDocker
+
+# === ARQUIVOS TEMPORÁRIOS / RAIZ ===
+echo
+texto.txt
 nul
+backend/nul
+projeto/
+anotacoes.md
+
+# === IDE / EDITOR ===
+.vscode/
+.idea/
+**/.cursor/*.log
+
+# === OS ===
+.DS_Store
+Thumbs.db
