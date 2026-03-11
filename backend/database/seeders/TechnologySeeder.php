@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace Database\Seeders;
 
@@ -29,8 +29,8 @@ class TechnologySeeder extends Seeder
         foreach ($technologies as $tech) {
             Technology::firstOrCreate(
                 [
-                    'user_id' => $user->id,
                     'slug' => Str::slug($tech['name']),
+                    'user_id' => $user->id,
                 ],
                 [
                     'name' => $tech['name'],

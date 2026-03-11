@@ -131,6 +131,7 @@ const years = computed(() => {
   background: var(--color-bg-card);
   border-radius: var(--widget-radius);
   padding: var(--widget-padding);
+  padding-bottom: var(--spacing-lg);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
 }

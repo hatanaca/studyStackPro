@@ -7,8 +7,13 @@ use App\Modules\StudySessions\DTOs\StudySessionDTO;
 use App\Modules\StudySessions\Repositories\Contracts\StudySessionRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
+/**
+ * Implementação Eloquent do repositório de sessões.
+ * Filtros: technology_id, date_from/to, min_duration, mood, status (active/completed).
+ */
 class EloquentStudySessionRepository implements StudySessionRepositoryInterface
 {
+    /** Lista sessões do usuário com filtros e paginação (máx 50 por página) */
     public function findByUser(string $userId, array $filters): LengthAwarePaginator
     {
         $query = StudySession::where('user_id', $userId)
@@ -44,6 +49,7 @@ class EloquentStudySessionRepository implements StudySessionRepositoryInterface
         return $query->paginate($perPage);
     }
 
+    /** Retorna sessão ativa (ended_at null) mais recente do usuário */
     public function findActiveByUser(string $userId): ?StudySession
     {
         return StudySession::where('user_id', $userId)
@@ -53,11 +59,13 @@ class EloquentStudySessionRepository implements StudySessionRepositoryInterface
             ->first();
     }
 
+    /** Busca sessão por ID com tecnologia carregada */
     public function findById(string $id): ?StudySession
     {
         return StudySession::with('technology')->find($id);
     }
 
+    /** Cria sessão a partir do DTO */
     public function create(StudySessionDTO $dto): StudySession
     {
         return StudySession::create([
@@ -71,6 +79,7 @@ class EloquentStudySessionRepository implements StudySessionRepositoryInterface
         ]);
     }
 
+    /** Atualiza sessão e retorna fresh com technology */
     public function update(StudySession $session, array $data): StudySession
     {
         $session->update($data);
@@ -78,6 +87,7 @@ class EloquentStudySessionRepository implements StudySessionRepositoryInterface
         return $session->fresh(['technology']);
     }
 
+    /** Remove sessão do banco */
     public function delete(StudySession $session): void
     {
         $session->delete();

@@ -133,23 +133,25 @@ function formatMinutes(m: number) {
       </header>
 
       <Card class="technology-sessions-view__card">
-        <table class="technology-sessions-view__table">
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Tempo estudado</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="row in tableRows"
-              :key="row.date"
-            >
-              <td>{{ formatDate(row.date) }}</td>
-              <td>{{ formatMinutes(row.totalMinutes) }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="technology-sessions-view__table-wrap">
+          <table class="technology-sessions-view__table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Tempo estudado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="row in tableRows"
+                :key="row.date"
+              >
+                <td>{{ formatDate(row.date) }}</td>
+                <td>{{ formatMinutes(row.totalMinutes) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <p
           v-if="!loading && !tableRows.length"
           class="technology-sessions-view__empty"
@@ -205,11 +207,17 @@ function formatMinutes(m: number) {
 }
 .technology-sessions-view__card {
   padding: 0;
-  overflow: hidden;
+  overflow: visible;
   border-radius: var(--radius-md);
+}
+.technology-sessions-view__table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .technology-sessions-view__table {
   width: 100%;
+  min-width: 420px;
   border-collapse: collapse;
   font-size: var(--text-sm);
 }

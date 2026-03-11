@@ -15,14 +15,27 @@ use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+/**
+ * Controlador de autenticação e gerenciamento de usuário.
+ *
+ * Responsável por: registro, login, logout, perfil, troca de senha e gestão de tokens
+ * (Sanctum). Todas as rotas exigem middleware de autenticação, exceto register/login.
+ */
 class AuthController extends Controller
 {
     use HasApiResponse;
 
+    /**
+     * Injeta o AuthService para centralizar a lógica de autenticação.
+     */
     public function __construct(
         private AuthService $authService
     ) {}
 
+    /**
+     * Registra um novo usuário no sistema.
+     * Cria o usuário via AuthService, gera token Sanctum e retorna o usuário com header Authorization.
+     */
     public function register(RegisterRequest $request): JsonResponse
     {
         $dto = new RegisterDTO(
@@ -39,6 +52,10 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Autentica o usuário com email e senha.
+     * Retorna user + token em caso de sucesso; 401 se credenciais inválidas.
+     */
     public function login(LoginRequest $request): JsonResponse
     {
         $dto = new LoginDTO(
@@ -58,6 +75,9 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Revoga o token atual (logout). O token em uso é removido da base.
+     */
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
@@ -65,11 +85,17 @@ class AuthController extends Controller
         return $this->success(null, 'Token revogado com sucesso.');
     }
 
+    /**
+     * Retorna o usuário autenticado atual (perfil resumido).
+     */
     public function me(Request $request): JsonResponse
     {
         return $this->success(new UserResource($request->user()));
     }
 
+    /**
+     * Atualiza dados do perfil (nome, email, timezone). Validação via UpdateProfileRequest.
+     */
     public function updateProfile(UpdateProfileRequest $request): JsonResponse
     {
         $user = $request->user();
@@ -78,6 +104,10 @@ class AuthController extends Controller
         return $this->success(new UserResource($user->fresh()), 'Perfil atualizado.');
     }
 
+    /**
+     * Altera a senha do usuário. Requer senha atual para validação.
+     * Retorna 422 se a senha atual estiver incorreta.
+     */
     public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
         $user = $request->user();
@@ -92,6 +122,9 @@ class AuthController extends Controller
         return $this->success(null, 'Senha alterada. Reconecte seus dispositivos.');
     }
 
+    /**
+     * Lista todos os tokens de acesso do usuário (útil para gestão de sessões/dispositivos).
+     */
     public function tokens(Request $request): JsonResponse
     {
         $tokens = $request->user()->tokens()->get(['id', 'name', 'created_at', 'last_used_at']);
@@ -104,6 +137,10 @@ class AuthController extends Controller
         ]));
     }
 
+    /**
+     * Revoga todos os tokens do usuário (logout de todos os dispositivos).
+     * Retorna quantos tokens foram revogados.
+     */
     public function revokeAllTokens(Request $request): JsonResponse
     {
         $count = $request->user()->tokens()->count();

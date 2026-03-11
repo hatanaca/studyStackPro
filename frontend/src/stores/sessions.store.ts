@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 import type { StudySession } from '@/types/domain.types'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import type { ActiveSessionResponse } from '@/api/modules/sessions.api'
+
+/** Store de sessões: lista, sessão ativa, timer (elapsedSeconds, formattedTimer). */
 export const useSessionsStore = defineStore('sessions', () => {
   const sessions = ref<StudySession[]>([])
   const activeSession = ref<ActiveSessionResponse | null>(null)
@@ -10,7 +12,9 @@ export const useSessionsStore = defineStore('sessions', () => {
   const isLoading = ref(false)
   const total = ref(0)
 
+  /** True se há sessão ativa */
   const hasActiveSession = computed(() => !!activeSession.value)
+  /** Timer formatado HH:MM:SS */
   const formattedTimer = computed(() => {
     const s = elapsedSeconds.value
     const h = Math.floor(s / 3600)
@@ -34,6 +38,7 @@ export const useSessionsStore = defineStore('sessions', () => {
     }
   }
 
+  /** Busca sessão ativa (timer). Retorna null se não houver. */
   async function fetchActiveSession() {
     const { data } = await sessionsApi.getActive()
     if (data.success && data.data) {
@@ -46,14 +51,17 @@ export const useSessionsStore = defineStore('sessions', () => {
     return null
   }
 
+  /** Atualiza segundos decorridos (usado pelo timer) */
   function setElapsedSeconds(s: number) {
     elapsedSeconds.value = s
   }
 
+  /** Define sessão ativa (ex.: via WebSocket) */
   function setActiveSession(session: StudySession | ActiveSessionResponse | null) {
     activeSession.value = session as ActiveSessionResponse | null
   }
 
+  /** Limpa sessão ativa (ex.: ao encerrar via WebSocket) */
   function clearActiveSession() {
     activeSession.value = null
     elapsedSeconds.value = 0

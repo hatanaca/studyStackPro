@@ -35,7 +35,7 @@ defineProps<{
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
-  overflow: hidden;
+  overflow: visible;
   transition: box-shadow var(--duration-normal) var(--ease-in-out),
     border-color var(--duration-fast) ease;
 }
@@ -60,5 +60,6 @@ defineProps<{
 }
 .base-card__body {
   padding: var(--widget-padding, var(--spacing-md));
+  min-width: 0;
 }
 </style>

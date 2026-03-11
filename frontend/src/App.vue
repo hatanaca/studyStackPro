@@ -1,26 +1,19 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+/**
+ * Componente raiz da aplicação.
+ * Renderiza RouterView, Toast global, ConfirmDialog e ApiToastInit (integração API → toast).
+ */
 import { RouterView } from 'vue-router'
 import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
-import { setApiToast } from '@/api/client'
-import { useToast } from '@/composables/useToast'
-
-const { success, error, info } = useToast()
-
-onMounted(() => {
-  setApiToast((msg, type = 'success') => {
-    if (type === 'error') error(msg)
-    else if (type === 'info') info(msg)
-    else success(msg)
-  })
-})
+import ApiToastInit from '@/components/ApiToastInit.vue'
 </script>
 
 <template>
   <RouterView />
   <Toast />
   <ConfirmDialog />
+  <ApiToastInit />
 </template>
 
 <style>

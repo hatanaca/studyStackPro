@@ -5,9 +5,9 @@ import { getApiErrorMessage } from '@/api/client'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import { formatDateTime } from '@/utils/formatters'
 import PageView from '@/components/layout/PageView.vue'
+import ErrorCard from '@/components/ui/ErrorCard.vue'
 import Tag from 'primevue/tag'
 import Button from 'primevue/button'
-import Message from 'primevue/message'
 import Skeleton from 'primevue/skeleton'
 import type { StudySession } from '@/types/domain.types'
 
@@ -92,35 +92,30 @@ function goBack() {
       <Skeleton class="session-detail__skeleton" height="8rem" />
     </div>
     <template v-else-if="error">
-      <Message
-        severity="error"
-        :closable="false"
+      <ErrorCard
+        :message="error"
+        :on-retry="fetchSession"
         class="session-detail__message"
-      >
-        {{ error }}
-      </Message>
-      <Button
-        label="Tentar novamente"
-        severity="secondary"
-        variant="outlined"
-        class="session-detail__retry"
-        @click="fetchSession"
       />
       <Button
         label="Voltar para Sessões"
         severity="secondary"
         variant="outlined"
         class="session-detail__back"
+        aria-label="Voltar para Sessões"
         @click="goBack"
       />
     </template>
     <template v-else-if="session">
       <div class="session-detail__actions">
         <Button
-          label="← Voltar"
+          label="Voltar para Sessões"
+          icon="pi pi-arrow-left"
+          icon-pos="left"
           severity="secondary"
           variant="text"
           size="small"
+          aria-label="Voltar para Sessões"
           @click="goBack"
         />
       </div>
@@ -177,7 +172,6 @@ function goBack() {
   margin-bottom: var(--spacing-md);
 }
 .session-detail__message { margin-bottom: var(--spacing-md); }
-.session-detail__retry { margin-right: var(--spacing-sm); }
 .session-detail__back {
   margin-top: var(--spacing-md);
 }

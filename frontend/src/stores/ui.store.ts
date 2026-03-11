@@ -4,6 +4,7 @@ import { ref, computed } from 'vue'
 const THEME_KEY = 'studytrack.theme'
 const CUSTOM_THEME_KEY = 'studytrack.theme.custom'
 
+/** Opções de tema customizado (mapeadas para variáveis CSS) */
 export interface CustomThemeOptions {
   primary?: string
   bg?: string
@@ -14,6 +15,7 @@ export interface CustomThemeOptions {
   fontSans?: string
 }
 
+/** Carrega tema do localStorage (light/dark) */
 function loadTheme(): 'light' | 'dark' {
   try {
     const saved = localStorage.getItem(THEME_KEY)
@@ -24,6 +26,7 @@ function loadTheme(): 'light' | 'dark' {
   return 'light'
 }
 
+/** Carrega tema customizado do localStorage */
 function loadCustomTheme(): CustomThemeOptions {
   try {
     const raw = localStorage.getItem(CUSTOM_THEME_KEY)
@@ -35,6 +38,7 @@ function loadCustomTheme(): CustomThemeOptions {
   }
 }
 
+/** Store de UI: tema, sidebar, modais, tema customizado. Persiste em localStorage. */
 export const useUiStore = defineStore('ui', () => {
   const theme = ref<'light' | 'dark'>(loadTheme())
   const customTheme = ref<CustomThemeOptions>(loadCustomTheme())

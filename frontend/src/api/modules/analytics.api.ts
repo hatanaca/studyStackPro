@@ -3,6 +3,7 @@ import { ENDPOINTS } from '@/api/endpoints'
 import type { ApiResponse } from '@/types/api.types'
 import type { DashboardData, TechnologyMetric } from '@/types/domain.types'
 
+/** Módulo de chamadas à API de analytics (dashboard, heatmap, export, etc.) */
 export const analyticsApi = {
   getDashboard: () => apiClient.get<ApiResponse<DashboardData>>(ENDPOINTS.analytics.dashboard),
   getUserMetrics: () => apiClient.get<ApiResponse<Record<string, unknown>>>(ENDPOINTS.analytics.userMetrics),
@@ -13,7 +14,19 @@ export const analyticsApi = {
       { params: { days } }
     ),
   getWeekly: () =>
-    apiClient.get<ApiResponse<{ week_start: string; total_minutes: number; session_count: number }[]>>(
+    apiClient.get<
+      ApiResponse<
+        {
+          week_start: string
+          total_minutes: number
+          session_count: number
+          score?: number | null
+          focus_score?: number | null
+          avg_focus_score?: number | null
+          study_score?: number | null
+        }[]
+      >
+    >(
       ENDPOINTS.analytics.weekly
     ),
   getHeatmap: (year?: number) =>

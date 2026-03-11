@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { getApiErrorMessage } from '@/api/client'
 import { useSessionTimer } from '@/features/sessions/composables/useSessionTimer'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import { useToast } from '@/composables/useToast'
 
 const { activeSession, formattedTime, refresh } = useSessionTimer()
+const router = useRouter()
 const toast = useToast()
 const ending = ref(false)
 
@@ -38,6 +40,13 @@ async function endSession() {
         {{ activeSession.technology.name }}
       </span>
     </div>
+    <button
+      type="button"
+      class="active-session-banner__btn active-session-banner__btn--ghost"
+      @click="router.push('/session')"
+    >
+      Modo foco
+    </button>
     <button
       type="button"
       class="active-session-banner__btn"
@@ -99,6 +108,9 @@ async function endSession() {
   cursor: pointer;
   white-space: nowrap;
   transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease;
+}
+.active-session-banner__btn--ghost {
+  background: color-mix(in srgb, var(--color-primary-contrast) 12%, transparent);
 }
 .active-session-banner__btn:focus-visible {
   outline: none;

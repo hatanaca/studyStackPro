@@ -1,3 +1,8 @@
+/**
+ * Configuração do Vue Router.
+ * Auth routes (login/register) fora do layout; rotas autenticadas dentro de AppLayout.
+ * Guard de auth em beforeEach; título dinâmico em afterEach.
+ */
 import { createRouter, createWebHistory } from 'vue-router'
 import { setupAuthGuard } from './guards'
 import { authRoutes } from './routes/auth.routes'
@@ -34,9 +39,11 @@ const router = createRouter({
   ],
 })
 
+/** Guard global: redireciona não autenticados para login e guests para dashboard */
 router.beforeEach(setupAuthGuard)
 
 const APP_TITLE = 'StudyTrack Pro'
+/** Define título da página com base no meta.title da rota */
 router.afterEach((to) => {
   const title = to.meta?.title as string | undefined
   document.title = title ? `${title} · ${APP_TITLE}` : APP_TITLE

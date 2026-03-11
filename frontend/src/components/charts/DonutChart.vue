@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ApexOptions } from 'apexcharts'
+import VueApexCharts from 'vue3-apexcharts'
 import { useApexChartTheme } from '@/composables/useApexChartTheme'
 
 const props = withDefaults(
@@ -58,14 +59,7 @@ const chartOptions = computed<ApexOptions>(() => {
         animateGradually: { enabled: true, delay: 120 },
         dynamicAnimation: { enabled: true, speed: 350 },
       },
-      dropShadow: {
-        enabled: true,
-        top: 3,
-        left: 0,
-        blur: 14,
-        opacity: 0.18,
-        color: t.textColor,
-      },
+      dropShadow: { enabled: false },
     },
     colors: labels.value.map((_, i) => colors[i % colors.length]),
     labels: labels.value,
@@ -88,8 +82,9 @@ const chartOptions = computed<ApexOptions>(() => {
       formatter: (val: number, opts: { w?: { globals?: { seriesTotals?: number[] } } }) => {
         const w = opts?.w
         const sum = w?.globals?.seriesTotals?.reduce((a, b) => a + b, 0) ?? total.value
-        const pct = sum ? ((Number(val) / sum) * 100).toFixed(1) : '0'
-        return `${Number(val).toFixed(1)}\n(${pct}%)`
+        const pct = sum ? (Number(val) / sum) * 100 : 0
+        if (pct < 8) return ''
+        return `${Number(val).toFixed(1)} (${pct.toFixed(0)}%)`
       },
       style: { fontSize: t.fontSize, fontFamily: t.fontFamily },
       dropShadow: { enabled: false },
@@ -179,7 +174,7 @@ const chartOptions = computed<ApexOptions>(() => {
       v-if="chartSeries.length"
       class="chart-wrap"
     >
-      <apexchart
+      <VueApexCharts
         type="donut"
         :options="chartOptions"
         :series="chartSeries"

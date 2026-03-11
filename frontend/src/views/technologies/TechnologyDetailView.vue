@@ -3,9 +3,9 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import Card from 'primevue/card'
-import Message from 'primevue/message'
 import PageView from '@/components/layout/PageView.vue'
 import Skeleton from 'primevue/skeleton'
+import ErrorCard from '@/components/ui/ErrorCard.vue'
 import TechnologyDetailMural from '@/features/technologies/components/TechnologyDetailMural.vue'
 import TechnologyDetailReminders from '@/features/technologies/components/TechnologyDetailReminders.vue'
 import { sessionsApi } from '@/api/modules/sessions.api'
@@ -96,8 +96,10 @@ function goBack() {
       <Skeleton class="technology-detail__skeleton" height="10rem" />
     </div>
     <template v-else-if="error">
-      <Message severity="error" :closable="false">{{ error }}</Message>
-      <Button label="Tentar novamente" severity="secondary" variant="outlined" @click="fetchData" />
+      <ErrorCard
+        :message="error"
+        :on-retry="fetchData"
+      />
       <Button
         label="Voltar para Tecnologias"
         severity="secondary"

@@ -3,6 +3,7 @@ import { ENDPOINTS } from '@/api/endpoints'
 import type { ApiResponse, SessionListFilters } from '@/types/api.types'
 import type { StudySession } from '@/types/domain.types'
 
+/** Sessão ativa com elapsed_seconds (timer em tempo real) */
 export interface ActiveSessionResponse extends StudySession {
   elapsed_seconds: number
 }
@@ -13,11 +14,14 @@ export interface SessionsListParams extends SessionListFilters {
   status?: string
 }
 
+/** Módulo de chamadas à API de sessões de estudo */
 export const sessionsApi = {
+  /** Lista sessões com filtros e paginação */
   list: (params?: SessionsListParams) =>
     apiClient.get<ApiResponse<StudySession[]>>(ENDPOINTS.sessions.list, { params }),
   getOne: (id: string) =>
     apiClient.get<ApiResponse<StudySession>>(ENDPOINTS.sessions.one(id)),
+  /** Sessão ativa (timer) com elapsed_seconds */
   getActive: () =>
     apiClient.get<ApiResponse<ActiveSessionResponse | null>>(ENDPOINTS.sessions.active),
   start: (technology_id?: string) =>

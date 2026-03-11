@@ -4,6 +4,12 @@ namespace App\Modules\StudySessions\DTOs;
 
 use Carbon\Carbon;
 
+/**
+ * DTO de sessão de estudo.
+ *
+ * userId, technologyId, startedAt, endedAt (null = sessão ativa).
+ * notes, mood, focusScore opcionais para enriquecimento.
+ */
 final readonly class StudySessionDTO
 {
     public function __construct(

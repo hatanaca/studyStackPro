@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use Illuminate\Support\Facades\Facade;
 
@@ -38,6 +38,7 @@ return [
         App\Providers\AppServiceProvider::class,
         Laravel\Sanctum\SanctumServiceProvider::class,
         Laravel\Reverb\ReverbServiceProvider::class,
+        Laravel\Horizon\HorizonServiceProvider::class,
     ],
     'aliases' => Facade::defaultAliases()->merge([])->toArray(),
 ];

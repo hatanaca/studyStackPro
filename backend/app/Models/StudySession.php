@@ -5,6 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Model de sessão de estudo.
+ *
+ * Representa um período de estudo em uma tecnologia. started_at/ended_at definem o intervalo.
+ * duration_min pode ser calculado via trigger no banco ou no app. mood e focus_score opcionais.
+ */
 class StudySession extends BaseModel
 {
     use HasFactory;
@@ -21,6 +27,7 @@ class StudySession extends BaseModel
         'focus_score',
     ];
 
+    /** Casts de atributos */
     protected function casts(): array
     {
         return [
@@ -32,16 +39,19 @@ class StudySession extends BaseModel
         ];
     }
 
+    /** Usuário proprietário da sessão */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** Tecnologia estudada na sessão */
     public function technology(): BelongsTo
     {
         return $this->belongsTo(Technology::class);
     }
 
+    /** Accessor: duração formatada (ex: "1h 30min") */
     public function getDurationFormattedAttribute(): ?string
     {
         if ($this->duration_min === null) {

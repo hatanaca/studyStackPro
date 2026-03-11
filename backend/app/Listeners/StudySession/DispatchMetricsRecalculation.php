@@ -7,6 +7,11 @@ use App\Events\StudySession\StudySessionDeleted;
 use App\Events\StudySession\StudySessionUpdated;
 use App\Jobs\RecalculateMetricsJob;
 
+/**
+ * Listener que agenda RecalculateMetricsJob após mudanças em sessões.
+ * Deleted → full recalc; Updated → recalc se campos relevantes mudaram; Created → full recalc.
+ * Delay de 2s para agrupar múltiplas alterações.
+ */
 class DispatchMetricsRecalculation
 {
     public function handle(StudySessionCreated|StudySessionUpdated|StudySessionDeleted $event): void

@@ -1,5 +1,9 @@
-/* Design tokens: cores, espaçamentos, tipografia, motion */
-/* Breakpoints: 375px (mobile), 480px (xs), 640px (sm), 768px (md), 1024px (lg), 1280px (xl), 1440px (wide) */
+/**
+ * Design tokens do StudyTrackPro.
+ * Cores, espaçamentos, tipografia, sombras, breakpoints, layout.
+ * Breakpoints: 375px (mobile), 480px (xs), 640px (sm), 768px (md), 1024px (lg), 1280px (xl), 1440px (wide).
+ * Evite valores hardcoded; use estas variáveis nos componentes.
+ */
 :root {
   --viewport-min: 375px;
   --viewport-max: 1440px;
@@ -46,6 +50,11 @@
   --shadow-card-hover: 0 12px 28px rgba(15, 23, 42, 0.12);
 
   --sidebar-width: 200px;
+  --sidebar-drawer-width: min(280px, 85vw);
+  --overlay-backdrop: rgba(0, 0, 0, 0.5);
+  --overlay-shadow: 8px 0 32px rgba(0, 0, 0, 0.3);
+  --header-height: 4rem;
+  --viewport-app-min-height: 100dvh;
 
   /* Page layout: conteúdo das rotas */
   --page-max-width: 1280px;
@@ -68,6 +77,7 @@
   --widget-chart-min-height: 220px;
   --widget-chart-min-height-sm: 180px;
   --widget-chart-min-height-tall: 260px;
+  --widget-chart-stage-height: clamp(260px, 56vh, 520px);
   --widget-card-min-height: 100px;
   --widget-gap: var(--spacing-sm);
   --chart-axis-font-size: var(--text-sm);
@@ -120,6 +130,9 @@
   --avatar-size-xl: 4rem;
   --tooltip-offset: 0.5rem;
   --dropdown-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 4px 10px -5px rgba(15, 23, 42, 0.08);
+  --overlay-panel-max-width: clamp(16rem, 92vw, 23.75rem);
+  --toast-max-width: clamp(16rem, 92vw, 23.75rem);
+  --chart-line-stock-color: #1e88e5;
 
   /* Ícones e tamanhos fixos (evitar hardcode em componentes) */
   --icon-size-sm: 1.25rem;

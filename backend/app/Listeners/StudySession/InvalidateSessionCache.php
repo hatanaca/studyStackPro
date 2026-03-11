@@ -7,6 +7,7 @@ use App\Events\StudySession\StudySessionDeleted;
 use App\Events\StudySession\StudySessionUpdated;
 use Illuminate\Support\Facades\Cache;
 
+/** Listener que invalida cache de sessões (tags sessions, user:{id}) após CRUD. */
 class InvalidateSessionCache
 {
     public function handle(StudySessionCreated|StudySessionUpdated|StudySessionDeleted $event): void

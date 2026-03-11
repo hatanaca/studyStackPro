@@ -12,6 +12,12 @@ export const sessionsRoutes = [
     meta: { title: 'Sessões por tecnologia' },
   },
   {
+    path: 'session',
+    name: 'session-focus',
+    component: () => import('@/views/sessions/SessionFocusView.vue'),
+    meta: { title: 'Sessão ativa' },
+  },
+  {
     path: 'sessions/:id',
     name: 'session-detail',
     component: () => import('@/views/sessions/SessionDetailView.vue'),

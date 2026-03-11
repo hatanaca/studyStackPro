@@ -2,6 +2,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 
+/** Intervalo de polling do dashboard quando WebSocket desconectado (2min) */
 const POLLING_INTERVAL_MS = 120_000
 const DISCONNECTED_POLLING_DELAY_MS = 5000
 const VISIBILITY_COOLDOWN_MS = 10_000
@@ -11,6 +12,10 @@ export interface UseDashboardOptions {
   refetchDashboard?: () => Promise<unknown>
 }
 
+/**
+ * Composable do dashboard: polling de fallback, refetch ao voltar à aba, init (heatmap/weekly/timeSeries).
+ * Quando WebSocket desconecta, inicia polling. initDashboard chama fetchDashboard e carrega widgets extras.
+ */
 export function useDashboard(options?: UseDashboardOptions) {
   const authStore = useAuthStore()
   const analyticsStore = useAnalyticsStore()

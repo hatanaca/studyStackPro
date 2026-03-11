@@ -19,7 +19,7 @@ const { toasts, dismiss } = useToast()
           type="button"
           class="close"
           aria-label="Fechar"
-          @click="dismiss(t.id)"
+          @click="dismiss()"
         >
           ×
         </button>
@@ -37,10 +37,10 @@ const { toasts, dismiss } = useToast()
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  max-width: 380px;
-  width: calc(100% - var(--spacing-xl));
+  max-width: var(--toast-max-width);
+  width: min(92vw, var(--toast-max-width));
 }
-@media (min-width: 481px) {
+@media (min-width: 480px) {
   .toast-container {
     width: auto;
   }

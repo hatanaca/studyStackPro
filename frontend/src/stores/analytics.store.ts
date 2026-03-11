@@ -3,17 +3,23 @@ import { ref, computed } from 'vue'
 import type { DashboardData, UserMetrics, TechnologyMetric, DailyMinute } from '@/types/domain.types'
 import { analyticsApi } from '@/api/modules/analytics.api'
 
+/** Períodos disponíveis para gráficos de séries temporais */
 export type TimeSeriesPeriod = '7d' | '30d' | '90d'
 
 export interface WeeklySummary {
   week_start: string
   total_minutes: number
   session_count: number
+  score?: number | null
+  focus_score?: number | null
+  avg_focus_score?: number | null
+  study_score?: number | null
   week_number?: number
   year?: number
   active_days?: number
 }
 
+/** Entrada do heatmap: data + minutos */
 export interface HeatmapDay {
   date: string
   total_minutes: number
@@ -59,6 +65,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   const pendingSessions = ref<PendingSession[]>([])
   const sessionCountAtPendingStart = ref<number | null>(null)
 
+  /** TTL para considerar dados "frescos" (5min) */
   const TTL_MS = 5 * 60 * 1000
   const isFresh = computed(
     () =>
@@ -203,6 +210,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   })
 
   // --- Reconcile: clear pending when API confirms data is up to date ---
+  /** Remove pending quando API confirma que dados estão atualizados */
   function reconcilePending() {
     if (!pendingSessions.value.length || sessionCountAtPendingStart.value === null) return
     const apiTotal = dashboard.value?.user_metrics.total_sessions ?? 0
@@ -214,6 +222,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   }
 
   // --- Optimistic add: just pushes to pending, never touches API data ---
+  /** Adiciona sessão otimista (antes da API confirmar) */
   function addLocalTodaySession(
     sessionDate: string,
     minutes: number,
@@ -313,6 +322,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     }
   }
 
+  /** Atualiza store com dados recebidos via WebSocket (recálculo concluído) */
   function updateFromWebSocket(data: DashboardData) {
     dashboard.value = data
     lastFetchAt.value = new Date()

@@ -9,12 +9,24 @@ use App\Modules\Auth\Repositories\Contracts\AuthRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * Serviço de autenticação.
+ *
+ * Centraliza lógica de registro, login, troca de senha. Usa AuthRepository para persistência
+ * e Sanctum para tokens. No login, remove tokens anteriores (sessão única por vez).
+ */
 class AuthService
 {
+    /**
+     * Injeta o repositório de auth para abstrair persistência.
+     */
     public function __construct(
         private AuthRepositoryInterface $authRepository
     ) {}
 
+    /**
+     * Cria um novo usuário com senha hasheada.
+     */
     public function register(RegisterDTO $dto): User
     {
         return $this->authRepository->create([
@@ -26,7 +38,9 @@ class AuthService
     }
 
     /**
-     * @return array{user: User, token: string}|null
+     * Autentica via Laravel Auth e retorna user + token. Remove tokens antigos.
+     *
+     * @return array{user: User, token: string}|null null se credenciais inválidas
      */
     public function login(LoginDTO $dto): ?array
     {
@@ -40,6 +54,9 @@ class AuthService
         return ['user' => $user, 'token' => $token];
     }
 
+    /**
+     * Altera a senha do usuário. Revoga todos os tokens em caso de sucesso.
+     */
     public function changePassword(User $user, string $currentPassword, string $newPassword): bool
     {
         if (! Hash::check($currentPassword, $user->password)) {

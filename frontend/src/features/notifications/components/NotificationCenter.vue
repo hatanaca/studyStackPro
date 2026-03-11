@@ -138,9 +138,8 @@ function typeClass(type: NotificationType): string {
   justify-content: center;
 }
 .notification-center__panel {
-  min-width: 300px;
-  max-width: 380px;
-  max-height: 380px;
+  width: var(--overlay-panel-max-width);
+  max-height: clamp(16rem, 62vh, 23.75rem);
   display: flex;
   flex-direction: column;
 }
@@ -159,7 +158,8 @@ function typeClass(type: NotificationType): string {
 }
 .notification-center__list {
   overflow-y: auto;
-  max-height: 300px;
+  max-height: clamp(12rem, 50vh, 18.75rem);
+  overscroll-behavior: contain;
 }
 .notification-center__item {
   display: flex;

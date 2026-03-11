@@ -2,6 +2,7 @@ import { computed } from 'vue'
 import type { ApexOptions } from 'apexcharts'
 import { useUiStore } from '@/stores/ui.store'
 
+/** Lê variável CSS do :root (SSR-safe) */
 function getCssVar(name: string): string {
   if (typeof document === 'undefined') return ''
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || ''

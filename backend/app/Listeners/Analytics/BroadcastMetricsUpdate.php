@@ -5,14 +5,13 @@ namespace App\Listeners\Analytics;
 use App\Events\Analytics\MetricsRecalculated;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
+/**
+ * Listener para MetricsRecalculated. O evento já implementa ShouldBroadcast
+ * e é transmitido automaticamente. Este listener mantém o fluxo event-driven
+ * e permite logging ou side-effects extras no futuro.
+ */
 class BroadcastMetricsUpdate implements ShouldQueue
 {
-    /**
-     * O evento MetricsRecalculated já implementa ShouldBroadcast e é
-     * transmitido automaticamente pelo Laravel. Este listener garante
-     * conformidade com o fluxo event-driven e permite lógica adicional
-     * pós-broadcast se necessário.
-     */
     public function handle(MetricsRecalculated $event): void
     {
         // Broadcast já emitido pelo evento ShouldBroadcast.

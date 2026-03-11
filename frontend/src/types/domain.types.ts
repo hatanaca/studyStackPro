@@ -1,3 +1,4 @@
+/** Usuário autenticado (resposta de auth/me, registro, etc.) */
 export interface User {
   id: string
   name: string
@@ -8,6 +9,7 @@ export interface User {
   updated_at?: string
 }
 
+/** Tecnologia (linguagem, ferramenta). Vinculada ao usuário. */
 export interface Technology {
   id: string
   name: string
@@ -19,6 +21,7 @@ export interface Technology {
   created_at?: string
 }
 
+/** Sessão de estudo. ended_at null = sessão ativa. */
 export interface StudySession {
   id: string
   user_id: string
@@ -34,6 +37,7 @@ export interface StudySession {
   created_at: string
 }
 
+/** Métricas gerais do usuário (usado no dashboard) */
 export interface UserMetrics {
   total_sessions: number
   total_minutes: number
@@ -45,6 +49,7 @@ export interface UserMetrics {
   last_session_at?: string | null
 }
 
+/** Payload completo do dashboard (user_metrics, tech metrics, séries, top techs) */
 export interface DashboardData {
   user_metrics: UserMetrics
   technology_metrics: TechnologyMetric[]
@@ -52,6 +57,7 @@ export interface DashboardData {
   top_technologies: TechnologyMetric[]
 }
 
+/** Métricas por tecnologia (minutos, sessões, % do total) */
 export interface TechnologyMetric {
   technology: Technology
   total_minutes: number
@@ -61,6 +67,7 @@ export interface TechnologyMetric {
   last_studied_at?: string | null
 }
 
+/** Minutos e sessões por dia (time series, heatmap) */
 export interface DailyMinute {
   date: string
   total_minutes: number

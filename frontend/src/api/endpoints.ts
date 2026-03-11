@@ -1,8 +1,8 @@
 /**
- * Constantes de endpoints da API
- * Base URL: /api/v1 (definida no client.ts)
+ * Constantes de endpoints da API.
+ * Base URL: /api/v1 (definida no client.ts).
+ * Estrutura organizada por domínio (auth, sessions, technologies, analytics).
  */
-
 export const ENDPOINTS = {
   auth: {
     login: '/auth/login',
