@@ -1,4 +1,4 @@
-﻿# Docker Compose - StudyTrackPro
+# Docker Compose - StudyTrackPro
 # Services: nginx (proxy), php-fpm (Laravel), reverb (WebSocket), horizon (queue worker),
 # scheduler (cron), node (Vite dev), postgres, redis
 # 
@@ -76,6 +76,8 @@ services:
       DB_HOST: postgres
       REDIS_HOST: redis
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
     networks:
@@ -145,14 +147,20 @@ services:
       - "5173:5173"
     environment:
       - VITE_API_URL=
-      - VITE_REVERB_HOST=\
-      - VITE_REVERB_PORT=\
+      - VITE_REVERB_HOST=localhost
+      - VITE_REVERB_PORT=80
       - VITE_REVERB_SCHEME=http
       - PROXY_TARGET=http://nginx:80
-    command: sh -c "find /app/node_modules -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null; npm install && npm run dev -- --host 0.0.0.0"
+    command: sh -c "find /app/node_modules -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null; npm install && npm run dev -- --host 0.0.0.0 --port 5173"
     networks:
       - app
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:5173 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # ========================
   # POSTGRESQL - Database
@@ -163,7 +171,7 @@ services:
     environment:
       POSTGRES_DB: studytrack
       POSTGRES_USER: studytrack
-      POSTGRES_PASSWORD: \
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -184,7 +192,9 @@ services:
   redis:
     container_name: redis
     image: redis:7-alpine
-    command: redis-server /usr/local/etc/redis/redis.conf --requirepass \
+    command: redis-server /usr/local/etc/redis/redis.conf
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-c812c3a3c4685cda4fc087d6d4edf667}
     volumes:
       - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf
       - redis_data:/data
@@ -192,7 +202,7 @@ services:
       - app
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "--no-auth-warning", "ping"]
+      test: ["CMD-SHELL", "redis-cli --no-auth-warning -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
       interval: 5s
       timeout: 3s
       retries: 5
