@@ -1,9 +1,14 @@
-# Docker Compose - StudyTrackPro
-# Serviços: nginx (proxy), php-fpm (Laravel), reverb (WebSocket), horizon (filas),
+﻿# Docker Compose - StudyTrackPro
+# Services: nginx (proxy), php-fpm (Laravel), reverb (WebSocket), horizon (queue worker),
 # scheduler (cron), node (Vite dev), postgres, redis
+# 
+# Network: app (internal) - all services communicate internally
+# Public: Only nginx exposes ports to host
 
 services:
-  # Proxy reverso: API, SPA, WebSocket, health, Horizon
+  # ========================
+  # NGINX - Reverse Proxy
+  # ========================
   nginx:
     container_name: nginx
     image: nginx:1.25-alpine
@@ -13,24 +18,51 @@ services:
     volumes:
       - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
       - ./frontend/dist:/var/www/html/public/frontend
+      # Uncomment for SSL in production
+      # - /etc/letsencrypt/live/yourdomain.com/fullchain.pem:/etc/nginx/certs/fullchain.pem:ro
+      # - /etc/letsencrypt/live/yourdomain.com/privkey.pem:/etc/nginx/certs/privkey.pem:ro
     depends_on:
       - php-fpm
+    networks:
+      - app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
-  # Laravel (API + frontend estático em produção)
+  # ========================
+  # PHP-FPM - Laravel API
+  # ========================
   php-fpm:
     container_name: php-fpm
     build: ./docker/php
     volumes:
       - ./backend:/var/www/html
+      # For persistent storage in production:
+      # - app_storage:/var/www/html/storage
     environment:
       APP_ENV: local
       DB_HOST: postgres
+      DB_PORT: 5432
       REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # Load from .env in production:
+      # - REDIS_PASSWORD (from .env.production)
+      # - DB_PASSWORD (from .env.production)
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app
+    restart: unless-stopped
 
-  # Laravel Reverb - WebSocket para dashboard em tempo real
+  # ========================
+  # REVERB - WebSocket Server
+  # ========================
   reverb:
     container_name: reverb
     build:
@@ -39,11 +71,20 @@ services:
     command: php artisan reverb:start --host=0.0.0.0 --port=8080
     volumes:
       - ./backend:/var/www/html
+    environment:
+      APP_ENV: local
+      DB_HOST: postgres
+      REDIS_HOST: redis
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    networks:
+      - app
     restart: unless-stopped
 
-  # Laravel Horizon - processamento de filas (jobs, recálculo de métricas)
+  # ========================
+  # HORIZON - Queue Worker
+  # ========================
   horizon:
     container_name: horizon
     build:
@@ -52,12 +93,22 @@ services:
     command: php artisan horizon
     volumes:
       - ./backend:/var/www/html
+    environment:
+      APP_ENV: local
+      DB_HOST: postgres
+      REDIS_HOST: redis
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app
     restart: unless-stopped
 
-  # Scheduler - substitui cron para tarefas agendadas (schedule:work)
+  # ========================
+  # SCHEDULER - Task Scheduler
+  # ========================
   scheduler:
     container_name: scheduler
     build:
@@ -66,11 +117,22 @@ services:
     command: php artisan schedule:work
     volumes:
       - ./backend:/var/www/html
+    environment:
+      APP_ENV: local
+      DB_HOST: postgres
+      REDIS_HOST: redis
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app
+    restart: unless-stopped
 
-  # Node - ambiente de desenvolvimento do frontend (Vite)
+  # ========================
+  # NODE - Frontend Dev Server (Vite)
+  # ========================
   node:
     container_name: node
     build:
@@ -83,45 +145,78 @@ services:
       - "5173:5173"
     environment:
       - VITE_API_URL=
-      - VITE_REVERB_HOST=${VITE_REVERB_HOST:-localhost}
-      - VITE_REVERB_PORT=${VITE_REVERB_PORT:-5173}
+      - VITE_REVERB_HOST=\
+      - VITE_REVERB_PORT=\
       - VITE_REVERB_SCHEME=http
-      - PROXY_TARGET=http://nginx
+      - PROXY_TARGET=http://nginx:80
     command: sh -c "find /app/node_modules -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null; npm install && npm run dev -- --host 0.0.0.0"
+    networks:
+      - app
+    restart: unless-stopped
 
-  # PostgreSQL 16 - banco principal + schema analytics
+  # ========================
+  # POSTGRESQL - Database
+  # ========================
   postgres:
     container_name: postgres
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: studytrack
       POSTGRES_USER: studytrack
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+      POSTGRES_PASSWORD: \
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    networks:
+      - app
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U studytrack"]
+      test: ["CMD-SHELL", "pg_isready -U studytrack -d studytrack"]
       interval: 5s
       timeout: 5s
       retries: 5
+    # Security: No port exposure - access only through internal network
 
-  # Redis 7 - cache, filas, sessões, Reverb
+  # ========================
+  # REDIS - Cache & Sessions
+  # ========================
   redis:
     container_name: redis
     image: redis:7-alpine
-    command: redis-server /usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf --requirepass \
     volumes:
       - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf
       - redis_data:/data
+    networks:
+      - app
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "--no-auth-warning", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
+    # Security: No port exposure - access only through internal network
 
-# Volumes persistentes para dados entre restarts
+# ========================
+# NETWORKS
+# ========================
+networks:
+  app:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# ========================
+# VOLUMES
+# ========================
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
   node_modules:
+    driver: local
+  # app_storage:  # Uncomment for persistent app storage
+  #   driver: local

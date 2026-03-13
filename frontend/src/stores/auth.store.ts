@@ -42,14 +42,20 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function register(name: string, email: string, password: string, passwordConfirmation: string, timezone = 'UTC') {
-    await authApi.register({
+    const { data } = await authApi.register({
       name,
       email,
       password,
       password_confirmation: passwordConfirmation,
       timezone,
     })
-    await login(email, password)
+    if (data.success && data.data) {
+      const { user: u, token: t } = data.data
+      token.value = t
+      user.value = u
+      localStorage.setItem(TOKEN_KEY, t)
+      localStorage.setItem(USER_KEY, JSON.stringify(u))
+    }
   }
 
   /** Atualiza dados do usuário na API e sincroniza cache local */

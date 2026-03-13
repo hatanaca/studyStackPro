@@ -2,6 +2,7 @@
 /**
  * Sidebar de navegação. Links principais, resumo (horas, sessões, streak),
  * ThemeToggle, RealtimeBadge. Fecha ao mudar rota (mobile). Teleport para overlay.
+ * Suporta estado colapsado (ícones apenas) via uiStore.sidebarCollapsed.
  */
 import { computed, inject, useAttrs, watch } from 'vue'
 
@@ -71,7 +72,10 @@ async function handleLogout() {
   </Teleport>
   <aside
     class="app-sidebar"
-    :class="[attrs.class, { 'app-sidebar--open': uiStore.mobileSidebarOpen }]"
+    :class="[attrs.class, {
+      'app-sidebar--open': uiStore.mobileSidebarOpen,
+      'app-sidebar--collapsed': uiStore.sidebarCollapsed
+    }]"
   >
     <div class="app-sidebar__top">
       <div class="app-sidebar__brand">
@@ -83,6 +87,35 @@ async function handleLogout() {
           class="app-sidebar__theme"
         />
       </div>
+      <button
+        type="button"
+        class="app-sidebar__toggle"
+        :aria-label="uiStore.sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'"
+        :title="uiStore.sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'"
+        @click="uiStore.toggleSidebar()"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path
+            v-if="uiStore.sidebarCollapsed"
+            d="M9 18l6-6-6-6"
+          />
+          <path
+            v-else
+            d="M15 18l-6-6 6-6"
+          />
+        </svg>
+      </button>
       <button
         type="button"
         class="app-sidebar__close"
@@ -139,12 +172,13 @@ async function handleLogout() {
         Metas
       </RouterLink>
     </div>
-    <RealtimeBadge class="app-sidebar__realtime" />
     <nav class="app-sidebar__nav">
       <RouterLink
         to="/"
         active-class="active"
         class="app-sidebar__link"
+        title="Dashboard"
+        aria-label="Ir para Dashboard"
       >
         <span
           class="app-sidebar__icon"
@@ -186,12 +220,14 @@ async function handleLogout() {
             rx="1"
           /></svg>
         </span>
-        Dashboard
+        <span class="app-sidebar__link-text">Dashboard</span>
       </RouterLink>
       <RouterLink
         to="/sessions"
         active-class="active"
         class="app-sidebar__link"
+        title="Sessões"
+        aria-label="Ir para Sessões"
       >
         <span
           class="app-sidebar__icon"
@@ -213,12 +249,14 @@ async function handleLogout() {
             r="10"
           /><polyline points="12 6 12 12 16 14" /></svg>
         </span>
-        Sessões
+        <span class="app-sidebar__link-text">Sessões</span>
       </RouterLink>
       <RouterLink
         to="/technologies"
         active-class="active"
         class="app-sidebar__link"
+        title="Tecnologias"
+        aria-label="Ir para Tecnologias"
       >
         <span
           class="app-sidebar__icon"
@@ -236,12 +274,14 @@ async function handleLogout() {
             stroke-linejoin="round"
           ><path d="M12 2v4" /><path d="m4.93 4.93 2.83 2.83" /><path d="M2 12h4" /><path d="m4.93 19.07 2.83-2.83" /><path d="M12 18v4" /><path d="m17.24 17.24 2.83-2.83" /><path d="M18 12h4" /><path d="m17.24 6.76 2.83 2.83" /></svg>
         </span>
-        Tecnologias
+        <span class="app-sidebar__link-text">Tecnologias</span>
       </RouterLink>
       <RouterLink
         to="/goals"
         active-class="active"
         class="app-sidebar__link"
+        title="Metas"
+        aria-label="Ir para Metas"
       >
         <span
           class="app-sidebar__icon"
@@ -263,12 +303,14 @@ async function handleLogout() {
             r="10"
           /><path d="M12 6v6l4 2" /></svg>
         </span>
-        Metas
+        <span class="app-sidebar__link-text">Metas</span>
       </RouterLink>
       <RouterLink
         to="/export"
         active-class="active"
         class="app-sidebar__link"
+        title="Exportar"
+        aria-label="Ir para Exportar"
       >
         <span
           class="app-sidebar__icon"
@@ -291,12 +333,14 @@ async function handleLogout() {
             y2="3"
           /></svg>
         </span>
-        Exportar
+        <span class="app-sidebar__link-text">Exportar</span>
       </RouterLink>
       <RouterLink
         to="/reports"
         active-class="active"
         class="app-sidebar__link"
+        title="Relatórios"
+        aria-label="Ir para Relatórios"
       >
         <span
           class="app-sidebar__icon"
@@ -324,12 +368,14 @@ async function handleLogout() {
             y2="17"
           /><polyline points="10 9 9 9 8 9" /></svg>
         </span>
-        Relatórios
+        <span class="app-sidebar__link-text">Relatórios</span>
       </RouterLink>
       <RouterLink
         to="/help"
         active-class="active"
         class="app-sidebar__link"
+        title="Ajuda"
+        aria-label="Ir para Ajuda"
       >
         <span
           class="app-sidebar__icon"
@@ -351,12 +397,13 @@ async function handleLogout() {
             r="10"
           /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg>
         </span>
-        Ajuda
+        <span class="app-sidebar__link-text">Ajuda</span>
       </RouterLink>
       <RouterLink
         to="/settings"
         active-class="active"
         class="app-sidebar__link"
+        title="Preferências"
         aria-label="Ir para Configurações"
       >
         <span
@@ -379,12 +426,13 @@ async function handleLogout() {
             r="3"
           /></svg>
         </span>
-        Preferências
+        <span class="app-sidebar__link-text">Preferências</span>
       </RouterLink>
       <RouterLink
         to="/profile"
         active-class="active"
         class="app-sidebar__link"
+        title="Perfil"
         aria-label="Ir para Perfil"
       >
         <span
@@ -407,7 +455,7 @@ async function handleLogout() {
             r="4"
           /></svg>
         </span>
-        Perfil
+        <span class="app-sidebar__link-text">Perfil</span>
       </RouterLink>
     </nav>
     <template v-if="stakentStyle?.value">
@@ -434,12 +482,31 @@ async function handleLogout() {
       </div>
     </template>
     <div class="app-sidebar__footer">
+      <RealtimeBadge class="app-sidebar__realtime" />
       <button
         type="button"
         class="app-sidebar__logout"
         @click="handleLogout"
       >
-        Sair
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+          class="app-sidebar__logout-icon"
+        ><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line
+          x1="21"
+          y1="12"
+          x2="9"
+          y2="12"
+        /></svg>
+        <span class="app-sidebar__link-text">Sair</span>
       </button>
     </div>
   </aside>
@@ -456,17 +523,35 @@ async function handleLogout() {
   flex-shrink: 0;
   border-right: 1px solid var(--color-border);
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: width var(--duration-normal) var(--ease-out-expo);
+}
+.app-sidebar--collapsed {
+  width: var(--sidebar-width-collapsed);
+  padding: var(--spacing-md) var(--spacing-xs);
 }
 .app-sidebar__top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--spacing-md);
+  gap: var(--spacing-xs);
+  min-width: 0;
 }
 .app-sidebar__brand {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  transition: width var(--duration-normal) var(--ease-out-expo), opacity var(--duration-normal) ease;
+}
+.app-sidebar--collapsed .app-sidebar__brand {
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 .app-sidebar__logo {
   font-size: var(--text-base);
@@ -475,6 +560,31 @@ async function handleLogout() {
   margin: 0;
   white-space: nowrap;
   color: var(--color-text);
+  overflow: hidden;
+}
+.app-sidebar__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+}
+.app-sidebar__toggle:hover {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.app-sidebar__toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 .app-sidebar__close {
   display: none;
@@ -489,9 +599,6 @@ async function handleLogout() {
 }
 .app-sidebar__close:hover {
   color: var(--color-text);
-}
-.app-sidebar__realtime {
-  margin-bottom: var(--spacing-md);
 }
 .app-sidebar__pills {
   display: flex;
@@ -594,6 +701,8 @@ async function handleLogout() {
   border-radius: var(--radius-md);
   border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
   background: color-mix(in srgb, var(--color-bg-soft) 70%, transparent);
+  overflow: hidden;
+  min-width: 0;
 }
 .app-sidebar__avatar-wrap {
   flex-shrink: 0;
@@ -618,6 +727,14 @@ async function handleLogout() {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: width var(--duration-normal) var(--ease-out-expo), opacity var(--duration-normal) ease;
+}
+.app-sidebar--collapsed .app-sidebar__profile-meta {
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 .app-sidebar__profile-name {
   margin: 0;
@@ -657,6 +774,7 @@ async function handleLogout() {
   transition: color var(--duration-fast) ease,
     background var(--duration-fast) ease,
     transform var(--duration-fast) ease;
+  overflow: hidden;
 }
 .app-sidebar__link:hover {
   color: var(--color-text);
@@ -677,14 +795,37 @@ async function handleLogout() {
 .app-sidebar__link.active .app-sidebar__icon {
   opacity: 1;
 }
+.app-sidebar__link-text {
+  overflow: hidden;
+  white-space: nowrap;
+  transition: width var(--duration-normal) var(--ease-out-expo), opacity var(--duration-normal) ease;
+}
+.app-sidebar--collapsed .app-sidebar__link-text {
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
 .app-sidebar__footer {
   margin-top: auto;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
   padding-top: var(--spacing-sm);
+  overflow: hidden;
+}
+.app-sidebar__realtime {
+  overflow: hidden;
+  transition: width var(--duration-normal) var(--ease-out-expo), opacity var(--duration-normal) ease;
+}
+.app-sidebar--collapsed .app-sidebar__realtime {
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 .app-sidebar__logout {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
   padding: var(--spacing-xs) var(--spacing-sm);
   background: transparent;
   border: 1px solid var(--color-border);
@@ -694,11 +835,16 @@ async function handleLogout() {
   white-space: nowrap;
   font-size: var(--text-xs);
   transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+  overflow: hidden;
+  min-width: 0;
 }
 .app-sidebar__logout:hover {
   background: var(--color-bg-soft);
   color: var(--color-text);
   border-color: var(--color-text-muted);
+}
+.app-sidebar__logout-icon {
+  flex-shrink: 0;
 }
 
 .app-sidebar-backdrop {
@@ -716,6 +862,9 @@ async function handleLogout() {
     transform: none;
     overflow-y: auto;
     overflow-x: hidden;
+  }
+  .app-sidebar__toggle {
+    display: flex;
   }
 }
 
@@ -738,6 +887,9 @@ async function handleLogout() {
   }
   .app-sidebar__close {
     display: block;
+  }
+  .app-sidebar__toggle {
+    display: none;
   }
   .app-sidebar-backdrop {
     display: block;

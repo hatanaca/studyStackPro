@@ -58,7 +58,7 @@ export function useWebSocket() {
       key,
       wsHost: host,
       wsPort: parseInt(port, 10),
-      wssPort: scheme === 'https' ? 443 : 443,
+      wssPort: scheme === 'https' ? 443 : parseInt(port, 10),
       forceTLS: scheme === 'https',
       enabledTransports: ['ws', 'wss'],
       authEndpoint: `${apiUrl || ''}/api/broadcasting/auth`,

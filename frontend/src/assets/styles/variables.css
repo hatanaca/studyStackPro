@@ -50,6 +50,7 @@
   --shadow-card-hover: 0 12px 28px rgba(15, 23, 42, 0.12);
 
   --sidebar-width: 200px;
+  --sidebar-width-collapsed: 3.5rem;
   --sidebar-drawer-width: min(280px, 85vw);
   --overlay-backdrop: rgba(0, 0, 0, 0.5);
   --overlay-shadow: 8px 0 32px rgba(0, 0, 0, 0.3);
@@ -190,7 +191,7 @@
   --dropdown-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
-/* Tema Stakent: dark + roxo, cards com glow (aplicado quando layout tem .stakent-style em tema dark) */
+/* Tema Stakent: dark + roxo, cards com glow (ativado via uiStore.stakentMode, separado do tema) */
 [data-theme='dark'] .app-layout.stakent-style {
   --color-bg: #0c0f1a;
   --color-bg-soft: #151922;
@@ -208,7 +209,6 @@
   --shadow-glow: 0 0 40px rgba(139, 92, 246, 0.08);
   --radius-card: 0.75rem;
   --header-height: 4rem;
-  --sidebar-width: 260px;
 }
 
 /* Scrollbar global no tema escuro */

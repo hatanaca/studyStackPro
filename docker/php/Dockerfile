@@ -1,4 +1,4 @@
-FROM php:8.4-fpm-alpine
+﻿FROM php:8.4-fpm-alpine
 
 RUN apk add --no-cache \
     libpq-dev \
@@ -22,3 +22,5 @@ COPY www.conf /usr/local/etc/php-fpm.d/www.conf
 WORKDIR /var/www/html
 
 RUN chown -R www-data:www-data /var/www/html
+
+USER www-data
