@@ -21,7 +21,7 @@ class DispatchMetricsRecalculation
             $event instanceof StudySessionUpdated => [
                 $event->session->user_id,
                 ! empty(array_intersect(
-                    array_keys($event->changedFields ?? []),
+                    $event->changedFields ?? [],
                     ['started_at', 'ended_at', 'technology_id', 'duration_min']
                 )),
             ],

@@ -2,24 +2,20 @@
 /**
  * Layout principal autenticado.
  * Sidebar + área de conteúdo + ActiveSessionBanner. Conecta WebSocket no mount.
- * Tema (stakent-style) e data-theme aplicados via uiStore.
+ * Tema (data-theme) aplicado via uiStore. Layout estrutural independente do tema.
  */
-import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
-import AppTopBar from '@/components/layout/AppTopBar.vue'
 import ActiveSessionBanner from '@/features/sessions/components/ActiveSessionBanner.vue'
 
 const authStore = useAuthStore()
 const uiStore = useUiStore()
 const route = useRoute()
 
-const useStakentStyle = computed(() => uiStore.theme === 'dark')
 const showActiveBanner = computed(() => route.name !== 'session-focus')
-
-provide('stakentStyle', useStakentStyle)
 
 const wsModule = ref<{ connect: (id: string) => Promise<void>; disconnect: () => void } | null>(null)
 
@@ -48,14 +44,10 @@ watch(
 <template>
   <div
     class="app-layout"
-    :class="{ 'stakent-style': useStakentStyle }"
+    :class="{ 'app-layout--sidebar-collapsed': uiStore.sidebarCollapsed }"
   >
     <AppSidebar class="app-layout__sidebar" />
     <div class="app-layout__main-wrap">
-      <AppTopBar
-        v-if="useStakentStyle"
-        class="app-layout__topbar"
-      />
       <main class="app-layout__main">
         <header class="app-layout__mobile-header">
           <button
@@ -117,9 +109,7 @@ watch(
   min-height: var(--viewport-app-min-height);
   display: flex;
   flex-direction: column;
-}
-.app-layout__topbar {
-  flex-shrink: 0;
+  transition: margin-left var(--duration-normal) var(--ease-out-expo);
 }
 .app-layout__main {
   flex: 1;
@@ -136,9 +126,6 @@ watch(
   pointer-events: none;
   z-index: 0;
 }
-.app-layout.stakent-style .app-layout__main::before {
-  background: var(--gradient-mesh, radial-gradient(at 40% 20%, #1a1f2e 0%, transparent 50%));
-}
 .app-layout__main > * {
   position: relative;
   z-index: 1;
@@ -150,10 +137,6 @@ watch(
   width: 100%;
   padding-block: var(--page-content-padding-block);
 }
-.app-layout.stakent-style .app-layout__content {
-  max-width: none;
-  padding: var(--spacing-lg);
-}
 .app-layout__mobile-header {
   display: none;
 }
@@ -161,6 +144,9 @@ watch(
 @media (min-width: calc(var(--screen-md) + 1px)) {
   .app-layout__main-wrap {
     margin-left: var(--sidebar-width);
+  }
+  .app-layout--sidebar-collapsed .app-layout__main-wrap {
+    margin-left: var(--sidebar-width-collapsed);
   }
   .app-layout__main {
     padding: var(--spacing-md) var(--spacing-lg);

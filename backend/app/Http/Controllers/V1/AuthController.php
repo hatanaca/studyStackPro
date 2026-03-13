@@ -34,7 +34,7 @@ class AuthController extends Controller
 
     /**
      * Registra um novo usuário no sistema.
-     * Cria o usuário via AuthService, gera token Sanctum e retorna o usuário com header Authorization.
+     * Cria o usuário via AuthService, gera token Sanctum e retorna user + token no body (consistente com login).
      */
     public function register(RegisterRequest $request): JsonResponse
     {
@@ -47,9 +47,11 @@ class AuthController extends Controller
         $user = $this->authService->register($dto);
         $token = $user->createToken('api-token')->plainTextToken;
 
-        return $this->success(new UserResource($user), 'Registrado com sucesso.', 201)->withHeaders([
-            'Authorization' => 'Bearer '.$token,
-        ]);
+        return $this->success([
+            'user' => new UserResource($user),
+            'token' => $token,
+            'token_type' => 'Bearer',
+        ], 'Registrado com sucesso.', 201);
     }
 
     /**

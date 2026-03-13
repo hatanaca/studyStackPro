@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 
 const THEME_KEY = 'studytrack.theme'
 const CUSTOM_THEME_KEY = 'studytrack.theme.custom'
+const SIDEBAR_COLLAPSED_KEY = 'studytrack.sidebar.collapsed'
 
 /** Opções de tema customizado (mapeadas para variáveis CSS) */
 export interface CustomThemeOptions {
@@ -26,6 +27,18 @@ function loadTheme(): 'light' | 'dark' {
   return 'light'
 }
 
+/** Carrega estado colapsado da sidebar do localStorage (padrão: true) */
+function loadSidebarCollapsed(): boolean {
+  try {
+    const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY)
+    if (saved === 'false') return false
+    if (saved === 'true') return true
+  } catch {
+    // ignore
+  }
+  return true
+}
+
 /** Carrega tema customizado do localStorage */
 function loadCustomTheme(): CustomThemeOptions {
   try {
@@ -42,7 +55,7 @@ function loadCustomTheme(): CustomThemeOptions {
 export const useUiStore = defineStore('ui', () => {
   const theme = ref<'light' | 'dark'>(loadTheme())
   const customTheme = ref<CustomThemeOptions>(loadCustomTheme())
-  const sidebarCollapsed = ref(false)
+  const sidebarCollapsed = ref(loadSidebarCollapsed())
   const mobileSidebarOpen = ref(false)
   const modalStack = ref<string[]>([])
 
@@ -103,6 +116,11 @@ export const useUiStore = defineStore('ui', () => {
 
   function toggleSidebar() {
     sidebarCollapsed.value = !sidebarCollapsed.value
+    try {
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(sidebarCollapsed.value))
+    } catch {
+      // ignore
+    }
   }
 
   function openMobileSidebar() {

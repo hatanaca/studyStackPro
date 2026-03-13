@@ -38,6 +38,7 @@ class EventServiceProvider extends ServiceProvider
         StudySessionDeleted::class => [
             InvalidateSessionCache::class,
             DispatchMetricsRecalculation::class,
+            BroadcastMetricsRecalculating::class,
         ],
         MetricsRecalculated::class => [
             UpdateCacheWithFreshData::class,
