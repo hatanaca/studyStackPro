@@ -1,5 +1,6 @@
 # Checklist e exemplos de prompt
 
+- **Debug (quando algo quebra):** use o checklist rápido e o prompt de diagnóstico em [DEBUG-CHECKLIST-E-PROMPT.md](DEBUG-CHECKLIST-E-PROMPT.md).
 - **Throttles da API:** tabela no final deste arquivo.
 - **Variáveis de ambiente:** `docs/ENV-VARS.md` e `backend/.env.example` / `frontend/.env.example`.
 - **WebSocket:** canais privados `dashboard.{userId}`; eventos `.session.started`, `.session.ended`, `.metrics.updated`, `.metrics.recalculating`. O frontend espera `session.technology.slug` em `.session.started` e `dashboard` (objeto DashboardData) em `.metrics.updated`.
