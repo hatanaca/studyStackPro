@@ -1,9 +1,0 @@
-CONTAINER ID   IMAGE                     COMMAND                  CREATED       STATUS                 PORTS                                                                          NAMES
-0c84e07787bf   nginx:1.25-alpine         "/docker-entrypoint.…"   5 hours ago   Up 5 hours             0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp   studytrackpro-nginx-1
-180ddf4dc98e   studytrackpro-horizon     "docker-php-entrypoi…"   5 hours ago   Up 6 seconds           9000/tcp                                                                       studytrackpro-horizon-1
-9b65af19b0a1   studytrackpro-scheduler   "docker-php-entrypoi…"   5 hours ago   Up 5 hours             9000/tcp                                                                       studytrackpro-scheduler-1
-03ecd5315692   studytrackpro-php-fpm     "docker-php-entrypoi…"   5 hours ago   Up 5 hours             9000/tcp                                                                       studytrackpro-php-fpm-1
-e2476760afda   postgres:16-alpine        "docker-entrypoint.s…"   5 hours ago   Up 5 hours (healthy)   5432/tcp                                                                       studytrackpro-postgres-1
-b8e4a70a333a   redis:7-alpine            "docker-entrypoint.s…"   5 hours ago   Up 5 hours (healthy)   6379/tcp                                                                       studytrackpro-redis-1
-9b8cf28198c1   studytrackpro-node        "docker-entrypoint.s…"   5 hours ago   Up 5 hours             0.0.0.0:5173->5173/tcp, [::]:5173->5173/tcp                                    studytrackpro-node-1
-29968c9514fe   axllent/mailpit:latest    "/mailpit"               5 hours ago   Up 5 hours (healthy)   0.0.0.0:8025->8025/tcp, [::]:8025->8025/tcp                                    studytrackpro-mailpit-1
