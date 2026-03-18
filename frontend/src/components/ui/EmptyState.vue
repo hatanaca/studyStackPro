@@ -77,7 +77,7 @@ function handleAction() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-xl) var(--spacing-lg);
+  padding: var(--spacing-2xl) var(--spacing-xl);
   text-align: center;
   background: color-mix(in srgb, var(--color-bg-soft) 50%, var(--color-bg-card));
   border: 1px dashed var(--color-border);
@@ -95,20 +95,20 @@ function handleAction() {
   font-weight: 600;
   color: var(--color-text);
   margin: 0 0 var(--spacing-xs);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-tight);
 }
 .empty-state__description {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
-  margin: 0 0 var(--spacing-md);
+  margin: 0 0 var(--spacing-lg);
   max-width: var(--empty-state-max-width);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 .empty-state__action {
   margin-top: var(--spacing-xs);
 }
 .empty-state__button {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-primary-contrast);

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 
 const props = withDefaults(
   defineProps<{
@@ -10,8 +11,9 @@ const props = withDefaults(
     tag?: string
     chartData?: number[]
     color?: string
+    to?: string
   }>(),
-  { change: undefined, changeLabel: undefined, tag: '', chartData: () => [], color: undefined }
+  { change: undefined, changeLabel: undefined, tag: '', chartData: () => [], color: undefined, to: undefined }
 )
 
 const hasPositiveChange = computed(() => (props.change ?? 0) > 0)
@@ -27,8 +29,9 @@ const changeText = computed(() => {
   <article class="stakent-metric-card">
     <div class="stakent-metric-card__tag-row">
       <span class="stakent-metric-card__tag">{{ tag || 'Métrica' }}</span>
-      <button
-        type="button"
+      <RouterLink
+        v-if="to"
+        :to="to"
         class="stakent-metric-card__more"
         aria-label="Ver mais"
       >
@@ -41,7 +44,7 @@ const changeText = computed(() => {
           stroke="currentColor"
           stroke-width="2"
         ><path d="M5 12h14" /><path d="M12 5v14" /></svg>
-      </button>
+      </RouterLink>
     </div>
     <div class="stakent-metric-card__content">
       <div class="stakent-metric-card__main">
@@ -85,7 +88,7 @@ const changeText = computed(() => {
   background: var(--color-bg-card);
   border-radius: var(--radius-card, var(--radius-lg));
   border: 1px solid var(--color-border);
-  padding: var(--spacing-md);
+  padding: var(--spacing-lg);
   position: relative;
   overflow: hidden;
   box-shadow: var(--shadow-card, var(--shadow-sm));
@@ -146,8 +149,8 @@ const changeText = computed(() => {
   font-size: var(--text-2xl);
   font-weight: 700;
   color: var(--color-text);
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
 }
 .stakent-metric-card__change {
   font-size: var(--text-sm);
@@ -163,7 +166,7 @@ const changeText = computed(() => {
   margin: var(--spacing-xs) 0 0;
   font-size: var(--text-xs);
   color: var(--color-text-muted);
-  line-height: 1.4;
+  line-height: var(--leading-snug);
 }
 .stakent-metric-card__chart {
   margin-top: var(--spacing-sm);

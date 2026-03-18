@@ -72,7 +72,7 @@ function getDisplayValue(value: KeyValueItem['value']): string {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   align-items: baseline;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
   padding: var(--spacing-sm) 0;
   border-bottom: 1px solid var(--color-border);
 }
@@ -98,7 +98,7 @@ function getDisplayValue(value: KeyValueItem['value']): string {
   grid-template-columns: 1fr;
   gap: var(--spacing-2xs);
 }
-@media (min-width: 480px) {
+@media (min-width: 640px) {
   .key-value-list--stack .key-value-list__row {
     grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   }

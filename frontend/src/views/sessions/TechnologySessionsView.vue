@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import Breadcrumb from 'primevue/breadcrumb'
 import Card from 'primevue/card'
 import Button from 'primevue/button'
+import Skeleton from 'primevue/skeleton'
+import PageView from '@/components/layout/PageView.vue'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import { technologiesApi } from '@/api/modules/technologies.api'
 import { formatDate } from '@/utils/formatters'
@@ -89,6 +90,14 @@ function goBack() {
   router.push({ name: 'sessions' })
 }
 
+async function retry() {
+  loading.value = true
+  error.value = null
+  await loadTechnology()
+  if (technology.value) await loadSessions()
+  loading.value = false
+}
+
 function formatMinutes(m: number) {
   if (m < 60) return `${m} min`
   const h = Math.floor(m / 60)
@@ -98,25 +107,37 @@ function formatMinutes(m: number) {
 </script>
 
 <template>
-  <div class="technology-sessions-view">
-    <Breadcrumb :model="breadcrumbItems" />
+  <PageView
+    :breadcrumb="breadcrumbItems"
+    class="technology-sessions-view"
+  >
     <div
       v-if="loading"
       class="technology-sessions-view__loading"
+      role="status"
+      aria-live="polite"
+      aria-label="Carregando"
     >
-      Carregando...
+      <Skeleton class="technology-sessions-view__skeleton" height="6rem" />
+      <Skeleton class="technology-sessions-view__skeleton" height="8rem" />
     </div>
     <div
       v-else-if="error"
       class="technology-sessions-view__error"
     >
       <p>{{ error }}</p>
-      <Button
-        label="Voltar"
-        severity="secondary"
-        variant="outlined"
-        @click="goBack"
-      />
+      <div class="technology-sessions-view__error-actions">
+        <Button
+          label="Tentar novamente"
+          @click="retry"
+        />
+        <Button
+          label="Voltar"
+          severity="secondary"
+          variant="outlined"
+          @click="goBack"
+        />
+      </div>
     </div>
     <template v-else-if="technology">
       <header class="technology-sessions-view__header">
@@ -133,7 +154,7 @@ function formatMinutes(m: number) {
       </header>
 
       <Card class="technology-sessions-view__card">
-        <div class="technology-sessions-view__table-wrap">
+        <div class="technology-sessions-view__table-wrap scroll-pretty">
           <table class="technology-sessions-view__table">
             <thead>
               <tr>
@@ -160,7 +181,7 @@ function formatMinutes(m: number) {
         </p>
       </Card>
     </template>
-  </div>
+  </PageView>
 </template>
 
 <style scoped>
@@ -169,20 +190,30 @@ function formatMinutes(m: number) {
 }
 .technology-sessions-view__loading,
 .technology-sessions-view__error {
-  padding: var(--spacing-xl);
+  padding: var(--spacing-2xl);
   text-align: center;
   color: var(--color-text-muted);
   background: color-mix(in srgb, var(--color-bg-soft) 80%, var(--color-bg-card));
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 .technology-sessions-view__error p {
-  margin: 0 0 var(--spacing-md);
+  margin: 0 0 var(--spacing-lg);
+}
+.technology-sessions-view__error-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+.technology-sessions-view__skeleton {
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
 }
 .technology-sessions-view__header {
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-sm) 0;
 }
 .technology-sessions-view__back {
   background: none;
@@ -217,15 +248,23 @@ function formatMinutes(m: number) {
 }
 .technology-sessions-view__table {
   width: 100%;
-  min-width: 420px;
+  min-width: 280px;
   border-collapse: collapse;
   font-size: var(--text-sm);
+  line-height: var(--leading-normal);
 }
 .technology-sessions-view__table th,
 .technology-sessions-view__table td {
-  padding: var(--spacing-md) var(--widget-padding);
+  padding: var(--spacing-md) var(--spacing-lg);
   text-align: left;
   border-bottom: 1px solid var(--color-border);
+}
+@media (max-width: 640px) {
+  .technology-sessions-view__table th,
+  .technology-sessions-view__table td {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--text-xs);
+  }
 }
 .technology-sessions-view__table th {
   font-weight: 600;
@@ -241,10 +280,10 @@ function formatMinutes(m: number) {
 }
 .technology-sessions-view__empty {
   margin: 0;
-  padding: var(--spacing-xl);
+  padding: var(--spacing-2xl);
   text-align: center;
   color: var(--color-text-muted);
   font-size: var(--text-sm);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 </style>

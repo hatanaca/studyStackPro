@@ -17,7 +17,7 @@
   align-items: center;
   justify-content: center;
   background: var(--color-bg);
-  padding: var(--spacing-md);
+  padding: var(--spacing-lg);
   position: relative;
   overflow: hidden;
 }
@@ -31,17 +31,17 @@
   position: relative;
   z-index: 1;
   background: var(--color-bg-card);
-  padding: var(--spacing-xl) var(--spacing-2xl);
+  padding: var(--spacing-2xl) var(--spacing-3xl);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--color-border);
   width: 100%;
-  max-width: 400px;
-  min-height: 300px;
+  max-width: 24rem;
+  min-height: 18rem;
 }
-@media (max-width: 400px) {
+@media (max-width: 640px) {
   .auth-layout__card {
-    padding: var(--spacing-lg) var(--spacing-md);
+    padding: var(--spacing-xl) var(--spacing-lg);
     border-radius: var(--radius-md);
     min-height: 260px;
   }

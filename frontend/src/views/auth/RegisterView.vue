@@ -57,21 +57,23 @@ async function onSubmit(payload: {
 h1 {
   font-size: var(--text-xl);
   font-weight: 700;
-  letter-spacing: -0.02em;
-  margin: 0 0 var(--spacing-xs);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+  margin: 0 0 var(--spacing-sm);
   color: var(--color-text);
 }
 .subtitle {
   color: var(--color-text-muted);
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
   font-size: var(--text-sm);
-  line-height: 1.4;
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
 }
 .footer {
-  margin-top: var(--spacing-lg);
+  margin-top: var(--spacing-xl);
   font-size: var(--text-sm);
   color: var(--color-text-muted);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 .footer a {
   color: var(--color-primary);

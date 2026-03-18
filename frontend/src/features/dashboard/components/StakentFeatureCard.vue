@@ -36,7 +36,7 @@
 <style scoped>
 .stakent-feature-card {
   position: relative;
-  padding: var(--spacing-lg);
+  padding: var(--spacing-xl);
   border-radius: var(--radius-card, var(--radius-lg));
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.35), rgba(124, 58, 237, 0.2));
   border: 1px solid rgba(139, 92, 246, 0.4);
@@ -47,14 +47,14 @@
   position: absolute;
   top: var(--spacing-sm);
   right: var(--spacing-sm);
-  font-size: 0.65rem;
+  font-size: var(--text-xs);
   font-weight: 700;
-  padding: 0.2rem 0.5rem;
+  padding: var(--spacing-2xs) var(--spacing-sm);
   border-radius: 4px;
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-primary-contrast);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--tracking-wide);
 }
 .stakent-feature-card__brand {
   margin-bottom: var(--spacing-sm);
@@ -63,20 +63,20 @@
   font-size: var(--text-xs);
   font-weight: 700;
   color: rgba(255, 255, 255, 0.9);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-tight);
 }
 .stakent-feature-card__title {
   margin: 0 0 var(--spacing-xs);
   font-size: var(--text-lg);
   font-weight: 700;
   color: var(--color-text);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-tight);
 }
 .stakent-feature-card__desc {
-  margin: 0 0 var(--spacing-md);
+  margin: 0 0 var(--spacing-lg);
   font-size: var(--text-sm);
   color: var(--color-text-muted);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
   max-width: 36ch;
 }
 .stakent-feature-card__actions {
@@ -101,7 +101,7 @@
 }
 .stakent-feature-card__btn--primary {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-primary-contrast);
   border: 1px solid var(--color-primary);
 }
 .stakent-feature-card__btn--secondary {
@@ -110,6 +110,6 @@
   border: 1px solid var(--color-border);
 }
 .stakent-feature-card__btn-icon {
-  font-size: 1rem;
+  font-size: var(--text-base);
 }
 </style>

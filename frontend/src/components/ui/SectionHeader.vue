@@ -40,8 +40,8 @@ withDefaults(
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
 }
 .section-header__text {
   flex: 1;
@@ -52,14 +52,14 @@ withDefaults(
   font-weight: 600;
   color: var(--color-text);
   margin: var(--page-section-title-margin, 0 0 var(--spacing-xs));
-  letter-spacing: -0.01em;
-  line-height: 1.3;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
 }
 .section-header__description {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   margin: 0;
-  line-height: 1.45;
+  line-height: var(--leading-snug);
 }
 .section-header__actions {
   flex-shrink: 0;

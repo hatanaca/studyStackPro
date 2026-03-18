@@ -110,18 +110,18 @@ function clear() {
 .base-date-range {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--spacing-md);
   flex-wrap: wrap;
 }
 .base-date-range__inputs {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
   flex-wrap: wrap;
 }
 .base-date-range__input {
   min-height: var(--input-height-sm);
-  padding: 0.45rem 0.75rem;
+  padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--text-sm);
   font-family: inherit;
   color: var(--color-text);
@@ -146,7 +146,7 @@ function clear() {
 }
 .base-date-range__clear {
   min-height: var(--input-height-sm);
-  padding: 0.35rem 0.75rem;
+  padding: var(--spacing-xs) var(--spacing-md);
   font-size: var(--text-xs);
   font-weight: 600;
   color: var(--color-text-muted);

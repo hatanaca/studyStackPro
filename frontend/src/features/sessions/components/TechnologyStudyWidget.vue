@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import Card from 'primevue/card'
+import Skeleton from 'primevue/skeleton'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import { formatHours } from '@/utils/formatters'
 import type { Technology } from '@/types/domain.types'
@@ -21,7 +22,7 @@ async function loadTotal() {
   try {
     const { data } = await sessionsApi.list({
       technology_id: props.technology.id,
-      per_page: 500,
+      per_page: 50,
     })
     if (data.success && Array.isArray(data.data)) {
       totalMinutes.value = data.data.reduce((sum, s) => sum + (s.duration_min ?? 0), 0)
@@ -48,8 +49,10 @@ watch(() => props.technology.id, loadTotal)
       <div class="technology-study-widget__bar" />
       <div class="technology-study-widget__content">
         <h3 class="technology-study-widget__name">{{ technology.name }}</h3>
-        <p v-if="loading" class="technology-study-widget__total">...</p>
-        <p v-else class="technology-study-widget__total">{{ totalHoursLabel }}</p>
+        <p v-if="loading" class="technology-study-widget__total technology-study-widget__total--skeleton" aria-hidden="true">
+          <Skeleton width="4rem" height="1.5rem" class="technology-study-widget__skeleton" />
+        </p>
+        <p v-else class="technology-study-widget__total">{{ totalMinutes === 0 ? '0h' : totalHoursLabel }}</p>
         <RouterLink
           :to="{ name: 'sessions-by-technology', params: { id: technology.id } }"
           class="technology-study-widget__link"
@@ -81,20 +84,32 @@ watch(() => props.technology.id, loadTotal)
 .technology-study-widget__name {
   font-size: var(--text-base);
   font-weight: 600;
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
   color: var(--color-text);
   margin: 0 0 var(--spacing-xs);
-  letter-spacing: -0.01em;
 }
 .technology-study-widget__total {
   font-size: var(--text-xl);
   font-weight: 700;
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
   color: var(--tech-color, var(--color-primary));
   margin: 0 0 var(--spacing-sm);
-  letter-spacing: -0.02em;
+}
+.technology-study-widget__total--skeleton {
+  display: flex;
+  align-items: center;
+  min-height: 1.5rem;
+  color: transparent;
+}
+.technology-study-widget__skeleton {
+  border-radius: var(--radius-sm);
 }
 .technology-study-widget__link {
   font-size: var(--text-sm);
   font-weight: 500;
+  line-height: var(--leading-snug);
   color: var(--color-primary);
   text-decoration: none;
   transition: color var(--duration-fast) ease;

@@ -27,12 +27,12 @@ withDefaults(
   align-items: center;
   justify-content: center;
   gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
   min-height: var(--input-height-sm);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
   font-weight: 600;
-  letter-spacing: 0.01em;
+  letter-spacing: var(--tracking-normal);
   line-height: 1;
   cursor: pointer;
   border: 1px solid transparent;
@@ -109,12 +109,12 @@ withDefaults(
   font-size: var(--text-xs);
 }
 .base-button--md {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
   min-height: var(--input-height-sm);
 }
 .base-button--lg {
   min-height: var(--input-height-md);
-  padding: var(--spacing-sm) var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-xl);
   font-size: var(--text-base);
 }
 .base-button:disabled {

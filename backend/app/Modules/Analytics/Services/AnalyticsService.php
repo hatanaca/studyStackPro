@@ -25,13 +25,18 @@ class AnalyticsService
     {
         $lockKey = 'dashboard:lock:'.$userId;
 
-        return \Illuminate\Support\Facades\Cache::lock($lockKey, 10)->block(5, function () use ($userId) {
-            return Cache::tags(['analytics', "user:{$userId}"])->remember(
-                "dashboard:{$userId}",
-                now()->addMinutes(5),
-                fn () => $this->buildDashboardData($userId)
-            );
-        });
+        $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 10);
+        try {
+            return $lock->block(5, function () use ($userId) {
+                return Cache::tags(['analytics', "user:{$userId}"])->remember(
+                    "dashboard:{$userId}",
+                    now()->addMinutes(5),
+                    fn () => $this->buildDashboardData($userId)
+                );
+            });
+        } finally {
+            $lock->forceRelease();
+        }
     }
 
     /**

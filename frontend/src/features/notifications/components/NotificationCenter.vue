@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import OverlayPanel from 'primevue/overlaypanel'
 import Button from 'primevue/button'
 import type { NotificationType } from '@/stores/notifications.store'
@@ -9,13 +9,7 @@ const op = ref<InstanceType<typeof OverlayPanel> | null>(null)
 
 const notificationsStore = useNotificationsStore()
 
-const unreadCount = computed(() => notificationsStore.items.filter(n => !n.read).length)
-
-watch(
-  () => notificationsStore.items,
-  () => notificationsStore.updateUnreadCount(),
-  { deep: true }
-)
+const unreadCount = computed(() => notificationsStore.unreadCount)
 
 function typeIcon(type: NotificationType): string {
   switch (type) {
@@ -114,12 +108,16 @@ function typeClass(type: NotificationType): string {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 1.125rem;
+  font-size: var(--text-lg);
   transition: border-color var(--duration-fast) ease, background var(--duration-fast) ease;
 }
 .notification-center__trigger:hover {
   border-color: var(--color-primary);
   background: var(--color-primary-soft);
+}
+.notification-center__trigger:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 .notification-center__badge {
   position: absolute;
@@ -128,9 +126,10 @@ function typeClass(type: NotificationType): string {
   min-width: 1.25rem;
   height: 1.25rem;
   padding: 0 var(--spacing-xs);
-  font-size: 0.65rem;
+  font-size: var(--text-xs);
   font-weight: 700;
-  color: #fff;
+  line-height: var(--leading-tight);
+  color: var(--color-primary-contrast);
   background: var(--color-error);
   border-radius: 9999px;
   display: flex;
@@ -148,13 +147,15 @@ function typeClass(type: NotificationType): string {
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-sm);
-  padding: var(--spacing-md) var(--widget-padding);
+  padding: var(--spacing-lg) var(--widget-padding);
   border-bottom: 1px solid var(--color-border);
 }
 .notification-center__title {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-text);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
 }
 .notification-center__list {
   overflow-y: auto;
@@ -165,7 +166,7 @@ function typeClass(type: NotificationType): string {
   display: flex;
   align-items: flex-start;
   gap: var(--spacing-sm);
-  padding: var(--spacing-md) var(--widget-padding);
+  padding: var(--spacing-lg) var(--widget-padding);
   border-bottom: 1px solid var(--color-border);
   transition: background var(--duration-fast) ease;
 }
@@ -180,8 +181,9 @@ function typeClass(type: NotificationType): string {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-size: 0.7rem;
+  font-size: var(--text-xs);
   font-weight: 700;
+  line-height: var(--leading-tight);
 }
 .notification-center__item--info .notification-center__item-icon { background: var(--color-info-soft); color: var(--color-info); }
 .notification-center__item--success .notification-center__item-icon { background: var(--color-success-soft); color: var(--color-success); }
@@ -200,14 +202,14 @@ function typeClass(type: NotificationType): string {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
   margin: var(--spacing-xs) 0 0;
-  line-height: 1.4;
+  line-height: var(--leading-snug);
 }
 .notification-center__empty {
-  padding: var(--spacing-xl);
+  padding: var(--spacing-2xl);
   text-align: center;
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   margin: 0;
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 </style>

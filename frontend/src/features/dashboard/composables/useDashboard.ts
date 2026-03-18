@@ -80,6 +80,7 @@ export function useDashboard(options?: UseDashboardOptions) {
         wsIsConnected.value = ws.isConnected.value
 
         reconnectCheckId = setInterval(() => {
+          const prev = wsIsConnected.value
           wsIsConnected.value = ws.isConnected.value
           if (wsIsConnected.value) {
             lastConnectedAt = Date.now()
@@ -117,6 +118,9 @@ export function useDashboard(options?: UseDashboardOptions) {
     analyticsStore.fetchHeatmap().catch(() => {})
     analyticsStore.fetchWeekly().catch(() => {})
 
+    if (!analyticsStore.timeSeriesData['90d']?.length) {
+      analyticsStore.fetchTimeSeries('90d').catch(() => {})
+    }
     if (!analyticsStore.timeSeriesData['30d']?.length) {
       analyticsStore.fetchTimeSeries('30d').catch(() => {})
     }

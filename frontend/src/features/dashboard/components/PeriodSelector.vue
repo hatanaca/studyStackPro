@@ -50,7 +50,7 @@ function select(period: TimeSeriesPeriod) {
 }
 .period-btn {
   min-height: var(--input-height-sm);
-  padding: 0.3rem 0.6rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--text-xs);
   font-weight: 600;
   border-radius: var(--radius-sm);
@@ -68,7 +68,7 @@ function select(period: TimeSeriesPeriod) {
 .period-btn.active {
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: #fff;
+  color: var(--color-primary-contrast);
 }
 .period-btn:focus-visible {
   outline: 2px solid var(--color-focus-ring);

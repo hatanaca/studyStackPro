@@ -108,17 +108,25 @@ async function doExport() {
             Selecione o intervalo de datas para incluir no export.
           </p>
           <div class="export-view__dates">
-            <label class="p-field">
+            <label
+              for="export-date-start"
+              class="p-field"
+            >
               <span class="export-view__label">Data inicial</span>
               <input
+                id="export-date-start"
                 v-model="dateRange.start"
                 type="date"
                 class="p-inputtext p-component w-full"
               >
             </label>
-            <label class="p-field">
+            <label
+              for="export-date-end"
+              class="p-field"
+            >
               <span class="export-view__label">Data final</span>
               <input
+                id="export-date-end"
                 v-model="dateRange.end"
                 type="date"
                 class="p-inputtext p-component w-full"
@@ -192,7 +200,7 @@ async function doExport() {
 }
 .export-view__dates {
   display: flex;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
   flex-wrap: wrap;
 }
 .export-view__dates .p-field {
@@ -201,18 +209,27 @@ async function doExport() {
   flex: 1 1 16rem;
 }
 .export-view__dates .w-full { min-width: clamp(8.75rem, 32vw, 12rem); }
-.export-view__label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); margin-bottom: 0.25rem; }
-.p-field { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: var(--spacing-md); }
+.export-view__label {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-xs);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+}
+.p-field { display: flex; flex-direction: column; gap: var(--spacing-xs); margin-bottom: var(--spacing-lg); }
 .w-full { width: 100%; }
 .export-view__fieldset-desc {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
   margin: 0 0 var(--spacing-sm);
-  line-height: 1.4;
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
 }
 .export-view__format {
   display: flex;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
   flex-wrap: wrap;
 }
 .export-view__radio-label {
@@ -224,13 +241,31 @@ async function doExport() {
   color: var(--color-text);
   cursor: pointer;
   padding: var(--spacing-xs) 0;
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+  border-radius: var(--radius-md);
+}
+.export-view__radio-label:focus-within {
+  outline: none;
+}
+.export-view__radio-label input:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 .export-view__actions {
-  margin-top: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+.export-view__actions :deep(.p-button) {
+  min-height: 2.75rem;
+}
+.export-view__actions :deep(.p-button:focus-visible),
+.export-view__dates input:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 .export-view__success {
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-lg);
   display: flex;
   align-items: flex-start;
   gap: var(--spacing-sm);
@@ -239,21 +274,21 @@ async function doExport() {
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
   color: var(--color-success);
-  line-height: 1.45;
+  line-height: var(--leading-snug);
 }
 .export-view__success-icon {
   font-weight: 700;
   flex-shrink: 0;
 }
 .export-view__error {
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-lg);
   background: var(--color-error-soft);
   border: 1px solid color-mix(in srgb, var(--color-error) 35%, transparent);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
   color: var(--color-error);
-  line-height: 1.45;
+  line-height: var(--leading-snug);
 }
 @media (max-width: 640px) {
   .export-view__dates {

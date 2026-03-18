@@ -57,38 +57,16 @@ class HealthController extends Controller
             $services['websocket'] = 'error';
         }
 
-        // #region agent log
-        try {
-            $logPayload = [
-                'sessionId' => '501e11',
-                'runId' => 'pre-fix',
-                'hypothesisId' => 'H1-H4',
-                'location' => 'HealthController::__invoke',
-                'message' => 'health_check_services_status',
-                'data' => [
-                    'services' => $services,
-                    'healthy' => $healthy,
-                ],
-                'timestamp' => (int) (microtime(true) * 1000),
-            ];
-
-            $logLine = json_encode($logPayload) . PHP_EOL;
-
-            @file_put_contents(
-                base_path('debug-501e11.log'),
-                $logLine,
-                FILE_APPEND | LOCK_EX
-            );
-        } catch (\Throwable) {
-            // Silently ignore logging failures
-        }
-        // #endregion
-
-        return response()->json([
+        $responseData = [
             'status' => $healthy ? 'healthy' : 'degraded',
-            'services' => $services,
             'version' => '1.0.0',
             'timestamp' => now()->toIso8601String(),
-        ], $healthy ? 200 : 503);
+        ];
+
+        if (app()->environment('local', 'testing')) {
+            $responseData['services'] = $services;
+        }
+
+        return response()->json($responseData, $healthy ? 200 : 503);
     }
 }

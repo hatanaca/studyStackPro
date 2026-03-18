@@ -1,28 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getApiErrorMessage } from '@/api/client'
-import { useSessionTimer } from '@/features/sessions/composables/useSessionTimer'
-import { sessionsApi } from '@/api/modules/sessions.api'
-import { useToast } from '@/composables/useToast'
+import { useEndSession } from '@/features/sessions/composables/useEndSession'
 
-const { activeSession, formattedTime, refresh } = useSessionTimer()
+const { activeSession, formattedTime, ending, endSession } = useEndSession()
 const router = useRouter()
-const toast = useToast()
-const ending = ref(false)
-
-async function endSession() {
-  if (!activeSession.value || ending.value) return
-  ending.value = true
-  try {
-    await sessionsApi.end(activeSession.value.id)
-    await refresh()
-  } catch (err: unknown) {
-    toast.error(getApiErrorMessage(err) || 'Erro ao finalizar sessão.')
-  } finally {
-    ending.value = false
-  }
-}
 </script>
 
 <template>
@@ -43,6 +24,7 @@ async function endSession() {
     <button
       type="button"
       class="active-session-banner__btn active-session-banner__btn--ghost"
+      aria-label="Ir para modo foco da sessão"
       @click="router.push('/session')"
     >
       Modo foco
@@ -50,6 +32,7 @@ async function endSession() {
     <button
       type="button"
       class="active-session-banner__btn"
+      aria-label="Finalizar sessão em andamento"
       :disabled="ending"
       @click="endSession"
     >
@@ -63,11 +46,11 @@ async function endSession() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-md) var(--widget-padding);
+  padding: var(--spacing-lg) var(--widget-padding);
   background: var(--gradient-primary);
   color: var(--color-primary-contrast);
   border-radius: var(--radius-md);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
   gap: var(--spacing-sm);
   flex-wrap: wrap;
   box-shadow: var(--shadow-md);
@@ -76,29 +59,32 @@ async function endSession() {
 .active-session-banner__content {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm) var(--spacing-md);
+  gap: var(--spacing-sm) var(--spacing-lg);
   flex-wrap: wrap;
+  line-height: var(--leading-snug);
 }
 .active-session-banner__label {
   font-size: var(--text-xs);
   font-weight: 600;
+  letter-spacing: var(--tracking-wide);
   opacity: 0.95;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 .active-session-banner__time {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   font-size: var(--text-xl);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
 }
 .active-session-banner__tech {
   font-size: var(--text-sm);
+  line-height: var(--leading-snug);
   opacity: 0.95;
 }
 .active-session-banner__btn {
-  min-height: 2.75rem; /* >= 44px área de toque a11y */
-  padding: var(--spacing-sm) var(--spacing-md);
+  min-height: 2.75rem; /* 44px touch target a11y */
+  padding: var(--spacing-sm) var(--spacing-lg);
   background: color-mix(in srgb, var(--color-primary-contrast) 20%, transparent);
   color: var(--color-primary-contrast);
   border: 1px solid color-mix(in srgb, var(--color-primary-contrast) 40%, transparent);
@@ -124,10 +110,11 @@ async function endSession() {
   opacity: 0.75;
   cursor: not-allowed;
 }
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .active-session-banner {
     flex-direction: column;
     align-items: stretch;
+    padding: var(--spacing-xl);
     text-align: center;
   }
   .active-session-banner__content {
@@ -135,6 +122,7 @@ async function endSession() {
   }
   .active-session-banner__btn {
     width: 100%;
+    min-height: 2.75rem; /* 44px touch target em mobile */
   }
 }
 </style>

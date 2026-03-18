@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
 import { useTechnologiesStore } from '@/stores/technologies.store'
 import type { Technology } from '@/types/domain.types'
 
@@ -8,6 +9,8 @@ const props = withDefaults(
     modelValue?: Technology | null
     placeholder?: string
     minSearchLength?: number
+    id?: string
+    ariaLabel?: string
   }>(),
   { modelValue: null, placeholder: 'Buscar tecnologia...', minSearchLength: 2 }
 )
@@ -23,7 +26,7 @@ const loading = ref(false)
 const open = ref(false)
 const highlightIndex = ref(0)
 
-watch(query, async (q) => {
+const debouncedSearch = useDebounceFn(async (q: string) => {
   if (q.length < props.minSearchLength) {
     results.value = []
     return
@@ -43,7 +46,9 @@ watch(query, async (q) => {
       loading.value = false
     }
   }
-})
+}, 300)
+
+watch(query, (q) => debouncedSearch(q))
 
 watch(
   () => props.modelValue,
@@ -78,19 +83,55 @@ function onFocus() {
 function onBlur() {
   setTimeout(() => { open.value = false }, 150)
 }
+
+function onKeydown(e: KeyboardEvent) {
+  if (!open.value || !results.value.length) {
+    if (e.key === 'Escape') open.value = false
+    return
+  }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault()
+    highlightIndex.value = (highlightIndex.value + 1) % results.value.length
+    return
+  }
+  if (e.key === 'ArrowUp') {
+    e.preventDefault()
+    highlightIndex.value = highlightIndex.value <= 0
+      ? results.value.length - 1
+      : highlightIndex.value - 1
+    return
+  }
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    select(results.value[highlightIndex.value])
+    return
+  }
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    open.value = false
+  }
+}
 </script>
 
 <template>
   <div class="technology-picker">
     <div class="technology-picker__input-wrap">
       <input
+        :id="props.id"
         v-model="query"
         type="text"
         :placeholder="placeholder"
         class="technology-picker__input"
         autocomplete="off"
+        role="combobox"
+        :aria-label="props.ariaLabel"
+        :aria-expanded="open && results.length > 0"
+        :aria-activedescendant="open && results.length ? `tech-picker-option-${highlightIndex}` : undefined"
+        aria-controls="tech-picker-listbox"
+        aria-autocomplete="list"
         @focus="onFocus"
         @blur="onBlur"
+        @keydown="onKeydown"
       >
       <button
         v-if="modelValue"
@@ -104,12 +145,17 @@ function onBlur() {
     </div>
     <div
       v-if="open && results.length"
+      id="tech-picker-listbox"
+      role="listbox"
       class="technology-picker__dropdown"
     >
       <button
         v-for="(tech, i) in results"
         :key="tech.id"
+        :id="`tech-picker-option-${i}`"
         type="button"
+        role="option"
+        :aria-selected="i === highlightIndex"
         class="technology-picker__option"
         :class="{ 'technology-picker__option--highlight': i === highlightIndex }"
         @mousedown.prevent="select(tech)"
@@ -140,7 +186,7 @@ function onBlur() {
 .technology-picker__input {
   width: 100%;
   min-height: var(--input-height-sm);
-  padding: 0.45rem 2rem 0.45rem 0.75rem;
+  padding: var(--spacing-sm) var(--spacing-2xl) var(--spacing-sm) var(--spacing-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
@@ -161,7 +207,7 @@ function onBlur() {
   transform: translateY(-50%);
   background: none;
   border: none;
-  font-size: 1.125rem;
+  font-size: var(--text-lg);
   color: var(--color-text-muted);
   cursor: pointer;
   padding: var(--spacing-xs);
@@ -190,7 +236,7 @@ function onBlur() {
   align-items: center;
   gap: var(--spacing-sm);
   width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
   border: none;
   background: none;
   text-align: left;
@@ -210,7 +256,7 @@ function onBlur() {
   flex-shrink: 0;
 }
 .technology-picker__loading {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
   font-size: var(--text-xs);
   color: var(--color-text-muted);
   margin: 0;

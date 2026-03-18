@@ -30,7 +30,7 @@ withDefaults(
 .divider {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
   width: 100%;
 }
 .divider::before,
@@ -53,6 +53,6 @@ withDefaults(
   margin: var(--spacing-sm) 0;
 }
 .divider--spacing-md {
-  margin: var(--spacing-md) 0;
+  margin: var(--spacing-lg) 0;
 }
 </style>

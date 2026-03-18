@@ -37,11 +37,11 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: process.env.PROXY_TARGET || 'http://localhost',
+        target: process.env.PROXY_TARGET || 'http://127.0.0.1:8000',
         changeOrigin: true
       },
       '/app': {
-        target: process.env.PROXY_TARGET || 'http://localhost',
+        target: process.env.PROXY_TARGET || 'http://127.0.0.1:8000',
         ws: true,
         changeOrigin: true
       }

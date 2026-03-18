@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import InputText from 'primevue/inputtext'
-import Button from 'primevue/button'
+import BaseInput from '@/components/ui/BaseInput.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import type { Technology } from '@/types/domain.types'
+import { normalizeHexColor, safeHexColor } from '@/utils/color'
 
 const props = defineProps<{
   modelValue?: Technology | null
@@ -15,7 +16,7 @@ const emit = defineEmits<{
 }>()
 
 const name = ref('')
-const color = ref('#3498DB')
+const color = ref('#3b82f6')
 const description = ref('')
 const errors = ref<{ name?: string }>({})
 
@@ -24,7 +25,7 @@ watch(
   (tech) => {
     if (tech) {
       name.value = tech.name
-      color.value = tech.color || '#3498DB'
+      color.value = tech.color || '#3b82f6'
       description.value = tech.description || ''
     } else {
       reset()
@@ -35,7 +36,7 @@ watch(
 
 function reset() {
   name.value = ''
-  color.value = '#3498DB'
+  color.value = '#3b82f6'
   description.value = ''
   errors.value = {}
 }
@@ -45,20 +46,6 @@ function validate(): boolean {
   if (!name.value.trim()) e.name = 'Nome é obrigatório'
   errors.value = e
   return Object.keys(e).length === 0
-}
-
-function normalizeHexColor(hex: string): string {
-  const m = hex.match(/^#?([0-9A-Fa-f]+)$/)
-  if (!m) return '#3498DB'
-  const s = m[1]
-  if (s.length === 6) return '#' + s
-  if (s.length === 3) return '#' + s.split('').map((c) => c + c).join('')
-  if (s.length === 5) return '#' + (s + s[0]).slice(0, 6)
-  return '#' + (s + '0'.repeat(6)).slice(0, 6)
-}
-
-function safeHexColor(hex: string): string {
-  return /^#[0-9A-Fa-f]{6}$/.test(hex) ? hex : '#3498DB'
 }
 
 function onColorPickerInput(event: Event) {
@@ -89,19 +76,15 @@ defineExpose({ reset, setError: (msg: string) => { errors.value = { name: msg } 
     class="technology-form"
     @submit.prevent="onSubmit"
   >
-    <div class="p-field">
-      <label for="tech-name">Nome</label>
-      <InputText
-        id="tech-name"
-        v-model="name"
-        placeholder="Ex: JavaScript"
-        class="w-full"
-        :class="{ 'p-invalid': errors.name }"
-      />
-      <small v-if="errors.name" class="p-error">{{ errors.name }}</small>
-    </div>
+    <BaseInput
+      id="tech-name"
+      v-model="name"
+      label="Nome"
+      placeholder="Ex: JavaScript"
+      :error="errors.name"
+    />
     <div class="field">
-      <label class="label">Cor</label>
+      <span class="label">Cor</span>
       <div class="color-input">
         <input
           :value="safeHexColor(color)"
@@ -114,21 +97,30 @@ defineExpose({ reset, setError: (msg: string) => { errors.value = { name: msg } 
           type="text"
           class="color-text"
           maxlength="7"
+          placeholder="#3b82f6"
         >
       </div>
     </div>
-    <div class="p-field">
-      <label for="tech-desc">Descrição</label>
-      <InputText
-        id="tech-desc"
-        v-model="description"
-        placeholder="Descrição (opcional)"
-        class="w-full"
-      />
-    </div>
+    <BaseInput
+      id="tech-desc"
+      v-model="description"
+      label="Descrição"
+      placeholder="Descrição (opcional)"
+    />
     <div class="actions">
-      <Button type="submit" :label="modelValue ? 'Salvar' : 'Criar'" />
-      <Button type="button" label="Cancelar" severity="secondary" @click="onCancel" />
+      <BaseButton
+        type="submit"
+        variant="primary"
+      >
+        {{ modelValue ? 'Salvar' : 'Criar' }}
+      </BaseButton>
+      <BaseButton
+        type="button"
+        variant="secondary"
+        @click="onCancel"
+      >
+        Cancelar
+      </BaseButton>
     </div>
   </form>
 </template>
@@ -137,17 +129,18 @@ defineExpose({ reset, setError: (msg: string) => { errors.value = { name: msg } 
 .technology-form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--form-section-gap);
 }
 .field {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: var(--form-field-gap);
 }
 .label {
-  font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--color-text-muted);
+  font-size: var(--form-label-size);
+  font-weight: var(--form-label-weight);
+  letter-spacing: var(--form-label-tracking);
+  color: var(--form-label-color);
 }
 .color-input {
   display: flex;
@@ -156,39 +149,47 @@ defineExpose({ reset, setError: (msg: string) => { errors.value = { name: msg } 
 }
 .color-picker {
   width: 2.5rem;
-  height: var(--input-height-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  height: var(--form-input-height);
+  border: 1px solid var(--form-input-border);
+  border-radius: var(--form-input-radius);
+  padding: 2px;
   cursor: pointer;
-  background: var(--color-bg-card);
-  transition: border-color var(--duration-fast) ease;
+  background: var(--form-input-bg);
+  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
 .color-picker:hover {
-  border-color: var(--color-primary);
+  border-color: var(--form-input-border-focus);
+}
+.color-picker:focus-visible {
+  outline: none;
+  box-shadow: var(--form-input-shadow-focus);
 }
 .color-text {
   flex: 1;
-  min-height: var(--input-height-sm);
-  padding: 0.45rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
+  min-height: var(--form-input-height);
+  padding: var(--form-input-padding);
+  border: 1px solid var(--form-input-border);
+  border-radius: var(--form-input-radius);
+  font-size: var(--form-input-font-size);
   font-family: monospace;
-  background: var(--color-bg-card);
-  color: var(--color-text);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  background: var(--form-input-bg);
+  color: var(--form-input-text);
+  outline: none;
+  transition: border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease,
+    background var(--duration-fast) ease;
+  box-sizing: border-box;
+}
+.color-text::placeholder {
+  color: var(--form-input-placeholder);
 }
 .color-text:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  border-color: var(--form-input-border-focus);
+  box-shadow: var(--form-input-shadow-focus);
 }
-.p-field { display: flex; flex-direction: column; gap: 0.25rem; }
-.p-field label { font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); }
-.w-full { width: 100%; }
 .actions {
   display: flex;
-  gap: var(--spacing-sm);
-  margin-top: var(--spacing-xs);
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
 }
 </style>

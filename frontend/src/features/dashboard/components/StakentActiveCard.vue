@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { ref, computed, defineAsyncComponent } from 'vue'
 import { useAnalyticsStore } from '@/stores/analytics.store'
+import { useDashboard } from '@/features/dashboard/composables/useDashboard'
 const LogSessionWidget = defineAsyncComponent(() => import('@/features/sessions/components/LogSessionWidget.vue'))
 const TechDistributionWidget = defineAsyncComponent(() => import('@/features/dashboard/components/TechDistributionWidget.vue'))
 const TimeSeriesWidget = defineAsyncComponent(() => import('@/features/dashboard/components/TimeSeriesWidget.vue'))
 const GoalsWidget = defineAsyncComponent(() => import('@/features/dashboard/components/GoalsWidget.vue'))
 
 const analyticsStore = useAnalyticsStore()
+const { fetchDashboard } = useDashboard()
 const activeTab = ref('overview')
+
+async function handleRefresh() {
+  await fetchDashboard(true)
+}
 
 const tabs = [
   { id: 'overview', label: 'Visão geral' },
@@ -40,6 +46,7 @@ const lastUpdate = computed(() => {
             type="button"
             class="stakent-active__icon-btn"
             aria-label="Atualizar"
+            @click="handleRefresh"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -54,11 +61,18 @@ const lastUpdate = computed(() => {
         </div>
       </div>
     </header>
-    <div class="stakent-active__tabs">
+    <div
+      class="stakent-active__tabs"
+      role="tablist"
+    >
       <button
         v-for="t in tabs"
         :key="t.id"
+        :id="`stakent-tab-${t.id}`"
         type="button"
+        role="tab"
+        :aria-selected="activeTab === t.id"
+        :aria-controls="`stakent-panel-${t.id}`"
         class="stakent-active__tab"
         :class="{ active: activeTab === t.id }"
         @click="activeTab = t.id"
@@ -66,7 +80,12 @@ const lastUpdate = computed(() => {
         {{ t.label }}
       </button>
     </div>
-    <div class="stakent-active__body">
+    <div
+      class="stakent-active__body"
+      role="tabpanel"
+      :id="`stakent-panel-${activeTab}`"
+      :aria-labelledby="`stakent-tab-${activeTab}`"
+    >
       <div v-if="activeTab === 'overview'" class="stakent-active__panel">
         <LogSessionWidget />
       </div>
@@ -110,7 +129,7 @@ const lastUpdate = computed(() => {
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-sm);
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-lg) var(--spacing-xl);
   border-bottom: 1px solid var(--color-border);
 }
 .stakent-active__title {
@@ -122,7 +141,7 @@ const lastUpdate = computed(() => {
 .stakent-active__meta {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 .stakent-active__updated {
   font-size: var(--text-xs);
@@ -151,12 +170,12 @@ const lastUpdate = computed(() => {
 .stakent-active__tabs {
   display: flex;
   gap: 0;
-  padding: 0 var(--spacing-lg);
+  padding: 0 var(--spacing-xl);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-bg-soft);
 }
 .stakent-active__tab {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
   font-size: var(--text-sm);
   font-weight: 500;
   color: var(--color-text-muted);
@@ -175,7 +194,7 @@ const lastUpdate = computed(() => {
   border-bottom-color: var(--color-primary);
 }
 .stakent-active__body {
-  padding: var(--spacing-lg);
+  padding: var(--spacing-xl);
   min-height: 280px;
 }
 .stakent-active__panel {
@@ -186,7 +205,7 @@ const lastUpdate = computed(() => {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   text-align: center;
-  padding: var(--spacing-xl);
+  padding: var(--spacing-2xl);
 }
 @keyframes fadeIn {
   from { opacity: 0; }

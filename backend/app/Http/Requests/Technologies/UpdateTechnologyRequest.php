@@ -15,7 +15,7 @@ class UpdateTechnologyRequest extends FormRequest
     {
         return [
             'name' => ['sometimes', 'string', 'min:2', 'max:100'],
-            'color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'color' => ['nullable', 'string', 'regex:/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/'],
             'icon' => ['nullable', 'string', 'max:80'],
             'description' => ['nullable', 'string', 'max:500'],
             'is_active' => ['sometimes', 'boolean'],

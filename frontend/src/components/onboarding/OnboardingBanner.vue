@@ -66,12 +66,12 @@ function dismiss() {
 .onboarding-banner__content {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
   flex-wrap: wrap;
 }
 .onboarding-banner__icon {
-  font-size: 1.5rem;
-  line-height: 1;
+  font-size: var(--text-2xl);
+  line-height: var(--leading-tight);
   flex-shrink: 0;
 }
 .onboarding-banner__text {
@@ -79,12 +79,18 @@ function dismiss() {
   min-width: 0;
   font-size: var(--text-sm);
   color: var(--color-text);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-tight);
 }
 .onboarding-banner__text strong {
   font-weight: 600;
 }
 .onboarding-banner__dismiss {
   flex-shrink: 0;
+  min-height: 2.75rem;
+}
+.onboarding-banner__dismiss:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 </style>

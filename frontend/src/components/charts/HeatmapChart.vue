@@ -28,7 +28,7 @@ defineProps<{
 .heatmap-chart {
   background: var(--color-bg-card);
   border-radius: var(--radius-md);
-  padding: var(--spacing-md);
+  padding: var(--spacing-lg);
   box-shadow: var(--shadow-sm);
 }
 .chart-title {

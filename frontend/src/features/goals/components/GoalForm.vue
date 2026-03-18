@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import InputNumber from 'primevue/inputnumber'
-import Button from 'primevue/button'
-import Fieldset from 'primevue/fieldset'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import type { CreateGoalPayload, GoalType } from '@/types/goals.types'
 import { GOAL_TYPE_LABELS } from '@/types/goals.types'
 
@@ -69,11 +67,13 @@ function submit() {
     class="goal-form"
     @submit.prevent="submit"
   >
-    <Fieldset legend="Tipo e valor">
+    <fieldset class="goal-form__fieldset">
+      <legend class="goal-form__legend">Tipo e valor</legend>
       <p class="goal-form__desc">Escolha o tipo de meta e o valor alvo.</p>
-      <div class="goal-form__row">
-        <label class="goal-form__label">Tipo</label>
+      <div class="goal-form__field">
+        <label class="goal-form__label" for="goal-type">Tipo</label>
         <select
+          id="goal-type"
           v-model="type"
           class="goal-form__select"
           aria-label="Tipo de meta"
@@ -87,87 +87,136 @@ function submit() {
           </option>
         </select>
       </div>
-      <div class="p-field">
-        <label for="goal-target">Valor alvo</label>
-        <InputNumber
+      <div class="goal-form__field">
+        <label class="goal-form__label" for="goal-target">Valor alvo</label>
+        <input
           id="goal-target"
-          v-model="targetValueNum"
+          v-model="targetValue"
+          type="number"
+          min="1"
+          step="1"
           placeholder="Ex: 300"
-          :min="1"
-          :max-fraction-digits="0"
-          class="w-full"
-          :class="{ 'p-invalid': errors.target_value }"
-        />
-        <small v-if="errors.target_value" class="p-error">{{ errors.target_value }}</small>
+          class="goal-form__input"
+          :class="{ 'goal-form__input--error': errors.target_value }"
+        >
+        <span v-if="errors.target_value" class="goal-form__error">{{ errors.target_value }}</span>
       </div>
-    </Fieldset>
-    <Fieldset legend="Período">
+    </fieldset>
+
+    <fieldset class="goal-form__fieldset">
+      <legend class="goal-form__legend">Período</legend>
       <p class="goal-form__desc">Data de início da meta.</p>
-      <div class="p-field">
-        <label for="goal-start">Data inicial</label>
+      <div class="goal-form__field">
+        <label class="goal-form__label" for="goal-start">Data inicial</label>
         <input
           id="goal-start"
           v-model="startDate"
           type="date"
-          class="p-inputtext p-component w-full"
-          :class="{ 'p-invalid': errors.start_date }"
+          class="goal-form__input"
+          :class="{ 'goal-form__input--error': errors.start_date }"
         >
-        <small v-if="errors.start_date" class="p-error">{{ errors.start_date }}</small>
+        <span v-if="errors.start_date" class="goal-form__error">{{ errors.start_date }}</span>
       </div>
-    </Fieldset>
+    </fieldset>
+
     <div class="goal-form__actions">
-      <Button
+      <BaseButton
         type="button"
-        label="Cancelar"
-        severity="secondary"
-        variant="text"
+        variant="secondary"
         @click="emit('cancel')"
-      />
-      <Button
+      >
+        Cancelar
+      </BaseButton>
+      <BaseButton
         type="submit"
-        :label="loading ? 'Salvando...' : (initialGoal ? 'Salvar alterações' : 'Criar meta')"
-        :loading="loading"
-      />
+        variant="primary"
+        :disabled="loading"
+      >
+        {{ loading ? 'Salvando...' : (initialGoal ? 'Salvar alterações' : 'Criar meta') }}
+      </BaseButton>
     </div>
   </form>
 </template>
 
 <style scoped>
-.goal-form__row {
+.goal-form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: var(--form-section-gap);
+}
+.goal-form__fieldset {
+  border: 1px solid var(--form-input-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+.goal-form__legend {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  padding: 0 var(--spacing-xs);
+}
+.goal-form__desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: var(--leading-normal);
+}
+.goal-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--form-field-gap);
 }
 .goal-form__label {
-  font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--color-text-muted);
+  font-size: var(--form-label-size);
+  font-weight: var(--form-label-weight);
+  letter-spacing: var(--form-label-tracking);
+  color: var(--form-label-color);
+}
+.goal-form__select,
+.goal-form__input {
+  width: 100%;
+  min-height: var(--form-input-height);
+  padding: var(--form-input-padding);
+  font-size: var(--form-input-font-size);
+  font-family: inherit;
+  color: var(--form-input-text);
+  background: var(--form-input-bg);
+  border: 1px solid var(--form-input-border);
+  border-radius: var(--form-input-radius);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease,
+    background var(--duration-fast) ease;
 }
 .goal-form__select {
-  min-height: var(--input-height-sm);
-  padding: 0.45rem 0.75rem;
-  font-size: var(--text-sm);
-  font-family: inherit;
-  color: var(--color-text);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
-.goal-form__select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
+.goal-form__select::placeholder,
+.goal-form__input::placeholder {
+  color: var(--form-input-placeholder);
 }
-.goal-form__desc { font-size: var(--text-sm); color: var(--color-text-muted); margin: 0 0 var(--spacing-sm); }
-.p-field { margin-bottom: var(--spacing-md); display: flex; flex-direction: column; gap: 0.25rem; }
-.p-field label { font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); }
-.w-full { width: 100%; }
+.goal-form__select:focus,
+.goal-form__input:focus {
+  border-color: var(--form-input-border-focus);
+  box-shadow: var(--form-input-shadow-focus);
+}
+.goal-form__input--error {
+  border-color: var(--form-input-border-error);
+  box-shadow: var(--form-input-shadow-error);
+}
+.goal-form__error {
+  font-size: var(--form-label-size);
+  color: var(--form-input-border-error);
+  line-height: var(--leading-snug);
+}
 .goal-form__actions {
   display: flex;
   justify-content: flex-end;
-  gap: var(--spacing-sm);
-  margin-top: var(--spacing-md);
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
 }
 </style>

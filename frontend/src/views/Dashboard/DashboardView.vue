@@ -168,7 +168,7 @@ async function retry() {
                 class="kpi-card-skeleton"
               >
                 <Skeleton width="60%" height="0.875rem" />
-                <Skeleton width="80%" height="1.5rem" class="mt-2" />
+                <Skeleton width="80%" height="1.5rem" class="skeleton-spacer" />
               </div>
             </section>
           </div>
@@ -225,7 +225,7 @@ async function retry() {
             <div class="widgets__item widgets__item--5 widget-full">
               <section class="kpi-card-skeleton" aria-hidden="true">
                 <Skeleton width="45%" height="1rem" />
-                <Skeleton width="100%" height="14rem" class="mt-2" />
+                <Skeleton width="100%" height="14rem" class="skeleton-spacer" />
               </section>
             </div>
           </template>
@@ -243,7 +243,7 @@ async function retry() {
 .dashboard__content {
   background: color-mix(in srgb, var(--color-bg-soft) 40%, var(--color-bg));
   border-radius: var(--radius-lg);
-  padding: var(--spacing-md);
+  padding: var(--spacing-lg);
   margin-top: var(--spacing-xs);
 }
 .dashboard__empty {
@@ -253,7 +253,7 @@ async function retry() {
   background: var(--color-bg-card);
   border: 1px dashed var(--color-border);
   border-radius: var(--widget-radius);
-  padding: var(--spacing-xl);
+  padding: var(--spacing-2xl);
 }
 .widgets {
   display: grid;
@@ -326,7 +326,7 @@ async function retry() {
   grid-column: 1 / -1;
 }
 /* Tablet: 2 colunas com registro e lembretes lado a lado */
-@media (min-width: var(--screen-sm)) {
+@media (min-width: 640px) {
   .widgets {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--widget-gap);
@@ -348,7 +348,7 @@ async function retry() {
   }
 }
 /* Desktop: grid 12 colunas com register/reminders no topo */
-@media (min-width: var(--screen-lg)) {
+@media (min-width: 1024px) {
   .widgets {
     grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: var(--widget-gap);
@@ -396,12 +396,12 @@ async function retry() {
   grid-template-columns: 1fr;
   gap: var(--widget-gap);
 }
-@media (min-width: var(--screen-xs)) {
+@media (min-width: 480px) {
   .kpi-skeleton {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
 }
-@media (min-width: var(--screen-lg)) {
+@media (min-width: 1024px) {
   .kpi-skeleton {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -414,7 +414,11 @@ async function retry() {
   border: 1px solid var(--color-border);
   min-height: var(--widget-card-min-height);
 }
-.mt-2 {
+.kpi-card-skeleton :deep(.p-skeleton),
+.widgets--skeleton :deep(.p-skeleton) {
+  border-radius: var(--radius-sm);
+}
+.skeleton-spacer {
   margin-top: var(--spacing-sm);
 }
 .widget-full {
@@ -428,14 +432,14 @@ async function retry() {
 .stakent-dashboard {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-xl);
 }
 .stakent-dashboard__top {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-xl);
 }
-@media (min-width: var(--screen-lg)) {
+@media (min-width: 1024px) {
   .stakent-dashboard__top {
     grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
     align-items: start;
@@ -445,7 +449,7 @@ async function retry() {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
   flex-wrap: wrap;
 }
 .stakent-dashboard__section-title {
@@ -464,9 +468,9 @@ async function retry() {
 .stakent-dashboard__cards {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
-@media (min-width: var(--screen-sm)) {
+@media (min-width: 640px) {
   .stakent-dashboard__cards {
     grid-template-columns: repeat(3, 1fr);
   }

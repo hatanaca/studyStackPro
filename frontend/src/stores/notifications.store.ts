@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error'
 
@@ -43,10 +43,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     items.value = items.value.filter(n => n.id !== id)
   }
 
-  const unreadCount = ref(0)
-  function updateUnreadCount() {
-    unreadCount.value = items.value.filter(n => !n.read).length
-  }
+  const unreadCount = computed(() => items.value.filter(n => !n.read).length)
 
   return {
     items,
@@ -55,6 +52,5 @@ export const useNotificationsStore = defineStore('notifications', () => {
     markAllRead,
     remove,
     unreadCount,
-    updateUnreadCount,
   }
 })

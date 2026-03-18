@@ -94,6 +94,7 @@ const hasActivity = computed(() => analyticsStore.todayMinutes > 0)
 }
 .today-summary:hover {
   box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
 }
 .today-summary__title {
   display: flex;
@@ -102,12 +103,12 @@ const hasActivity = computed(() => analyticsStore.todayMinutes > 0)
   font-size: var(--widget-title-size);
   font-weight: var(--widget-title-weight);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--tracking-wide);
   color: var(--widget-title-color);
   margin: 0 0 var(--spacing-sm);
 }
 .today-summary__title-icon {
-  font-size: 1rem;
+  font-size: var(--icon-size-sm);
   opacity: 0.9;
 }
 .today-summary__content {
@@ -117,7 +118,7 @@ const hasActivity = computed(() => analyticsStore.todayMinutes > 0)
 }
 .today-summary__stats {
   display: flex;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-xl);
   flex-wrap: wrap;
 }
 .today-summary__stat {
@@ -128,9 +129,9 @@ const hasActivity = computed(() => analyticsStore.todayMinutes > 0)
 .today-summary__stat-value {
   font-size: var(--text-xl);
   font-weight: 700;
-  line-height: 1.2;
+  line-height: var(--leading-tight);
   color: var(--color-text);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-tight);
 }
 .today-summary__stat--primary .today-summary__stat-value {
   color: var(--color-primary);
@@ -169,14 +170,14 @@ const hasActivity = computed(() => analyticsStore.todayMinutes > 0)
   color: var(--color-text-muted);
   font-size: var(--text-sm);
   margin: 0;
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
-@media (max-width: calc(var(--screen-xs) - 1px)) {
+@media (max-width: 479px) {
   .today-summary {
     padding: var(--widget-padding-sm);
   }
   .today-summary__stats {
-    gap: var(--spacing-lg);
+    gap: var(--spacing-xl);
   }
   .today-summary__stat-value {
     font-size: var(--text-xl);

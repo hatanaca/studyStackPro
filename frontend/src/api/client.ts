@@ -62,15 +62,35 @@ export function setApiToast(fn: ToastFn) {
   toastFn = fn
 }
 
-/** Response interceptor: 401 → logout e redirect para /login; 429 → toast de rate limit */
+/** Evita centenas de logouts/redirects paralelos quando várias APIs retornam 401 ao mesmo tempo */
+let handlingUnauthorized = false
+
+/** Response interceptor: 401 → limpa sessão local + /login (sem chamar API de logout em loop) */
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const status = error.response?.status
+    const reqUrl = String(error.config?.url ?? '')
 
     if (status === 401) {
-      useAuthStore().logout()
-      router.push('/login')
+      if (
+        reqUrl.includes('/auth/login') ||
+        reqUrl.includes('/auth/register') ||
+        handlingUnauthorized
+      ) {
+        return Promise.reject(error)
+      }
+      handlingUnauthorized = true
+      try {
+        useAuthStore().clearSessionLocally()
+        if (router.currentRoute.value.name !== 'login') {
+          await router.push({ name: 'login' })
+        }
+      } finally {
+        setTimeout(() => {
+          handlingUnauthorized = false
+        }, 300)
+      }
     } else if (status === 429) {
       const message = getApiErrorMessage(error) || 'Muitas requisições. Aguarde um momento e tente novamente.'
       if (toastFn) {

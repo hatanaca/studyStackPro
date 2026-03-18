@@ -24,6 +24,8 @@ const props = withDefaults(
     xAxisTitle?: string
     /** Título do eixo Y (opcional) */
     yAxisTitle?: string
+    /** Altura explícita do gráfico (px ou string, ex.: 340 ou "100%") */
+    chartHeight?: number | string
   }>(),
   {
     data: undefined,
@@ -36,6 +38,7 @@ const props = withDefaults(
     gradientFill: true,
     xAxisTitle: undefined,
     yAxisTitle: undefined,
+    chartHeight: 340,
   }
 )
 
@@ -98,6 +101,7 @@ const chartOptions = computed<ApexOptions>(() => {
     chart: {
       ...baseOptions.value.chart,
       type: 'bar',
+      height: props.chartHeight,
       background: 'transparent',
       toolbar: {
         show: props.showToolbar,
@@ -234,6 +238,7 @@ const chartOptions = computed<ApexOptions>(() => {
     >
       <VueApexCharts
         type="bar"
+        :height="chartHeight"
         :options="chartOptions"
         :series="series"
         class="apex-bar"
@@ -268,7 +273,7 @@ const chartOptions = computed<ApexOptions>(() => {
   flex: 1 1 auto;
   padding-bottom: 4px;
 }
-@media (min-width: var(--screen-sm)) {
+@media (min-width: 640px) {
   .chart-wrap {
     min-height: var(--widget-chart-min-height);
   }

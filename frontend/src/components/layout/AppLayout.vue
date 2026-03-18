@@ -15,17 +15,31 @@ const authStore = useAuthStore()
 const uiStore = useUiStore()
 const route = useRoute()
 
+const mainWrapRef = ref<HTMLElement | null>(null)
+
 const showActiveBanner = computed(() => route.name !== 'session-focus')
+
+// Reset scroll ao trocar de rota (scroll isolado no main-wrap, não no window)
+watch(
+  () => route.path,
+  () => {
+    mainWrapRef.value?.scrollTo({ top: 0, behavior: 'instant' })
+  }
+)
 
 const wsModule = ref<{ connect: (id: string) => Promise<void>; disconnect: () => void } | null>(null)
 
 onMounted(async () => {
-  const { useWebSocket } = await import('@/composables/useWebSocket')
-  wsModule.value = useWebSocket()
-  if (authStore.user?.id) wsModule.value.connect(authStore.user.id)
-
   document.documentElement.setAttribute('data-theme', uiStore.theme)
   uiStore.applyCustomTheme()
+
+  try {
+    const { useWebSocket } = await import('@/composables/useWebSocket')
+    wsModule.value = useWebSocket()
+    if (authStore.user?.id) await wsModule.value.connect(authStore.user.id)
+  } catch {
+    // WebSocket connection failed silently; polling fallback handles this
+  }
 })
 
 onUnmounted(() => {
@@ -47,7 +61,7 @@ watch(
     :class="{ 'app-layout--sidebar-collapsed': uiStore.sidebarCollapsed }"
   >
     <AppSidebar class="app-layout__sidebar" />
-    <div class="app-layout__main-wrap">
+    <div ref="mainWrapRef" class="app-layout__main-wrap">
       <main class="app-layout__main">
         <header class="app-layout__mobile-header">
           <button
@@ -98,23 +112,31 @@ watch(
 </template>
 
 <style scoped>
+/*
+  Layout de "scroll isolado":
+  - .app-layout ocupa exatamente 100dvh (sem overflow)
+  - A sidebar fica em flow normal (sem position: fixed)
+  - .app-layout__main-wrap é o único scroll container da página
+  - Não é necessário margin-left nem z-index complicado
+*/
 .app-layout {
   display: flex;
-  min-height: 100vh;
-  min-height: var(--viewport-app-min-height);
+  height: 100dvh;
+  overflow: hidden;
 }
 .app-layout__main-wrap {
   flex: 1;
   min-width: 0;
-  min-height: var(--viewport-app-min-height);
   display: flex;
   flex-direction: column;
-  transition: margin-left var(--duration-normal) var(--ease-out-expo);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
 }
 .app-layout__main {
   flex: 1;
   min-width: 0;
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-lg) var(--spacing-xl);
   background: var(--color-bg);
   position: relative;
 }
@@ -141,21 +163,24 @@ watch(
   display: none;
 }
 
-@media (min-width: calc(var(--screen-md) + 1px)) {
-  .app-layout__main-wrap {
-    margin-left: var(--sidebar-width);
-  }
-  .app-layout--sidebar-collapsed .app-layout__main-wrap {
-    margin-left: var(--sidebar-width-collapsed);
-  }
+@media (min-width: 769px) {
   .app-layout__main {
-    padding: var(--spacing-md) var(--spacing-lg);
+    padding: var(--spacing-lg) var(--spacing-xl);
   }
 }
 
-@media (max-width: var(--screen-md)) {
+@media (max-width: 768px) {
+  .app-layout {
+    /* Mobile: layout normal (sidebar como drawer, não em flow) */
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+  .app-layout__main-wrap {
+    overflow: visible;
+  }
   .app-layout__main {
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
   }
   .app-layout__mobile-header {
     display: flex;
@@ -169,8 +194,8 @@ watch(
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2.75rem;
+    height: 2.75rem;
     padding: 0;
     background: var(--color-bg-card);
     border: 1px solid var(--color-border);
@@ -193,7 +218,7 @@ watch(
   }
   .app-layout__mobile-title {
     font-weight: 600;
-    font-size: 1rem;
+    font-size: var(--text-base);
     color: var(--color-text);
   }
 }

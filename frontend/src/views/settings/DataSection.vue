@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import Fieldset from 'primevue/fieldset'
 
-const exporting = ref(false)
+const router = useRouter()
 function handleExport() {
-  exporting.value = true
-  setTimeout(() => { exporting.value = false }, 1000)
+  router.push({ name: 'export' })
 }
 </script>
 
@@ -17,10 +16,9 @@ function handleExport() {
     </p>
     <div class="data-section">
       <Button
-        :label="exporting ? 'Preparando...' : 'Exportar dados locais'"
+        label="Exportar dados locais"
         severity="secondary"
         variant="outlined"
-        :loading="exporting"
         @click="handleExport"
       />
       <p class="data-section__hint">
@@ -40,12 +38,21 @@ function handleExport() {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   margin: 0 0 var(--spacing-sm);
-  line-height: 1.45;
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
 }
 .data-section__hint {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
   margin: 0;
-  line-height: 1.45;
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+}
+.data-section :deep(.p-button) {
+  min-height: 2.75rem;
+}
+.data-section :deep(.p-button:focus-visible) {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 </style>

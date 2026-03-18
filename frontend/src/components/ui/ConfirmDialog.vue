@@ -59,10 +59,10 @@ function onConfirm() {
 
 <style scoped>
 .confirm-dialog__message {
-  margin: 0 0 var(--spacing-lg);
+  margin: 0 0 var(--spacing-xl);
   color: var(--color-text);
   font-size: var(--text-sm);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 .confirm-dialog__actions {
   display: flex;

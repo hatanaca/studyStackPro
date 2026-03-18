@@ -51,11 +51,11 @@ const variantIcon: Record<string, string> = {
   display: flex;
   align-items: flex-start;
   gap: var(--spacing-sm);
-  padding: var(--spacing-md);
+  padding: var(--spacing-lg);
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   font-size: var(--text-sm);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 .callout__icon {
   flex-shrink: 0;

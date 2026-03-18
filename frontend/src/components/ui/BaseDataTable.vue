@@ -184,7 +184,7 @@ function onRowClick(row: unknown) {
   align-items: center;
   justify-content: center;
   gap: var(--spacing-sm);
-  padding: var(--spacing-xl);
+  padding: var(--spacing-2xl);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
 }
@@ -213,14 +213,14 @@ function onRowClick(row: unknown) {
 }
 .base-data-table__table--compact .base-data-table__th,
 .base-data-table__table--compact .base-data-table__td {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
 }
 .base-data-table__thead {
   background: var(--color-bg-soft);
   border-bottom: 1px solid var(--color-border);
 }
 .base-data-table__th {
-  padding: var(--spacing-md) var(--widget-padding);
+  padding: var(--spacing-lg) var(--widget-padding);
   text-align: left;
   font-weight: 600;
   font-size: var(--text-xs);
@@ -263,17 +263,17 @@ function onRowClick(row: unknown) {
   background: color-mix(in srgb, var(--color-border) 50%, var(--color-bg-soft));
 }
 .base-data-table__td {
-  padding: var(--spacing-md) var(--widget-padding);
+  padding: var(--spacing-lg) var(--widget-padding);
   color: var(--color-text);
   vertical-align: middle;
 }
 .base-data-table__td--center { text-align: center; }
 .base-data-table__td--right { text-align: right; }
 .base-data-table__empty {
-  padding: var(--spacing-xl);
+  padding: var(--spacing-2xl);
   text-align: center;
   color: var(--color-text-muted);
   font-size: var(--text-sm);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 </style>

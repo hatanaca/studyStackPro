@@ -145,16 +145,16 @@ const userInitials = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--spacing-lg);
+  padding: 0 var(--spacing-xl);
   background: var(--color-bg-soft);
   border-bottom: 1px solid var(--color-border);
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
   flex-shrink: 0;
 }
 .app-topbar__left {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
   min-width: 0;
 }
 .app-topbar__brand {
@@ -162,7 +162,7 @@ const userInitials = computed(() => {
   color: var(--color-text);
   font-weight: 700;
   font-size: var(--text-base);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-tight);
   white-space: nowrap;
 }
 .app-topbar__brand:hover {
@@ -231,12 +231,12 @@ const userInitials = computed(() => {
 .app-topbar__badge {
   font-size: var(--text-xs);
   font-weight: 700;
-  padding: 0.1rem 0.35rem;
+  padding: var(--spacing-2xs) var(--spacing-xs);
   border-radius: var(--radius-sm);
   background: var(--color-primary);
   color: var(--color-primary-contrast);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: var(--tracking-wide);
 }
 .app-topbar__chevron {
   font-size: 0.5rem;
@@ -293,13 +293,13 @@ const userInitials = computed(() => {
   color: var(--color-primary);
   background: var(--color-primary-soft);
 }
-@media (max-width: var(--screen-lg)) {
+@media (max-width: 1024px) {
   .app-topbar__pagetitle { display: none; }
   .app-topbar__search { display: none; }
   .app-topbar__name { max-width: 6rem; }
 }
-@media (max-width: var(--screen-sm)) {
+@media (max-width: 640px) {
   .app-topbar__center { display: none; }
-  .app-topbar { padding: 0 var(--spacing-md); }
+  .app-topbar { padding: 0 var(--spacing-lg); }
 }
 </style>

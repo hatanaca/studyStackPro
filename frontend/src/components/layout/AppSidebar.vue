@@ -12,7 +12,6 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 import RealtimeBadge from '@/features/dashboard/components/RealtimeBadge.vue'
-import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 
 const attrs = useAttrs()
 const authStore = useAuthStore()
@@ -82,10 +81,6 @@ async function handleLogout() {
         <h1 class="app-sidebar__logo">
           StudyTrack Pro
         </h1>
-        <ThemeToggle
-          variant="sidebar"
-          class="app-sidebar__theme"
-        />
       </div>
       <button
         type="button"
@@ -105,15 +100,9 @@ async function handleLogout() {
           stroke-linecap="round"
           stroke-linejoin="round"
           aria-hidden="true"
+          class="app-sidebar__toggle-icon"
         >
-          <path
-            v-if="uiStore.sidebarCollapsed"
-            d="M9 18l6-6-6-6"
-          />
-          <path
-            v-else
-            d="M15 18l-6-6 6-6"
-          />
+          <path d="M15 18l-6-6 6-6" />
         </svg>
       </button>
       <button
@@ -175,7 +164,7 @@ async function handleLogout() {
     <nav class="app-sidebar__nav">
       <RouterLink
         to="/"
-        active-class="active"
+        exact-active-class="active"
         class="app-sidebar__link"
         title="Dashboard"
         aria-label="Ir para Dashboard"
@@ -485,6 +474,48 @@ async function handleLogout() {
       <RealtimeBadge class="app-sidebar__realtime" />
       <button
         type="button"
+        class="app-sidebar__link app-sidebar__theme-btn"
+        :aria-label="uiStore.isDarkMode ? 'Usar tema claro' : 'Usar tema escuro'"
+        :title="uiStore.isDarkMode ? 'Usar tema claro' : 'Usar tema escuro'"
+        @click="uiStore.toggleTheme()"
+      >
+        <span class="app-sidebar__icon" aria-hidden="true">
+          <svg
+            v-if="uiStore.isDarkMode"
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+          </svg>
+          <svg
+            v-else
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        </span>
+        <span class="app-sidebar__link-text">
+          {{ uiStore.isDarkMode ? 'Tema claro' : 'Tema escuro' }}
+        </span>
+      </button>
+      <button
+        type="button"
         class="app-sidebar__logout"
         @click="handleLogout"
       >
@@ -515,26 +546,45 @@ async function handleLogout() {
 <style scoped>
 .app-sidebar {
   width: var(--sidebar-width);
-  background: var(--color-bg);
+  background: var(--color-bg-card);
   color: var(--color-text);
-  padding: var(--spacing-md);
+  padding: var(--spacing-lg);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   border-right: 1px solid var(--color-border);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
-  transition: width var(--duration-normal) var(--ease-out-expo);
+  /* anima width e padding simultaneamente para colapso suave */
+  transition:
+    width var(--duration-slow) var(--ease-out-expo),
+    padding var(--duration-slow) var(--ease-out-expo);
 }
 .app-sidebar--collapsed {
   width: var(--sidebar-width-collapsed);
-  padding: var(--spacing-md) var(--spacing-xs);
+  padding: var(--spacing-lg) var(--spacing-xs);
+}
+.app-sidebar--collapsed .app-sidebar__top {
+  justify-content: center;
+  gap: 0;
+}
+.app-sidebar--collapsed .app-sidebar__link {
+  justify-content: center;
+  padding: var(--spacing-xs);
+  gap: 0;
+}
+.app-sidebar--collapsed .app-sidebar__logout {
+  justify-content: center;
+  padding: var(--spacing-xs);
+  gap: 0;
+  border-color: transparent;
+  background: transparent;
 }
 .app-sidebar__top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
   gap: var(--spacing-xs);
   min-width: 0;
 }
@@ -546,17 +596,22 @@ async function handleLogout() {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  transition: width var(--duration-normal) var(--ease-out-expo), opacity var(--duration-normal) ease;
+  transition:
+    width var(--duration-slow) var(--ease-out-expo),
+    opacity var(--duration-normal) ease;
 }
 .app-sidebar--collapsed .app-sidebar__brand {
+  flex: 0 0 0px;
   width: 0;
+  min-width: 0;
   opacity: 0;
   pointer-events: none;
+  overflow: hidden;
 }
 .app-sidebar__logo {
   font-size: var(--text-base);
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-tight);
   margin: 0;
   white-space: nowrap;
   color: var(--color-text);
@@ -570,10 +625,10 @@ async function handleLogout() {
   width: 1.75rem;
   height: 1.75rem;
   padding: 0;
-  background: var(--color-bg-soft);
+  background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   cursor: pointer;
   transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease;
 }
@@ -586,15 +641,22 @@ async function handleLogout() {
   outline: none;
   box-shadow: var(--shadow-focus);
 }
+.app-sidebar__toggle-icon {
+  transition: transform var(--duration-slow) var(--ease-out-expo);
+  will-change: transform;
+}
+.app-sidebar--collapsed .app-sidebar__toggle-icon {
+  transform: rotate(180deg);
+}
 .app-sidebar__close {
   display: none;
   background: none;
   border: none;
   color: var(--color-text-muted);
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
   cursor: pointer;
   padding: var(--spacing-xs);
-  line-height: 1;
+  line-height: var(--leading-tight);
   transition: color var(--duration-fast) ease;
 }
 .app-sidebar__close:hover {
@@ -669,14 +731,14 @@ async function handleLogout() {
   font-variant-numeric: tabular-nums;
 }
 .app-sidebar__cta {
-  padding: var(--spacing-md);
+  padding: var(--spacing-lg);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-primary) 18%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 .app-sidebar__cta-icon {
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
   display: block;
   margin-bottom: var(--spacing-xs);
 }
@@ -690,7 +752,7 @@ async function handleLogout() {
   margin: 0;
   font-size: var(--text-xs);
   color: var(--color-text-muted);
-  line-height: 1.4;
+  line-height: var(--leading-snug);
 }
 .app-sidebar__profile {
   display: flex;
@@ -703,18 +765,38 @@ async function handleLogout() {
   background: color-mix(in srgb, var(--color-bg-soft) 70%, transparent);
   overflow: hidden;
   min-width: 0;
+  /* anima colapso via max-height em vez de display:none */
+  max-height: 5rem;
+  opacity: 1;
+  pointer-events: auto;
+  transition:
+    max-height var(--duration-slow) var(--ease-out-expo),
+    opacity var(--duration-normal) ease,
+    margin-bottom var(--duration-slow) ease,
+    padding var(--duration-slow) ease,
+    border-color var(--duration-normal) ease;
+}
+.app-sidebar--collapsed .app-sidebar__profile {
+  max-height: 0;
+  opacity: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-color: transparent;
+  pointer-events: none;
 }
 .app-sidebar__avatar-wrap {
   flex-shrink: 0;
 }
 .app-sidebar__avatar {
-  width: 2.2rem;
-  height: 2.2rem;
+  width: var(--avatar-size-sm);
+  height: var(--avatar-size-sm);
   border-radius: 50%;
   object-fit: cover;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   border: 1px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
   background: color-mix(in srgb, var(--color-primary-soft) 55%, var(--color-bg-card));
 }
@@ -729,7 +811,7 @@ async function handleLogout() {
   flex-direction: column;
   overflow: hidden;
   white-space: nowrap;
-  transition: width var(--duration-normal) var(--ease-out-expo), opacity var(--duration-normal) ease;
+  transition: width var(--duration-slow) var(--ease-out-expo), opacity var(--duration-normal) ease;
 }
 .app-sidebar--collapsed .app-sidebar__profile-meta {
   width: 0;
@@ -753,52 +835,85 @@ async function handleLogout() {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ── Nav scrollável isolada ────────────────────────────────────────
+   min-height: 0 é crítico para flex scroll funcionar corretamente.
+   O cabeçalho (top + perfil) e o rodapé (footer) ficam fixos.
+   ─────────────────────────────────────────────────────────────── */
 .app-sidebar__nav {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding-inline: var(--spacing-2xs);
+  padding-bottom: var(--spacing-xs);
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+.app-sidebar__nav::-webkit-scrollbar {
+  width: 4px;
+}
+.app-sidebar__nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.app-sidebar__nav::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 9999px;
 }
 .app-sidebar__link {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  color: var(--color-text-muted);
+  color: var(--sidebar-link-color);
   text-decoration: none;
   padding: var(--spacing-xs) var(--spacing-sm);
   min-height: 2.25rem;
   border-radius: var(--radius-md);
   white-space: nowrap;
   font-size: var(--text-sm);
+  font-weight: 500;
   transition: color var(--duration-fast) ease,
     background var(--duration-fast) ease,
     transform var(--duration-fast) ease;
   overflow: hidden;
 }
 .app-sidebar__link:hover {
-  color: var(--color-text);
+  color: var(--sidebar-link-color-hover);
   background: var(--color-bg-soft);
   transform: translateX(2px);
 }
 .app-sidebar__link.active {
   color: var(--color-primary);
   background: var(--color-primary-soft);
+  font-weight: 600;
 }
 .app-sidebar__icon {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  opacity: 0.9;
+  opacity: 1;
+  color: inherit;
+}
+.app-sidebar__icon svg {
+  stroke-width: 2.5;
+  stroke: currentColor;
 }
 .app-sidebar__link.active .app-sidebar__icon {
   opacity: 1;
 }
+.app-sidebar__link.active .app-sidebar__icon svg {
+  stroke-width: 2;
+}
 .app-sidebar__link-text {
   overflow: hidden;
   white-space: nowrap;
-  transition: width var(--duration-normal) var(--ease-out-expo), opacity var(--duration-normal) ease;
+  transition:
+    width var(--duration-slow) var(--ease-out-expo),
+    opacity var(--duration-normal) ease;
 }
 .app-sidebar--collapsed .app-sidebar__link-text {
   width: 0;
@@ -806,16 +921,20 @@ async function handleLogout() {
   pointer-events: none;
 }
 .app-sidebar__footer {
-  margin-top: auto;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
   padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--spacing-xs);
   overflow: hidden;
 }
 .app-sidebar__realtime {
   overflow: hidden;
-  transition: width var(--duration-normal) var(--ease-out-expo), opacity var(--duration-normal) ease;
+  transition:
+    width var(--duration-slow) var(--ease-out-expo),
+    opacity var(--duration-normal) ease;
 }
 .app-sidebar--collapsed .app-sidebar__realtime {
   width: 0;
@@ -829,7 +948,7 @@ async function handleLogout() {
   padding: var(--spacing-xs) var(--spacing-sm);
   background: transparent;
   border: 1px solid var(--color-border);
-  color: var(--color-text-muted);
+  color: var(--sidebar-link-color);
   border-radius: var(--radius-md);
   cursor: pointer;
   white-space: nowrap;
@@ -840,28 +959,35 @@ async function handleLogout() {
 }
 .app-sidebar__logout:hover {
   background: var(--color-bg-soft);
-  color: var(--color-text);
-  border-color: var(--color-text-muted);
+  color: var(--sidebar-link-color-hover);
+  border-color: var(--sidebar-link-color);
 }
 .app-sidebar__logout-icon {
   flex-shrink: 0;
+}
+.app-sidebar__theme-btn {
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-size: var(--text-sm);
+  cursor: pointer;
 }
 
 .app-sidebar-backdrop {
   display: none;
 }
 
-/* Desktop: sidebar sempre visível */
-@media (min-width: calc(var(--screen-md) + 1px)) {
+/* Desktop: sidebar em flow normal — o layout de scroll isolado (height: 100dvh + overflow-y: auto no main-wrap)
+   mantém a sidebar "fixa" sem precisar de position: fixed.
+   z-index: 2 garante que a sidebar fique acima do gradient ::before (z-index: 0) do main. */
+@media (min-width: 769px) {
   .app-sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    z-index: 40;
-    transform: none;
-    overflow-y: auto;
-    overflow-x: hidden;
+    position: relative;
+    z-index: 2;
+    height: 100dvh;
+    flex-shrink: 0;
+    overflow: hidden;
   }
   .app-sidebar__toggle {
     display: flex;
@@ -869,7 +995,7 @@ async function handleLogout() {
 }
 
 /* Mobile: hamburger drawer */
-@media (max-width: var(--screen-md)) {
+@media (max-width: 768px) {
   .app-sidebar {
     position: fixed;
     top: 0;
@@ -877,7 +1003,7 @@ async function handleLogout() {
     bottom: 0;
     z-index: 100;
     transform: translateX(-100%);
-    transition: transform 0.3s ease;
+    transition: transform var(--duration-slow) var(--ease-out-expo);
     width: var(--sidebar-drawer-width);
     overflow-y: auto;
     overscroll-behavior: contain;

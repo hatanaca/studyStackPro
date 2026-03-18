@@ -36,7 +36,7 @@ withDefaults(
 
 <style scoped>
 .form-section {
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
 }
 .form-section:last-child {
   margin-bottom: 0;
@@ -48,24 +48,24 @@ withDefaults(
   border-radius: var(--radius-md);
 }
 .form-section__header {
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 .form-section__title {
   font-size: var(--text-base);
   font-weight: 600;
   color: var(--color-text);
   margin: 0 0 var(--spacing-xs);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-tight);
 }
 .form-section__desc {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   margin: 0;
-  line-height: 1.45;
+  line-height: var(--leading-snug);
 }
 .form-section__body {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 </style>

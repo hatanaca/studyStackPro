@@ -55,6 +55,16 @@ class AuthService
     }
 
     /**
+     * Atualiza dados do perfil do usuário (nome, email, timezone, etc.).
+     */
+    public function updateProfile(User $user, array $data): User
+    {
+        $user->update($data);
+
+        return $user->fresh();
+    }
+
+    /**
      * Altera a senha do usuário. Revoga todos os tokens em caso de sucesso.
      */
     public function changePassword(User $user, string $currentPassword, string $newPassword): bool

@@ -53,5 +53,7 @@ const activeTab = ref('appearance')
   margin-top: 0;
   border-radius: var(--radius-md);
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
 }
 </style>

@@ -4,6 +4,7 @@ import Fieldset from 'primevue/fieldset'
 import Button from 'primevue/button'
 import { useUiStore } from '@/stores/ui.store'
 import type { CustomThemeOptions } from '@/stores/ui.store'
+import { safeHexColor } from '@/utils/color'
 
 const uiStore = useUiStore()
 const form = ref<CustomThemeOptions>({
@@ -17,8 +18,8 @@ const form = ref<CustomThemeOptions>({
 })
 
 const FONT_OPTIONS = [
-  { value: '', label: 'Padrão (Inter)' },
-  { value: 'Inter, system-ui, sans-serif', label: 'Inter' },
+  { value: '', label: 'Padrão (DM Sans)' },
+  { value: "'DM Sans', system-ui, sans-serif", label: 'DM Sans' },
   { value: 'system-ui, -apple-system, sans-serif', label: 'System UI' },
   { value: 'Georgia, serif', label: 'Georgia' },
   { value: '"Segoe UI", Tahoma, sans-serif', label: 'Segoe UI' },
@@ -27,10 +28,6 @@ const FONT_OPTIONS = [
 onMounted(() => {
   form.value = { ...uiStore.customTheme }
 })
-
-function safeHexColor(value: string | undefined, fallback: string): string {
-  return value && /^#[0-9A-Fa-f]{6}$/.test(value) ? value : fallback
-}
 
 function setColor(key: keyof CustomThemeOptions, value: string) {
   form.value[key] = value
@@ -193,13 +190,14 @@ function reset() {
 .appearance-section__hint {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
-  margin: 0 0 var(--spacing-md);
-  line-height: 1.5;
+  margin: 0 0 var(--spacing-lg);
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-tight);
 }
 .appearance-section__editor {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 .appearance-section__subtitle {
   font-size: var(--text-xs);
@@ -207,12 +205,12 @@ function reset() {
   color: var(--color-text-muted);
   margin: 0 0 var(--spacing-xs);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--tracking-wide);
 }
 .appearance-section__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 .appearance-section__field {
   display: flex;
@@ -239,6 +237,12 @@ function reset() {
 .appearance-section__color:hover {
   border-color: var(--color-primary);
 }
+.appearance-section__color:focus-visible,
+.appearance-section__text:focus-visible,
+.appearance-section__select:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
 .appearance-section__text {
   padding: var(--spacing-xs) var(--spacing-sm);
   border: 1px solid var(--color-border);
@@ -251,8 +255,6 @@ function reset() {
 }
 .appearance-section__text:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
-  outline: none;
 }
 .appearance-section__font-row {
   display: flex;
@@ -260,7 +262,7 @@ function reset() {
 }
 .appearance-section__select {
   min-height: var(--input-height-sm);
-  padding: var(--spacing-sm) var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-xl);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
@@ -273,11 +275,16 @@ function reset() {
 }
 .appearance-section__select:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
-  outline: none;
 }
 .appearance-section__actions {
   margin-top: var(--spacing-sm);
+}
+.appearance-section__actions :deep(.p-button) {
+  min-height: 2.75rem;
+}
+.appearance-section__actions :deep(.p-button:focus-visible) {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 @media (max-width: 640px) {
   .appearance-section__font-row {

@@ -161,10 +161,10 @@ function onStepClick(step: StepperStep, index: number) {
   flex-direction: column;
   gap: var(--spacing-2xs);
   min-width: 0;
-  padding-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-xl);
 }
 .base-stepper--vertical .base-stepper__content {
-  padding-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-lg);
 }
 .base-stepper__item:last-child .base-stepper__content {
   padding-bottom: 0;
@@ -183,8 +183,8 @@ function onStepClick(step: StepperStep, index: number) {
 }
 .base-stepper__connector {
   position: absolute;
-  top: var(--spacing-md);
-  left: calc(var(--spacing-md) + var(--spacing-sm) + var(--spacing-xs));
+  top: var(--spacing-lg);
+  left: calc(var(--spacing-lg) + var(--spacing-sm) + var(--spacing-xs));
   right: calc(-1 * var(--spacing-xs));
   height: 2px;
   background: var(--color-border);

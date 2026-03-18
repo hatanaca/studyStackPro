@@ -194,7 +194,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
   margin-bottom: var(--spacing-sm);
 }
 .reminders-title {
@@ -202,13 +202,13 @@ onMounted(() => {
   font-weight: var(--widget-title-weight);
   color: var(--color-text);
   margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-tight);
 }
 .reminders-subtitle {
   margin: var(--spacing-xs) 0 0;
   font-size: var(--text-xs);
   color: var(--color-text-muted);
-  line-height: 1.4;
+  line-height: var(--leading-snug);
 }
 
 .reminders-input {
@@ -222,7 +222,7 @@ onMounted(() => {
   flex: 1;
   min-width: 0;
   min-height: 2rem;
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   font-size: var(--text-sm);
@@ -251,7 +251,7 @@ onMounted(() => {
 }
 .reminders-item {
   flex-shrink: 0;
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-md);
   background: var(--color-bg-soft);
   border: 1px solid var(--color-border);
@@ -269,7 +269,7 @@ onMounted(() => {
 .reminders-item__text {
   margin: 0;
   font-size: var(--text-sm);
-  line-height: 1.45;
+  line-height: var(--leading-snug);
   color: var(--color-text);
   cursor: text;
 }
@@ -313,7 +313,7 @@ onMounted(() => {
 }
 .reminders-chip--primary {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-primary-contrast);
 }
 .reminders-chip--primary:hover {
   background: var(--color-primary-hover);
@@ -324,14 +324,14 @@ onMounted(() => {
 }
 .reminders-chip--danger:hover {
   background: var(--color-error);
-  color: #fff;
+  color: var(--color-primary-contrast);
 }
 
 .reminders-empty {
   margin: var(--spacing-sm) 0 0;
   font-size: var(--text-sm);
   color: var(--color-text-muted);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 
 @media (max-width: 640px) {

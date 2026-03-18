@@ -4,20 +4,26 @@ namespace App\Listeners\Analytics;
 
 use App\Events\Analytics\MetricsRecalculated;
 use App\Modules\Analytics\Services\AnalyticsService;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class UpdateCacheWithFreshData
+class UpdateCacheWithFreshData implements ShouldQueue
 {
+    public string $queue = 'metrics';
+
+    public function __construct(
+        private AnalyticsService $analyticsService
+    ) {}
+
     public function handle(MetricsRecalculated $event): void
     {
-        $analyticsService = app(AnalyticsService::class);
         $userId = $event->userId;
 
-        $analyticsService->getUserMetrics($userId);
-        $analyticsService->getTechStats($userId);
-        $analyticsService->getTimeSeries($userId, 7);
-        $analyticsService->getTimeSeries($userId, 30);
-        $analyticsService->getTimeSeries($userId, 90);
-        $analyticsService->getWeekly($userId);
-        $analyticsService->getHeatmap($userId);
+        $this->analyticsService->getUserMetrics($userId);
+        $this->analyticsService->getTechStats($userId);
+        $this->analyticsService->getTimeSeries($userId, 7);
+        $this->analyticsService->getTimeSeries($userId, 30);
+        $this->analyticsService->getTimeSeries($userId, 90);
+        $this->analyticsService->getWeekly($userId);
+        $this->analyticsService->getHeatmap($userId);
     }
 }

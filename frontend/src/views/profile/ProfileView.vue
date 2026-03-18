@@ -357,7 +357,7 @@ function formatDate(iso: string | null): string {
   max-width: 100%;
 }
 .profile-view__avatar-wrap {
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
   display: flex;
   justify-content: center;
 }
@@ -365,7 +365,7 @@ function formatDate(iso: string | null): string {
   flex-shrink: 0;
 }
 .profile-view__tabs {
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 .profile-view__card {
   margin-top: 0;
@@ -375,31 +375,32 @@ function formatDate(iso: string | null): string {
 .profile-form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 .section-title {
   font-size: var(--text-base);
   font-weight: 600;
   color: var(--color-text);
   margin: 0 0 var(--spacing-sm);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
 }
 .section-desc {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
-  margin: 0 0 var(--spacing-md);
-  line-height: 1.5;
+  margin: 0 0 var(--spacing-lg);
+  line-height: var(--leading-normal);
 }
 .tokens-list {
   list-style: none;
   padding: 0;
-  margin: 0 0 var(--spacing-md);
+  margin: 0 0 var(--spacing-lg);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
 }
 .token-item {
-  padding: var(--spacing-md);
+  padding: var(--spacing-lg);
   background: color-mix(in srgb, var(--color-bg-soft) 70%, var(--color-bg-card));
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -420,26 +421,43 @@ function formatDate(iso: string | null): string {
 .token-date {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
+  line-height: var(--leading-snug);
 }
 .no-tokens {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 .revoke-btn {
   margin-top: var(--spacing-sm);
 }
+.revoke-btn :deep(.p-button),
+.profile-form :deep(.p-button) {
+  min-height: 2.75rem;
+}
+.profile-form :deep(.p-button:focus-visible),
+.profile-form :deep(.p-inputtext:focus-visible),
+.revoke-btn :deep(.p-button:focus-visible) {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
 .loading-msg {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
-  padding: var(--spacing-md) 0;
+  padding: var(--spacing-lg) 0;
 }
 .p-field {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: var(--spacing-md);
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-lg);
 }
-.p-field label { font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); }
+.p-field label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+}
 .w-full { width: 100%; }
 </style>
