@@ -151,8 +151,8 @@ function onKeydown(e: KeyboardEvent) {
     >
       <button
         v-for="(tech, i) in results"
-        :key="tech.id"
         :id="`tech-picker-option-${i}`"
+        :key="tech.id"
         type="button"
         role="option"
         :aria-selected="i === highlightIndex"
