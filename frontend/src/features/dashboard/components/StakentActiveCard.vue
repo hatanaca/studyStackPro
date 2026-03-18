@@ -67,8 +67,8 @@ const lastUpdate = computed(() => {
     >
       <button
         v-for="t in tabs"
-        :key="t.id"
         :id="`stakent-tab-${t.id}`"
+        :key="t.id"
         type="button"
         role="tab"
         :aria-selected="activeTab === t.id"
@@ -81,9 +81,9 @@ const lastUpdate = computed(() => {
       </button>
     </div>
     <div
+      :id="`stakent-panel-${activeTab}`"
       class="stakent-active__body"
       role="tabpanel"
-      :id="`stakent-panel-${activeTab}`"
       :aria-labelledby="`stakent-tab-${activeTab}`"
     >
       <div v-if="activeTab === 'overview'" class="stakent-active__panel">
