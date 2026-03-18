@@ -56,7 +56,8 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     '90d': [],
   })
   const timeSeriesLoading = ref(false)
-  const selectedPeriod = ref<TimeSeriesPeriod>('30d')
+  /** 90d cobre histórico recente (ex.: dados importados de planilha sem estudo nos últimos 30 dias). */
+  const selectedPeriod = ref<TimeSeriesPeriod>('90d')
 
   const techStatsData = ref<TechnologyMetric[]>([])
   const techStatsLoading = ref(false)
@@ -213,7 +214,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   /** Remove pending quando API confirma que dados estão atualizados */
   function reconcilePending() {
     if (!pendingSessions.value.length || sessionCountAtPendingStart.value === null) return
-    const apiTotal = dashboard.value?.user_metrics.total_sessions ?? 0
+    const apiTotal = dashboard.value?.user_metrics?.total_sessions ?? 0
     const expected = sessionCountAtPendingStart.value + pendingSessions.value.length
     if (apiTotal >= expected) {
       pendingSessions.value = []
@@ -229,7 +230,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     technology?: { id: string; name: string; color: string }
   ) {
     if (pendingSessions.value.length === 0) {
-      sessionCountAtPendingStart.value = dashboard.value?.user_metrics.total_sessions ?? 0
+      sessionCountAtPendingStart.value = dashboard.value?.user_metrics?.total_sessions ?? 0
     }
     pendingSessions.value = [
       ...pendingSessions.value,
@@ -365,6 +366,8 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     todayMinutes,
     todaySessions,
     todayTechnologies,
+    pendingSessions,
+    sessionCountAtPendingStart,
     addLocalTodaySession,
     setDashboard,
     fetchDashboard,

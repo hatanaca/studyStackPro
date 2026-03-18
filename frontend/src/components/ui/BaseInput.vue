@@ -52,49 +52,51 @@ const inputId = computed(() => props.id ?? props.name ?? undefined)
 .base-input {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: var(--form-field-gap);
 }
 .base-input__label {
   display: block;
-  font-size: var(--text-xs);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--color-text-muted);
+  font-size: var(--form-label-size);
+  font-weight: var(--form-label-weight);
+  letter-spacing: var(--form-label-tracking);
+  color: var(--form-label-color);
 }
 .base-input__field {
   width: 100%;
-  min-height: var(--input-height-sm);
-  padding: 0.45rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  color: var(--color-text);
-  background: var(--color-bg-card);
+  min-height: var(--form-input-height);
+  padding: var(--form-input-padding);
+  border: 1px solid var(--form-input-border);
+  border-radius: var(--form-input-radius);
+  font-size: var(--form-input-font-size);
+  color: var(--form-input-text);
+  background: var(--form-input-bg);
+  outline: none;
   transition: border-color var(--duration-fast) ease,
     box-shadow var(--duration-fast) ease,
     background var(--duration-fast) ease;
   box-sizing: border-box;
 }
 .base-input__field::placeholder {
-  color: color-mix(in srgb, var(--color-text-muted) 78%, transparent);
+  color: var(--form-input-placeholder);
 }
 .base-input__field:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  border-color: var(--form-input-border-focus);
+  box-shadow: var(--form-input-shadow-focus);
 }
 .base-input__field:disabled {
-  background: color-mix(in srgb, var(--color-bg-soft) 85%, transparent);
-  color: var(--color-text-muted);
+  background: var(--form-input-bg-disabled);
+  color: var(--form-label-color);
   cursor: not-allowed;
+  opacity: 0.7;
 }
 .base-input__field--error {
-  border-color: var(--color-error);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 22%, transparent);
+  border-color: var(--form-input-border-error);
+  box-shadow: var(--form-input-shadow-error);
 }
 .base-input__error {
-  font-size: var(--text-xs);
-  color: var(--color-error);
+  font-size: var(--form-label-size);
+  color: var(--form-input-border-error);
   margin-top: 0;
-  line-height: 1.35;
+  line-height: var(--leading-snug);
 }
 </style>

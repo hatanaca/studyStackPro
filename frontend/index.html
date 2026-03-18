@@ -21,8 +21,9 @@
         .app-loader{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--color-bg,#f8fafc);transition:opacity .25s ease}
         .app-loader__content{text-align:center}
         .app-loader__spinner{width:40px;height:40px;border:3px solid var(--color-border,#e2e8f0);border-top-color:var(--color-primary,#3b82f6);border-radius:50%;animation:app-loader-spin .8s cubic-bezier(0.5,0,0.5,1) infinite;margin:0 auto 1rem}
-        .app-loader__text{color:var(--color-text-muted,#64748b);font-family:var(--font-sans,Inter),system-ui,sans-serif;font-size:.875rem;font-weight:500}
+        .app-loader__text{color:var(--color-text-muted,#64748b);font-family:'DM Sans',system-ui,sans-serif;font-size:.875rem;font-weight:500}
         @keyframes app-loader-spin{to{transform:rotate(360deg)}}
+        @media(prefers-reduced-motion:reduce){.app-loader__spinner{animation:none;border-top-color:var(--color-primary,#3b82f6)}}
       </style>
     </div>
     <script type="module" src="/src/main.ts"></script>

@@ -30,7 +30,7 @@ const { formattedTime, activeSession } = useSessionTimer()
   font-weight: 600;
   font-size: var(--text-lg);
   color: var(--color-text);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--tracking-normal);
 }
 .session-timer__tech {
   font-size: var(--text-sm);

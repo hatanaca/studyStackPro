@@ -9,7 +9,9 @@ use App\Models\StudySession;
 use App\Modules\StudySessions\DTOs\StudySessionDTO;
 use App\Modules\StudySessions\DTOs\StudySessionFilterDTO;
 use App\Modules\StudySessions\Repositories\Contracts\StudySessionRepositoryInterface;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 /**
  * Serviço de sessões de estudo.
@@ -36,16 +38,17 @@ class StudySessionService
     }
 
     /**
-     * Busca sessão por ID. Aborta 404 se não existir, 403 se não pertencer ao usuário.
+     * Busca sessão por ID. Lança ModelNotFoundException se não existir,
+     * AuthorizationException se não pertencer ao usuário.
      */
     public function findForUser(string $id, string $userId): StudySession
     {
         $session = $this->repository->findById($id);
         if (! $session) {
-            abort(404);
+            throw (new ModelNotFoundException)->setModel(StudySession::class, $id);
         }
         if ($session->user_id !== $userId) {
-            abort(403);
+            throw new AuthorizationException('Acesso negado a este recurso.');
         }
 
         return $session;

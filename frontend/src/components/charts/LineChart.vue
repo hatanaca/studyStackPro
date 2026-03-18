@@ -35,6 +35,9 @@ const props = withDefaults(
 const { baseOptions, theme } = useApexChartTheme()
 const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
 
+/** ApexCharts com height % costuma ficar 0px se o pai não tem altura definida — usar pixels */
+const chartHeightPx = computed(() => (props.tall ? 280 : 220))
+
 const series = computed(() => [
   {
     name: props.valueUnit === 'hours' ? 'Horas' : 'Minutos',
@@ -52,14 +55,14 @@ const chartOptions = computed<ApexOptions>(() => {
   const stockColor = typeof document !== 'undefined'
     ? (styleReader?.(document.documentElement)
       .getPropertyValue('--chart-line-stock-color')
-      .trim() || '#1e88e5')
-    : '#1e88e5'
+      .trim() || '#3b82f6')
+    : '#3b82f6'
   return {
   ...baseOptions.value,
   chart: {
     ...baseOptions.value.chart,
     type: 'area',
-    height: '100%',
+    height: chartHeightPx.value,
     background: 'transparent',
     toolbar: {
       show: isStockPreset,
@@ -174,7 +177,7 @@ const chartOptions = computed<ApexOptions>(() => {
     >
       <VueApexCharts
         type="area"
-        height="100%"
+        :height="chartHeightPx"
         :options="chartOptions"
         :series="series"
         class="apex-line"
@@ -216,7 +219,7 @@ const chartOptions = computed<ApexOptions>(() => {
 .line-chart--tall .chart-wrap {
   min-height: var(--widget-chart-min-height-tall);
 }
-@media (min-width: var(--screen-sm)) {
+@media (min-width: 640px) {
   .line-chart {
     --line-chart-height: var(--widget-chart-min-height);
   }

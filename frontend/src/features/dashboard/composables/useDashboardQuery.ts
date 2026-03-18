@@ -1,5 +1,6 @@
 import { watch } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
+import type { AxiosError } from 'axios'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 import { analyticsApi } from '@/api/modules/analytics.api'
 import { queryKeys } from '@/api/queryKeys'
@@ -20,13 +21,26 @@ export function useDashboardQuery(options?: { enabled?: boolean }) {
   const query = useQuery({
     queryKey: queryKeys.analytics.dashboard(),
     queryFn: async (): Promise<DashboardData> => {
-      const res = await analyticsApi.getDashboard()
-      return parseDashboardResponse(res.data) as DashboardData
+      let res: { data: unknown }
+      try {
+        res = await analyticsApi.getDashboard()
+      } catch (err: unknown) {
+        throw err
+      }
+      try {
+        return parseDashboardResponse(res.data) as DashboardData
+      } catch (parseErr: unknown) {
+        throw parseErr
+      }
     },
     staleTime: STALE_TIME_MS,
     gcTime: CACHE_TIME_MS,
     refetchOnWindowFocus: true,
-    retry: 2,
+    retry(failureCount, err) {
+      const status = (err as AxiosError)?.response?.status
+      if (status === 401 || status === 403) return false
+      return failureCount < 2
+    },
     enabled: options?.enabled ?? true,
   })
 

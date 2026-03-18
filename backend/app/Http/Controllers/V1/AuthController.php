@@ -100,10 +100,9 @@ class AuthController extends Controller
      */
     public function updateProfile(UpdateProfileRequest $request): JsonResponse
     {
-        $user = $request->user();
-        $user->update($request->validated());
+        $user = $this->authService->updateProfile($request->user(), $request->validated());
 
-        return $this->success(new UserResource($user->fresh()), 'Perfil atualizado.');
+        return $this->success(new UserResource($user), 'Perfil atualizado.');
     }
 
     /**

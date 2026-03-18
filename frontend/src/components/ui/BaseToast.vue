@@ -31,8 +31,8 @@ const { toasts, dismiss } = useToast()
 <style scoped>
 .toast-container {
   position: fixed;
-  top: var(--spacing-md);
-  right: var(--spacing-md);
+  top: var(--spacing-lg);
+  right: var(--spacing-lg);
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -40,7 +40,7 @@ const { toasts, dismiss } = useToast()
   max-width: var(--toast-max-width);
   width: min(92vw, var(--toast-max-width));
 }
-@media (min-width: 480px) {
+@media (min-width: 640px) {
   .toast-container {
     width: auto;
   }
@@ -50,7 +50,7 @@ const { toasts, dismiss } = useToast()
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   border: 1px solid transparent;
@@ -73,7 +73,7 @@ const { toasts, dismiss } = useToast()
 .message {
   flex: 1;
   font-size: var(--text-sm);
-  line-height: 1.4;
+  line-height: var(--leading-snug);
 }
 .close {
   background: none;

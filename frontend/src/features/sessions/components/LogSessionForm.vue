@@ -132,6 +132,7 @@ function onCancel() {
         v-model="technologyId"
         class="log-session-form__select"
         :class="{ 'log-session-form__select--error': errors.technology_id }"
+        aria-label="Selecionar tecnologia da sessão"
       >
         <option
           value=""
@@ -244,70 +245,74 @@ function onCancel() {
 .log-session-form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--form-section-gap);
 }
 .log-session-form__label {
   display: block;
-  font-size: var(--text-xs);
-  font-weight: 600;
-  margin-bottom: var(--spacing-xs);
-  color: var(--color-text-muted);
+  font-size: var(--form-label-size);
+  font-weight: var(--form-label-weight);
+  letter-spacing: var(--form-label-tracking);
+  color: var(--form-label-color);
+  margin-bottom: 0;
 }
 .log-session-form__field {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--form-field-gap);
 }
 .log-session-form__row {
   display: flex;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
+}
+.log-session-form__select,
+.log-session-form__input,
+.log-session-form__textarea {
+  width: 100%;
+  padding: var(--form-input-padding);
+  border: 1px solid var(--form-input-border);
+  border-radius: var(--form-input-radius);
+  font-size: var(--form-input-font-size);
+  font-family: inherit;
+  box-sizing: border-box;
+  background: var(--form-input-bg);
+  color: var(--form-input-text);
+  outline: none;
+  transition: border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease,
+    background var(--duration-fast) ease;
 }
 .log-session-form__select,
 .log-session-form__input {
-  width: 100%;
-  min-height: var(--input-height-sm);
-  padding: 0.45rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  box-sizing: border-box;
-  background: var(--color-bg-card);
-  color: var(--color-text);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  min-height: var(--form-input-height);
+}
+.log-session-form__select::placeholder,
+.log-session-form__input::placeholder,
+.log-session-form__textarea::placeholder {
+  color: var(--form-input-placeholder);
 }
 .log-session-form__select:focus,
-.log-session-form__input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
-  outline: none;
+.log-session-form__input:focus,
+.log-session-form__textarea:focus {
+  border-color: var(--form-input-border-focus);
+  box-shadow: var(--form-input-shadow-focus);
 }
 .log-session-form__select--error,
-.log-session-form__input--error {
-  border-color: var(--color-error);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 22%, transparent);
+.log-session-form__input--error,
+.log-session-form__textarea--error {
+  border-color: var(--form-input-border-error);
+  box-shadow: var(--form-input-shadow-error);
 }
 .log-session-form__textarea {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
   resize: vertical;
-  box-sizing: border-box;
-  background: var(--color-bg-card);
-  color: var(--color-text);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
-  min-height: var(--input-height-sm);
-}
-.log-session-form__textarea:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
-  outline: none;
+  min-height: calc(var(--form-input-height) * 2.5);
 }
 .log-session-form__error {
-  font-size: var(--text-xs);
-  color: var(--color-error);
-  margin-top: var(--spacing-xs);
-  line-height: 1.35;
+  font-size: var(--form-label-size);
+  color: var(--form-input-border-error);
+  margin-top: 0;
+  line-height: var(--leading-snug);
 }
 .log-session-form__actions {
   display: flex;
@@ -318,7 +323,7 @@ function onCancel() {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
   margin: 0;
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 .log-session-form__empty a {
   color: var(--color-primary);
@@ -330,7 +335,7 @@ function onCancel() {
   color: var(--color-primary-hover);
   text-decoration: underline;
 }
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .log-session-form__row {
     flex-direction: column;
   }

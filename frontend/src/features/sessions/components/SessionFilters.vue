@@ -96,31 +96,35 @@ function clear() {
   <div class="session-filters">
     <div class="session-filters__row">
       <div class="filter-group">
-        <label>Tecnologia</label>
+        <label for="filter-tech">Tecnologia</label>
         <TechnologyPicker
+          id="filter-tech"
           v-model="technology"
           placeholder="Todas"
         />
       </div>
       <div class="filter-group">
-        <label>De</label>
+        <label for="filter-date-from">De</label>
         <input
+          id="filter-date-from"
           v-model="dateFrom"
           type="date"
           class="filter-input"
         >
       </div>
       <div class="filter-group">
-        <label>Até</label>
+        <label for="filter-date-to">Até</label>
         <input
+          id="filter-date-to"
           v-model="dateTo"
           type="date"
           class="filter-input"
         >
       </div>
       <div class="filter-group">
-        <label>Mín. duração (min)</label>
+        <label for="filter-min-duration">Mín. duração (min)</label>
         <input
+          id="filter-min-duration"
           v-model="minDuration"
           type="number"
           min="0"
@@ -129,8 +133,9 @@ function clear() {
         >
       </div>
       <div class="filter-group">
-        <label>Mood (1-5)</label>
+        <label for="filter-mood">Mood (1-5)</label>
         <select
+          id="filter-mood"
           v-model="mood"
           class="filter-input"
         >
@@ -157,6 +162,7 @@ function clear() {
       <button
         type="button"
         class="btn-clear"
+        aria-label="Limpar filtros"
         @click="clear"
       >
         Limpar
@@ -194,7 +200,7 @@ function clear() {
 }
 .filter-input {
   min-height: var(--input-height-sm);
-  padding: 0.4rem 0.6rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
@@ -211,7 +217,7 @@ function clear() {
 }
 .btn-clear {
   min-height: var(--input-height-sm);
-  padding: 0.35rem 0.75rem;
+  padding: var(--spacing-xs) var(--spacing-md);
   font-size: var(--text-sm);
   font-weight: 500;
   background: var(--color-bg-card);

@@ -94,7 +94,7 @@ function isOpen(id: string) {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: var(--spacing-md) var(--widget-padding);
+  padding: var(--spacing-lg) var(--widget-padding);
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-text);

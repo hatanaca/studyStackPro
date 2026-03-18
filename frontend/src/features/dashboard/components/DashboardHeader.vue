@@ -34,12 +34,14 @@ const headerSummary = computed(() => {
 })
 
 async function handleRefresh() {
-  await fetchDashboard(true)
-  analyticsStore.fetchHeatmap().catch(() => {})
-  analyticsStore.fetchWeekly().catch(() => {})
-  analyticsStore.fetchTimeSeries('7d').catch(() => {})
-  analyticsStore.fetchTimeSeries('30d').catch(() => {})
-  analyticsStore.fetchTimeSeries('90d').catch(() => {})
+  await Promise.all([
+    fetchDashboard(true),
+    analyticsStore.fetchHeatmap(),
+    analyticsStore.fetchWeekly(),
+    analyticsStore.fetchTimeSeries('7d'),
+    analyticsStore.fetchTimeSeries('30d'),
+    analyticsStore.fetchTimeSeries('90d'),
+  ]).catch(() => {})
 }
 
 function onPeriodChange(period: TimeSeriesPeriod) {
@@ -120,8 +122,8 @@ function onPeriodChange(period: TimeSeriesPeriod) {
   align-items: flex-start;
   margin-bottom: var(--page-header-margin-bottom);
   flex-wrap: wrap;
-  gap: var(--spacing-md);
-  padding: var(--spacing-lg);
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -136,16 +138,16 @@ function onPeriodChange(period: TimeSeriesPeriod) {
 .dashboard-header__title {
   font-size: var(--text-xl);
   font-weight: 700;
-  letter-spacing: -0.025em;
+  letter-spacing: var(--tracking-tight);
   margin: 0;
   color: var(--color-text);
-  line-height: 1.25;
+  line-height: var(--leading-tight);
 }
 .dashboard-header__desc {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   margin: 0;
-  line-height: 1.4;
+  line-height: var(--leading-snug);
   max-width: 42ch;
 }
 .dashboard-header__summary {
@@ -171,13 +173,13 @@ function onPeriodChange(period: TimeSeriesPeriod) {
   display: block;
   font-size: var(--text-sm);
   color: var(--color-text);
-  line-height: 1.3;
+  line-height: var(--leading-snug);
 }
 .dashboard-header__toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 .dashboard-header__period {
   display: flex;
@@ -189,7 +191,7 @@ function onPeriodChange(period: TimeSeriesPeriod) {
   font-weight: 600;
   color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--tracking-wide);
 }
 .dashboard-header__actions {
   display: flex;
@@ -204,8 +206,8 @@ function onPeriodChange(period: TimeSeriesPeriod) {
   color: var(--color-text-muted);
 }
 .spinner {
-  width: 1rem;
-  height: 1rem;
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
   border: 2px solid var(--color-border);
   border-top-color: var(--color-primary);
   border-radius: 50%;
@@ -216,7 +218,7 @@ function onPeriodChange(period: TimeSeriesPeriod) {
     transform: rotate(360deg);
   }
 }
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .dashboard-header__summary {
     grid-template-columns: 1fr;
   }

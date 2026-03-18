@@ -46,23 +46,22 @@ class EloquentTechnologyRepository implements TechnologyRepositoryInterface
             return collect();
         }
 
+        $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $q);
+
         return Technology::where('user_id', $userId)
             ->where('is_active', true)
-            ->where('name', 'ilike', "%{$q}%")
+            ->where('name', 'ilike', "%{$escaped}%")
             ->orderBy('name')
             ->limit($limit)
             ->get();
     }
 
-    /** Busca por ID. ModelNotFoundException se não existir; AuthorizationException se não pertencer ao usuário */
+    /** Busca por ID restrita ao usuário. ModelNotFoundException se não existir ou não pertencer ao usuário */
     public function findForUser(string $id, string $userId): Technology
     {
-        $tech = Technology::find($id);
+        $tech = Technology::where('user_id', $userId)->find($id);
         if (! $tech) {
             throw (new ModelNotFoundException)->setModel(Technology::class, $id);
-        }
-        if ($tech->user_id !== $userId) {
-            throw new AuthorizationException('Acesso negado a este recurso.');
         }
 
         return $tech;

@@ -97,7 +97,7 @@ onUnmounted(() => {
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--text-xs);
   font-weight: 500;
-  line-height: 1.3;
+  line-height: var(--leading-snug);
   color: var(--color-bg-card);
   background: var(--color-text);
   border-radius: var(--radius-sm);

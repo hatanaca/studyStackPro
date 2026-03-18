@@ -45,7 +45,7 @@ withDefaults(
 .stat-card {
   display: flex;
   align-items: flex-start;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
   padding: var(--widget-padding);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
@@ -76,8 +76,8 @@ withDefaults(
   font-size: var(--text-xl);
   font-weight: 700;
   color: var(--color-text);
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
 }
 .stat-card--primary .stat-card__value { color: var(--color-primary); }
 .stat-card--success .stat-card__value { color: var(--color-success); }

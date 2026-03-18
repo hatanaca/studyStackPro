@@ -18,8 +18,8 @@ defineProps<{
 
 <style scoped>
 .app-header {
-  padding: 0 0 var(--spacing-md);
-  margin-bottom: var(--spacing-md);
+  padding: 0 0 var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
   border-bottom: 1px solid var(--color-border);
 }
 .app-header__title {

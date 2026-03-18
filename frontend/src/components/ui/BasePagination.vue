@@ -120,7 +120,7 @@ function goTo(p: number) {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 .base-pagination__info {
   font-size: var(--text-sm);

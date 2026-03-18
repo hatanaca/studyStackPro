@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
-import LineChart from '@/components/charts/LineChart.vue'
+const LineChart = defineAsyncComponent(() => import('@/components/charts/LineChart.vue'))
 import Skeleton from 'primevue/skeleton'
 import Message from 'primevue/message'
 import Button from 'primevue/button'
@@ -69,9 +69,16 @@ function goToRegisterSession() {
       >
         Total no período: {{ totalInPeriod }}
       </p>
+      <p
+        v-if="hasData && analyticsStore.isRecalculating"
+        class="recalc-hint"
+        role="status"
+      >
+        Atualizando métricas…
+      </p>
     </div>
     <div
-      v-if="analyticsStore.timeSeriesLoading || analyticsStore.isRecalculating"
+      v-if="analyticsStore.timeSeriesLoading"
       class="chart-skeleton"
     >
       <Skeleton
@@ -97,7 +104,7 @@ function goToRegisterSession() {
     >
       <strong>Nenhum registro neste período</strong><br>
       Registre sessões para ver sua evolução aqui. O gráfico mostra as horas estudadas por dia.
-      <Button label="Registrar sessão" size="small" class="mt-2" @click="goToRegisterSession" />
+      <Button label="Registrar sessão" size="small" class="time-series-empty__action" @click="goToRegisterSession" />
     </Message>
   </div>
 </template>
@@ -115,7 +122,7 @@ function goToRegisterSession() {
   gap: var(--spacing-sm);
   overflow: hidden;
 }
-@media (min-width: var(--screen-sm)) {
+@media (min-width: 640px) {
   .time-series-widget {
     min-height: calc(var(--widget-chart-min-height-tall) + 7rem);
   }
@@ -142,6 +149,11 @@ function goToRegisterSession() {
   margin: var(--spacing-2xs) 0 0;
   font-variant-numeric: tabular-nums;
 }
+.recalc-hint {
+  font-size: var(--text-xs);
+  color: var(--color-primary);
+  margin: var(--spacing-2xs) 0 0;
+}
 .chart-skeleton {
   min-height: var(--widget-chart-min-height);
   flex: 1;
@@ -153,7 +165,13 @@ function goToRegisterSession() {
 .skeleton-line {
   width: 90%;
 }
-@media (max-width: var(--screen-xs)) {
+.time-series-empty {
+  margin-top: var(--spacing-xs);
+}
+.time-series-empty__action {
+  margin-top: var(--spacing-sm);
+}
+@media (max-width: 640px) {
   .time-series-widget {
     padding: var(--widget-padding-sm);
   }

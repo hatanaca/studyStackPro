@@ -47,7 +47,7 @@ defineProps<{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--widget-padding, var(--spacing-md));
+  padding: var(--widget-padding, var(--spacing-lg));
   padding-bottom: 0;
 }
 .base-card__title {
@@ -55,11 +55,11 @@ defineProps<{
   font-weight: var(--widget-title-weight, 600);
   color: var(--color-text);
   margin: 0;
-  letter-spacing: -0.01em;
-  line-height: 1.35;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
 }
 .base-card__body {
-  padding: var(--widget-padding, var(--spacing-md));
+  padding: var(--widget-padding, var(--spacing-lg));
   min-width: 0;
 }
 </style>

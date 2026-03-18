@@ -112,7 +112,7 @@ function clearFilters() {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 .filter-bar__search {
   flex: 1;

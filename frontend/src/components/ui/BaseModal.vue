@@ -53,7 +53,7 @@ defineEmits<{
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: var(--spacing-md);
+  padding: var(--spacing-lg);
 }
 .base-modal {
   background: var(--color-bg-card);
@@ -65,13 +65,13 @@ defineEmits<{
   border: 1px solid var(--color-border);
   width: 100%;
 }
-@media (min-width: 481px) {
+@media (min-width: 640px) {
   .base-modal {
     width: auto;
     min-width: 360px;
   }
 }
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .base-modal {
     max-width: 95vw;
     max-height: 95vh;
@@ -80,20 +80,20 @@ defineEmits<{
     padding: var(--widget-padding);
   }
   .base-modal__header {
-    padding: var(--spacing-md) var(--widget-padding);
+    padding: var(--spacing-lg) var(--widget-padding);
   }
 }
 .base-modal__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--widget-padding) var(--spacing-lg);
+  padding: var(--widget-padding) var(--spacing-xl);
   border-bottom: 1px solid var(--color-border);
 }
 .base-modal__title {
   font-size: var(--text-lg);
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-tight);
   margin: 0;
   color: var(--color-text);
 }
@@ -124,6 +124,6 @@ defineEmits<{
   background: var(--color-primary-soft);
 }
 .base-modal__body {
-  padding: var(--widget-padding) var(--spacing-lg);
+  padding: var(--widget-padding) var(--spacing-xl);
 }
 </style>

@@ -27,6 +27,16 @@ interface EchoInstance {
 /** Estado global de conexão WS (compartilhado entre instâncias) */
 const isConnected = ref(false)
 let echo: EchoInstance | null = null
+/** Se o broadcast de fim de recálculo falhar (ex.: payload grande), libera o spinner após este tempo */
+const RECALC_FALLBACK_MS = 45_000
+let recalcFallbackTimer: ReturnType<typeof setTimeout> | null = null
+
+function clearRecalcFallbackTimer() {
+  if (recalcFallbackTimer) {
+    clearTimeout(recalcFallbackTimer)
+    recalcFallbackTimer = null
+  }
+}
 
 export function useWebSocket() {
   const authStore = useAuthStore()
@@ -82,11 +92,18 @@ export function useWebSocket() {
 
     echo.private(`dashboard.${userId}`)
       .listen('.metrics.updated', (e: unknown) => {
+        clearRecalcFallbackTimer()
         const ev = e as MetricsUpdatedEvent
         if (ev.dashboard) analyticsStore.updateFromWebSocket(ev.dashboard)
+        else analyticsStore.setRecalculating(false)
       })
       .listen('.metrics.recalculating', () => {
         analyticsStore.setRecalculating(true)
+        clearRecalcFallbackTimer()
+        recalcFallbackTimer = setTimeout(() => {
+          analyticsStore.setRecalculating(false)
+          recalcFallbackTimer = null
+        }, RECALC_FALLBACK_MS)
       })
       .listen('.session.started', (e: unknown) => {
         const ev = e as SessionStartedEvent
@@ -117,6 +134,7 @@ export function useWebSocket() {
 
   /** Desconecta do Reverb e limpa referências */
   function disconnect() {
+    clearRecalcFallbackTimer()
     if (echo) {
       echo.disconnect()
       echo = null

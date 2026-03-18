@@ -96,14 +96,14 @@ async function copy() {
 }
 .copy-button__icon {
   flex-shrink: 0;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   line-height: 1;
 }
 .copy-button__icon--copy {
   opacity: 0.9;
 }
 .copy-button--md {
-  padding: var(--spacing-xs) var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-lg);
   font-size: var(--text-sm);
 }
 </style>

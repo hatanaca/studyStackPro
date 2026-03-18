@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseCard from '@/components/ui/BaseCard.vue'
 import type { Technology } from '@/types/domain.types'
 
 defineProps<{
@@ -10,67 +12,84 @@ const emit = defineEmits<{
   edit: [Technology]
   delete: [Technology]
 }>()
+
+// #region agent log
+fetch('http://127.0.0.1:7573/ingest/086e8d00-457e-4a30-82b0-abf450d19c28', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Debug-Session-Id': '7879a4',
+  },
+  body: JSON.stringify({
+    sessionId: '7879a4',
+    runId: 'pre-fix',
+    hypothesisId: 'H-tech-card-standardization',
+    location: 'TechnologyCard.vue:16',
+    message: 'TechnologyCard rendered using BaseCard/BaseButton',
+    data: {},
+    timestamp: Date.now(),
+  }),
+}).catch(() => {})
+// #endregion agent log
 </script>
 
 <template>
-  <div
+  <BaseCard
     class="technology-card"
     :style="{ '--tech-color': technology.color }"
   >
-    <div class="technology-card__bar" />
-    <div class="technology-card__content">
-      <div class="technology-card__main">
-        <span class="technology-card__name">{{ technology.name }}</span>
-        <span class="technology-card__slug">{{ technology.slug }}</span>
+    <template #default>
+      <div class="technology-card__content">
+        <div class="technology-card__main">
+          <span class="technology-card__name">{{ technology.name }}</span>
+          <span class="technology-card__slug">{{ technology.slug }}</span>
+        </div>
+        <p
+          v-if="technology.description"
+          class="technology-card__desc"
+        >
+          {{ technology.description }}
+        </p>
+        <div class="technology-card__actions">
+          <RouterLink
+            :to="{ name: 'technology-detail', params: { id: technology.id } }"
+            class="technology-card__primary-link"
+          >
+            <BaseButton
+              variant="primary"
+              size="md"
+              class="technology-card__primary-button"
+            >
+              Ver detalhes
+            </BaseButton>
+          </RouterLink>
+          <div class="technology-card__secondary">
+            <BaseButton
+              variant="secondary"
+              size="sm"
+              type="button"
+              @click="emit('edit', technology)"
+            >
+              Editar
+            </BaseButton>
+            <BaseButton
+              variant="danger"
+              size="sm"
+              type="button"
+              @click="emit('delete', technology)"
+            >
+              Excluir
+            </BaseButton>
+          </div>
+        </div>
       </div>
-      <p
-        v-if="technology.description"
-        class="technology-card__desc"
-      >
-        {{ technology.description }}
-      </p>
-      <div class="technology-card__actions">
-        <RouterLink
-          :to="{ name: 'technology-detail', params: { id: technology.id } }"
-          class="btn btn--primary"
-        >
-          Ver detalhes
-        </RouterLink>
-        <button
-          type="button"
-          class="btn btn--ghost"
-          @click="emit('edit', technology)"
-        >
-          Editar
-        </button>
-        <button
-          type="button"
-          class="btn btn--ghost btn--danger"
-          @click="emit('delete', technology)"
-        >
-          Excluir
-        </button>
-      </div>
-    </div>
-  </div>
+    </template>
+  </BaseCard>
 </template>
 
 <style scoped>
 .technology-card {
-  background: var(--color-bg-card);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
-  transition: box-shadow var(--duration-normal) var(--ease-in-out), border-color var(--duration-fast) ease;
-}
-.technology-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: color-mix(in srgb, var(--tech-color, var(--color-primary)) 40%, var(--color-border));
-}
-.technology-card__bar {
-  height: 3px;
-  background: var(--tech-color, var(--color-primary));
+  border-color: color-mix(in srgb, var(--tech-color, var(--color-primary)) 22%, var(--color-border));
 }
 .technology-card__content {
   padding: var(--widget-padding);
@@ -103,49 +122,26 @@ const emit = defineEmits<{
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   margin: var(--spacing-sm) 0 0;
-  line-height: 1.45;
+  line-height: var(--leading-snug);
 }
 .technology-card__actions {
   display: flex;
-  gap: var(--spacing-xs);
-  margin-top: var(--spacing-md);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
 }
-.btn {
-  padding: 0.3rem 0.6rem;
-  font-size: var(--text-xs);
-  font-weight: 500;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  background: transparent;
-  color: var(--color-text-muted);
+.technology-card__secondary {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+.technology-card__primary-link {
+  display: inline-flex;
+  flex: 1;
+  min-width: 0;
   text-decoration: none;
-  transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease, transform var(--duration-fast) ease;
 }
-.btn--ghost:hover {
-  background: var(--color-bg-soft);
-  color: var(--color-text);
-}
-.btn--danger:hover {
-  background: var(--color-error-soft);
-  color: var(--color-error);
-}
-.btn--primary {
-  padding: 0.35rem 0.65rem;
-  font-size: var(--text-xs);
-  font-weight: 600;
-  border-radius: var(--radius-sm);
-  text-decoration: none;
-  background: var(--tech-color, var(--color-primary));
-  color: #fff;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: opacity var(--duration-fast) ease, transform var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
-}
-.btn--primary:hover {
-  opacity: 0.95;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+.technology-card__primary-button {
+  width: 100%;
+  justify-content: center;
 }
 </style>

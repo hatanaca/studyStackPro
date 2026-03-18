@@ -46,7 +46,7 @@ export const useTechnologiesStore = defineStore('technologies', () => {
     if (!q) return technologies.value
     return technologies.value.filter(
       (t) =>
-        t.name.toLowerCase().includes(q) || t.slug.toLowerCase().includes(q)
+        t.name.toLowerCase().includes(q) || t.slug?.toLowerCase().includes(q)
     )
   }
 

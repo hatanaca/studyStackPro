@@ -128,7 +128,11 @@ watch(() => props.technologyId, loadFromStorage)
         <p
           v-else
           class="tech-reminders__text"
+          tabindex="0"
+          role="button"
           @click="startEdit(r)"
+          @keydown.enter.prevent="startEdit(r)"
+          @keydown.space.prevent="startEdit(r)"
         >
           {{ r.text }}
         </p>
@@ -168,24 +172,25 @@ watch(() => props.technologyId, loadFromStorage)
   font-size: var(--text-base);
   font-weight: 600;
   color: var(--color-text);
-  margin: 0 0 var(--spacing-xs);
+  margin: 0 0 var(--spacing-sm);
+  letter-spacing: var(--tracking-tight);
 }
 .tech-reminders__subtitle {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
-  margin: 0 0 var(--spacing-md);
-  line-height: 1.45;
+  margin: 0 0 var(--spacing-lg);
+  line-height: var(--leading-snug);
 }
 .tech-reminders__input {
   display: flex;
   gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 .tech-reminders__field {
   flex: 1;
   min-width: 0;
   min-height: var(--input-height-sm);
-  padding: 0.45rem 0.75rem;
+  padding: var(--spacing-sm) var(--spacing-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
@@ -196,7 +201,11 @@ watch(() => props.technologyId, loadFromStorage)
 .tech-reminders__field:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  box-shadow: var(--shadow-focus);
+}
+.tech-reminders__field:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 .tech-reminders__list {
   list-style: none;
@@ -223,7 +232,12 @@ watch(() => props.technologyId, loadFromStorage)
   font-size: var(--text-sm);
   color: var(--color-text);
   cursor: pointer;
-  line-height: 1.45;
+  line-height: var(--leading-snug);
+}
+.tech-reminders__text:focus-visible {
+  outline: none;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-focus);
 }
 .tech-reminders__textarea {
   flex: 1;
@@ -240,16 +254,23 @@ watch(() => props.technologyId, loadFromStorage)
 .tech-reminders__textarea:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  box-shadow: var(--shadow-focus);
+}
+.tech-reminders__textarea:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 .tech-reminders__actions {
   display: flex;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm);
+}
+.tech-reminders__actions :deep(.p-button:focus-visible) {
+  box-shadow: var(--shadow-focus);
 }
 .tech-reminders__empty {
   margin: 0;
   font-size: var(--text-sm);
   color: var(--color-text-muted);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 </style>

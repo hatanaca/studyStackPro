@@ -73,14 +73,14 @@ const emit = defineEmits<{
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
-  transition: box-shadow var(--duration-normal) var(--ease-in-out), border-color var(--duration-fast) ease;
+  transition: box-shadow var(--duration-normal) var(--ease-out-expo), border-color var(--duration-fast) ease;
 }
 .session-card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-card-hover);
   border-color: color-mix(in srgb, var(--color-primary) 25%, var(--color-border));
 }
 .session-card__bar {
-  height: 3px;
+  height: 3px; /* sem token para 3px; mantém proporção visual */
 }
 .session-card__content {
   padding: var(--widget-padding);
@@ -96,15 +96,18 @@ const emit = defineEmits<{
 .session-card__tech {
   font-weight: 600;
   font-size: var(--text-sm);
+  line-height: var(--leading-snug);
   color: var(--color-text);
 }
 .session-card__duration {
   font-size: var(--text-sm);
+  line-height: var(--leading-snug);
   color: var(--color-text-muted);
   white-space: nowrap;
 }
 .session-card__meta {
   font-size: var(--text-xs);
+  line-height: var(--leading-normal);
   color: var(--color-text-muted);
   margin-bottom: var(--spacing-sm);
 }
@@ -113,20 +116,21 @@ const emit = defineEmits<{
 }
 .session-card__notes {
   font-size: var(--text-sm);
+  line-height: var(--leading-snug);
   color: var(--color-text-muted);
   margin: var(--spacing-sm) 0 0;
-  line-height: 1.45;
   word-break: break-word;
 }
 .session-card__actions {
   display: flex;
   gap: var(--spacing-xs);
-  margin-top: var(--spacing-md);
+  margin-top: var(--spacing-lg);
   flex-wrap: wrap;
 }
 .btn {
-  padding: 0.3rem 0.6rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--text-xs);
+  line-height: var(--leading-snug);
   font-weight: 500;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);

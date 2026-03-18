@@ -6,6 +6,11 @@ let fetchMePromise: Promise<void> | null = null
 /** Flag para refresh em background (apenas uma vez após login) */
 let hasDoneBackgroundRefresh = false
 
+/** Reseta flag de background refresh (chamar no logout) */
+export function resetBackgroundRefresh() {
+  hasDoneBackgroundRefresh = false
+}
+
 /**
  * Guard de autenticação.
  * requiresAuth sem token → redirect login; guest com token → redirect dashboard.
@@ -37,7 +42,14 @@ export async function setupAuthGuard(
           fetchMePromise = null
         })
       }
-      await fetchMePromise
+      try {
+        await fetchMePromise
+      } catch {
+        if (!authStore.isAuthenticated) {
+          next({ name: 'login' })
+          return
+        }
+      }
     } else if (!hasDoneBackgroundRefresh) {
       hasDoneBackgroundRefresh = true
       authStore.fetchMe().catch(() => {})

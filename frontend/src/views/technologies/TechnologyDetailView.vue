@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import Button from 'primevue/button'
-import Card from 'primevue/card'
 import PageView from '@/components/layout/PageView.vue'
 import Skeleton from 'primevue/skeleton'
+import BaseCard from '@/components/ui/BaseCard.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import ErrorCard from '@/components/ui/ErrorCard.vue'
 import TechnologyDetailMural from '@/features/technologies/components/TechnologyDetailMural.vue'
 import TechnologyDetailReminders from '@/features/technologies/components/TechnologyDetailReminders.vue'
@@ -40,7 +40,7 @@ async function loadTechnology() {
 async function loadTotalHours() {
   if (!id.value) return
   try {
-    const { data } = await sessionsApi.list({ technology_id: id.value, per_page: 500 })
+    const { data } = await sessionsApi.list({ technology_id: id.value, per_page: 50 })
     if (data.success && Array.isArray(data.data)) {
       totalMinutes.value = data.data.reduce((sum, s) => sum + (s.duration_min ?? 0), 0)
     }
@@ -100,13 +100,15 @@ function goBack() {
         :message="error"
         :on-retry="fetchData"
       />
-      <Button
-        label="Voltar para Tecnologias"
-        severity="secondary"
-        variant="outlined"
-        class="technology-detail__back"
-        @click="goBack"
-      />
+      <div class="technology-detail__back">
+        <BaseButton
+          variant="secondary"
+          type="button"
+          @click="goBack"
+        >
+          Voltar para Tecnologias
+        </BaseButton>
+      </div>
     </template>
     <template v-else-if="technology">
       <div
@@ -114,14 +116,11 @@ function goBack() {
         :style="technology ? { '--tech-color': technology.color } : {}"
       >
         <div class="technology-detail__total">
-          <Card class="technology-detail__card">
-            <template #content>
-              <h2 class="technology-detail__card-title">Total de horas</h2>
-              <p class="technology-detail__total-value">
-                {{ totalHoursLabel }}
-              </p>
-            </template>
-          </Card>
+          <BaseCard class="technology-detail__card" title="Total de horas">
+            <p class="technology-detail__total-value">
+              {{ totalHoursLabel }}
+            </p>
+          </BaseCard>
         </div>
         <div class="technology-detail__sections">
           <TechnologyDetailReminders :technology-id="technology.id" />
@@ -134,14 +133,14 @@ function goBack() {
 
 <style scoped>
 .technology-detail__loading {
-  padding: var(--spacing-md) 0;
+  padding: var(--spacing-xl) 0;
 }
 .technology-detail__skeleton {
   min-height: 10rem;
   border-radius: var(--radius-md);
 }
 .technology-detail__back {
-  margin-top: var(--spacing-md);
+  margin-top: var(--spacing-xl);
 }
 .technology-detail {
   max-width: 100%;
@@ -150,20 +149,22 @@ function goBack() {
   margin-bottom: var(--page-section-gap);
 }
 .technology-detail__card {
-  padding: var(--spacing-lg);
+  padding: var(--spacing-xl);
 }
 .technology-detail__card-title {
-  font-size: var(--widget-title-size);
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-text-muted);
-  margin: 0 0 var(--spacing-xs);
+  margin: 0 0 var(--spacing-sm);
+  letter-spacing: var(--tracking-wide);
 }
 .technology-detail__total-value {
   font-size: var(--text-2xl);
   font-weight: 700;
   color: var(--tech-color, var(--color-primary));
   margin: 0;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
 }
 .technology-detail__sections {
   display: flex;

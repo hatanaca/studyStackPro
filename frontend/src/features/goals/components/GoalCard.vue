@@ -60,11 +60,29 @@ function formatValue(): string {
 </template>
 
 <style scoped>
-.goal-card__actions { display: flex; gap: var(--spacing-xs); }
+.goal-card {
+  transition: box-shadow var(--duration-normal) var(--ease-in-out),
+    border-color var(--duration-normal) var(--ease-in-out);
+}
+.goal-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
+}
+.goal-card__actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+.goal-card__actions :deep(.p-button) {
+  min-height: 2.75rem;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+.goal-card__actions :deep(.p-button:focus-visible) {
+  box-shadow: var(--shadow-focus);
+}
 .goal-card__body {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-md);
 }
 .goal-card__meta {
   display: flex;
@@ -74,19 +92,21 @@ function formatValue(): string {
 .goal-card__status {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
-  padding: var(--spacing-2xs) var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
   background: color-mix(in srgb, var(--color-bg-soft) 80%, var(--color-bg-card));
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
+  letter-spacing: var(--tracking-wide);
 }
 .goal-card__value {
   font-size: var(--text-base);
   font-weight: 600;
   color: var(--color-text);
   margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
 }
 .goal-card__progress {
-  margin-top: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
 }
 </style>

@@ -26,7 +26,10 @@ const mockSession: StudySession = {
 
 const router = createRouter({
   history: createWebHistory(),
-  routes: [{ path: '/sessions/:id', name: 'session-detail', component: { template: '<div />' } }]
+  routes: [
+    { path: '/', component: { template: '<div />' } },
+    { path: '/sessions/:id', name: 'session-detail', component: { template: '<div />' } }
+  ]
 })
 
 describe('SessionCard', () => {

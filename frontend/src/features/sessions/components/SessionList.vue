@@ -3,9 +3,11 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
+import Skeleton from 'primevue/skeleton'
 import SessionCard from './SessionCard.vue'
 import SessionFilters from './SessionFilters.vue'
 import LogSessionForm from './LogSessionForm.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import { useTechnologiesStore } from '@/stores/technologies.store'
 import { useSessionsListQuery, useInvalidateSessions } from '@/features/sessions/composables/useSessionsListQuery'
 import { useSessionEdit } from '@/features/sessions/composables/useSessionEdit'
@@ -86,8 +88,14 @@ onMounted(() => {
     <div
       v-if="loading"
       class="loading"
+      role="status"
+      aria-live="polite"
+      aria-label="Carregando sessões"
     >
-      Carregando...
+      <Skeleton class="loading__skeleton" height="6rem" />
+      <Skeleton class="loading__skeleton" height="6rem" />
+      <Skeleton class="loading__skeleton" height="6rem" />
+      <Skeleton class="loading__skeleton" height="6rem" />
     </div>
     <div
       v-else-if="sessions.length"
@@ -101,12 +109,15 @@ onMounted(() => {
         @delete="sessionDelete.openDelete"
       />
     </div>
-    <p
+    <EmptyState
       v-else
-      class="empty"
-    >
-      Nenhuma sessão registrada. Clique em "Nova sessão" para registrar.
-    </p>
+      icon="📚"
+      title="Nenhuma sessão registrada"
+      description="Registre sua primeira sessão de estudo para começar a acompanhar seu progresso."
+      action-label="Nova sessão"
+      :hide-action="false"
+      @action="showAddModal = true"
+    />
 
     <!-- Pagination -->
     <div
@@ -116,6 +127,7 @@ onMounted(() => {
       <button
         type="button"
         class="pagination__btn"
+        aria-label="Página anterior"
         :disabled="currentPage <= 1"
         @click="goToPage(currentPage - 1)"
       >
@@ -128,6 +140,7 @@ onMounted(() => {
       <button
         type="button"
         class="pagination__btn"
+        aria-label="Próxima página"
         :disabled="currentPage >= meta.last_page"
         @click="goToPage(currentPage + 1)"
       >
@@ -276,7 +289,7 @@ onMounted(() => {
   margin-bottom: var(--page-section-gap);
   flex-wrap: wrap;
   gap: var(--spacing-sm);
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-lg) var(--spacing-xl);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -287,23 +300,25 @@ onMounted(() => {
   font-weight: 600;
   margin: 0;
   color: var(--color-text);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-tight);
 }
 .session-list__grid {
   display: flex;
   flex-direction: column;
   gap: var(--widget-gap);
 }
-.loading,
-.empty {
-  padding: var(--spacing-lg);
-  text-align: center;
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  margin-top: var(--spacing-lg);
   background: color-mix(in srgb, var(--color-bg-soft) 50%, var(--color-bg-card));
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-md);
-  margin-top: var(--spacing-md);
+}
+.loading__skeleton {
+  border-radius: var(--radius-md);
 }
 
 /* Pagination */
@@ -312,17 +327,17 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-lg);
-  padding: var(--spacing-md);
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-xl);
+  padding: var(--spacing-lg);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
 }
 .pagination__btn {
-  min-height: var(--input-height-sm);
-  padding: 0.35rem 0.75rem;
+  min-height: 2.75rem; /* 44px touch target a11y */
+  padding: var(--spacing-xs) var(--spacing-md);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -341,6 +356,10 @@ onMounted(() => {
   opacity: 0.5;
   cursor: not-allowed;
 }
+.pagination__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
 .pagination__info {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
@@ -350,7 +369,7 @@ onMounted(() => {
 .edit-form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 .edit-form__label {
   display: block;
@@ -365,13 +384,13 @@ onMounted(() => {
 }
 .edit-form__row {
   display: flex;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 .edit-form__select,
 .edit-form__input {
   width: 100%;
-  min-height: var(--input-height-sm);
-  padding: 0.45rem 0.75rem;
+  min-height: var(--input-height-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
@@ -381,13 +400,16 @@ onMounted(() => {
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
 .edit-form__select:focus,
-.edit-form__input:focus {
+.edit-form__input:focus,
+.edit-form__select:focus-visible,
+.edit-form__input:focus-visible {
+  outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  box-shadow: var(--shadow-focus);
 }
 .edit-form__textarea {
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: var(--spacing-sm) var(--spacing-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
@@ -397,9 +419,11 @@ onMounted(() => {
   color: var(--color-text);
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
-.edit-form__textarea:focus {
+.edit-form__textarea:focus,
+.edit-form__textarea:focus-visible {
+  outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  box-shadow: var(--shadow-focus);
 }
 .edit-form__actions {
   display: flex;
@@ -412,12 +436,12 @@ onMounted(() => {
   margin: 0 0 var(--spacing-sm);
   color: var(--color-text);
   font-size: var(--text-sm);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 .delete-confirm__hint {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
-  margin: 0 0 var(--spacing-md);
+  margin: 0 0 var(--spacing-lg);
 }
 .delete-confirm__actions {
   display: flex;
@@ -425,8 +449,8 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 .delete-confirm__btn {
-  min-height: var(--input-height-sm);
-  padding: 0.5rem 1rem;
+  min-height: 2.75rem; /* 44px touch target a11y */
+  padding: var(--spacing-sm) var(--spacing-lg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -434,7 +458,15 @@ onMounted(() => {
   font-weight: 500;
   background: var(--color-bg-card);
   color: var(--color-text);
-  transition: border-color var(--duration-fast) ease, background var(--duration-fast) ease, color var(--duration-fast) ease;
+  transition: border-color var(--duration-fast) ease, background var(--duration-fast) ease, color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+.delete-confirm__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+.delete-confirm__btn--danger:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-error-soft);
 }
 .delete-confirm__btn:hover {
   background: var(--color-bg-soft);
@@ -455,7 +487,7 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .edit-form__row {
     flex-direction: column;
   }

@@ -47,12 +47,12 @@ const maxMinutes = computed(() => {
 })
 
 function getColor(minutes: number) {
-  if (minutes <= 0) return '#ebedf0'
+  if (minutes <= 0) return 'var(--color-border)'
   const ratio = minutes / maxMinutes.value
-  if (ratio < 0.25) return '#9be9a8'
-  if (ratio < 0.5) return '#40c463'
-  if (ratio < 0.75) return '#30a14e'
-  return '#216e39'
+  if (ratio < 0.25) return 'var(--color-success-soft)'
+  if (ratio < 0.5) return 'var(--color-success)'
+  if (ratio < 0.75) return 'var(--color-primary)'
+  return 'var(--color-primary-hover)'
 }
 
 const years = computed(() => {
@@ -70,6 +70,7 @@ const years = computed(() => {
       <select
         v-model="selectedYear"
         class="year-select"
+        aria-label="Selecionar ano para visualizar o calendário de atividade"
       >
         <option
           v-for="y in years"
@@ -99,6 +100,8 @@ const years = computed(() => {
         viewBox="0 0 730 110"
         preserveAspectRatio="xMidYMid meet"
         class="heatmap-svg"
+        role="img"
+        :aria-label="`Calendário de atividade de estudo em ${selectedYear}. Cada célula representa um dia; intensidade da cor indica minutos estudados.`"
       >
         <g
           v-for="(week, wi) in weeks"
@@ -112,7 +115,7 @@ const years = computed(() => {
             :y="0"
             width="11"
             height="11"
-            :fill="day.date ? getColor(day.minutes) : '#ebedf0'"
+            :fill="day.date ? getColor(day.minutes) : 'var(--color-bg-soft)'"
             :data-date="day.date"
             :data-minutes="day.minutes"
           >
@@ -131,7 +134,7 @@ const years = computed(() => {
   background: var(--color-bg-card);
   border-radius: var(--widget-radius);
   padding: var(--widget-padding);
-  padding-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-xl);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
 }
@@ -140,6 +143,7 @@ const years = computed(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--spacing-sm);
+  gap: var(--spacing-sm);
 }
 .title {
   font-size: var(--widget-title-size);
@@ -177,6 +181,9 @@ const years = computed(() => {
   flex-direction: column;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) 0;
+}
+.heatmap-skeleton :deep(.p-skeleton) {
+  border-radius: var(--radius-sm);
 }
 .skeleton-row {
   width: 100%;

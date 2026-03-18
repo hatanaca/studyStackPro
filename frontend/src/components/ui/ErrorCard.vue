@@ -35,18 +35,18 @@ defineProps<{
   background: var(--color-error-soft);
   border: 1px solid color-mix(in srgb, var(--color-error) 40%, transparent);
   border-radius: var(--radius-md);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-xl);
   text-align: center;
 }
 .message {
   color: var(--color-error);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
   font-size: var(--text-sm);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 .retry {
   min-height: var(--input-height-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
   background: var(--color-error);
   color: var(--color-primary-contrast);
   border: 1px solid var(--color-error);

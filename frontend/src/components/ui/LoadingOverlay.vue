@@ -49,8 +49,8 @@ withDefaults(
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-xl);
+  gap: var(--spacing-lg);
+  padding: var(--spacing-2xl);
 }
 .loading-overlay__spinner {
   width: 2.5rem;

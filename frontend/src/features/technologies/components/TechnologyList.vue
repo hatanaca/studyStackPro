@@ -2,7 +2,10 @@
 import { ref, computed } from 'vue'
 import TechnologyCard from './TechnologyCard.vue'
 import TechnologyForm from './TechnologyForm.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import Button from 'primevue/button'
+import Skeleton from 'primevue/skeleton'
+import { useConfirm } from 'primevue/useconfirm'
 import { useTechnologiesStore } from '@/stores/technologies.store'
 import { useTechnologiesQuery, useInvalidateTechnologies } from '@/features/technologies/composables/useTechnologiesQuery'
 import type { Technology } from '@/types/domain.types'
@@ -10,6 +13,7 @@ import type { Technology } from '@/types/domain.types'
 const technologiesQuery = useTechnologiesQuery()
 const store = useTechnologiesStore()
 const invalidateTechnologies = useInvalidateTechnologies()
+const confirm = useConfirm()
 const editingTech = ref<Technology | null>(null)
 const showForm = ref(false)
 
@@ -46,10 +50,18 @@ function handleCancel() {
   editingTech.value = null
 }
 
-async function handleDelete(tech: Technology) {
-  if (!confirm(`Excluir "${tech.name}"?`)) return
-  await store.deleteTechnology(tech.id)
-  await invalidateTechnologies()
+function handleDelete(tech: Technology) {
+  confirm.require({
+    header: 'Excluir tecnologia',
+    message: `Excluir "${tech.name}"? Esta ação não pode ser desfeita.`,
+    acceptLabel: 'Excluir',
+    rejectLabel: 'Cancelar',
+    acceptClass: 'p-button-danger',
+    accept: async () => {
+      await store.deleteTechnology(tech.id)
+      await invalidateTechnologies()
+    },
+  })
 }
 </script>
 
@@ -74,8 +86,13 @@ async function handleDelete(tech: Technology) {
     <div
       v-if="loading"
       class="loading"
+      role="status"
+      aria-live="polite"
+      aria-label="Carregando tecnologias"
     >
-      Carregando...
+      <Skeleton class="loading__skeleton" height="8rem" />
+      <Skeleton class="loading__skeleton" height="8rem" />
+      <Skeleton class="loading__skeleton" height="8rem" />
     </div>
     <div
       v-else-if="technologies.length"
@@ -89,12 +106,15 @@ async function handleDelete(tech: Technology) {
         @delete="handleDelete"
       />
     </div>
-    <p
+    <EmptyState
       v-else
-      class="empty"
-    >
-      Nenhuma tecnologia cadastrada.
-    </p>
+      icon="⚡"
+      title="Nenhuma tecnologia cadastrada"
+      description="Adicione uma tecnologia para categorizar suas sessões de estudo."
+      action-label="Nova tecnologia"
+      :hide-action="false"
+      @action="openCreate"
+    />
   </div>
 </template>
 
@@ -108,8 +128,8 @@ async function handleDelete(tech: Technology) {
   align-items: center;
   margin-bottom: var(--page-section-gap);
   flex-wrap: wrap;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md) var(--spacing-lg);
+  gap: var(--spacing-md);
+  padding: var(--spacing-xl);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -120,29 +140,35 @@ async function handleDelete(tech: Technology) {
   font-weight: 600;
   margin: 0;
   color: var(--color-text);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-tight);
 }
 .technology-list__grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--widget-gap);
-  margin-top: var(--spacing-md);
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
 }
 @media (min-width: 640px) {
   .technology-list__grid {
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: var(--spacing-md);
+    gap: var(--spacing-xl);
   }
 }
-.loading,
-.empty {
-  padding: var(--spacing-lg);
-  text-align: center;
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  margin-top: var(--spacing-lg);
+}
+.loading__skeleton {
+  border-radius: var(--radius-md);
+}
+.loading {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
   background: color-mix(in srgb, var(--color-bg-soft) 50%, var(--color-bg-card));
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-md);
-  margin-top: var(--spacing-md);
 }
 </style>

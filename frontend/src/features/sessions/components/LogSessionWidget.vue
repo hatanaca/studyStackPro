@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Card from 'primevue/card'
 import LogSessionForm from './LogSessionForm.vue'
 import type { SessionSavedPayload } from './LogSessionForm.vue'
 import { useAnalyticsStore } from '@/stores/analytics.store'
@@ -23,10 +22,28 @@ function onSuccess(payload: SessionSavedPayload) {
 </script>
 
 <template>
-  <Card>
-    <template #title>Registrar estudo</template>
-    <template #content>
-      <LogSessionForm @success="onSuccess" />
-    </template>
-  </Card>
+  <section class="log-session-widget">
+    <h2 class="log-session-widget__title">Registrar estudo</h2>
+    <LogSessionForm @success="onSuccess" />
+  </section>
 </template>
+
+<style scoped>
+.log-session-widget {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+}
+.log-session-widget__title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: var(--leading-snug);
+}
+</style>

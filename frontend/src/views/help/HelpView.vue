@@ -59,15 +59,16 @@ const faqItems = [
   overflow: hidden;
 }
 .help-view__card + .help-view__card {
-  margin-top: var(--page-section-gap);
+  margin-top: var(--spacing-xl);
 }
 .help-view__answer,
 .help-view__text {
   font-size: var(--text-sm);
   color: var(--color-text);
-  line-height: 1.6;
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-tight);
   margin: 0;
-  padding: 0 var(--spacing-xs);
+  padding: 0 var(--spacing-sm);
 }
 .help-view__text {
   color: var(--color-text-muted);

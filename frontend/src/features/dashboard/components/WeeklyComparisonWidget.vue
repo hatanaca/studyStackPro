@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import BarChart from '@/components/charts/BarChart.vue'
+import { computed, defineAsyncComponent } from 'vue'
+const BarChart = defineAsyncComponent(() => import('@/components/charts/BarChart.vue'))
+import EmptyState from '@/components/ui/EmptyState.vue'
 import Skeleton from 'primevue/skeleton'
 import { formatShortDate } from '@/utils/formatters'
 import { useAnalyticsStore } from '@/stores/analytics.store'
@@ -47,6 +48,13 @@ const chartData = computed(() => {
         class="skeleton-bar"
       />
     </div>
+    <EmptyState
+      v-else-if="!chartData || !chartData.values?.length"
+      title="Nenhuma comparação semanal"
+      description="Registre sessões ao longo das semanas para ver o gráfico de comparação."
+      icon="📊"
+      :hide-action="true"
+    />
     <BarChart
       v-else
       :data="chartData"
@@ -86,10 +94,13 @@ const chartData = computed(() => {
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) 0;
 }
+.chart-skeleton :deep(.p-skeleton) {
+  border-radius: var(--radius-sm);
+}
 .skeleton-bar {
   width: 80%;
 }
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .weekly-widget {
     padding: var(--widget-padding-sm);
   }

@@ -7,7 +7,7 @@ const props = defineProps<{
   metrics: UserMetrics | null
 }>()
 
-function formatHours(hours: number): string {
+function formatTotalHours(hours: number): string {
   if (hours <= 0) return '0h'
   const h = Math.floor(hours)
   const m = Math.round((hours - h) * 60)
@@ -29,7 +29,7 @@ const items = computed(() => {
     },
     {
       label: 'Total de horas',
-      value: formatHours(props.metrics?.total_hours ?? 0),
+      value: formatTotalHours(props.metrics?.total_hours ?? 0),
       icon: '⏱',
       variant: 'primary' as StatVariant,
     },
@@ -50,7 +50,7 @@ const items = computed(() => {
   >
     <Card
       v-for="(item, i) in items"
-      :key="i"
+      :key="item.label"
       class="kpi-card"
       :class="`kpi-card--${item.variant}`"
     >
@@ -73,7 +73,7 @@ const items = computed(() => {
   grid-template-columns: 1fr;
   gap: var(--widget-gap);
 }
-@media (min-width: 480px) {
+@media (min-width: 640px) {
   .kpi-cards {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -90,20 +90,34 @@ const items = computed(() => {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
+.kpi-card:focus-within {
+  box-shadow: var(--shadow-md);
+}
 .kpi-card__inner {
   display: flex;
   align-items: flex-start;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
-.kpi-card__icon { font-size: 1.25rem; line-height: 1; opacity: 0.9; }
+.kpi-card__icon {
+  font-size: var(--icon-size-md);
+  line-height: var(--leading-tight);
+  opacity: 0.9;
+}
 .kpi-card__content { display: flex; flex-direction: column; gap: var(--spacing-xs); min-width: 0; }
 .kpi-card__label { font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600; }
-.kpi-card__value { font-size: var(--text-xl); font-weight: 700; color: var(--color-text); letter-spacing: -0.02em; line-height: 1.2; }
+.kpi-card__value {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+}
 .kpi-card--primary .kpi-card__value { color: var(--color-primary); }
 .kpi-card--success .kpi-card__value { color: var(--color-success); }
 .kpi-card--warning .kpi-card__value { color: var(--color-warning); }
 .kpi-card--error .kpi-card__value { color: var(--color-error); }
-@media (max-width: 479px) {
+@media (max-width: 640px) {
   .kpi-card__inner { flex-direction: row; align-items: center; }
   .kpi-card { min-height: auto; padding: var(--widget-padding-sm); }
   .kpi-card__content { flex: 1; min-width: 0; }

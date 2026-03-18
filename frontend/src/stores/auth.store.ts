@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User } from '@/types/domain.types'
 import { authApi } from '@/api/modules/auth.api'
+import { resetBackgroundRefresh } from '@/router/guards'
 
 /** Chave do localStorage para o token JWT */
 const TOKEN_KEY = 'studytrack_token'
@@ -73,17 +74,41 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem(USER_KEY, JSON.stringify(updated))
   }
 
+  /**
+   * Limpa sessão local sem chamar a API (usado no 401 para evitar loop:
+   * logout → 401 → logout → … e saturação do PHP-FPM).
+   */
+  function clearSessionLocally() {
+    token.value = null
+    user.value = null
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(USER_KEY)
+    resetBackgroundRefresh()
+  }
+
   /** Revoga token na API e limpa store + localStorage */
   async function logout() {
+    const hadToken = !!token.value
     try {
-      await authApi.logout()
+      if (hadToken) {
+        await authApi.logout()
+      }
+    } catch {
+      /* rede / token já inválido */
     } finally {
-      token.value = null
-      user.value = null
-      localStorage.removeItem(TOKEN_KEY)
-      localStorage.removeItem(USER_KEY)
+      clearSessionLocally()
     }
   }
 
-  return { token, user, isAuthenticated, login, register, fetchMe, logout, updateUser }
+  return {
+    token,
+    user,
+    isAuthenticated,
+    login,
+    register,
+    fetchMe,
+    logout,
+    clearSessionLocally,
+    updateUser,
+  }
 })

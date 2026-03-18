@@ -67,7 +67,7 @@ withDefaults(
 }
 .page-view__header {
   margin-bottom: var(--page-header-margin-bottom);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-bg-card) 85%, var(--color-bg-soft));
@@ -80,7 +80,7 @@ withDefaults(
 .page-hint {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
-  line-height: 1.45;
+  line-height: var(--leading-normal);
   margin: 0;
   padding: var(--spacing-xs) 0 0;
   border-top: 1px solid var(--color-border);
@@ -93,7 +93,7 @@ withDefaults(
   gap: var(--page-section-gap);
   padding-block: var(--page-content-padding-block);
 }
-@media (max-width: var(--screen-sm)) {
+@media (max-width: 640px) {
   .page-view__header {
     padding: var(--spacing-sm);
   }

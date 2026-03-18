@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import InputText from 'primevue/inputtext'
-import Button from 'primevue/button'
+import BaseInput from '@/components/ui/BaseInput.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -52,38 +52,32 @@ defineExpose({
     class="login-form"
     @submit.prevent="onSubmit"
   >
-    <div class="p-field">
-      <label for="login-email">E-mail</label>
-      <InputText
-        id="login-email"
-        v-model="email"
-        type="email"
-        placeholder="E-mail"
-        autocomplete="email"
-        class="w-full"
-        :class="{ 'p-invalid': emailError }"
-      />
-      <small v-if="emailError" class="p-error">{{ emailError }}</small>
-    </div>
-    <div class="p-field">
-      <label for="login-password">Senha</label>
-      <InputText
-        id="login-password"
-        v-model="password"
-        type="password"
-        placeholder="Senha"
-        autocomplete="current-password"
-        class="w-full"
-        :class="{ 'p-invalid': passwordError }"
-      />
-      <small v-if="passwordError" class="p-error">{{ passwordError }}</small>
-    </div>
-    <Button
-      type="submit"
-      :label="props.loading ? 'Entrando...' : 'Entrar'"
-      :loading="props.loading"
-      class="w-full"
+    <BaseInput
+      id="login-email"
+      v-model="email"
+      type="email"
+      label="E-mail"
+      placeholder="E-mail"
+      autocomplete="email"
+      :error="emailError"
     />
+    <BaseInput
+      id="login-password"
+      v-model="password"
+      type="password"
+      label="Senha"
+      placeholder="Senha"
+      autocomplete="current-password"
+      :error="passwordError"
+    />
+    <BaseButton
+      type="submit"
+      variant="primary"
+      :disabled="props.loading"
+      class="login-form__submit"
+    >
+      {{ props.loading ? 'Entrando...' : 'Entrar' }}
+    </BaseButton>
   </form>
 </template>
 
@@ -91,13 +85,11 @@ defineExpose({
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--form-section-gap);
 }
-.p-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+.login-form__submit {
+  width: 100%;
+  min-height: var(--form-input-height);
+  margin-top: var(--spacing-xs);
 }
-.p-field label { font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); }
-.w-full { width: 100%; }
 </style>

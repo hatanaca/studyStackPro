@@ -54,7 +54,7 @@ function onSubmit(e: Event) {
 <style scoped>
 .session-form button {
   min-height: var(--input-height-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
   font-size: var(--text-sm);
   font-weight: 600;
   background: var(--color-primary);

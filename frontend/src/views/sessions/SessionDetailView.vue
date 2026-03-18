@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getApiErrorMessage } from '@/api/client'
 import { sessionsApi } from '@/api/modules/sessions.api'
@@ -55,6 +55,10 @@ async function fetchSession() {
 }
 
 onMounted(() => {
+  fetchSession()
+})
+
+watch(id, () => {
   fetchSession()
 })
 
@@ -162,31 +166,52 @@ function goBack() {
 
 <style scoped>
 .session-detail__loading {
-  padding: var(--spacing-md) 0;
+  padding: var(--spacing-lg) 0;
 }
 .session-detail__skeleton {
   min-height: 8rem;
   border-radius: var(--radius-md);
 }
 .session-detail__actions {
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
-.session-detail__message { margin-bottom: var(--spacing-md); }
+.session-detail__message { margin-bottom: var(--spacing-lg); }
 .session-detail__back {
-  margin-top: var(--spacing-md);
+  margin-top: var(--spacing-lg);
 }
-.key-value-list { margin: 0; display: flex; flex-direction: column; gap: 0; }
+.key-value-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
 .key-value-list__row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   align-items: baseline;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
   padding: var(--spacing-sm) 0;
   border-bottom: 1px solid var(--color-border);
 }
-.key-value-list__row:last-child { border-bottom: none; }
-.key-value-list__term { font-size: var(--text-xs); font-weight: 600; color: var(--color-text-muted); margin: 0; }
-.key-value-list__value { font-size: var(--text-sm); color: var(--color-text); margin: 0; word-break: break-word; }
+.key-value-list__row:last-child {
+  border-bottom: none;
+}
+.key-value-list__term {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+.key-value-list__value {
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-normal);
+  color: var(--color-text);
+  margin: 0;
+  word-break: break-word;
+}
 .session-detail__card {
   background: var(--color-bg-card);
   border-radius: var(--radius-md);
@@ -203,27 +228,28 @@ function goBack() {
   background: var(--session-tech-color, var(--color-primary));
 }
 .session-detail__card-inner {
-  padding: var(--spacing-lg) var(--spacing-xl);
+  padding: var(--spacing-xl) var(--spacing-2xl);
 }
 .session-detail__badge-wrap {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
   flex-wrap: wrap;
-  margin-bottom: var(--spacing-lg);
-  padding-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-lg);
   border-bottom: 1px solid var(--color-border);
 }
 .session-detail__duration {
   font-size: var(--text-lg);
   font-weight: 700;
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
   color: var(--color-text);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
 }
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .session-detail__card-inner {
-    padding: var(--spacing-md);
+    padding: var(--spacing-lg);
   }
 }
 </style>

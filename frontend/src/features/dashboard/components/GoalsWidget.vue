@@ -100,7 +100,7 @@ function formatMinutes(m: number): string {
 .goals-widget__content {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
   min-height: var(--widget-card-min-height);
   justify-content: center;
 }
@@ -108,7 +108,7 @@ function formatMinutes(m: number): string {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   margin: 0;
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 .goals-widget__desc strong {
   color: var(--color-text);

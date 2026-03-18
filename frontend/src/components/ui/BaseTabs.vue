@@ -102,7 +102,7 @@ provide('tabs', {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-text-muted);
@@ -157,6 +157,6 @@ provide('tabs', {
   margin-bottom: -1px;
 }
 .base-tabs__panels {
-  padding: var(--spacing-md) 0;
+  padding: var(--spacing-lg) 0;
 }
 </style>

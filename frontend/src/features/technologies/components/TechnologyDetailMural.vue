@@ -190,30 +190,35 @@ watch(() => props.technologyId, loadFromStorage)
   font-size: var(--text-base);
   font-weight: 600;
   color: var(--color-text);
-  margin: 0 0 var(--spacing-xs);
+  margin: 0 0 var(--spacing-sm);
+  letter-spacing: var(--tracking-tight);
 }
 .tech-mural__subtitle {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
-  margin: 0 0 var(--spacing-md);
-  line-height: 1.45;
+  margin: 0 0 var(--spacing-lg);
+  line-height: var(--leading-snug);
 }
 .tech-mural__add {
   display: flex;
   gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 .tech-mural__form {
   display: flex;
   gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
   align-items: flex-start;
+}
+.tech-mural__add :deep(.p-button:focus-visible),
+.tech-mural__form :deep(.p-button:focus-visible) {
+  box-shadow: var(--shadow-focus);
 }
 .tech-mural__input {
   flex: 1;
   min-width: 0;
   min-height: var(--input-height-sm);
-  padding: 0.45rem 0.75rem;
+  padding: var(--spacing-sm) var(--spacing-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
@@ -224,7 +229,11 @@ watch(() => props.technologyId, loadFromStorage)
 .tech-mural__input:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  box-shadow: var(--shadow-focus);
+}
+.tech-mural__input:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 .tech-mural__textarea {
   flex: 1;
@@ -242,12 +251,16 @@ watch(() => props.technologyId, loadFromStorage)
 .tech-mural__textarea:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  box-shadow: var(--shadow-focus);
+}
+.tech-mural__textarea:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 .tech-mural__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 .tech-mural__item {
   position: relative;
@@ -282,7 +295,7 @@ watch(() => props.technologyId, loadFromStorage)
   color: var(--color-text);
   border-left: 3px solid var(--color-primary);
   background: var(--color-bg-soft);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 .tech-mural__remove {
   position: absolute;
@@ -302,12 +315,16 @@ watch(() => props.technologyId, loadFromStorage)
 }
 .tech-mural__remove:hover {
   background: var(--color-error);
-  color: #fff;
+  color: var(--color-primary-contrast);
+}
+.tech-mural__remove:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 .tech-mural__empty {
   margin: 0;
   font-size: var(--text-sm);
   color: var(--color-text-muted);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 </style>

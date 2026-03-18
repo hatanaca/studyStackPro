@@ -44,7 +44,7 @@ const technologiesStore = useTechnologiesStore()
 .sessions-view__by-tech {
   margin-bottom: var(--page-section-gap);
 }
-.sessions-view__section-header { margin-bottom: var(--spacing-md); }
+.sessions-view__section-header { margin-bottom: var(--spacing-lg); }
 .sessions-view__section-title {
   font-size: var(--text-base);
   font-weight: 600;
@@ -55,7 +55,7 @@ const technologiesStore = useTechnologiesStore()
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   margin: 0;
-  line-height: 1.45;
+  line-height: var(--leading-snug);
 }
 .sessions-view__widgets {
   display: grid;

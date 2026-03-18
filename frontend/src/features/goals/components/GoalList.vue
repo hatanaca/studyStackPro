@@ -2,9 +2,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useConfirm } from 'primevue/useconfirm'
 import GoalCard from './GoalCard.vue'
-import Message from 'primevue/message'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
+import Skeleton from 'primevue/skeleton'
 import GoalForm from './GoalForm.vue'
 import type { Goal } from '@/types/goals.types'
 import type { CreateGoalPayload } from '@/types/goals.types'
@@ -77,8 +78,13 @@ async function handleUpdate(payload: { id: string; target_value: number }) {
     <div
       v-if="goalsStore.loading"
       class="goal-list__loading"
+      role="status"
+      aria-live="polite"
+      aria-label="Carregando metas"
     >
-      Carregando metas...
+      <Skeleton class="goal-list__skeleton" height="6rem" />
+      <Skeleton class="goal-list__skeleton" height="6rem" />
+      <Skeleton class="goal-list__skeleton" height="6rem" />
     </div>
     <template v-else>
       <div
@@ -93,16 +99,15 @@ async function handleUpdate(payload: { id: string; target_value: number }) {
           @delete="confirmDelete"
         />
       </div>
-      <Message
+      <EmptyState
         v-else
-        severity="info"
-        :closable="false"
-        class="goal-list__empty"
-      >
-        <strong>Nenhuma meta</strong><br>
-        Crie uma meta de estudo para acompanhar seu progresso.
-        <Button label="Nova meta" size="small" class="mt-2" @click="showForm = true" />
-      </Message>
+        icon="🎯"
+        title="Nenhuma meta"
+        description="Crie uma meta de estudo para acompanhar seu progresso."
+        action-label="Nova meta"
+        :hide-action="false"
+        @action="showForm = true"
+      />
     </template>
 
     <Dialog
@@ -140,19 +145,22 @@ async function handleUpdate(payload: { id: string; target_value: number }) {
 <style scoped>
 .goal-list__toolbar {
   margin-bottom: var(--page-section-gap);
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-lg) var(--spacing-xl);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
 }
 .goal-list__loading {
-  padding: var(--spacing-xl);
-  text-align: center;
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-2xl);
   background: color-mix(in srgb, var(--color-bg-soft) 50%, var(--color-bg-card));
   border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+}
+.goal-list__skeleton {
   border-radius: var(--radius-md);
 }
 .goal-list__grid {
