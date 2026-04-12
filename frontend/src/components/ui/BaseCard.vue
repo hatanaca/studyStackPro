@@ -32,16 +32,16 @@ defineProps<{
 <style scoped>
 .base-card {
   background: var(--color-bg-card);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
+  border-radius: var(--card-chrome-radius);
+  box-shadow: var(--card-chrome-shadow);
+  border: var(--card-chrome-border);
   overflow: visible;
   transition: box-shadow var(--duration-normal) var(--ease-in-out),
     border-color var(--duration-fast) ease;
 }
 .base-card:hover {
   box-shadow: var(--shadow-card-hover);
-  border-color: var(--color-border);
+  border-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-border));
 }
 .base-card__header {
   display: flex;
@@ -51,12 +51,13 @@ defineProps<{
   padding-bottom: 0;
 }
 .base-card__title {
-  font-size: var(--widget-title-size, var(--text-sm));
-  font-weight: var(--widget-title-weight, 600);
+  font-family: var(--font-display);
+  font-size: var(--widget-title-size, var(--text-base));
+  font-weight: var(--widget-title-weight, 700);
   color: var(--color-text);
   margin: 0;
   letter-spacing: var(--tracking-tight);
-  line-height: var(--leading-snug);
+  line-height: var(--leading-tight);
 }
 .base-card__body {
   padding: var(--widget-padding, var(--spacing-lg));

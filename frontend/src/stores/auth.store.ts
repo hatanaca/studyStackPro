@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User } from '@/types/domain.types'
 import { authApi } from '@/api/modules/auth.api'
-import { resetBackgroundRefresh } from '@/router/guards'
+import { useSessionsStore } from '@/stores/sessions.store'
 
 /** Chave do localStorage para o token JWT */
 const TOKEN_KEY = 'studytrack_token'
@@ -26,6 +26,11 @@ function loadCachedUser(): User | null {
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem(TOKEN_KEY))
   const user = ref<User | null>(loadCachedUser())
+  /**
+   * True após login/register ou GET /auth/me com sucesso.
+   * TanStack Query e outros devem usar isso em `enabled` para não disparar antes do guard validar o JWT.
+   */
+  const sessionValidated = ref(false)
 
   /** Computed: true se há token (usuário considerado autenticado) */
   const isAuthenticated = computed(() => !!token.value)
@@ -39,6 +44,9 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = u
       localStorage.setItem(TOKEN_KEY, t)
       localStorage.setItem(USER_KEY, JSON.stringify(u))
+      sessionValidated.value = true
+    } else {
+      throw new Error((data as unknown as { error?: { message?: string } }).error?.message ?? 'Credenciais inválidas.')
     }
   }
 
@@ -56,15 +64,30 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = u
       localStorage.setItem(TOKEN_KEY, t)
       localStorage.setItem(USER_KEY, JSON.stringify(u))
+      sessionValidated.value = true
+    } else {
+      throw new Error((data as unknown as { error?: { message?: string } }).error?.message ?? 'Falha no cadastro. Verifique os dados.')
     }
   }
 
   /** Atualiza dados do usuário na API e sincroniza cache local */
   async function fetchMe() {
-    const { data } = await authApi.me()
-    if (data.success && data.data) {
-      user.value = data.data
-      localStorage.setItem(USER_KEY, JSON.stringify(data.data))
+    try {
+      const { data } = await authApi.me()
+      if (data.success && data.data) {
+        user.value = data.data
+        localStorage.setItem(USER_KEY, JSON.stringify(data.data))
+        sessionValidated.value = true
+      }
+    } catch (e) {
+      const status = (e as { response?: { status?: number } })?.response?.status
+      if (status === 401) {
+        // Token inválido — interceptor já limpa
+      } else if (token.value) {
+        // Erro de rede com token — registrar listener de reconexão
+        registerOnlineRecovery()
+      }
+      throw e
     }
   }
 
@@ -81,9 +104,28 @@ export const useAuthStore = defineStore('auth', () => {
   function clearSessionLocally() {
     token.value = null
     user.value = null
+    sessionValidated.value = false
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
-    resetBackgroundRefresh()
+    try { useSessionsStore().$reset() } catch { /* store não inicializada */ }
+    if (onlineHandler) {
+      window.removeEventListener('online', onlineHandler)
+      onlineHandler = null
+    }
+  }
+
+  let onlineHandler: (() => void) | null = null
+
+  function registerOnlineRecovery() {
+    if (onlineHandler) return
+    onlineHandler = () => {
+      if (token.value && !sessionValidated.value) {
+        fetchMe().catch(() => { /* retry silencioso */ })
+      }
+      window.removeEventListener('online', onlineHandler!)
+      onlineHandler = null
+    }
+    window.addEventListener('online', onlineHandler)
   }
 
   /** Revoga token na API e limpa store + localStorage */
@@ -103,6 +145,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     token,
     user,
+    sessionValidated,
     isAuthenticated,
     login,
     register,

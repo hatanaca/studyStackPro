@@ -58,7 +58,7 @@ function onSubmit(e: Event) {
   font-size: var(--text-sm);
   font-weight: 600;
   background: var(--color-primary);
-  color: var(--color-primary-contrast, #fff);
+  color: var(--color-primary-contrast);
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -67,8 +67,12 @@ function onSubmit(e: Event) {
 .session-form button:hover:not(:disabled) {
   background: var(--color-primary-hover);
 }
+.session-form button:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
 .session-form button:disabled {
-  opacity: 0.7;
+  opacity: var(--state-disabled-opacity);
   cursor: not-allowed;
 }
 </style>

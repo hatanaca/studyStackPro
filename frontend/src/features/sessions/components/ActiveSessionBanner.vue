@@ -1,19 +1,25 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { prefetchSessionFocusView } from '@/router/prefetch'
 import { useEndSession } from '@/features/sessions/composables/useEndSession'
 
 const { activeSession, formattedTime, ending, endSession } = useEndSession()
 const router = useRouter()
+
+function goToFocus() {
+  router.push({ name: 'session-focus' })
+}
 </script>
 
 <template>
   <div
     v-if="activeSession"
     class="active-session-banner"
+    @mouseenter="prefetchSessionFocusView"
   >
     <div class="active-session-banner__content">
       <span class="active-session-banner__label">Sessão ativa</span>
-      <span class="active-session-banner__time">{{ formattedTime }}</span>
+      <span class="active-session-banner__time" role="timer" aria-live="off" aria-atomic="true">{{ formattedTime }}</span>
       <span
         v-if="activeSession.technology"
         class="active-session-banner__tech"
@@ -25,7 +31,7 @@ const router = useRouter()
       type="button"
       class="active-session-banner__btn active-session-banner__btn--ghost"
       aria-label="Ir para modo foco da sessão"
-      @click="router.push('/session')"
+      @click="goToFocus"
     >
       Modo foco
     </button>
@@ -83,7 +89,7 @@ const router = useRouter()
   opacity: 0.95;
 }
 .active-session-banner__btn {
-  min-height: 2.75rem; /* 44px touch target a11y */
+  min-height: var(--touch-target-min);
   padding: var(--spacing-sm) var(--spacing-lg);
   background: color-mix(in srgb, var(--color-primary-contrast) 20%, transparent);
   color: var(--color-primary-contrast);
@@ -122,7 +128,7 @@ const router = useRouter()
   }
   .active-session-banner__btn {
     width: 100%;
-    min-height: 2.75rem; /* 44px touch target em mobile */
+    min-height: var(--touch-target-min);
   }
 }
 </style>

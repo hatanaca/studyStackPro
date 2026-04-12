@@ -1,0 +1,1539 @@
++---------------------------------------------------------------------------------------------+
+| STUDYTRACK PRO                                                                              |
+|                                                                                             |
+| Modelagem Relacional Otimizada do Banco de Dados                                            |
+|                                                                                             |
+| PostgreSQL 16 • Dois Schemas • CQRS Parcial • Índices Estratégicos • Triggers • Constraints |
++---------------------------------------------------------------------------------------------+
+
++----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ESCOPO DESTE DOCUMENTO                                                                                                                                                     |
++----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Objetivo: Especificar todas as tabelas, tipos, constraints, índices, triggers e estratégias de particionamento do banco de dados do StudyTrack Pro.                        |
+|                                                                                                                                                                            |
+| Princípios: Integridade garantida pelo banco • Redundância mínima nos dados transacionais • Pré-agregação nos dados analíticos • Desempenho previsível em qualquer volume. |
+|                                                                                                                                                                            |
+| Convencões: PK = amarelo • FK = verde-teal • Tipos em roxo • snake_case em todas as colunas • UUIDs como PKs (gen_random_uuid()).                                          |
++----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+1. Estratégia de Schemas
+
+O banco de dados utiliza dois schemas PostgreSQL dentro de uma única instância, implementando um padrão CQRS simplificado: operações de escrita operam exclusivamente no schema transacional, enquanto leituras do dashboard consomem dados pré-calculados do schema analítico. Essa separação é a decisão arquitetural mais importante do banco.
+
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Schema       Propósito                                Acesso                           Quem escreve                   Quem lê
+  ------------ ---------------------------------------- -------------------------------- ------------------------------ --------------------------------------
+  public       Dados transacionais (fonte da verdade)   Leitura + Escrita                API Laravel (CRUD)             API Laravel, Jobs
+
+  analytics    Dados pré-calculados para dashboard      Leitura (API) + Escrita (Jobs)   Queue Workers exclusivamente   API Laravel (dashboard), Cache Redis
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  ⚠️ Por que não calcular métricas on-the-fly?
+
+  Calcular “total de horas por tecnologia” diretamente na tabela study_sessions exige um GROUP BY com JOIN em cada requisição de dashboard. Com 10.000 sessões por usuário, isso representa dezenas de milissegundos por query — inaceitável para uma página que abre em tempo real. O schema analytics resolve: a leitura do dashboard sempre é um SELECT simples em uma linha já calculada, independente do volume de dados históricos.
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+1.1 Configuração Inicial do PostgreSQL
+
++----------------------------------------------------------------------------------------------------------+
+| -- Habilita extensões necessárias                                                                        |
+|                                                                                                          |
+| CREATE EXTENSION IF NOT EXISTS "pgcrypto"; -- gen_random_uuid()                                          |
+|                                                                                                          |
+| CREATE EXTENSION IF NOT EXISTS "pg_trgm"; -- busca por trigrama (tecnologias)                            |
+|                                                                                                          |
+| CREATE EXTENSION IF NOT EXISTS "btree_gist"; -- índices de exclusão temporal                             |
+|                                                                                                          |
+| -- Cria o schema analítico                                                                               |
+|                                                                                                          |
+| CREATE SCHEMA IF NOT EXISTS analytics;                                                                   |
+|                                                                                                          |
+| -- Configura search_path para o Laravel encontrar ambos os schemas                                       |
+|                                                                                                          |
+| ALTER DATABASE studytrack SET search_path TO public, analytics;                                          |
+|                                                                                                          |
+| -- Usuário de aplicação com privilégios segmentados                                                      |
+|                                                                                                          |
+| CREATE ROLE app_user WITH LOGIN PASSWORD '${APP_DB_PASS}';                                               |
+|                                                                                                          |
+| GRANT USAGE ON SCHEMA public, analytics TO app_user;                                                     |
+|                                                                                                          |
+| GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_user;                         |
+|                                                                                                          |
+| GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA analytics TO app_user;                      |
+|                                                                                                          |
+| ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_user;    |
+|                                                                                                          |
+| ALTER DEFAULT PRIVILEGES IN SCHEMA analytics GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_user; |
++----------------------------------------------------------------------------------------------------------+
+
+2. Schema Transacional (public)
+
+Contém os dados operacionais brutos. Nenhuma agregação é calculada aqui. A integridade referencial é garantida por chaves estrangeiras com comportamentos de cascata explícitos para cada relação.
+
+2.1 Tabela users
+
+  -----------------------------------------------------------------------------------------------------------------------
+  Coluna              Tipo            Constraints        Descrição
+  ------------------- --------------- ------------------ ----------------------------------------------------------------
+  public.users                                           
+
+  id                  UUID            PK, DEFAULT        Identificador único. gen_random_uuid() no banco.
+
+  name                VARCHAR(255)    NOT NULL           Nome completo para exibição.
+
+  email               VARCHAR(255)    UNIQUE, NOT NULL   E-mail de login. Índice único garante unicidade.
+
+  password            VARCHAR(255)    NOT NULL           Hash bcrypt. Nunca armazenar em texto plano.
+
+  timezone            VARCHAR(50)     DEFAULT 'UTC'      Timezone do usuário. Usado para agrupar sessões por dia local.
+
+  locale              VARCHAR(10)     DEFAULT 'pt_BR'    Locale para formatação de datas/números no frontend.
+
+  avatar_url          TEXT            NULLABLE           URL do avatar. Armazenado externamente (S3 / local disk).
+
+  email_verified_at   TIMESTAMPTZ     NULLABLE           NULL = e-mail não verificado.
+
+  remember_token      VARCHAR(100)    NULLABLE           Token de sessão persistente do Laravel Sanctum.
+
+  created_at          TIMESTAMPTZ     DEFAULT NOW()      Data de cadastro.
+
+  updated_at          TIMESTAMPTZ     DEFAULT NOW()      Auto-atualizado via trigger.
+  -----------------------------------------------------------------------------------------------------------------------
+
++-----------------------------------------------------------------------+
+| CREATE TABLE public.users (                                           |
+|                                                                       |
+| id UUID PRIMARY KEY DEFAULT gen_random_uuid(),                        |
+|                                                                       |
+| name VARCHAR(255) NOT NULL,                                           |
+|                                                                       |
+| email VARCHAR(255) NOT NULL,                                          |
+|                                                                       |
+| password VARCHAR(255) NOT NULL,                                       |
+|                                                                       |
+| timezone VARCHAR(50) NOT NULL DEFAULT 'UTC',                          |
+|                                                                       |
+| locale VARCHAR(10) NOT NULL DEFAULT 'pt_BR',                          |
+|                                                                       |
+| avatar_url TEXT,                                                      |
+|                                                                       |
+| email_verified_at TIMESTAMPTZ,                                        |
+|                                                                       |
+| remember_token VARCHAR(100),                                          |
+|                                                                       |
+| created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),                        |
+|                                                                       |
+| updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),                        |
+|                                                                       |
+| CONSTRAINT uq_users_email UNIQUE (email)                              |
+|                                                                       |
+| );                                                                    |
+|                                                                       |
+| -- Índice para busca por e-mail (login)                               |
+|                                                                       |
+| CREATE INDEX idx_users_email ON public.users(email);                  |
+|                                                                       |
+| -- Trigger para auto-atualizar updated_at                             |
+|                                                                       |
+| CREATE TRIGGER trg_users_updated_at                                   |
+|                                                                       |
+| BEFORE UPDATE ON public.users                                         |
+|                                                                       |
+| FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();                    |
++-----------------------------------------------------------------------+
+
+2.2 Tabela technologies
+
+Tecnologias são criadas dinamicamente por cada usuário. O campo slug garante URLs amigáveis e unicidade por usuário. A constraint UNIQUE em (user_id, slug) é definida no banco, não apenas na aplicação, evitando race conditions em inserções concorrentes.
+
+  -----------------------------------------------------------------------------------------------------------------------------
+  Coluna                Tipo            Constraints               Descrição
+  --------------------- --------------- ------------------------- -------------------------------------------------------------
+  public.technologies                                             
+
+  id                    UUID            PK, DEFAULT               Identificador único.
+
+  user_id               UUID            FK → users.id, NOT NULL   Dono da tecnologia. CASCADE DELETE.
+
+  name                  VARCHAR(100)    NOT NULL                  Nome legível: 'Vue.js', 'Laravel', 'Docker'.
+
+  slug                  VARCHAR(100)    NOT NULL                  Slug URL-safe: 'vue-js', 'laravel'. Gerado na aplicação.
+
+  color                 CHAR(7)         DEFAULT '#3498DB'         Cor hexadecimal para exibição no dashboard.
+
+  icon                  VARCHAR(80)     NULLABLE                  Identificador de ícone (ex: 'devicon-vuejs-plain').
+
+  description           TEXT            NULLABLE                  Descrição opcional da tecnologia.
+
+  is_active             BOOLEAN         DEFAULT TRUE              Soft-disable: falso oculta do formulário, mantém histórico.
+
+  created_at            TIMESTAMPTZ     DEFAULT NOW()             Data de criação.
+
+  updated_at            TIMESTAMPTZ     DEFAULT NOW()             Auto-atualizado via trigger.
+  -----------------------------------------------------------------------------------------------------------------------------
+
++--------------------------------------------------------------------------------------+
+| CREATE TABLE public.technologies (                                                   |
+|                                                                                      |
+| id UUID PRIMARY KEY DEFAULT gen_random_uuid(),                                       |
+|                                                                                      |
+| user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,                 |
+|                                                                                      |
+| name VARCHAR(100) NOT NULL,                                                          |
+|                                                                                      |
+| slug VARCHAR(100) NOT NULL,                                                          |
+|                                                                                      |
+| color CHAR(7) NOT NULL DEFAULT '#3498DB'                                             |
+|                                                                                      |
+| CHECK (color ~ '^#[0-9A-Fa-f]{6}$'), -- valida hexadecimal                           |
+|                                                                                      |
+| icon VARCHAR(80),                                                                    |
+|                                                                                      |
+| description TEXT,                                                                    |
+|                                                                                      |
+| is_active BOOLEAN NOT NULL DEFAULT TRUE,                                             |
+|                                                                                      |
+| created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),                                       |
+|                                                                                      |
+| updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),                                       |
+|                                                                                      |
+| CONSTRAINT uq_tech_user_slug UNIQUE (user_id, slug),                                 |
+|                                                                                      |
+| CONSTRAINT uq_tech_user_name UNIQUE (user_id, name) -- evita duplicatas visuais      |
+|                                                                                      |
+| );                                                                                   |
+|                                                                                      |
+| -- Busca por nome (autocomplete com trigrama)                                        |
+|                                                                                      |
+| CREATE INDEX idx_tech_user_id ON public.technologies(user_id);                       |
+|                                                                                      |
+| CREATE INDEX idx_tech_name_trgm ON public.technologies USING gin(name gin_trgm_ops); |
++--------------------------------------------------------------------------------------+
+
+2.3 Tabela study_sessions
+
+Tabela central do sistema transacional. A coluna duration_min é uma Generated Column — calculada e armazenada automaticamente pelo PostgreSQL, sempre consistente com started_at e ended_at, sem lógica extra na aplicação.
+
+  ----------------------------------------------------------------------------------------------------------------------------
+  Coluna                  Tipo            Constraints               Descrição
+  ----------------------- --------------- ------------------------- ----------------------------------------------------------
+  public.study_sessions                                             
+
+  id                      UUID            PK, DEFAULT               Identificador único.
+
+  user_id                 UUID            FK → users.id, NOT NULL   Dono da sessão. CASCADE DELETE.
+
+  technology_id           UUID            FK → technologies.id      Tecnologia estudada. SET NULL se deletada.
+
+  started_at              TIMESTAMPTZ     NOT NULL                  Início da sessão (UTC).
+
+  ended_at                TIMESTAMPTZ     NULLABLE                  Fim da sessão. NULL = sessão em andamento.
+
+  duration_min            INTEGER         GENERATED STORED          Minutos = EPOCH(ended_at - started_at) / 60. Automático.
+
+  notes                   TEXT            NULLABLE                  Anotações livres da sessão.
+
+  mood                    SMALLINT        CHECK (1..5), NULLABLE    Humor ao estudar. 1=Muito ruim, 5=Ótimo.
+
+  focus_score             SMALLINT        CHECK (1..10), NULLABLE   Auto-avaliação de foco. Escala 1–10.
+
+  created_at              TIMESTAMPTZ     DEFAULT NOW()             Data de registro.
+
+  updated_at              TIMESTAMPTZ     DEFAULT NOW()             Auto-atualizado via trigger.
+  ----------------------------------------------------------------------------------------------------------------------------
+
++---------------------------------------------------------------------------+
+| CREATE TABLE public.study_sessions (                                      |
+|                                                                           |
+| id UUID PRIMARY KEY DEFAULT gen_random_uuid(),                            |
+|                                                                           |
+| user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,      |
+|                                                                           |
+| technology_id UUID REFERENCES public.technologies(id) ON DELETE SET NULL, |
+|                                                                           |
+| started_at TIMESTAMPTZ NOT NULL,                                          |
+|                                                                           |
+| ended_at TIMESTAMPTZ,                                                     |
+|                                                                           |
+| -- GENERATED ALWAYS AS STORED: calculado e armazenado pelo PostgreSQL.    |
+|                                                                           |
+| -- Nunca desincroniza com os timestamps. Sem triggers. Sem lógica na app. |
+|                                                                           |
+| duration_min INTEGER GENERATED ALWAYS AS (                                |
+|                                                                           |
+| CASE WHEN ended_at IS NOT NULL                                            |
+|                                                                           |
+| THEN EXTRACT(EPOCH FROM (ended_at - started_at))::INTEGER / 60            |
+|                                                                           |
+| ELSE NULL                                                                 |
+|                                                                           |
+| END                                                                       |
+|                                                                           |
+| ) STORED,                                                                 |
+|                                                                           |
+| notes TEXT,                                                               |
+|                                                                           |
+| mood SMALLINT CHECK (mood BETWEEN 1 AND 5),                               |
+|                                                                           |
+| focus_score SMALLINT CHECK (focus_score BETWEEN 1 AND 10),                |
+|                                                                           |
+| created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),                            |
+|                                                                           |
+| updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),                            |
+|                                                                           |
+| -- Constraints de negócio garantidas pelo banco                           |
+|                                                                           |
+| CONSTRAINT chk_session_end_after_start                                    |
+|                                                                           |
+| CHECK (ended_at IS NULL OR ended_at > started_at),                        |
+|                                                                           |
+| CONSTRAINT chk_session_min_duration                                       |
+|                                                                           |
+| CHECK (ended_at IS NULL OR ended_at - started_at >= INTERVAL '1 minute')  |
+|                                                                           |
+| );                                                                        |
++---------------------------------------------------------------------------+
+
+2.3.1 Índices Estratégicos de study_sessions
+
+Os índices abaixo foram desenhados a partir das queries mais frequentes: listagem por usuário (paginada, filtrada por data e tecnologia) e agregações periódicas dos jobs.
+
++--------------------------------------------------------------------------------------------+
+| -- Índice principal: listagem de sessões por usuário em ordem cronológica inversa          |
+|                                                                                            |
+| -- Cobre: SELECT * FROM study_sessions WHERE user_id = ? ORDER BY started_at DESC          |
+|                                                                                            |
+| CREATE INDEX idx_sessions_user_date                                                        |
+|                                                                                            |
+| ON public.study_sessions(user_id, started_at DESC);                                        |
+|                                                                                            |
+| -- Filtro combinado: usuário + tecnologia (usado na página de tecnologia)                  |
+|                                                                                            |
+| CREATE INDEX idx_sessions_user_tech                                                        |
+|                                                                                            |
+| ON public.study_sessions(user_id, technology_id, started_at DESC);                         |
+|                                                                                            |
+| -- Índice parcial: sessões em andamento (ended_at IS NULL)                                 |
+|                                                                                            |
+| -- Apenas as linhas com ended_at NULL são indexadas. Custo mínimo.                         |
+|                                                                                            |
+| CREATE INDEX idx_sessions_in_progress                                                      |
+|                                                                                            |
+| ON public.study_sessions(user_id)                                                          |
+|                                                                                            |
+| WHERE ended_at IS NULL;                                                                    |
+|                                                                                            |
+| -- Índice para agregações por data (jobs de recalculo de métricas)                         |
+|                                                                                            |
+| -- Cobre: GROUP BY DATE(started_at AT TIME ZONE timezone)                                  |
+|                                                                                            |
+| CREATE INDEX idx_sessions_started_brin                                                     |
+|                                                                                            |
+| ON public.study_sessions USING BRIN(started_at);                                           |
+|                                                                                            |
+| -- BRIN é ideal para colunas temporais com inserção sequencial (baixo overhead de escrita) |
++--------------------------------------------------------------------------------------------+
+
+2.4 Tabela personal_access_tokens (Laravel Sanctum)
+
+Gerenciada automaticamente pelo Sanctum. Listada aqui para visibilidade da modelagem completa.
+
+  ---------------------------------------------------------------------------------------------------------------------------------
+  Coluna                          Tipo            Constraints        Descrição
+  ------------------------------- --------------- ------------------ --------------------------------------------------------------
+  public.personal_access_tokens                                      
+
+  id                              BIGINT          PK, AUTO           ID sequencial.
+
+  tokenable_type                  VARCHAR(255)    NOT NULL           Polymorphic type. Sempre 'App\\Models\\User'.
+
+  tokenable_id                    UUID            NOT NULL           FK polimórfica para users.id.
+
+  name                            VARCHAR(255)    NOT NULL           Nome do token ('api-token', 'mobile').
+
+  token                           VARCHAR(64)     UNIQUE, NOT NULL   Hash SHA-256 do token. O token bruto só é retornado uma vez.
+
+  abilities                       TEXT            NULLABLE           JSON de permissões: ["read", "write"].
+
+  expires_at                      TIMESTAMPTZ     NULLABLE           TTL do token. NULL = sem expiração.
+
+  last_used_at                    TIMESTAMPTZ     NULLABLE           Auditoria de uso do token.
+
+  created_at                      TIMESTAMPTZ     DEFAULT NOW()      
+  ---------------------------------------------------------------------------------------------------------------------------------
+
+2.5 Tabela jobs (Queue Backend)
+
+Tabela gerenciada pelo Laravel Queue. Com o driver database, cada job pendente é uma linha. Em produção, o Redis substitui essa tabela, mas ela é documentada para referência de estrutura.
+
+  ----------------------------------------------------------------------------------------------------------------------
+  Coluna           Tipo            Constraints      Descrição
+  ---------------- --------------- ---------------- --------------------------------------------------------------------
+  public.jobs                                       
+
+  id               BIGINT          PK, AUTO         ID sequencial.
+
+  queue            VARCHAR(255)    NOT NULL         Nome da fila: 'metrics', 'notifications', 'default'.
+
+  payload          LONGTEXT        NOT NULL         JSON serializado do job com toda a informação necessária.
+
+  attempts         TINYINT         NOT NULL         Número de tentativas já realizadas.
+
+  reserved_at      INTEGER         NULLABLE         Unix timestamp de quando um worker reservou o job.
+
+  available_at     INTEGER         NOT NULL         Unix timestamp de quando o job pode ser processado (delayed jobs).
+
+  created_at       INTEGER         NOT NULL         Unix timestamp de criação.
+  ----------------------------------------------------------------------------------------------------------------------
+
+3. Schema Analítico (analytics)
+
+Contém exclusivamente dados pré-calculados. Nenhuma aplicação de usuário escreve diretamente aqui — somente os Queue Workers via MetricsAggregator. As tabelas são otimizadas para leitura: estrutura desnormalizada intencionalmente, sem JOINs necessários para o dashboard.
+
+3.1 Tabela analytics.user_metrics
+
+Um registro por usuário. Sempre sobrescrito (UPSERT) após recalculo. Contém os KPIs exibidos no topo do dashboard.
+
+  ------------------------------------------------------------------------------------------------------------------------------
+  Coluna                   Tipo            Constraints         Descrição
+  ------------------------ --------------- ------------------- -----------------------------------------------------------------
+  analytics.user_metrics                                       
+
+  user_id                  UUID            PK, FK → users.id   Um registro por usuário.
+
+  total_sessions           INTEGER         DEFAULT 0           Total de sessões já finalizadas.
+
+  total_minutes            INTEGER         DEFAULT 0           Soma total de duration_min de todas as sessões.
+
+  total_hours              NUMERIC(8,1)    GENERATED STORED    total_minutes / 60.0. Gerado para eliminar cálculo no frontend.
+
+  avg_session_min          NUMERIC(8,2)    DEFAULT 0           Média de minutos por sessão.
+
+  longest_session_min      INTEGER         DEFAULT 0           Duração da sessão mais longa (minutos).
+
+  shortest_session_min     INTEGER         DEFAULT 0           Duração da sessão mais curta (minutos).
+
+  current_streak_days      INTEGER         DEFAULT 0           Dias consecutivos de estudo até hoje.
+
+  max_streak_days          INTEGER         DEFAULT 0           Maior sequência de dias consecutivos já atingida.
+
+  avg_mood                 NUMERIC(3,2)    NULLABLE            Média de humor das sessões com mood preenchido.
+
+  avg_focus_score          NUMERIC(3,2)    NULLABLE            Média de foco das sessões com focus_score preenchido.
+
+  last_session_at          TIMESTAMPTZ     NULLABLE            Última sessão finalizada. Exibida no dashboard.
+
+  recalculated_at          TIMESTAMPTZ     DEFAULT NOW()       Timestamp do último recalculo pelo job.
+  ------------------------------------------------------------------------------------------------------------------------------
+
++---------------------------------------------------------------------------------+
+| CREATE TABLE analytics.user_metrics (                                           |
+|                                                                                 |
+| user_id UUID PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,         |
+|                                                                                 |
+| total_sessions INTEGER NOT NULL DEFAULT 0,                                      |
+|                                                                                 |
+| total_minutes INTEGER NOT NULL DEFAULT 0,                                       |
+|                                                                                 |
+| -- Gerado: elimina cálculo no frontend E garante consistência com total_minutes |
+|                                                                                 |
+| total_hours NUMERIC(8,1) GENERATED ALWAYS AS (total_minutes / 60.0) STORED,     |
+|                                                                                 |
+| avg_session_min NUMERIC(8,2) NOT NULL DEFAULT 0,                                |
+|                                                                                 |
+| longest_session_min INTEGER NOT NULL DEFAULT 0,                                 |
+|                                                                                 |
+| shortest_session_min INTEGER NOT NULL DEFAULT 0,                                |
+|                                                                                 |
+| current_streak_days INTEGER NOT NULL DEFAULT 0,                                 |
+|                                                                                 |
+| max_streak_days INTEGER NOT NULL DEFAULT 0,                                     |
+|                                                                                 |
+| avg_mood NUMERIC(3,2),                                                          |
+|                                                                                 |
+| avg_focus_score NUMERIC(3,2),                                                   |
+|                                                                                 |
+| last_session_at TIMESTAMPTZ,                                                    |
+|                                                                                 |
+| recalculated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()                              |
+|                                                                                 |
+| );                                                                              |
++---------------------------------------------------------------------------------+
+
+3.2 Tabela analytics.technology_metrics
+
+Um registro por par (usuário, tecnologia). Exibido na página de breakdown por tecnologia e no gráfico de pizza do dashboard.
+
+  -------------------------------------------------------------------------------------------------------------------------
+  Coluna                         Tipo            Constraints            Descrição
+  ------------------------------ --------------- ---------------------- ---------------------------------------------------
+  analytics.technology_metrics                                          
+
+  id                             UUID            PK, DEFAULT            Identificador único da linha.
+
+  user_id                        UUID            FK → users.id          Usuário dono das métricas.
+
+  technology_id                  UUID            FK → technologies.id   Tecnologia avaliada.
+
+  total_minutes                  INTEGER         DEFAULT 0              Soma de duration_min para esta tecnologia.
+
+  total_hours                    NUMERIC(8,1)    GENERATED STORED       total_minutes / 60.0.
+
+  session_count                  INTEGER         DEFAULT 0              Número de sessões nesta tecnologia.
+
+  avg_session_min                NUMERIC(8,2)    DEFAULT 0              Média de minutos por sessão nesta tech.
+
+  percentage_total               NUMERIC(5,2)    DEFAULT 0              % do total de horas do usuário. Calculada no job.
+
+  first_studied_at               TIMESTAMPTZ     NULLABLE               Primeiro estudo nesta tecnologia.
+
+  last_studied_at                TIMESTAMPTZ     NULLABLE               Último estudo nesta tecnologia.
+
+  recalculated_at                TIMESTAMPTZ     DEFAULT NOW()          Timestamp do último recalculo.
+  -------------------------------------------------------------------------------------------------------------------------
+
++-----------------------------------------------------------------------------------+
+| CREATE TABLE analytics.technology_metrics (                                       |
+|                                                                                   |
+| id UUID PRIMARY KEY DEFAULT gen_random_uuid(),                                    |
+|                                                                                   |
+| user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,              |
+|                                                                                   |
+| technology_id UUID NOT NULL REFERENCES public.technologies(id) ON DELETE CASCADE, |
+|                                                                                   |
+| total_minutes INTEGER NOT NULL DEFAULT 0,                                         |
+|                                                                                   |
+| total_hours NUMERIC(8,1) GENERATED ALWAYS AS (total_minutes / 60.0) STORED,       |
+|                                                                                   |
+| session_count INTEGER NOT NULL DEFAULT 0,                                         |
+|                                                                                   |
+| avg_session_min NUMERIC(8,2) NOT NULL DEFAULT 0,                                  |
+|                                                                                   |
+| percentage_total NUMERIC(5,2) NOT NULL DEFAULT 0,                                 |
+|                                                                                   |
+| first_studied_at TIMESTAMPTZ,                                                     |
+|                                                                                   |
+| last_studied_at TIMESTAMPTZ,                                                      |
+|                                                                                   |
+| recalculated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),                               |
+|                                                                                   |
+| CONSTRAINT uq_tech_metrics_user_tech UNIQUE (user_id, technology_id)              |
+|                                                                                   |
+| );                                                                                |
+|                                                                                   |
+| -- Índice para ranking de tecnologias no dashboard                                |
+|                                                                                   |
+| CREATE INDEX idx_tech_metrics_user_hours                                          |
+|                                                                                   |
+| ON analytics.technology_metrics(user_id, total_minutes DESC);                     |
++-----------------------------------------------------------------------------------+
+
+3.3 Tabela analytics.daily_minutes
+
+Série temporal: minutos estudados por dia por usuário. Usada para o gráfico de barras/linha dos últimos 30/90 dias e para calcular streaks. O campo study_date armazena a data no timezone do usuário (conversão feita no job).
+
+  -------------------------------------------------------------------------------------------------------------------------------------
+  Coluna                    Tipo            Constraints      Descrição
+  ------------------------- --------------- ---------------- --------------------------------------------------------------------------
+  analytics.daily_minutes                                    
+
+  id                        UUID            PK, DEFAULT      Identificador único.
+
+  user_id                   UUID            FK → users.id    Usuário.
+
+  study_date                DATE            NOT NULL         Data no timezone do usuário (ex: '2025-03-15').
+
+  total_minutes             INTEGER         DEFAULT 0        Soma de duration_min de todas as sessões do dia.
+
+  session_count             INTEGER         DEFAULT 0        Número de sessões naquele dia.
+
+  technologies              UUID[]          NULLABLE         Array de technology_ids estudados no dia. Evita JOIN para exibir badges.
+
+  avg_mood                  NUMERIC(3,2)    NULLABLE         Média de humor do dia.
+
+  recalculated_at           TIMESTAMPTZ     DEFAULT NOW()    Timestamp do último recalculo.
+  -------------------------------------------------------------------------------------------------------------------------------------
+
++---------------------------------------------------------------------------------+
+| CREATE TABLE analytics.daily_minutes (                                          |
+|                                                                                 |
+| id UUID PRIMARY KEY DEFAULT gen_random_uuid(),                                  |
+|                                                                                 |
+| user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,            |
+|                                                                                 |
+| study_date DATE NOT NULL,                                                       |
+|                                                                                 |
+| total_minutes INTEGER NOT NULL DEFAULT 0,                                       |
+|                                                                                 |
+| session_count INTEGER NOT NULL DEFAULT 0,                                       |
+|                                                                                 |
+| technologies UUID[], -- array nativo do PostgreSQL                              |
+|                                                                                 |
+| avg_mood NUMERIC(3,2),                                                          |
+|                                                                                 |
+| recalculated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),                             |
+|                                                                                 |
+| CONSTRAINT uq_daily_user_date UNIQUE (user_id, study_date)                      |
+|                                                                                 |
+| );                                                                              |
+|                                                                                 |
+| -- Índice principal para gráfico de linha (série temporal)                      |
+|                                                                                 |
+| CREATE INDEX idx_daily_user_date                                                |
+|                                                                                 |
+| ON analytics.daily_minutes(user_id, study_date DESC);                           |
+|                                                                                 |
+| -- Índice BRIN para queries de range (ex: últimos 90 dias de TODOS os usuários) |
+|                                                                                 |
+| CREATE INDEX idx_daily_date_brin                                                |
+|                                                                                 |
+| ON analytics.daily_minutes USING BRIN(study_date);                              |
++---------------------------------------------------------------------------------+
+
+3.4 Tabela analytics.weekly_summaries
+
+Agregação por semana ISO (Segunda a Domingo). Usada para gráficos de tendência semanal e comparação semana-a-semana. Calculada apenas nos domingos à noite via job agendado, não em tempo real.
+
+  ---------------------------------------------------------------------------------------------------------------------
+  Coluna                       Tipo            Constraints      Descrição
+  ---------------------------- --------------- ---------------- -------------------------------------------------------
+  analytics.weekly_summaries                                    
+
+  id                           UUID            PK, DEFAULT      Identificador único.
+
+  user_id                      UUID            FK → users.id    Usuário.
+
+  week_start                   DATE            NOT NULL         Segunda-feira da semana ISO (sempre dia 1 da semana).
+
+  week_number                  SMALLINT        NOT NULL         Número da semana ISO (1–53).
+
+  year                         SMALLINT        NOT NULL         Ano ISO da semana.
+
+  total_minutes                INTEGER         DEFAULT 0        Total de minutos na semana.
+
+  session_count                INTEGER         DEFAULT 0        Número de sessões na semana.
+
+  active_days                  SMALLINT        DEFAULT 0        Dias com pelo menos 1 sessão (0–7).
+
+  recalculated_at              TIMESTAMPTZ     DEFAULT NOW()    Timestamp do último recalculo.
+  ---------------------------------------------------------------------------------------------------------------------
+
+4. Funções e Triggers
+
+4.1 Trigger Universal: updated_at
+
+Uma única função reutilizável para auto-atualizar updated_at em todas as tabelas transacionais. Mais eficiente que múltiplas funções específicas.
+
++-----------------------------------------------------------------------+
+| -- Função genérica (criada uma vez, reutilizada em todos os triggers) |
+|                                                                       |
+| CREATE OR REPLACE FUNCTION fn_set_updated_at()                        |
+|                                                                       |
+| RETURNS TRIGGER AS $$                                                 |
+|                                                                       |
+| BEGIN                                                                 |
+|                                                                       |
+| NEW.updated_at = NOW();                                               |
+|                                                                       |
+| RETURN NEW;                                                           |
+|                                                                       |
+| END;                                                                  |
+|                                                                       |
+| $$ LANGUAGE plpgsql;                                                  |
+|                                                                       |
+| -- Aplicar em todas as tabelas que têm updated_at                     |
+|                                                                       |
+| CREATE TRIGGER trg_users_updated_at                                   |
+|                                                                       |
+| BEFORE UPDATE ON public.users                                         |
+|                                                                       |
+| FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();                    |
+|                                                                       |
+| CREATE TRIGGER trg_technologies_updated_at                            |
+|                                                                       |
+| BEFORE UPDATE ON public.technologies                                  |
+|                                                                       |
+| FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();                    |
+|                                                                       |
+| CREATE TRIGGER trg_sessions_updated_at                                |
+|                                                                       |
+| BEFORE UPDATE ON public.study_sessions                                |
+|                                                                       |
+| FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();                    |
++-----------------------------------------------------------------------+
+
+4.2 Função de Geração de Slug
+
+Gera slug automaticamente a partir do nome da tecnologia, normalizado e seguro para URLs. Evita lógica duplicada entre Laravel e banco.
+
++---------------------------------------------------------------------------------------+
+| CREATE OR REPLACE FUNCTION fn_generate_slug(p_input TEXT)                             |
+|                                                                                       |
+| RETURNS TEXT AS $$                                                                    |
+|                                                                                       |
+| DECLARE                                                                               |
+|                                                                                       |
+| v_slug TEXT;                                                                          |
+|                                                                                       |
+| BEGIN                                                                                 |
+|                                                                                       |
+| v_slug := LOWER(TRIM(p_input));                                                       |
+|                                                                                       |
+| -- Substitui acentos e caracteres especiais                                           |
+|                                                                                       |
+| v_slug := translate(v_slug, 'áàâãäéèêëíìîïóòôõöúùûüçñ', 'aaaaaeeeeiiiioooooeuuuucn'); |
+|                                                                                       |
+| -- Substitui qualquer não-alfanumérico por hífen                                      |
+|                                                                                       |
+| v_slug := regexp_replace(v_slug, '[^a-z0-9]+', '-', 'g');                             |
+|                                                                                       |
+| -- Remove hífens no início/fim                                                        |
+|                                                                                       |
+| v_slug := trim(both '-' from v_slug);                                                 |
+|                                                                                       |
+| RETURN v_slug;                                                                        |
+|                                                                                       |
+| END;                                                                                  |
+|                                                                                       |
+| $$ LANGUAGE plpgsql IMMUTABLE STRICT;                                                 |
+|                                                                                       |
+| -- Uso: SELECT fn_generate_slug('Vue.js 3'); --> 'vue-js-3'                           |
+|                                                                                       |
+| -- No Laravel, também gerar via Str::slug() antes de enviar ao banco.                 |
+|                                                                                       |
+| -- A função serve como fallback e pode ser usada em DEFAULT.                          |
++---------------------------------------------------------------------------------------+
+
+4.3 Trigger: Validação de Sessão Ativa Simultânea
+
+Impede que o mesmo usuário tenha duas sessões em andamento ao mesmo tempo (ended_at IS NULL). Lógica garantida no banco, não apenas na aplicação.
+
++---------------------------------------------------------------------------------+
+| CREATE OR REPLACE FUNCTION fn_check_concurrent_session()                        |
+|                                                                                 |
+| RETURNS TRIGGER AS $$                                                           |
+|                                                                                 |
+| DECLARE                                                                         |
+|                                                                                 |
+| v_count INTEGER;                                                                |
+|                                                                                 |
+| BEGIN                                                                           |
+|                                                                                 |
+| -- Só verificar ao inserir sessão sem ended_at (em andamento)                   |
+|                                                                                 |
+| IF NEW.ended_at IS NULL THEN                                                    |
+|                                                                                 |
+| SELECT COUNT(*) INTO v_count                                                    |
+|                                                                                 |
+| FROM public.study_sessions                                                      |
+|                                                                                 |
+| WHERE user_id = NEW.user_id                                                     |
+|                                                                                 |
+| AND ended_at IS NULL                                                            |
+|                                                                                 |
+| AND id != COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::UUID);       |
+|                                                                                 |
+| IF v_count > 0 THEN                                                             |
+|                                                                                 |
+| RAISE EXCEPTION 'CONCURRENT_SESSION: User already has an active study session.' |
+|                                                                                 |
+| USING ERRCODE = 'P0001';                                                        |
+|                                                                                 |
+| END IF;                                                                         |
+|                                                                                 |
+| END IF;                                                                         |
+|                                                                                 |
+| RETURN NEW;                                                                     |
+|                                                                                 |
+| END;                                                                            |
+|                                                                                 |
+| $$ LANGUAGE plpgsql;                                                            |
+|                                                                                 |
+| CREATE TRIGGER trg_sessions_no_concurrent                                       |
+|                                                                                 |
+| BEFORE INSERT OR UPDATE ON public.study_sessions                                |
+|                                                                                 |
+| FOR EACH ROW EXECUTE FUNCTION fn_check_concurrent_session();                    |
++---------------------------------------------------------------------------------+
+
+5. Lógica de Cálculo das Métricas
+
+5.1 Query de Recalculo: user_metrics
+
+Executada dentro do RecalculateMetricsJob. Usa INSERT ... ON CONFLICT DO UPDATE (UPSERT) para garantir idempotência: pode ser executada múltiplas vezes sem efeito colateral.
+
++----------------------------------------------------------------------------------------------+
+| -- Recalculo de user_metrics (executado pelo job, wrapped em transaction)                    |
+|                                                                                              |
+| INSERT INTO analytics.user_metrics (                                                         |
+|                                                                                              |
+| user_id, total_sessions, total_minutes,                                                      |
+|                                                                                              |
+| avg_session_min, longest_session_min, shortest_session_min,                                  |
+|                                                                                              |
+| avg_mood, avg_focus_score, last_session_at, recalculated_at                                  |
+|                                                                                              |
+| )                                                                                            |
+|                                                                                              |
+| SELECT                                                                                       |
+|                                                                                              |
+| s.user_id,                                                                                   |
+|                                                                                              |
+| COUNT(*) AS total_sessions,                                                                  |
+|                                                                                              |
+| COALESCE(SUM(s.duration_min), 0) AS total_minutes,                                           |
+|                                                                                              |
+| COALESCE(AVG(s.duration_min), 0) AS avg_session_min,                                         |
+|                                                                                              |
+| COALESCE(MAX(s.duration_min), 0) AS longest_session_min,                                     |
+|                                                                                              |
+| COALESCE(MIN(s.duration_min), 0) AS shortest_session_min,                                    |
+|                                                                                              |
+| AVG(CASE WHEN s.mood IS NOT NULL THEN s.mood::NUMERIC END) AS avg_mood,                      |
+|                                                                                              |
+| AVG(CASE WHEN s.focus_score IS NOT NULL THEN s.focus_score::NUMERIC END) AS avg_focus_score, |
+|                                                                                              |
+| MAX(s.ended_at) AS last_session_at,                                                          |
+|                                                                                              |
+| NOW() AS recalculated_at                                                                     |
+|                                                                                              |
+| FROM public.study_sessions s                                                                 |
+|                                                                                              |
+| WHERE s.user_id = :user_id -- parâmetro do job                                               |
+|                                                                                              |
+| AND s.ended_at IS NOT NULL -- apenas sessões finalizadas                                     |
+|                                                                                              |
+| GROUP BY s.user_id                                                                           |
+|                                                                                              |
+| ON CONFLICT (user_id) DO UPDATE SET                                                          |
+|                                                                                              |
+| total_sessions = EXCLUDED.total_sessions,                                                    |
+|                                                                                              |
+| total_minutes = EXCLUDED.total_minutes,                                                      |
+|                                                                                              |
+| avg_session_min = EXCLUDED.avg_session_min,                                                  |
+|                                                                                              |
+| longest_session_min = EXCLUDED.longest_session_min,                                          |
+|                                                                                              |
+| shortest_session_min = EXCLUDED.shortest_session_min,                                        |
+|                                                                                              |
+| avg_mood = EXCLUDED.avg_mood,                                                                |
+|                                                                                              |
+| avg_focus_score = EXCLUDED.avg_focus_score,                                                  |
+|                                                                                              |
+| last_session_at = EXCLUDED.last_session_at,                                                  |
+|                                                                                              |
+| recalculated_at = EXCLUDED.recalculated_at;                                                  |
++----------------------------------------------------------------------------------------------+
+
+5.2 Query de Recalculo: technology_metrics
+
++---------------------------------------------------------------------------------------------+
+| -- Recalculo de technology_metrics com percentage_total calculado na query                  |
+|                                                                                             |
+| WITH user_total AS (                                                                        |
+|                                                                                             |
+| SELECT COALESCE(SUM(duration_min), 1) AS total -- evitar divisão por zero                   |
+|                                                                                             |
+| FROM public.study_sessions                                                                  |
+|                                                                                             |
+| WHERE user_id = :user_id AND ended_at IS NOT NULL                                           |
+|                                                                                             |
+| )                                                                                           |
+|                                                                                             |
+| INSERT INTO analytics.technology_metrics (                                                  |
+|                                                                                             |
+| user_id, technology_id, total_minutes, session_count,                                       |
+|                                                                                             |
+| avg_session_min, percentage_total, first_studied_at, last_studied_at, recalculated_at       |
+|                                                                                             |
+| )                                                                                           |
+|                                                                                             |
+| SELECT                                                                                      |
+|                                                                                             |
+| s.user_id,                                                                                  |
+|                                                                                             |
+| s.technology_id,                                                                            |
+|                                                                                             |
+| COALESCE(SUM(s.duration_min), 0) AS total_minutes,                                          |
+|                                                                                             |
+| COUNT(*) AS session_count,                                                                  |
+|                                                                                             |
+| COALESCE(AVG(s.duration_min), 0) AS avg_session_min,                                        |
+|                                                                                             |
+| ROUND((COALESCE(SUM(s.duration_min), 0)::NUMERIC / ut.total) * 100, 2) AS percentage_total, |
+|                                                                                             |
+| MIN(s.started_at) AS first_studied_at,                                                      |
+|                                                                                             |
+| MAX(s.ended_at) AS last_studied_at,                                                         |
+|                                                                                             |
+| NOW() AS recalculated_at                                                                    |
+|                                                                                             |
+| FROM public.study_sessions s, user_total ut                                                 |
+|                                                                                             |
+| WHERE s.user_id = :user_id                                                                  |
+|                                                                                             |
+| AND s.ended_at IS NOT NULL                                                                  |
+|                                                                                             |
+| AND s.technology_id IS NOT NULL                                                             |
+|                                                                                             |
+| GROUP BY s.user_id, s.technology_id, ut.total                                               |
+|                                                                                             |
+| ON CONFLICT (user_id, technology_id) DO UPDATE SET                                          |
+|                                                                                             |
+| total_minutes = EXCLUDED.total_minutes,                                                     |
+|                                                                                             |
+| session_count = EXCLUDED.session_count,                                                     |
+|                                                                                             |
+| avg_session_min = EXCLUDED.avg_session_min,                                                 |
+|                                                                                             |
+| percentage_total = EXCLUDED.percentage_total,                                               |
+|                                                                                             |
+| last_studied_at = EXCLUDED.last_studied_at,                                                 |
+|                                                                                             |
+| recalculated_at = EXCLUDED.recalculated_at;                                                 |
++---------------------------------------------------------------------------------------------+
+
+5.3 Algoritmo de Streak (Cálculo de Sequência)
+
+O cálculo de streak é implementado no PHP (MetricsAggregator) por clareza e testabilidade, usando os dados da tabela analytics.daily_minutes já recalculada. A query abaixo apenas busca as datas necessárias:
+
++-----------------------------------------------------------------------+
+| -- Buscar datas de estudo ordenadas para calcular streak no PHP       |
+|                                                                       |
+| SELECT study_date                                                     |
+|                                                                       |
+| FROM analytics.daily_minutes                                          |
+|                                                                       |
+| WHERE user_id = :user_id                                              |
+|                                                                       |
+| AND total_minutes > 0                                                 |
+|                                                                       |
+| ORDER BY study_date DESC;                                             |
+|                                                                       |
+| -- Lógica PHP no MetricsAggregator:                                   |
+|                                                                       |
+| // $dates = coleção de Carbon ordenada DESC                           |
+|                                                                       |
+| // $today = Carbon::today(usuário->timezone)                          |
+|                                                                       |
+| // $streak = 0                                                        |
+|                                                                       |
+| // foreach ($dates as $i => $date) {                                  |
+|                                                                       |
+| // $expected = $today->copy()->subDays($i);                           |
+|                                                                       |
+| // if ($date->isSameDay($expected)) { $streak++; }                    |
+|                                                                       |
+| // else { break; }                                                    |
+|                                                                       |
+| // }                                                                  |
++-----------------------------------------------------------------------+
+
+5.4 Query de Série Temporal para Gráficos
+
+Query que garante que todos os dias do range sejam retornados, mesmo sem sessões (dias zerados aparecem no gráfico). Usa generate_series do PostgreSQL para gerar o calendário completo.
+
++----------------------------------------------------------------------------------+
+| -- Série temporal completa: todos os dias dos últimos 30 dias, com ou sem estudo |
+|                                                                                  |
+| SELECT                                                                           |
+|                                                                                  |
+| d.day::DATE AS study_date,                                                       |
+|                                                                                  |
+| COALESCE(dm.total_minutes, 0) AS total_minutes,                                  |
+|                                                                                  |
+| COALESCE(dm.session_count, 0) AS session_count                                   |
+|                                                                                  |
+| FROM generate_series(                                                            |
+|                                                                                  |
+| CURRENT_DATE - INTERVAL '29 days',                                               |
+|                                                                                  |
+| CURRENT_DATE,                                                                    |
+|                                                                                  |
+| INTERVAL '1 day'                                                                 |
+|                                                                                  |
+| ) AS d(day)                                                                      |
+|                                                                                  |
+| LEFT JOIN analytics.daily_minutes dm                                             |
+|                                                                                  |
+| ON dm.study_date = d.day::DATE                                                   |
+|                                                                                  |
+| AND dm.user_id = :user_id                                                        |
+|                                                                                  |
+| ORDER BY d.day ASC;                                                              |
+|                                                                                  |
+| -- Resultado: 30 linhas garantidas. Dias sem estudo aparecem com 0.              |
+|                                                                                  |
+| -- Sem LEFT JOIN, dias sem estudo desapareceriam e o gráfico ficaria irregular.  |
++----------------------------------------------------------------------------------+
+
+6. Estrutura de Migrations Laravel
+
+6.1 Ordem de Execução
+
+As migrations devem ser executadas na ordem correta para respeitar as dependências de chaves estrangeiras. A convenção de nome com timestamp garante a ordem automática.
+
+  -----------------------------------------------------------------------------------------------------
+  Timestamp           Arquivo de Migration                            Dep. (FK precisa existir antes)
+  ------------------- ----------------------------------------------- ---------------------------------
+  2025_01_01_000001   create_users_table.php                          Nenhuma
+
+  2025_01_01_000002   create_technologies_table.php                   users
+
+  2025_01_01_000003   create_study_sessions_table.php                 users, technologies
+
+  2025_01_01_000004   create_personal_access_tokens_table.php         users (polimórfica)
+
+  2025_01_01_000005   create_jobs_table.php                           Nenhuma
+
+  2025_01_01_000006   create_failed_jobs_table.php                    Nenhuma
+
+  2025_01_02_000001   create_analytics_schema.php                     Nenhuma (apenas cria o schema)
+
+  2025_01_02_000002   create_analytics_user_metrics_table.php         users (schema analytics)
+
+  2025_01_02_000003   create_analytics_technology_metrics_table.php   users, technologies
+
+  2025_01_02_000004   create_analytics_daily_minutes_table.php        users
+
+  2025_01_02_000005   create_analytics_weekly_summaries_table.php     users
+
+  2025_01_03_000001   create_database_functions.php                   Todas as tabelas acima
+
+  2025_01_03_000002   create_database_triggers.php                    Todas as funções acima
+
+  2025_01_03_000003   create_database_indexes.php                     Todas as tabelas acima
+  -----------------------------------------------------------------------------------------------------
+
+6.2 Migration do Schema Analytics
+
++------------------------------------------------------------------------------------------+
+| <?php // database/migrations/2025_01_02_000001_create_analytics_schema.php               |
+|                                                                                          |
+| use Illuminate\Database\Migrations\Migration;                                            |
+|                                                                                          |
+| use Illuminate\Support\Facades\DB;                                                       |
+|                                                                                          |
+| return new class extends Migration {                                                     |
+|                                                                                          |
+| public function up(): void {                                                             |
+|                                                                                          |
+| // O Laravel não tem método nativo para schemas PostgreSQL                               |
+|                                                                                          |
+| DB::statement('CREATE SCHEMA IF NOT EXISTS analytics');                                  |
+|                                                                                          |
+| DB::statement("COMMENT ON SCHEMA analytics IS 'Dados pre-calculados para o dashboard'"); |
+|                                                                                          |
+| }                                                                                        |
+|                                                                                          |
+| public function down(): void {                                                           |
+|                                                                                          |
+| DB::statement('DROP SCHEMA IF EXISTS analytics CASCADE');                                |
+|                                                                                          |
+| }                                                                                        |
+|                                                                                          |
+| };                                                                                       |
++------------------------------------------------------------------------------------------+
+
+6.3 Migration com Generated Column e Triggers
+
++--------------------------------------------------------------------------------------+
+| <?php // database/migrations/2025_01_01_000003_create_study_sessions_table.php       |
+|                                                                                      |
+| return new class extends Migration {                                                 |
+|                                                                                      |
+| public function up(): void {                                                         |
+|                                                                                      |
+| // Criar tabela base via Schema Builder                                              |
+|                                                                                      |
+| Schema::create('study_sessions', function (Blueprint $table) {                       |
+|                                                                                      |
+| $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));                |
+|                                                                                      |
+| $table->foreignUuid('user_id')->constrained()->cascadeOnDelete();                    |
+|                                                                                      |
+| $table->foreignUuid('technology_id')->nullable()->nullOnDelete();                    |
+|                                                                                      |
+| $table->timestampTz('started_at');                                                   |
+|                                                                                      |
+| $table->timestampTz('ended_at')->nullable();                                         |
+|                                                                                      |
+| $table->text('notes')->nullable();                                                   |
+|                                                                                      |
+| $table->smallInteger('mood')->nullable();                                            |
+|                                                                                      |
+| $table->smallInteger('focus_score')->nullable();                                     |
+|                                                                                      |
+| $table->timestampsTz();                                                              |
+|                                                                                      |
+| });                                                                                  |
+|                                                                                      |
+| // Generated column e constraints: usar SQL direto                                   |
+|                                                                                      |
+| // (Schema Builder não suporta GENERATED ALWAYS AS STORED no PostgreSQL)             |
+|                                                                                      |
+| DB::statement("                                                                      |
+|                                                                                      |
+| ALTER TABLE study_sessions                                                           |
+|                                                                                      |
+| ADD COLUMN duration_min INTEGER GENERATED ALWAYS AS (                                |
+|                                                                                      |
+| CASE WHEN ended_at IS NOT NULL                                                       |
+|                                                                                      |
+| THEN EXTRACT(EPOCH FROM (ended_at - started_at))::INTEGER / 60                       |
+|                                                                                      |
+| ELSE NULL                                                                            |
+|                                                                                      |
+| END                                                                                  |
+|                                                                                      |
+| ) STORED                                                                             |
+|                                                                                      |
+| ");                                                                                  |
+|                                                                                      |
+| DB::statement("ALTER TABLE study_sessions ADD CONSTRAINT chk_session_end_after_start |
+|                                                                                      |
+| CHECK (ended_at IS NULL OR ended_at > started_at)");                                 |
+|                                                                                      |
+| DB::statement("ALTER TABLE study_sessions ADD CONSTRAINT chk_mood                    |
+|                                                                                      |
+| CHECK (mood IS NULL OR mood BETWEEN 1 AND 5)");                                      |
+|                                                                                      |
+| }                                                                                    |
+|                                                                                      |
+| public function down(): void {                                                       |
+|                                                                                      |
+| Schema::dropIfExists('study_sessions');                                              |
+|                                                                                      |
+| }                                                                                    |
+|                                                                                      |
+| };                                                                                   |
++--------------------------------------------------------------------------------------+
+
+7. Mapeamento Eloquent para Dois Schemas
+
+7.1 Model Base com UUID e Timestamps em UTC
+
++-----------------------------------------------------------------------+
+| <?php // app/Models/BaseModel.php                                     |
+|                                                                       |
+| abstract class BaseModel extends Model {                              |
+|                                                                       |
+| use HasUuids; // Laravel 10+ gerador nativo de UUID v4                |
+|                                                                       |
+| protected $keyType = 'string';                                        |
+|                                                                       |
+| public $incrementing = false;                                         |
+|                                                                       |
+| // Todos os timestamps armazenados como TIMESTAMPTZ (UTC)             |
+|                                                                       |
+| // Carbon converte para o timezone do usuário na exibição             |
+|                                                                       |
+| protected function serializeDate(DateTimeInterface $date): string {   |
+|                                                                       |
+| return $date->toIso8601String(); // ISO 8601 com timezone             |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| }                                                                     |
++-----------------------------------------------------------------------+
+
+7.2 Models do Schema Analytics
+
+Para tabelas no schema analytics, o Eloquent precisa que $table inclua o prefixo do schema. Nenhuma outra configuração especial é necessária com PostgreSQL.
+
++-----------------------------------------------------------------------+
+| <?php // app/Models/Analytics/UserMetrics.php                         |
+|                                                                       |
+| namespace App\Models\Analytics;                                       |
+|                                                                       |
+| use App\Models\BaseModel;                                             |
+|                                                                       |
+| class UserMetrics extends BaseModel {                                 |
+|                                                                       |
+| // Schema prefix no nome da tabela                                    |
+|                                                                       |
+| protected $table = 'analytics.user_metrics';                          |
+|                                                                       |
+| // PK é user_id (não 'id')                                            |
+|                                                                       |
+| protected $primaryKey = 'user_id';                                    |
+|                                                                       |
+| // Não tem timestamps padrão (só recalculated_at)                     |
+|                                                                       |
+| public $timestamps = false;                                           |
+|                                                                       |
+| protected $fillable = [                                               |
+|                                                                       |
+| 'user_id', 'total_sessions', 'total_minutes',                         |
+|                                                                       |
+| 'avg_session_min', 'longest_session_min', 'shortest_session_min',     |
+|                                                                       |
+| 'current_streak_days', 'max_streak_days',                             |
+|                                                                       |
+| 'avg_mood', 'avg_focus_score', 'last_session_at', 'recalculated_at',  |
+|                                                                       |
+| ];                                                                    |
+|                                                                       |
+| protected $casts = [                                                  |
+|                                                                       |
+| 'total_sessions' => 'integer',                                        |
+|                                                                       |
+| 'total_minutes' => 'integer',                                         |
+|                                                                       |
+| 'total_hours' => 'float', // generated column                         |
+|                                                                       |
+| 'avg_session_min' => 'float',                                         |
+|                                                                       |
+| 'avg_mood' => 'float',                                                |
+|                                                                       |
+| 'avg_focus_score' => 'float',                                         |
+|                                                                       |
+| 'last_session_at' => 'datetime',                                      |
+|                                                                       |
+| 'recalculated_at' => 'datetime',                                      |
+|                                                                       |
+| ];                                                                    |
+|                                                                       |
+| // Relação: pertence ao usuário                                       |
+|                                                                       |
+| public function user(): BelongsTo {                                   |
+|                                                                       |
+| return $this->belongsTo(User::class);                                 |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| }                                                                     |
++-----------------------------------------------------------------------+
+
+7.3 Model StudySession com Casts Completos
+
++---------------------------------------------------------------------------------------+
+| <?php // app/Models/StudySession.php                                                  |
+|                                                                                       |
+| class StudySession extends BaseModel {                                                |
+|                                                                                       |
+| protected $table = 'study_sessions';                                                  |
+|                                                                                       |
+| protected $fillable = [                                                               |
+|                                                                                       |
+| 'user_id', 'technology_id', 'started_at', 'ended_at', 'notes', 'mood', 'focus_score', |
+|                                                                                       |
+| ];                                                                                    |
+|                                                                                       |
+| protected $casts = [                                                                  |
+|                                                                                       |
+| 'started_at' => 'datetime',                                                           |
+|                                                                                       |
+| 'ended_at' => 'datetime',                                                             |
+|                                                                                       |
+| 'duration_min' => 'integer', // generated column (read-only)                          |
+|                                                                                       |
+| 'mood' => 'integer',                                                                  |
+|                                                                                       |
+| 'focus_score' => 'integer',                                                           |
+|                                                                                       |
+| ];                                                                                    |
+|                                                                                       |
+| // duration_min é gerada pelo banco; NUNCA incluir em $fillable                       |
+|                                                                                       |
+| // Tentar setar via Eloquent retorna erro de banco (GENERATED ALWAYS)                 |
+|                                                                                       |
+| public function user(): BelongsTo {                                                   |
+|                                                                                       |
+| return $this->belongsTo(User::class);                                                 |
+|                                                                                       |
+| }                                                                                     |
+|                                                                                       |
+| public function technology(): BelongsTo {                                             |
+|                                                                                       |
+| return $this->belongsTo(Technology::class);                                           |
+|                                                                                       |
+| }                                                                                     |
+|                                                                                       |
+| // Accessor: duração formatada para exibição                                          |
+|                                                                                       |
+| public function getDurationFormattedAttribute(): ?string {                            |
+|                                                                                       |
+| if ($this->duration_min === null) return null;                                        |
+|                                                                                       |
+| $h = intdiv($this->duration_min, 60);                                                 |
+|                                                                                       |
+| $m = $this->duration_min % 60;                                                        |
+|                                                                                       |
+| return $h > 0 ? "{$h}h {$m}min" : "{$m}min";                                          |
+|                                                                                       |
+| }                                                                                     |
+|                                                                                       |
+| }                                                                                     |
++---------------------------------------------------------------------------------------+
+
+8. Diagrama de Relacionamentos (ERD)
+
+8.1 Visualização Textual dos Relacionamentos
+
++-------------------------------------------------------------------------+
+| LEGENDA DO DIAGRAMA                                                     |
++-------------------------------------------------------------------------+
+| ||--o{ = um-para-muitos (obrigatório para o um, opcional para o muitos) |
+|                                                                         |
+| ||--|| = um-para-um                                                     |
+|                                                                         |
+| o|--|| = zero-ou-um para um                                             |
+|                                                                         |
+| PK = Chave primária • FK = Chave estrangeira • GEN = Generated Column   |
++-------------------------------------------------------------------------+
+
++-----------------------------------------------------------------------+
+| erDiagram                                                             |
+|                                                                       |
+| %% ─── SCHEMA PUBLIC ───────────────────────────────────────────────  |
+|                                                                       |
+| users {                                                               |
+|                                                                       |
+| UUID id PK                                                            |
+|                                                                       |
+| VARCHAR email UK                                                      |
+|                                                                       |
+| VARCHAR name                                                          |
+|                                                                       |
+| VARCHAR timezone                                                      |
+|                                                                       |
+| TIMESTAMPTZ email_verified_at                                         |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| technologies {                                                        |
+|                                                                       |
+| UUID id PK                                                            |
+|                                                                       |
+| UUID user_id FK                                                       |
+|                                                                       |
+| VARCHAR name                                                          |
+|                                                                       |
+| VARCHAR slug                                                          |
+|                                                                       |
+| CHAR color                                                            |
+|                                                                       |
+| BOOLEAN is_active                                                     |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| study_sessions {                                                      |
+|                                                                       |
+| UUID id PK                                                            |
+|                                                                       |
+| UUID user_id FK                                                       |
+|                                                                       |
+| UUID technology_id FK                                                 |
+|                                                                       |
+| TIMESTAMPTZ started_at                                                |
+|                                                                       |
+| TIMESTAMPTZ ended_at                                                  |
+|                                                                       |
+| INTEGER duration_min GEN                                              |
+|                                                                       |
+| SMALLINT mood                                                         |
+|                                                                       |
+| SMALLINT focus_score                                                  |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| %% ─── SCHEMA ANALYTICS ────────────────────────────────────────────  |
+|                                                                       |
+| user_metrics {                                                        |
+|                                                                       |
+| UUID user_id PK-FK                                                    |
+|                                                                       |
+| INTEGER total_sessions                                                |
+|                                                                       |
+| INTEGER total_minutes                                                 |
+|                                                                       |
+| NUMERIC total_hours GEN                                               |
+|                                                                       |
+| INTEGER current_streak_days                                           |
+|                                                                       |
+| NUMERIC avg_mood                                                      |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| technology_metrics {                                                  |
+|                                                                       |
+| UUID id PK                                                            |
+|                                                                       |
+| UUID user_id FK                                                       |
+|                                                                       |
+| UUID technology_id FK                                                 |
+|                                                                       |
+| INTEGER total_minutes                                                 |
+|                                                                       |
+| NUMERIC percentage_total                                              |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| daily_minutes {                                                       |
+|                                                                       |
+| UUID id PK                                                            |
+|                                                                       |
+| UUID user_id FK                                                       |
+|                                                                       |
+| DATE study_date                                                       |
+|                                                                       |
+| INTEGER total_minutes                                                 |
+|                                                                       |
+| UUID[] technologies                                                   |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| %% ─── RELACIONAMENTOS ────────────────────────────────────────────── |
+|                                                                       |
+| users ||--o{ technologies : cria                                      |
+|                                                                       |
+| users ||--o{ study_sessions : registra                                |
+|                                                                       |
+| technologies ||--o{ study_sessions : categoriza                       |
+|                                                                       |
+| users ||--|| user_metrics : agrega                                    |
+|                                                                       |
+| users ||--o{ technology_metrics: agrega                               |
+|                                                                       |
+| technologies ||--o{ technology_metrics: agrega                        |
+|                                                                       |
+| users ||--o{ daily_minutes : agrega                                   |
++-----------------------------------------------------------------------+
+
+  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  COLE NO MERMAID LIVE EDITOR
+
+  Acesse https://mermaid.live e cole o bloco acima (sem a primeira linha 'erDiagram') para visualizar o diagrama ERD interativo. Adicione ao README do projeto como imagem PNG exportada do Mermaid.
+  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+9. Índices e Estratégia de Performance
+
+9.1 Catálogo Completo de Índices
+
+  ------------------------------------------------------------------------------------------------------------------------------------------
+  Tabela                         Colunas Indexadas                      Tipo             Justificativa
+  ------------------------------ -------------------------------------- ---------------- ---------------------------------------------------
+  users                          email                                  B-tree UNIQUE    Login por e-mail. Query mais frequente de auth.
+
+  technologies                   user_id                                B-tree           Listar tecnologias do usuário.
+
+  technologies                   name (gin_trgm)                        GIN              Autocomplete de tecnologias. Busca por substring.
+
+  technologies                   (user_id, slug)                        B-tree UNIQUE    Constraint de unicidade + busca por slug.
+
+  study_sessions                 (user_id, started_at DESC)             B-tree           Listagem paginada. Query principal da aplicação.
+
+  study_sessions                 (user_id, technology_id, started_at)   B-tree           Filtro combinado na página de tecnologia.
+
+  study_sessions                 user_id WHERE ended_at IS NULL         B-tree Parcial   Detectar sessão em andamento. Índice mínimo.
+
+  study_sessions                 started_at                             BRIN             Agregações por range de data nos jobs.
+
+  analytics.technology_metrics   (user_id, total_minutes DESC)          B-tree           Ranking de tecnologias no dashboard.
+
+  analytics.daily_minutes        (user_id, study_date DESC)             B-tree           Série temporal do gráfico.
+
+  analytics.daily_minutes        study_date                             BRIN             Queries de range em todo o período.
+  ------------------------------------------------------------------------------------------------------------------------------------------
+
+9.2 Quando Usar Cada Tipo de Índice
+
+  ------------------------------------------------------------------------------------------------------------------------------------------------
+  Tipo              Use quando...                                                       Não usar quando...
+  ----------------- ------------------------------------------------------------------- ----------------------------------------------------------
+  B-tree            Igualdade, ranges, ORDER BY, UNIQUE constraints. Padrão.            Colunas com poucos valores distintos (booleanos, enums).
+
+  GIN + pg_trgm     Busca por substring, autocomplete, LIKE '%text%'.                   Campos com texto muito longo ou raras buscas.
+
+  BRIN              Colunas timestamp/date com inserção sequencial e tabelas grandes.   Quando se precisa de lookup exato de linha única.
+
+  Parcial (WHERE)   Subset pequeno de linhas com uma condição frequente.                Se a condição não aparecer nas queries.
+
+  GiST btree_gist   Exclusion constraints (ex: sem overlap de períodos).                Uso geral. Mais lento que B-tree para igualdade.
+  ------------------------------------------------------------------------------------------------------------------------------------------------
+
+9.3 EXPLAIN ANALYZE: Validando as Queries
+
+Sempre validar o plano de execução das queries críticas após popular o banco com dados reais. Uma query sem índice adequado usa Seq Scan, que é inaceitável com volume.
+
++---------------------------------------------------------------------------------+
+| -- Analisar a query mais crítica: listagem de sessões                           |
+|                                                                                 |
+| EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)                                         |
+|                                                                                 |
+| SELECT s.*, t.name as tech_name, t.color                                        |
+|                                                                                 |
+| FROM study_sessions s                                                           |
+|                                                                                 |
+| LEFT JOIN technologies t ON t.id = s.technology_id                              |
+|                                                                                 |
+| WHERE s.user_id = '550e8400-e29b-41d4-a716-446655440000'                        |
+|                                                                                 |
+| ORDER BY s.started_at DESC                                                      |
+|                                                                                 |
+| LIMIT 15 OFFSET 0;                                                              |
+|                                                                                 |
+| -- Resultado esperado (com índice correto):                                     |
+|                                                                                 |
+| -- Index Scan using idx_sessions_user_date on study_sessions                    |
+|                                                                                 |
+| -- (cost=0.42..10.5 rows=15 width=280) (actual time=0.05..0.12 rows=15 loops=1) |
+|                                                                                 |
+| -- Se aparecer 'Seq Scan': índice não está sendo usado.                         |
+|                                                                                 |
+| -- Verificar: o tipo de dado do parâmetro bate com a coluna? (UUID vs VARCHAR?) |
++---------------------------------------------------------------------------------+
+
+10. Checklist de Implementação
+
+10.1 Banco de Dados
+
+-   [ ] Extensões PostgreSQL habilitadas: pgcrypto, pg_trgm, btree_gist
+
+-   [ ] Schema analytics criado e permissões concedidas ao app_user
+
+-   [ ] Todas as migrations executam sem erro em ordem
+
+-   [ ] Generated columns existem em study_sessions e nas tabelas analytics
+
+-   [ ] Triggers de updated_at funcionando (testar via UPDATE manual no psql)
+
+-   [ ] Trigger de sessão concorrente rejeitando inserção com ended_at NULL duplicado
+
+-   [ ] Índices criados e validados com EXPLAIN ANALYZE nas queries principais
+
+10.2 Laravel / Eloquent
+
+-   [ ] Models com $table contendo prefixo 'analytics.' para tabelas do schema analítico
+
+-   [ ] $keyType = 'string' e $incrementing = false em todos os models com UUID
+
+-   [ ] duration_min ausente do $fillable (gerada pelo banco)
+
+-   [ ] Casts corretos para datetime, integer, float nos models
+
+-   [ ] Repository pattern: nenhum Model acessado diretamente no Controller
+
+10.3 Jobs de Métricas
+
+-   [ ] RecalculateMetricsJob usa transacção DB::transaction() envolvendo os 3 UPSERTs
+
+-   [ ] UPSERT com ON CONFLICT DO UPDATE (idempotente)
+
+-   [ ] Job configura $tries = 3 e $backoff = [30, 60, 120] (backoff exponencial)
+
+-   [ ] Cache invalidado após job concluir (Cache::tags(['metrics', userId])->flush())
+
+-   [ ] Série temporal usa generate_series para garantir todos os dias no range
+
++--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| PONTO DE ATENÇÃO CRÍTICO                                                                                                                                                                                                                                                                                                                                           |
++--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Generated Columns e Eloquent: Não inclua duration_min ou total_hours no array $fillable. Não tente settar esses valores via $model->duration_min = X. O PostgreSQL gerencia esses valores e qualquer tentativa de escrita retorna um erro de banco. Inclua-os em $casts apenas para leitura.                                                                       |
+|                                                                                                                                                                                                                                                                                                                                                                    |
+| Timezone em study_date: O campo study_date em analytics.daily_minutes deve armazenar a data no timezone DO USUÁRIO, não em UTC. Se um usuário em São Paulo estuda às 23h30 UTC-3, isso é 20h30 UTC e 23h30 no dia correto localmente. Fazer a conversão no Job antes do UPSERT: Carbon::parse($session->started_at)->setTimezone($user->timezone)->toDateString(). |
++--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+

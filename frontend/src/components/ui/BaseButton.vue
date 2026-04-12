@@ -48,11 +48,11 @@ withDefaults(
   box-shadow: var(--shadow-focus);
 }
 .base-button:hover:not(:disabled) {
-  transform: translateY(-1px);
+  transform: var(--state-hover-lift);
   box-shadow: var(--shadow-md);
 }
 .base-button:active:not(:disabled) {
-  transform: translateY(0);
+  transform: var(--state-active-press);
 }
 .base-button--primary {
   background: var(--color-primary);
@@ -118,7 +118,7 @@ withDefaults(
   font-size: var(--text-base);
 }
 .base-button:disabled {
-  opacity: 0.55;
+  opacity: var(--state-disabled-opacity);
   cursor: not-allowed;
   transform: none;
   box-shadow: none;

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, shallowRef, computed } from 'vue'
 import type { Technology } from '@/types/domain.types'
 import { technologiesApi } from '@/api/modules/technologies.api'
 
@@ -8,7 +8,7 @@ const CACHE_FRESH_MS = 60_000
 
 /** Store de tecnologias: CRUD, busca local e na API */
 export const useTechnologiesStore = defineStore('technologies', () => {
-  const technologies = ref<Technology[]>([])
+  const technologies = shallowRef<Technology[]>([])
   const lastFetchedAt = ref<number | null>(null)
   const loading = ref(false)
 

@@ -24,10 +24,5 @@ export function useGoalProgress(goal: { type: Goal['type']; start_date: string; 
     return 0
   })
 
-  const percentage = computed(() => {
-    // Precisa do target; não temos aqui. Deixar para o componente passar.
-    return 0
-  })
-
-  return { currentValue, percentage }
+  return { currentValue }
 }

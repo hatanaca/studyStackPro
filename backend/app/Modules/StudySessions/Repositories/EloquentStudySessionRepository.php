@@ -6,13 +6,17 @@ use App\Models\StudySession;
 use App\Modules\StudySessions\DTOs\StudySessionDTO;
 use App\Modules\StudySessions\Repositories\Contracts\StudySessionRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Implementação Eloquent do repositório de sessões.
  * Filtros: technology_id, date_from/to, min_duration, mood, status (active/completed).
+ * Cache com tags (sessions, sessions:user:{id}) para sessão ativa.
  */
 class EloquentStudySessionRepository implements StudySessionRepositoryInterface
 {
+    private const CACHE_TTL_MINUTES = 5;
+
     /** Lista sessões do usuário com filtros e paginação (máx 50 por página) */
     public function findByUser(string $userId, array $filters): LengthAwarePaginator
     {
@@ -49,14 +53,28 @@ class EloquentStudySessionRepository implements StudySessionRepositoryInterface
         return $query->paginate($perPage);
     }
 
-    /** Retorna sessão ativa (ended_at null) mais recente do usuário */
+    /** Retorna sessão ativa (ended_at null) mais recente do usuário. Cache 5min com tags sessions (só quando existe). */
     public function findActiveByUser(string $userId): ?StudySession
     {
-        return StudySession::where('user_id', $userId)
+        $cacheKey = "active-session:{$userId}";
+        $tags = ['sessions', "sessions:user:{$userId}"];
+
+        $cached = Cache::tags($tags)->get($cacheKey);
+        if ($cached instanceof StudySession) {
+            return $cached;
+        }
+
+        $session = StudySession::where('user_id', $userId)
             ->whereNull('ended_at')
             ->with('technology')
             ->orderByDesc('started_at')
             ->first();
+
+        if ($session) {
+            Cache::tags($tags)->put($cacheKey, $session, now()->addMinutes(self::CACHE_TTL_MINUTES));
+        }
+
+        return $session;
     }
 
     /** Busca sessão por ID com tecnologia carregada */

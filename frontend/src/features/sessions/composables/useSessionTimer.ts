@@ -1,4 +1,4 @@
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { useSessionsStore } from '@/stores/sessions.store'
 
 /** Intervalo do timer em ms (atualização a cada segundo) */
@@ -12,34 +12,58 @@ const POLL_INTERVAL_MS = 1000
 export function useSessionTimer() {
   const store = useSessionsStore()
   let intervalId: ReturnType<typeof setInterval> | null = null
+  let baseTimestamp: number | null = null
+  let baseElapsed = 0
 
-  /** Inicia o interval que incrementa elapsedSeconds */
   function startTicking() {
     stopTicking()
+    baseTimestamp = Date.now()
+    baseElapsed = store.elapsedSeconds
     intervalId = setInterval(() => {
-      store.setElapsedSeconds(store.elapsedSeconds + 1)
+      if (baseTimestamp !== null) {
+        const drift = Math.floor((Date.now() - baseTimestamp) / 1000)
+        store.setElapsedSeconds(baseElapsed + drift)
+      }
     }, POLL_INTERVAL_MS)
   }
 
-  /** Para o interval do timer */
   function stopTicking() {
     if (intervalId) {
       clearInterval(intervalId)
       intervalId = null
     }
+    baseTimestamp = null
   }
 
-  /** Busca sessão ativa na API e inicia/para o timer conforme o resultado */
   async function fetchActive() {
-    const session = await store.fetchActiveSession()
-    if (session) {
-      startTicking()
-    } else {
+    try {
+      const session = await store.fetchActiveSession()
+      if (session) {
+        startTicking()
+      } else {
+        stopTicking()
+      }
+    } catch {
       stopTicking()
     }
   }
 
-  onMounted(() => fetchActive())
+  // Reage a mudanças da sessão ativa originadas por WebSocket (setActiveSession/clearActiveSession).
+  // onMounted só cobre o carregamento inicial; este watch cobre eventos assíncronos posteriores.
+  watch(
+    () => store.activeSession,
+    (session, prevSession) => {
+      if (session && !prevSession) {
+        startTicking()
+      } else if (!session && prevSession) {
+        stopTicking()
+      }
+    },
+  )
+
+  onMounted(() => {
+    void fetchActive()
+  })
   onUnmounted(() => stopTicking())
 
   return {

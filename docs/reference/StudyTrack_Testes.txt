@@ -1,0 +1,1723 @@
++---------------------------------------------------------------------------------------------+
+| STUDYTRACK PRO                                                                              |
+|                                                                                             |
+| Estratégia Completa de Testes                                                               |
+|                                                                                             |
+| PHPUnit · Vitest · Feature Tests · Unit Tests · Fakes · CI/CD GitHub Actions                |
+|                                                                                             |
+| Pirâmide de testes · Testes com banco real · Cobertura por camada · Pipelines automatizadas |
++---------------------------------------------------------------------------------------------+
+
++---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| FILOSOFIA DE TESTES DESTE PROJETO                                                                                                                                                                                                                                                     |
++---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Testes de feature sobre testes de unidade: Para um projeto CRUD com API REST, Feature Tests que exercitam o endpoint completo (HTTP → banco → resposta) detectam mais bugs reais que mocks excessivos. Unit Tests ficam para lógica complexa isolada: Aggregators, Jobs, Composables. |
+|                                                                                                                                                                                                                                                                                       |
+| Banco real, não SQLite: PostgreSQL em container de teste. SQLite não suporta schemas (analytics.*), triggers, ou funções específicas do Postgres. Testar com SQLite seria testar algo diferente do que roda em produção.                                                              |
+|                                                                                                                                                                                                                                                                                       |
+| Event::fake() e Queue::fake() para isolar efeitos colaterais: Feature tests de sessões verificam que o evento foi disparado e o job foi enfileirado — sem executar o job em si. Job tem seu próprio teste unitário.                                                                   |
+|                                                                                                                                                                                                                                                                                       |
+| RefreshDatabase vs DatabaseTransactions: Usar RefreshDatabase (truncate) por padrão. DatabaseTransactions é mais rápido mas quebra com múltiplas conexões (PostgreSQL schemas separados, Redis). Consistência > velocidade nos testes.                                                |
++---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+1. Pirâmide de Testes do Projeto
+
+A distribuição de testes segue a pirâmide clássica, calibrada para o perfil deste sistema: API-centric, com lógica de negócio nos Services e Aggregators.
+
++-----------------------------------------------------------------------+
+| ▲ E2E / Manual                                                        |
+|                                                                       |
+| (2–3 fluxos críticos)                                                 |
+|                                                                       |
+| ───────────────────────                                               |
+|                                                                       |
+| Feature Tests (PHPUnit)                                               |
+|                                                                       |
+| endpoints completos, banco real                                       |
+|                                                                       |
+| ~40 testes / ~60% da suíte                                            |
+|                                                                       |
+| ───────────────────────────────                                       |
+|                                                                       |
+| Unit Tests Backend (PHPUnit)                                          |
+|                                                                       |
+| Aggregators, Services, Jobs, DTOs                                     |
+|                                                                       |
+| ~25 testes / ~25% da suíte                                            |
+|                                                                       |
+| ─────────────────────────────────────                                 |
+|                                                                       |
+| Unit Tests Frontend (Vitest)                                          |
+|                                                                       |
+| Composables, Stores, Formatters, Utils                                |
+|                                                                       |
+| ~20 testes / ~15% da suíte                                            |
+|                                                                       |
+| ───────────────────────────────────────────                           |
++-----------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------------------------------------------------------
+  Camada              Framework   Qtde Aprox.   O que testa                                            Banco
+  ------------------- ----------- ------------- ------------------------------------------------------ ---------------------
+  Feature (Backend)   PHPUnit     ~40           Endpoint completo: HTTP → Service → Banco → Resposta   PostgreSQL real
+
+  Unit (Backend)      PHPUnit     ~25           Aggregators, Services, Jobs, DTOs em isolamento        Mockery / sem banco
+
+  Unit (Frontend)     Vitest      ~20           Composables, Stores, formatters, utils                 Sem banco (mocks)
+
+  E2E / Manual        Manual      3–5 fluxos    Fluxo completo do usuário no browser                   Produção/staging
+  --------------------------------------------------------------------------------------------------------------------------
+
+2. Configuração do Ambiente de Testes
+
+2.1 Backend — phpunit.xml
+
+Configuração crítica: banco PostgreSQL dedicado para testes, Redis separado, variáveis de ambiente isoladas.
+
++--------------------------------------------------------------------------------+
+| <!-- phpunit.xml -->                                                           |
+|                                                                                |
+| <?xml version="1.0" encoding="UTF-8"?>                                         |
+|                                                                                |
+| <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"                 |
+|                                                                                |
+| xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"             |
+|                                                                                |
+| bootstrap="vendor/autoload.php"                                                |
+|                                                                                |
+| colors="true"                                                                  |
+|                                                                                |
+| stopOnFailure="false">                                                         |
+|                                                                                |
+| <testsuites>                                                                   |
+|                                                                                |
+| <testsuite name="Unit">                                                        |
+|                                                                                |
+| <directory suffix="Test.php">./tests/Unit</directory>                          |
+|                                                                                |
+| </testsuite>                                                                   |
+|                                                                                |
+| <testsuite name="Feature">                                                     |
+|                                                                                |
+| <directory suffix="Test.php">./tests/Feature</directory>                       |
+|                                                                                |
+| </testsuite>                                                                   |
+|                                                                                |
+| </testsuites>                                                                  |
+|                                                                                |
+| <php>                                                                          |
+|                                                                                |
+| <!-- Banco PostgreSQL de TESTE (separado do de desenvolvimento) -->            |
+|                                                                                |
+| <env name="DB_CONNECTION" value="pgsql" />                                     |
+|                                                                                |
+| <env name="DB_HOST" value="postgres" />                                        |
+|                                                                                |
+| <env name="DB_PORT" value="5432" />                                            |
+|                                                                                |
+| <env name="DB_DATABASE" value="studytrack_test" />                             |
+|                                                                                |
+| <env name="DB_USERNAME" value="studytrack" />                                  |
+|                                                                                |
+| <env name="DB_PASSWORD" value="secret" />                                      |
+|                                                                                |
+| <!-- Redis de TESTE (DB 15 — nunca usado em dev) -->                           |
+|                                                                                |
+| <env name="REDIS_DB" value="15" />                                             |
+|                                                                                |
+| <env name="CACHE_DRIVER" value="redis" />                                      |
+|                                                                                |
+| <env name="QUEUE_CONNECTION" value="sync" /> <!-- Jobs síncronos em testes --> |
+|                                                                                |
+| <env name="BROADCAST_DRIVER" value="null" /> <!-- Sem WebSocket em testes -->  |
+|                                                                                |
+| <env name="APP_ENV" value="testing" />                                         |
+|                                                                                |
+| <env name="APP_KEY" value="base64:test-key-32-chars-minimum=" />               |
+|                                                                                |
+| </php>                                                                         |
+|                                                                                |
+| <!-- Cobertura: apenas camadas com lógica real -->                             |
+|                                                                                |
+| <source>                                                                       |
+|                                                                                |
+| <include>                                                                      |
+|                                                                                |
+| <directory suffix=".php">./app/Modules</directory>                             |
+|                                                                                |
+| <directory suffix=".php">./app/Jobs</directory>                                |
+|                                                                                |
+| <directory suffix=".php">./app/Listeners</directory>                           |
+|                                                                                |
+| </include>                                                                     |
+|                                                                                |
+| </source>                                                                      |
+|                                                                                |
+| </phpunit>                                                                     |
++--------------------------------------------------------------------------------+
+
+2.2 TestCase Base Personalizado
+
+Uma classe TestCase base centraliza configurações comuns: criação de usuário autenticado, helpers de assertion, limpeza de cache.
+
++-------------------------------------------------------------------------------+
+| <?php // tests/TestCase.php                                                   |
+|                                                                               |
+| namespace Tests;                                                              |
+|                                                                               |
+| use App\Models\User;                                                          |
+|                                                                               |
+| use Illuminate\Foundation\Testing\TestCase as BaseTestCase;                   |
+|                                                                               |
+| use Illuminate\Foundation\Testing\RefreshDatabase;                            |
+|                                                                               |
+| use Illuminate\Support\Facades\Cache;                                         |
+|                                                                               |
+| abstract class TestCase extends BaseTestCase                                  |
+|                                                                               |
+| {                                                                             |
+|                                                                               |
+| use RefreshDatabase;                                                          |
+|                                                                               |
+| // Helper: cria usuário e retorna com token de autenticação                   |
+|                                                                               |
+| protected function createAuthenticatedUser(array $overrides = []): array      |
+|                                                                               |
+| {                                                                             |
+|                                                                               |
+| $user = User::factory()->create($overrides);                                  |
+|                                                                               |
+| $token = $user->createToken('test-token')->plainTextToken;                    |
+|                                                                               |
+| return compact('user', 'token');                                              |
+|                                                                               |
+| }                                                                             |
+|                                                                               |
+| // Helper: faz request autenticado                                            |
+|                                                                               |
+| protected function asUser(User $user): static                                 |
+|                                                                               |
+| {                                                                             |
+|                                                                               |
+| return $this->actingAs($user);                                                |
+|                                                                               |
+| }                                                                             |
+|                                                                               |
+| // Helper: request com Bearer token (testa via header, não via actingAs)      |
+|                                                                               |
+| protected function withBearerToken(string $token): static                     |
+|                                                                               |
+| {                                                                             |
+|                                                                               |
+| return $this->withHeader('Authorization', "Bearer {$token}");                 |
+|                                                                               |
+| }                                                                             |
+|                                                                               |
+| // Helper: limpa Redis entre testes que testam cache                          |
+|                                                                               |
+| protected function flushTestCache(): void                                     |
+|                                                                               |
+| {                                                                             |
+|                                                                               |
+| Cache::flush();                                                               |
+|                                                                               |
+| }                                                                             |
+|                                                                               |
+| // Helper: assertion customizada para envelope de resposta                    |
+|                                                                               |
+| protected function assertApiSuccess($response, int $status = 200): void       |
+|                                                                               |
+| {                                                                             |
+|                                                                               |
+| $response->assertStatus($status);                                             |
+|                                                                               |
+| $response->assertJsonPath('success', true);                                   |
+|                                                                               |
+| }                                                                             |
+|                                                                               |
+| protected function assertApiError($response, int $status, string $code): void |
+|                                                                               |
+| {                                                                             |
+|                                                                               |
+| $response->assertStatus($status);                                             |
+|                                                                               |
+| $response->assertJsonPath('success', false);                                  |
+|                                                                               |
+| $response->assertJsonPath('error.code', $code);                               |
+|                                                                               |
+| }                                                                             |
+|                                                                               |
+| }                                                                             |
++-------------------------------------------------------------------------------+
+
+2.3 Frontend — vitest.config.ts
+
++-------------------------------------------------------------------------+
+| // vitest.config.ts                                                     |
+|                                                                         |
+| import { defineConfig } from 'vitest/config';                           |
+|                                                                         |
+| import vue from '@vitejs/plugin-vue';                                   |
+|                                                                         |
+| import { fileURLToPath } from 'url';                                    |
+|                                                                         |
+| export default defineConfig({                                           |
+|                                                                         |
+| plugins: [vue()],                                                       |
+|                                                                         |
+| test: {                                                                 |
+|                                                                         |
+| environment: 'jsdom', // simula browser APIs                            |
+|                                                                         |
+| globals: true, // describe/it/expect sem import                         |
+|                                                                         |
+| setupFiles: ['./tests/setup.ts'],                                       |
+|                                                                         |
+| coverage: {                                                             |
+|                                                                         |
+| provider: 'v8',                                                         |
+|                                                                         |
+| reporter: ['text', 'json', 'html'],                                     |
+|                                                                         |
+| include: ['src/stores/**', 'src/composables/**', 'src/utils/**'],       |
+|                                                                         |
+| exclude: ['src/main.ts', 'src/router/**'],                              |
+|                                                                         |
+| },                                                                      |
+|                                                                         |
+| },                                                                      |
+|                                                                         |
+| resolve: {                                                              |
+|                                                                         |
+| alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },       |
+|                                                                         |
+| },                                                                      |
+|                                                                         |
+| });                                                                     |
+|                                                                         |
+| // tests/setup.ts                                                       |
+|                                                                         |
+| import { createPinia, setActivePinia } from 'pinia';                    |
+|                                                                         |
+| import { beforeEach } from 'vitest';                                    |
+|                                                                         |
+| beforeEach(() => {                                                      |
+|                                                                         |
+| // Pinia fresca antes de cada teste (evita estado vazando entre testes) |
+|                                                                         |
+| setActivePinia(createPinia());                                          |
+|                                                                         |
+| });                                                                     |
++-------------------------------------------------------------------------+
+
+3. Feature Tests — Backend (PHPUnit)
+
+3.1 Auth — AuthTest.php
+
+Testa todos os 7 endpoints de autenticação, incluindo casos de erro que um júnior costuma ignorar.
+
++------------------------------------------------------------------------------------------+
+| <?php // tests/Feature/Auth/AuthTest.php                                                 |
+|                                                                                          |
+| class AuthTest extends TestCase                                                          |
+|                                                                                          |
+| {                                                                                        |
+|                                                                                          |
+| // ── REGISTER ────────────────────────────────────────────────────                      |
+|                                                                                          |
+| public function test_user_can_register_with_valid_data(): void                           |
+|                                                                                          |
+| {                                                                                        |
+|                                                                                          |
+| $response = $this->postJson('/api/v1/auth/register', [                                   |
+|                                                                                          |
+| 'name' => 'Ana Lima',                                                                    |
+|                                                                                          |
+| 'email' => 'ana@example.com',                                                            |
+|                                                                                          |
+| 'password' => 'password123',                                                             |
+|                                                                                          |
+| 'password_confirmation' => 'password123',                                                |
+|                                                                                          |
+| 'timezone' => 'America/Sao_Paulo',                                                       |
+|                                                                                          |
+| ]);                                                                                      |
+|                                                                                          |
+| $this->assertApiSuccess($response, 201);                                                 |
+|                                                                                          |
+| $response->assertJsonStructure(['data' => ['id','name','email'], 'token']);              |
+|                                                                                          |
+| $this->assertDatabaseHas('users', ['email' => 'ana@example.com']);                       |
+|                                                                                          |
+| }                                                                                        |
+|                                                                                          |
+| public function test_register_fails_with_duplicate_email(): void                         |
+|                                                                                          |
+| {                                                                                        |
+|                                                                                          |
+| User::factory()->create(['email' => 'duplicate@example.com']);                           |
+|                                                                                          |
+| $response = $this->postJson('/api/v1/auth/register', [                                   |
+|                                                                                          |
+| 'name' => 'Other', 'email' => 'duplicate@example.com',                                   |
+|                                                                                          |
+| 'password' => 'password123', 'password_confirmation' => 'password123',                   |
+|                                                                                          |
+| ]);                                                                                      |
+|                                                                                          |
+| $this->assertApiError($response, 422, 'VALIDATION_ERROR');                               |
+|                                                                                          |
+| $response->assertJsonPath('error.details.email.0', fn($v) => str_contains($v, 'taken')); |
+|                                                                                          |
+| }                                                                                        |
+|                                                                                          |
+| public function test_register_fails_with_weak_password(): void                           |
+|                                                                                          |
+| {                                                                                        |
+|                                                                                          |
+| $response = $this->postJson('/api/v1/auth/register', [                                   |
+|                                                                                          |
+| 'name' => 'Test', 'email' => 'test@example.com',                                         |
+|                                                                                          |
+| 'password' => '123', 'password_confirmation' => '123',                                   |
+|                                                                                          |
+| ]);                                                                                      |
+|                                                                                          |
+| $this->assertApiError($response, 422, 'VALIDATION_ERROR');                               |
+|                                                                                          |
+| }                                                                                        |
+|                                                                                          |
+| // ── LOGIN ────────────────────────────────────────────────────────                     |
+|                                                                                          |
+| public function test_user_can_login_with_correct_credentials(): void                     |
+|                                                                                          |
+| {                                                                                        |
+|                                                                                          |
+| $user = User::factory()->create(['password' => Hash::make('correct-password')]);         |
+|                                                                                          |
+| $response = $this->postJson('/api/v1/auth/login', [                                      |
+|                                                                                          |
+| 'email' => $user->email,                                                                 |
+|                                                                                          |
+| 'password' => 'correct-password',                                                        |
+|                                                                                          |
+| ]);                                                                                      |
+|                                                                                          |
+| $this->assertApiSuccess($response);                                                      |
+|                                                                                          |
+| $response->assertJsonStructure(['data' => ['user'], 'token', 'token_type']);             |
+|                                                                                          |
+| }                                                                                        |
+|                                                                                          |
+| public function test_login_fails_with_wrong_password(): void                             |
+|                                                                                          |
+| {                                                                                        |
+|                                                                                          |
+| $user = User::factory()->create(['password' => Hash::make('correct')]);                  |
+|                                                                                          |
+| $response = $this->postJson('/api/v1/auth/login', [                                      |
+|                                                                                          |
+| 'email' => $user->email, 'password' => 'wrong',                                          |
+|                                                                                          |
+| ]);                                                                                      |
+|                                                                                          |
+| // CRÍTICO: resposta genérica — não revela se o email existe                             |
+|                                                                                          |
+| $this->assertApiError($response, 401, 'UNAUTHENTICATED');                                |
+|                                                                                          |
+| $response->assertJsonMissing(['email']); // não menciona o email na msg                  |
+|                                                                                          |
+| }                                                                                        |
+|                                                                                          |
+| // ── AUTENTICAÇÃO OBRIGATÓRIA ─────────────────────────────────────                     |
+|                                                                                          |
+| public function test_me_requires_authentication(): void                                  |
+|                                                                                          |
+| {                                                                                        |
+|                                                                                          |
+| $this->getJson('/api/v1/auth/me')                                                        |
+|                                                                                          |
+| ->assertStatus(401);                                                                     |
+|                                                                                          |
+| }                                                                                        |
+|                                                                                          |
+| public function test_me_returns_authenticated_user(): void                               |
+|                                                                                          |
+| {                                                                                        |
+|                                                                                          |
+| ['user' => $user] = $this->createAuthenticatedUser();                                    |
+|                                                                                          |
+| $this->asUser($user)                                                                     |
+|                                                                                          |
+| ->getJson('/api/v1/auth/me')                                                             |
+|                                                                                          |
+| ->assertStatus(200)                                                                      |
+|                                                                                          |
+| ->assertJsonPath('data.email', $user->email);                                            |
+|                                                                                          |
+| }                                                                                        |
+|                                                                                          |
+| public function test_logout_revokes_current_token(): void                                |
+|                                                                                          |
+| {                                                                                        |
+|                                                                                          |
+| ['user' => $user, 'token' => $token] = $this->createAuthenticatedUser();                 |
+|                                                                                          |
+| // Logout com o token                                                                    |
+|                                                                                          |
+| $this->withBearerToken($token)                                                           |
+|                                                                                          |
+| ->postJson('/api/v1/auth/logout')                                                        |
+|                                                                                          |
+| ->assertStatus(200);                                                                     |
+|                                                                                          |
+| // Mesmo token não funciona mais                                                         |
+|                                                                                          |
+| $this->withBearerToken($token)                                                           |
+|                                                                                          |
+| ->getJson('/api/v1/auth/me')                                                             |
+|                                                                                          |
+| ->assertStatus(401);                                                                     |
+|                                                                                          |
+| }                                                                                        |
+|                                                                                          |
+| }                                                                                        |
++------------------------------------------------------------------------------------------+
+
+3.2 StudySessions — StudySessionTest.php
+
+Os testes mais importantes do sistema. Cobrem o CRUD, os casos de erro de negócio (sessão concorrente) e verificam que eventos/jobs são disparados corretamente.
+
++-------------------------------------------------------------------------------------------+
+| <?php // tests/Feature/StudySessions/StudySessionCrudTest.php                             |
+|                                                                                           |
+| use Illuminate\Support\Facades\{Event, Queue, Cache};                                     |
+|                                                                                           |
+| use App\Events\StudySession\StudySessionCreated;                                          |
+|                                                                                           |
+| use App\Jobs\RecalculateMetricsJob;                                                       |
+|                                                                                           |
+| class StudySessionCrudTest extends TestCase                                               |
+|                                                                                           |
+| {                                                                                         |
+|                                                                                           |
+| // ── CRIAÇÃO ─────────────────────────────────────────────────────                       |
+|                                                                                           |
+| public function test_user_can_create_completed_session(): void                            |
+|                                                                                           |
+| {                                                                                         |
+|                                                                                           |
+| Event::fake();                                                                            |
+|                                                                                           |
+| Queue::fake();                                                                            |
+|                                                                                           |
+| ['user' => $user] = $this->createAuthenticatedUser();                                     |
+|                                                                                           |
+| $tech = Technology::factory()->for($user)->create();                                      |
+|                                                                                           |
+| $response = $this->asUser($user)->postJson('/api/v1/study-sessions', [                    |
+|                                                                                           |
+| 'technology_id' => $tech->id,                                                             |
+|                                                                                           |
+| 'started_at' => now()->subHours(2)->toIso8601String(),                                    |
+|                                                                                           |
+| 'ended_at' => now()->toIso8601String(),                                                   |
+|                                                                                           |
+| 'notes' => 'Estudei Eloquent ORM',                                                        |
+|                                                                                           |
+| 'mood' => 4,                                                                              |
+|                                                                                           |
+| ]);                                                                                       |
+|                                                                                           |
+| $response->assertStatus(201);                                                             |
+|                                                                                           |
+| $response->assertJsonStructure(['data' => [                                               |
+|                                                                                           |
+| 'id','technology','started_at','ended_at','duration_min','duration_formatted'             |
+|                                                                                           |
+| ]]);                                                                                      |
+|                                                                                           |
+| // Verifica que o campo gerado pelo banco foi calculado                                   |
+|                                                                                           |
+| $response->assertJsonPath('data.duration_min', 120);                                      |
+|                                                                                           |
+| // Verifica que o evento foi disparado com o model correto                                |
+|                                                                                           |
+| Event::assertDispatched(StudySessionCreated::class, function ($event) use ($tech) {       |
+|                                                                                           |
+| return $event->session->technology_id === $tech->id;                                      |
+|                                                                                           |
+| });                                                                                       |
+|                                                                                           |
+| // Verifica que o job foi enfileirado na fila correta                                     |
+|                                                                                           |
+| Queue::assertPushedOn('metrics', RecalculateMetricsJob::class);                           |
+|                                                                                           |
+| }                                                                                         |
+|                                                                                           |
+| public function test_ended_at_must_be_after_started_at(): void                            |
+|                                                                                           |
+| {                                                                                         |
+|                                                                                           |
+| ['user' => $user] = $this->createAuthenticatedUser();                                     |
+|                                                                                           |
+| $tech = Technology::factory()->for($user)->create();                                      |
+|                                                                                           |
+| $response = $this->asUser($user)->postJson('/api/v1/study-sessions', [                    |
+|                                                                                           |
+| 'technology_id' => $tech->id,                                                             |
+|                                                                                           |
+| 'started_at' => now()->toIso8601String(),                                                 |
+|                                                                                           |
+| 'ended_at' => now()->subHour()->toIso8601String(), // anterior!                           |
+|                                                                                           |
+| ]);                                                                                       |
+|                                                                                           |
+| $this->assertApiError($response, 422, 'VALIDATION_ERROR');                                |
+|                                                                                           |
+| }                                                                                         |
+|                                                                                           |
+| public function test_user_cannot_use_another_users_technology(): void                     |
+|                                                                                           |
+| {                                                                                         |
+|                                                                                           |
+| ['user' => $user] = $this->createAuthenticatedUser();                                     |
+|                                                                                           |
+| ['user' => $other] = $this->createAuthenticatedUser();                                    |
+|                                                                                           |
+| $techOfOther = Technology::factory()->for($other)->create();                              |
+|                                                                                           |
+| $response = $this->asUser($user)->postJson('/api/v1/study-sessions', [                    |
+|                                                                                           |
+| 'technology_id' => $techOfOther->id, // tecnologia de outro usuário!                      |
+|                                                                                           |
+| 'started_at' => now()->subHour()->toIso8601String(),                                      |
+|                                                                                           |
+| 'ended_at' => now()->toIso8601String(),                                                   |
+|                                                                                           |
+| ]);                                                                                       |
+|                                                                                           |
+| // CRÍTICO: não pode ser 404 (info leak) — deve ser 422                                   |
+|                                                                                           |
+| $this->assertApiError($response, 422, 'VALIDATION_ERROR');                                |
+|                                                                                           |
+| }                                                                                         |
+|                                                                                           |
+| // ── SESSÃO ATIVA (TIMER) ─────────────────────────────────────────                      |
+|                                                                                           |
+| public function test_user_can_start_active_session(): void                                |
+|                                                                                           |
+| {                                                                                         |
+|                                                                                           |
+| Event::fake();                                                                            |
+|                                                                                           |
+| ['user' => $user] = $this->createAuthenticatedUser();                                     |
+|                                                                                           |
+| $tech = Technology::factory()->for($user)->create();                                      |
+|                                                                                           |
+| $response = $this->asUser($user)->postJson('/api/v1/study-sessions/start', [              |
+|                                                                                           |
+| 'technology_id' => $tech->id,                                                             |
+|                                                                                           |
+| ]);                                                                                       |
+|                                                                                           |
+| $response->assertStatus(201);                                                             |
+|                                                                                           |
+| $response->assertJsonPath('data.ended_at', null);                                         |
+|                                                                                           |
+| $response->assertJsonPath('data.status', 'active');                                       |
+|                                                                                           |
+| }                                                                                         |
+|                                                                                           |
+| public function test_cannot_start_second_concurrent_session(): void                       |
+|                                                                                           |
+| {                                                                                         |
+|                                                                                           |
+| ['user' => $user] = $this->createAuthenticatedUser();                                     |
+|                                                                                           |
+| $tech = Technology::factory()->for($user)->create();                                      |
+|                                                                                           |
+| // Cria primeira sessão ativa                                                             |
+|                                                                                           |
+| StudySession::factory()->for($user)->active()->create([                                   |
+|                                                                                           |
+| 'technology_id' => $tech->id,                                                             |
+|                                                                                           |
+| ]);                                                                                       |
+|                                                                                           |
+| // Tenta criar segunda                                                                    |
+|                                                                                           |
+| $response = $this->asUser($user)->postJson('/api/v1/study-sessions/start', [              |
+|                                                                                           |
+| 'technology_id' => $tech->id,                                                             |
+|                                                                                           |
+| ]);                                                                                       |
+|                                                                                           |
+| $this->assertApiError($response, 409, 'CONCURRENT_SESSION');                              |
+|                                                                                           |
+| // Response deve incluir o id da sessão ativa atual                                       |
+|                                                                                           |
+| $response->assertJsonPath('error.details.active_session_id', fn($v) => $v !== null);      |
+|                                                                                           |
+| }                                                                                         |
+|                                                                                           |
+| // ── LISTAGEM E FILTROS ────────────────────────────────────────────                     |
+|                                                                                           |
+| public function test_user_only_sees_own_sessions(): void                                  |
+|                                                                                           |
+| {                                                                                         |
+|                                                                                           |
+| ['user' => $userA] = $this->createAuthenticatedUser();                                    |
+|                                                                                           |
+| ['user' => $userB] = $this->createAuthenticatedUser();                                    |
+|                                                                                           |
+| StudySession::factory()->count(3)->for($userA)->create();                                 |
+|                                                                                           |
+| StudySession::factory()->count(5)->for($userB)->create();                                 |
+|                                                                                           |
+| $response = $this->asUser($userA)->getJson('/api/v1/study-sessions');                     |
+|                                                                                           |
+| $response->assertStatus(200);                                                             |
+|                                                                                           |
+| $response->assertJsonPath('meta.total', 3); // apenas as 3 do userA                       |
+|                                                                                           |
+| }                                                                                         |
+|                                                                                           |
+| public function test_sessions_can_be_filtered_by_technology(): void                       |
+|                                                                                           |
+| {                                                                                         |
+|                                                                                           |
+| ['user' => $user] = $this->createAuthenticatedUser();                                     |
+|                                                                                           |
+| $vue = Technology::factory()->for($user)->create(['name' => 'Vue']);                      |
+|                                                                                           |
+| $laravel = Technology::factory()->for($user)->create(['name' => 'Laravel']);              |
+|                                                                                           |
+| StudySession::factory()->count(3)->for($user)->create(['technology_id' => $vue->id]);     |
+|                                                                                           |
+| StudySession::factory()->count(2)->for($user)->create(['technology_id' => $laravel->id]); |
+|                                                                                           |
+| $response = $this->asUser($user)                                                          |
+|                                                                                           |
+| ->getJson("/api/v1/study-sessions?technology_id={$vue->id}");                             |
+|                                                                                           |
+| $response->assertStatus(200);                                                             |
+|                                                                                           |
+| $response->assertJsonPath('meta.total', 3);                                               |
+|                                                                                           |
+| // Todas as sessões retornadas devem ser de Vue                                           |
+|                                                                                           |
+| collect($response->json('data'))->each(function ($session) use ($vue) {                   |
+|                                                                                           |
+| $this->assertEquals($vue->id, $session['technology']['id']);                              |
+|                                                                                           |
+| });                                                                                       |
+|                                                                                           |
+| }                                                                                         |
+|                                                                                           |
+| // ── AUTORIZAÇÃO ──────────────────────────────────────────────────                      |
+|                                                                                           |
+| public function test_user_cannot_access_another_users_session(): void                     |
+|                                                                                           |
+| {                                                                                         |
+|                                                                                           |
+| ['user' => $owner] = $this->createAuthenticatedUser();                                    |
+|                                                                                           |
+| ['user' => $other] = $this->createAuthenticatedUser();                                    |
+|                                                                                           |
+| $session = StudySession::factory()->for($owner)->create();                                |
+|                                                                                           |
+| $this->asUser($other)                                                                     |
+|                                                                                           |
+| ->getJson("/api/v1/study-sessions/{$session->id}")                                        |
+|                                                                                           |
+| ->assertStatus(403);                                                                      |
+|                                                                                           |
+| }                                                                                         |
+|                                                                                           |
+| }                                                                                         |
++-------------------------------------------------------------------------------------------+
+
+3.3 Analytics — AnalyticsTest.php
+
+Testa os endpoints de analytics com foco no comportamento do cache e na corretude dos dados retornados após recálculo.
+
++----------------------------------------------------------------------------------------------+
+| <?php // tests/Feature/Analytics/AnalyticsTest.php                                           |
+|                                                                                              |
+| class AnalyticsTest extends TestCase                                                         |
+|                                                                                              |
+| {                                                                                            |
+|                                                                                              |
+| public function test_dashboard_returns_correct_structure(): void                             |
+|                                                                                              |
+| {                                                                                            |
+|                                                                                              |
+| ['user' => $user] = $this->createAuthenticatedUser();                                        |
+|                                                                                              |
+| // Popula analytics.* diretamente (simula job já executado)                                  |
+|                                                                                              |
+| UserMetrics::factory()->for($user)->create([                                                 |
+|                                                                                              |
+| 'total_sessions' => 10,                                                                      |
+|                                                                                              |
+| 'total_minutes' => 600,                                                                      |
+|                                                                                              |
+| 'total_hours' => 10.0,                                                                       |
+|                                                                                              |
+| ]);                                                                                          |
+|                                                                                              |
+| $response = $this->asUser($user)->getJson('/api/v1/analytics/dashboard');                    |
+|                                                                                              |
+| $response->assertStatus(200);                                                                |
+|                                                                                              |
+| $response->assertJsonStructure(['data' => [                                                  |
+|                                                                                              |
+| 'user_metrics' => ['total_sessions','total_minutes','current_streak_days'],                  |
+|                                                                                              |
+| 'technology_metrics',                                                                        |
+|                                                                                              |
+| 'time_series_30d',                                                                           |
+|                                                                                              |
+| 'weekly_comparison',                                                                         |
+|                                                                                              |
+| ]]);                                                                                         |
+|                                                                                              |
+| }                                                                                            |
+|                                                                                              |
+| public function test_dashboard_is_served_from_cache_on_second_request(): void                |
+|                                                                                              |
+| {                                                                                            |
+|                                                                                              |
+| ['user' => $user] = $this->createAuthenticatedUser();                                        |
+|                                                                                              |
+| UserMetrics::factory()->for($user)->create();                                                |
+|                                                                                              |
+| // Primeira request: cache miss (popula cache)                                               |
+|                                                                                              |
+| $this->asUser($user)->getJson('/api/v1/analytics/dashboard');                                |
+|                                                                                              |
+| // Verifica que o cache foi populado                                                         |
+|                                                                                              |
+| $cacheKey = "dashboard:{$user->id}";                                                         |
+|                                                                                              |
+| $this->assertNotNull(                                                                        |
+|                                                                                              |
+| Cache::tags(['analytics', "user:{$user->id}"])->get($cacheKey)                               |
+|                                                                                              |
+| );                                                                                           |
+|                                                                                              |
+| // Segunda request: deve servir do cache (sem nova query ao banco)                           |
+|                                                                                              |
+| DB::connection()->enableQueryLog();                                                          |
+|                                                                                              |
+| $this->asUser($user)->getJson('/api/v1/analytics/dashboard');                                |
+|                                                                                              |
+| $queries = DB::connection()->getQueryLog();                                                  |
+|                                                                                              |
+| DB::connection()->disableQueryLog();                                                         |
+|                                                                                              |
+| // Cache HIT: zero queries ao banco                                                          |
+|                                                                                              |
+| $this->assertCount(0, $queries, 'Dashboard should be served from cache');                    |
+|                                                                                              |
+| }                                                                                            |
+|                                                                                              |
+| public function test_recalculate_dispatches_job_and_returns_202(): void                      |
+|                                                                                              |
+| {                                                                                            |
+|                                                                                              |
+| Queue::fake();                                                                               |
+|                                                                                              |
+| ['user' => $user] = $this->createAuthenticatedUser();                                        |
+|                                                                                              |
+| $response = $this->asUser($user)->postJson('/api/v1/analytics/recalculate');                 |
+|                                                                                              |
+| $response->assertStatus(202);                                                                |
+|                                                                                              |
+| Queue::assertPushedOn('metrics', RecalculateMetricsJob::class, function ($job) use ($user) { |
+|                                                                                              |
+| return $job->userId === $user->id;                                                           |
+|                                                                                              |
+| });                                                                                          |
+|                                                                                              |
+| }                                                                                            |
+|                                                                                              |
+| public function test_cache_is_invalidated_after_session_created(): void                      |
+|                                                                                              |
+| {                                                                                            |
+|                                                                                              |
+| ['user' => $user] = $this->createAuthenticatedUser();                                        |
+|                                                                                              |
+| $tech = Technology::factory()->for($user)->create();                                         |
+|                                                                                              |
+| // Popula cache                                                                              |
+|                                                                                              |
+| Cache::tags(['analytics', "user:{$user->id}"])                                               |
+|                                                                                              |
+| ->put("dashboard:{$user->id}", ['fake' => 'data'], 300);                                     |
+|                                                                                              |
+| // Cria sessão (listeners executam sincronamente em testes)                                  |
+|                                                                                              |
+| $this->asUser($user)->postJson('/api/v1/study-sessions', [                                   |
+|                                                                                              |
+| 'technology_id' => $tech->id,                                                                |
+|                                                                                              |
+| 'started_at' => now()->subHour()->toIso8601String(),                                         |
+|                                                                                              |
+| 'ended_at' => now()->toIso8601String(),                                                      |
+|                                                                                              |
+| ]);                                                                                          |
+|                                                                                              |
+| // Cache deve ter sido invalidado pelo InvalidateSessionCache listener                       |
+|                                                                                              |
+| $this->assertNull(                                                                           |
+|                                                                                              |
+| Cache::tags(['analytics', "user:{$user->id}"])->get("dashboard:{$user->id}")                 |
+|                                                                                              |
+| );                                                                                           |
+|                                                                                              |
+| }                                                                                            |
+|                                                                                              |
+| }                                                                                            |
++----------------------------------------------------------------------------------------------+
+
+4. Unit Tests — Backend (PHPUnit)
+
+4.1 UserMetricsAggregator — Lógica de Streak
+
+O cálculo de streak é a lógica mais complexa do sistema. Testes unitários isolam edge cases que seriam difíceis de reproduzir em feature tests.
+
++---------------------------------------------------------------------------------+
+| <?php // tests/Unit/Aggregators/UserMetricsAggregatorTest.php                   |
+|                                                                                 |
+| use App\Modules\Analytics\Aggregators\UserMetricsAggregator;                    |
+|                                                                                 |
+| class UserMetricsAggregatorTest extends TestCase                                |
+|                                                                                 |
+| {                                                                               |
+|                                                                                 |
+| use RefreshDatabase;                                                            |
+|                                                                                 |
+| private UserMetricsAggregator $aggregator;                                      |
+|                                                                                 |
+| private User $user;                                                             |
+|                                                                                 |
+| protected function setUp(): void                                                |
+|                                                                                 |
+| {                                                                               |
+|                                                                                 |
+| parent::setUp();                                                                |
+|                                                                                 |
+| $this->aggregator = app(UserMetricsAggregator::class);                          |
+|                                                                                 |
+| $this->user = User::factory()->create();                                        |
+|                                                                                 |
+| }                                                                               |
+|                                                                                 |
+| public function test_streak_is_1_for_single_today_session(): void               |
+|                                                                                 |
+| {                                                                               |
+|                                                                                 |
+| $this->createSessionOn(today());                                                |
+|                                                                                 |
+| $this->aggregator->recalculate($this->user->id);                                |
+|                                                                                 |
+| $this->assertAnalyticsValue('current_streak_days', 1);                          |
+|                                                                                 |
+| }                                                                               |
+|                                                                                 |
+| public function test_streak_is_3_for_three_consecutive_days(): void             |
+|                                                                                 |
+| {                                                                               |
+|                                                                                 |
+| $this->createSessionOn(today());                                                |
+|                                                                                 |
+| $this->createSessionOn(today()->subDay());                                      |
+|                                                                                 |
+| $this->createSessionOn(today()->subDays(2));                                    |
+|                                                                                 |
+| $this->aggregator->recalculate($this->user->id);                                |
+|                                                                                 |
+| $this->assertAnalyticsValue('current_streak_days', 3);                          |
+|                                                                                 |
+| }                                                                               |
+|                                                                                 |
+| public function test_streak_resets_to_0_if_yesterday_has_no_session(): void     |
+|                                                                                 |
+| {                                                                               |
+|                                                                                 |
+| // Sessão apenas anteontem — streak quebrado                                    |
+|                                                                                 |
+| $this->createSessionOn(today()->subDays(2));                                    |
+|                                                                                 |
+| $this->aggregator->recalculate($this->user->id);                                |
+|                                                                                 |
+| $this->assertAnalyticsValue('current_streak_days', 0);                          |
+|                                                                                 |
+| }                                                                               |
+|                                                                                 |
+| public function test_streak_counts_only_until_first_gap(): void                 |
+|                                                                                 |
+| {                                                                               |
+|                                                                                 |
+| $this->createSessionOn(today());                                                |
+|                                                                                 |
+| $this->createSessionOn(today()->subDay());                                      |
+|                                                                                 |
+| // gap aqui — sem sessão em subDays(2)                                          |
+|                                                                                 |
+| $this->createSessionOn(today()->subDays(3));                                    |
+|                                                                                 |
+| $this->createSessionOn(today()->subDays(4));                                    |
+|                                                                                 |
+| $this->aggregator->recalculate($this->user->id);                                |
+|                                                                                 |
+| // Streak atual = 2 (hoje + ontem), não 4                                       |
+|                                                                                 |
+| $this->assertAnalyticsValue('current_streak_days', 2);                          |
+|                                                                                 |
+| }                                                                               |
+|                                                                                 |
+| public function test_max_streak_is_preserved_when_current_streak_resets(): void |
+|                                                                                 |
+| {                                                                               |
+|                                                                                 |
+| // Simula que max_streak_days já era 10                                         |
+|                                                                                 |
+| \DB::table('analytics.user_metrics')->insert([                                  |
+|                                                                                 |
+| 'user_id' => $this->user->id,                                                   |
+|                                                                                 |
+| 'max_streak_days' => 10,                                                        |
+|                                                                                 |
+| 'current_streak_days' => 0,                                                     |
+|                                                                                 |
+| // ... outros campos ...                                                        |
+|                                                                                 |
+| ]);                                                                             |
+|                                                                                 |
+| // Nova sessão de hoje: streak atual = 1, max permanece 10                      |
+|                                                                                 |
+| $this->createSessionOn(today());                                                |
+|                                                                                 |
+| $this->aggregator->recalculate($this->user->id);                                |
+|                                                                                 |
+| $this->assertAnalyticsValue('current_streak_days', 1);                          |
+|                                                                                 |
+| $this->assertAnalyticsValue('max_streak_days', 10); // preservado               |
+|                                                                                 |
+| }                                                                               |
+|                                                                                 |
+| // ── HELPERS ──────────────────────────────────────────────────────            |
+|                                                                                 |
+| private function createSessionOn(Carbon $date): StudySession                    |
+|                                                                                 |
+| {                                                                               |
+|                                                                                 |
+| $tech = Technology::factory()->for($this->user)->create();                      |
+|                                                                                 |
+| return StudySession::factory()->for($this->user)->create([                      |
+|                                                                                 |
+| 'technology_id' => $tech->id,                                                   |
+|                                                                                 |
+| 'started_at' => $date->copy()->setHour(9),                                      |
+|                                                                                 |
+| 'ended_at' => $date->copy()->setHour(10),                                       |
+|                                                                                 |
+| ]);                                                                             |
+|                                                                                 |
+| }                                                                               |
+|                                                                                 |
+| private function assertAnalyticsValue(string $field, mixed $expected): void     |
+|                                                                                 |
+| {                                                                               |
+|                                                                                 |
+| $metrics = \DB::table('analytics.user_metrics')                                 |
+|                                                                                 |
+| ->where('user_id', $this->user->id)->first();                                   |
+|                                                                                 |
+| $this->assertNotNull($metrics, 'user_metrics não foi criado');                  |
+|                                                                                 |
+| $this->assertEquals($expected, $metrics->$field,                                |
+|                                                                                 |
+| "Esperado {$field} = {$expected}, obteve {$metrics->$field}");                  |
+|                                                                                 |
+| }                                                                               |
+|                                                                                 |
+| }                                                                               |
++---------------------------------------------------------------------------------+
+
+4.2 RecalculateMetricsJob — Teste com Mocks
+
++----------------------------------------------------------------------------+
+| <?php // tests/Unit/Jobs/RecalculateMetricsJobTest.php                     |
+|                                                                            |
+| use App\Jobs\RecalculateMetricsJob;                                        |
+|                                                                            |
+| use Mockery;                                                               |
+|                                                                            |
+| class RecalculateMetricsJobTest extends TestCase                           |
+|                                                                            |
+| {                                                                          |
+|                                                                            |
+| public function test_job_calls_all_three_aggregators(): void               |
+|                                                                            |
+| {                                                                          |
+|                                                                            |
+| Event::fake([MetricsRecalculated::class]);                                 |
+|                                                                            |
+| $userAgg = Mockery::mock(UserMetricsAggregator::class);                    |
+|                                                                            |
+| $techAgg = Mockery::mock(TechMetricsAggregator::class);                    |
+|                                                                            |
+| $dailyAgg = Mockery::mock(DailyMinutesAggregator::class);                  |
+|                                                                            |
+| // Garante que cada aggregator é chamado exatamente 1 vez                  |
+|                                                                            |
+| $userAgg->shouldReceive('recalculate')->once()->with('user-uuid-123');     |
+|                                                                            |
+| $techAgg->shouldReceive('recalculate')->once()->with('user-uuid-123');     |
+|                                                                            |
+| $dailyAgg->shouldReceive('recalculate')->once()->with('user-uuid-123');    |
+|                                                                            |
+| $job = new RecalculateMetricsJob('user-uuid-123');                         |
+|                                                                            |
+| $job->handle($userAgg, $techAgg, $dailyAgg, app(AnalyticsService::class)); |
+|                                                                            |
+| Event::assertDispatched(MetricsRecalculated::class, function ($event) {    |
+|                                                                            |
+| return $event->userId === 'user-uuid-123';                                 |
+|                                                                            |
+| });                                                                        |
+|                                                                            |
+| }                                                                          |
+|                                                                            |
+| public function test_job_unique_id_is_user_id(): void                      |
+|                                                                            |
+| {                                                                          |
+|                                                                            |
+| $job = new RecalculateMetricsJob('specific-user-uuid');                    |
+|                                                                            |
+| $this->assertSame('specific-user-uuid', $job->uniqueId());                 |
+|                                                                            |
+| }                                                                          |
+|                                                                            |
+| public function test_failed_logs_error_with_context(): void                |
+|                                                                            |
+| {                                                                          |
+|                                                                            |
+| Log::shouldReceive('error')                                                |
+|                                                                            |
+| ->once()                                                                   |
+|                                                                            |
+| ->with('RecalculateMetricsJob failed', Mockery::on(function ($ctx) {       |
+|                                                                            |
+| return isset($ctx['userId']) && isset($ctx['error']);                      |
+|                                                                            |
+| }));                                                                       |
+|                                                                            |
+| $job = new RecalculateMetricsJob('user-uuid');                             |
+|                                                                            |
+| $job->failed(new \RuntimeException('Test failure'));                       |
+|                                                                            |
+| }                                                                          |
+|                                                                            |
+| }                                                                          |
++----------------------------------------------------------------------------+
+
+5. Unit Tests — Frontend (Vitest)
+
+5.1 Analytics Store
+
+Testa o comportamento do store isolado de qualquer componente ou API real.
+
++-------------------------------------------------------------------------------------+
+| // tests/unit/stores/analytics.store.spec.ts                                        |
+|                                                                                     |
+| import { describe, it, expect, vi, beforeEach } from 'vitest';                      |
+|                                                                                     |
+| import { useAnalyticsStore } from '@/stores/analytics.store';                       |
+|                                                                                     |
+| import * as analyticsApi from '@/api/modules/analytics.api';                        |
+|                                                                                     |
+| describe('analytics.store', () => {                                                 |
+|                                                                                     |
+| describe('fetchDashboard', () => {                                                  |
+|                                                                                     |
+| it('populates dashboard and sets lastFetchAt on success', async () => {             |
+|                                                                                     |
+| const mockData = { user_metrics: { total_sessions: 10 } };                          |
+|                                                                                     |
+| vi.spyOn(analyticsApi, 'getDashboard').mockResolvedValueOnce({                      |
+|                                                                                     |
+| data: mockData,                                                                     |
+|                                                                                     |
+| });                                                                                 |
+|                                                                                     |
+| const store = useAnalyticsStore();                                                  |
+|                                                                                     |
+| await store.fetchDashboard();                                                       |
+|                                                                                     |
+| expect(store.dashboard).toEqual(mockData);                                          |
+|                                                                                     |
+| expect(store.lastFetchAt).toBeInstanceOf(Date);                                     |
+|                                                                                     |
+| expect(store.isLoading).toBe(false);                                                |
+|                                                                                     |
+| expect(store.error).toBeNull();                                                     |
+|                                                                                     |
+| });                                                                                 |
+|                                                                                     |
+| it('sets error message on API failure', async () => {                               |
+|                                                                                     |
+| vi.spyOn(analyticsApi, 'getDashboard').mockRejectedValueOnce({                      |
+|                                                                                     |
+| response: { data: { error: { message: 'Unauthorized' } } },                         |
+|                                                                                     |
+| });                                                                                 |
+|                                                                                     |
+| const store = useAnalyticsStore();                                                  |
+|                                                                                     |
+| await store.fetchDashboard();                                                       |
+|                                                                                     |
+| expect(store.error).toBe('Unauthorized');                                           |
+|                                                                                     |
+| expect(store.isLoading).toBe(false);                                                |
+|                                                                                     |
+| });                                                                                 |
+|                                                                                     |
+| it('does NOT refetch when data is fresh', async () => {                             |
+|                                                                                     |
+| const spy = vi.spyOn(analyticsApi, 'getDashboard').mockResolvedValue({ data: {} }); |
+|                                                                                     |
+| const store = useAnalyticsStore();                                                  |
+|                                                                                     |
+| await store.fetchDashboard(); // first fetch                                        |
+|                                                                                     |
+| await store.fetchDashboard(); // should skip — data is fresh                        |
+|                                                                                     |
+| expect(spy).toHaveBeenCalledTimes(1); // apenas 1 chamada à API                     |
+|                                                                                     |
+| });                                                                                 |
+|                                                                                     |
+| it('force=true bypasses freshness check', async () => {                             |
+|                                                                                     |
+| const spy = vi.spyOn(analyticsApi, 'getDashboard').mockResolvedValue({ data: {} }); |
+|                                                                                     |
+| const store = useAnalyticsStore();                                                  |
+|                                                                                     |
+| await store.fetchDashboard();                                                       |
+|                                                                                     |
+| await store.fetchDashboard(true); // forçado                                        |
+|                                                                                     |
+| expect(spy).toHaveBeenCalledTimes(2);                                               |
+|                                                                                     |
+| });                                                                                 |
+|                                                                                     |
+| });                                                                                 |
+|                                                                                     |
+| describe('updateFromWebSocket', () => {                                             |
+|                                                                                     |
+| it('updates dashboard state and clears recalculating flag', () => {                 |
+|                                                                                     |
+| const store = useAnalyticsStore();                                                  |
+|                                                                                     |
+| store.setRecalculating(true);                                                       |
+|                                                                                     |
+| const newData = { user_metrics: { total_sessions: 42 } };                           |
+|                                                                                     |
+| store.updateFromWebSocket(newData);                                                 |
+|                                                                                     |
+| expect(store.dashboard).toEqual(newData);                                           |
+|                                                                                     |
+| expect(store.isRecalculating).toBe(false);                                          |
+|                                                                                     |
+| expect(store.lastFetchAt).toBeInstanceOf(Date);                                     |
+|                                                                                     |
+| });                                                                                 |
+|                                                                                     |
+| });                                                                                 |
+|                                                                                     |
+| describe('computed: currentStreak', () => {                                         |
+|                                                                                     |
+| it('returns personal best badge when current equals max', () => {                   |
+|                                                                                     |
+| const store = useAnalyticsStore();                                                  |
+|                                                                                     |
+| store.dashboard = {                                                                 |
+|                                                                                     |
+| user_metrics: { current_streak_days: 15, max_streak_days: 15 },                     |
+|                                                                                     |
+| } as any;                                                                           |
+|                                                                                     |
+| expect(store.currentStreak.isPersonalBest).toBe(true);                              |
+|                                                                                     |
+| });                                                                                 |
+|                                                                                     |
+| it('returns false for personal best when current is below max', () => {             |
+|                                                                                     |
+| const store = useAnalyticsStore();                                                  |
+|                                                                                     |
+| store.dashboard = {                                                                 |
+|                                                                                     |
+| user_metrics: { current_streak_days: 5, max_streak_days: 15 },                      |
+|                                                                                     |
+| } as any;                                                                           |
+|                                                                                     |
+| expect(store.currentStreak.isPersonalBest).toBe(false);                             |
+|                                                                                     |
+| });                                                                                 |
+|                                                                                     |
+| });                                                                                 |
+|                                                                                     |
+| });                                                                                 |
++-------------------------------------------------------------------------------------+
+
+5.2 useSessionTimer Composable
+
++------------------------------------------------------------------------------------+
+| // tests/unit/composables/useSessionTimer.spec.ts                                  |
+|                                                                                    |
+| import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';          |
+|                                                                                    |
+| import { useSessionTimer } from '@/features/sessions/composables/useSessionTimer'; |
+|                                                                                    |
+| import { mount } from '@vue/test-utils';                                           |
+|                                                                                    |
+| import { defineComponent } from 'vue';                                             |
+|                                                                                    |
+| // Helper: monta composable dentro de um componente para usar lifecycle hooks      |
+|                                                                                    |
+| function mountTimer(elapsedSeconds: number) {                                      |
+|                                                                                    |
+| const session = { id: 'uuid', elapsed_seconds: elapsedSeconds } as any;            |
+|                                                                                    |
+| let timer: ReturnType<typeof useSessionTimer>;                                     |
+|                                                                                    |
+| const wrapper = mount(defineComponent({                                            |
+|                                                                                    |
+| setup() {                                                                          |
+|                                                                                    |
+| timer = useSessionTimer(session);                                                  |
+|                                                                                    |
+| return timer;                                                                      |
+|                                                                                    |
+| },                                                                                 |
+|                                                                                    |
+| template: '<div>{{ formatted }}</div>',                                            |
+|                                                                                    |
+| }));                                                                               |
+|                                                                                    |
+| return { wrapper, get timer() { return timer!; } };                                |
+|                                                                                    |
+| }                                                                                  |
+|                                                                                    |
+| describe('useSessionTimer', () => {                                                |
+|                                                                                    |
+| beforeEach(() => { vi.useFakeTimers(); });                                         |
+|                                                                                    |
+| afterEach(() => { vi.useRealTimers(); });                                          |
+|                                                                                    |
+| it('initializes with elapsed_seconds from server', () => {                         |
+|                                                                                    |
+| const { timer } = mountTimer(3661); // 1h 1min 1s                                  |
+|                                                                                    |
+| expect(timer.formatted.value).toBe('01:01:01');                                    |
+|                                                                                    |
+| });                                                                                |
+|                                                                                    |
+| it('increments every second via setInterval', async () => {                        |
+|                                                                                    |
+| const { timer } = mountTimer(0);                                                   |
+|                                                                                    |
+| expect(timer.formatted.value).toBe('00:00:00');                                    |
+|                                                                                    |
+| vi.advanceTimersByTime(3000); // avança 3 segundos                                 |
+|                                                                                    |
+| await nextTick();                                                                  |
+|                                                                                    |
+| expect(timer.formatted.value).toBe('00:00:03');                                    |
+|                                                                                    |
+| });                                                                                |
+|                                                                                    |
+| it('formats correctly at hour boundary', async () => {                             |
+|                                                                                    |
+| const { timer } = mountTimer(3599); // 59:59                                       |
+|                                                                                    |
+| vi.advanceTimersByTime(1000); // + 1s = 1:00:00                                    |
+|                                                                                    |
+| await nextTick();                                                                  |
+|                                                                                    |
+| expect(timer.formatted.value).toBe('01:00:00');                                    |
+|                                                                                    |
+| });                                                                                |
+|                                                                                    |
+| it('stops interval on unmount (no memory leak)', async () => {                     |
+|                                                                                    |
+| const clearSpy = vi.spyOn(globalThis, 'clearInterval');                            |
+|                                                                                    |
+| const { wrapper } = mountTimer(0);                                                 |
+|                                                                                    |
+| wrapper.unmount();                                                                 |
+|                                                                                    |
+| expect(clearSpy).toHaveBeenCalledOnce();                                           |
+|                                                                                    |
+| });                                                                                |
+|                                                                                    |
+| });                                                                                |
++------------------------------------------------------------------------------------+
+
+6. Factories — Dados de Teste Realistas
+
+6.1 StudySessionFactory
+
+Factories bem definidas são tão importantes quanto os testes. Precisam suportar estados (active, completed) e relacionamentos.
+
++-----------------------------------------------------------------------+
+| <?php // database/factories/StudySessionFactory.php                   |
+|                                                                       |
+| class StudySessionFactory extends Factory                             |
+|                                                                       |
+| {                                                                     |
+|                                                                       |
+| public function definition(): array                                   |
+|                                                                       |
+| {                                                                     |
+|                                                                       |
+| $startedAt = $this->faker->dateTimeBetween('-6 months', '-1 hour');   |
+|                                                                       |
+| $duration = $this->faker->numberBetween(15, 240); // 15min a 4h       |
+|                                                                       |
+| $endedAt = (clone $startedAt)->modify("+{$duration} minutes");        |
+|                                                                       |
+| return [                                                              |
+|                                                                       |
+| 'id' => Str::uuid(),                                                  |
+|                                                                       |
+| 'user_id' => User::factory(),                                         |
+|                                                                       |
+| 'technology_id' => Technology::factory(),                             |
+|                                                                       |
+| 'started_at' => $startedAt,                                           |
+|                                                                       |
+| 'ended_at' => $endedAt,                                               |
+|                                                                       |
+| // duration_min é GENERATED STORED — não definir aqui                 |
+|                                                                       |
+| 'notes' => $this->faker->optional(0.6)->sentence(),                   |
+|                                                                       |
+| 'mood' => $this->faker->optional(0.7)->numberBetween(1, 5),           |
+|                                                                       |
+| 'focus_score' => $this->faker->optional(0.5)->numberBetween(1, 10),   |
+|                                                                       |
+| ];                                                                    |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| // Estado: sessão ativa (sem ended_at)                                |
+|                                                                       |
+| public function active(): static                                      |
+|                                                                       |
+| {                                                                     |
+|                                                                       |
+| return $this->state(fn () => [                                        |
+|                                                                       |
+| 'started_at' => now()->subMinutes(rand(10, 90)),                      |
+|                                                                       |
+| 'ended_at' => null,                                                   |
+|                                                                       |
+| ]);                                                                   |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| // Estado: sessão de hoje                                             |
+|                                                                       |
+| public function today(): static                                       |
+|                                                                       |
+| {                                                                     |
+|                                                                       |
+| return $this->state(fn () => [                                        |
+|                                                                       |
+| 'started_at' => today()->setHour(rand(8, 18)),                        |
+|                                                                       |
+| 'ended_at' => today()->setHour(rand(19, 22)),                         |
+|                                                                       |
+| ]);                                                                   |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| // Estado: sessão longa (para testar longest_session_min)             |
+|                                                                       |
+| public function long(): static                                        |
+|                                                                       |
+| {                                                                     |
+|                                                                       |
+| $start = now()->subHours(4);                                          |
+|                                                                       |
+| return $this->state(fn () => [                                        |
+|                                                                       |
+| 'started_at' => $start,                                               |
+|                                                                       |
+| 'ended_at' => now(),                                                  |
+|                                                                       |
+| ]);                                                                   |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| }                                                                     |
++-----------------------------------------------------------------------+
+
+7. CI/CD — GitHub Actions
+
+7.1 Backend CI
+
++--------------------------------------------------------------------------+
+| # .github/workflows/backend-ci.yml                                       |
+|                                                                          |
+| name: Backend CI                                                         |
+|                                                                          |
+| on:                                                                      |
+|                                                                          |
+| push: { branches: [main, develop] }                                      |
+|                                                                          |
+| pull_request: { branches: [main] }                                       |
+|                                                                          |
+| jobs:                                                                    |
+|                                                                          |
+| test:                                                                    |
+|                                                                          |
+| runs-on: ubuntu-latest                                                   |
+|                                                                          |
+| defaults:                                                                |
+|                                                                          |
+| run:                                                                     |
+|                                                                          |
+| working-directory: ./backend                                             |
+|                                                                          |
+| services:                                                                |
+|                                                                          |
+| postgres:                                                                |
+|                                                                          |
+| image: postgres:16                                                       |
+|                                                                          |
+| env:                                                                     |
+|                                                                          |
+| POSTGRES_DB: studytrack_test                                             |
+|                                                                          |
+| POSTGRES_USER: studytrack                                                |
+|                                                                          |
+| POSTGRES_PASSWORD: secret                                                |
+|                                                                          |
+| ports: ['5432:5432']                                                     |
+|                                                                          |
+| options: --health-cmd pg_isready --health-interval 5s --health-retries 5 |
+|                                                                          |
+| redis:                                                                   |
+|                                                                          |
+| image: redis:7                                                           |
+|                                                                          |
+| ports: ['6379:6379']                                                     |
+|                                                                          |
+| options: --health-cmd 'redis-cli ping' --health-interval 5s              |
+|                                                                          |
+| steps:                                                                   |
+|                                                                          |
+| - uses: actions/checkout@v4                                              |
+|                                                                          |
+| - name: Setup PHP 8.3                                                    |
+|                                                                          |
+| uses: shivammathur/setup-php@v2                                          |
+|                                                                          |
+| with:                                                                    |
+|                                                                          |
+| php-version: '8.3'                                                       |
+|                                                                          |
+| extensions: pdo_pgsql, redis, pcntl                                      |
+|                                                                          |
+| coverage: xdebug                                                         |
+|                                                                          |
+| - name: Cache Composer                                                   |
+|                                                                          |
+| uses: actions/cache@v4                                                   |
+|                                                                          |
+| with:                                                                    |
+|                                                                          |
+| path: backend/vendor                                                     |
+|                                                                          |
+| key: composer-${{ hashFiles('backend/composer.lock') }}                  |
+|                                                                          |
+| - name: Install dependencies                                             |
+|                                                                          |
+| run: composer install --no-interaction --prefer-dist --no-progress       |
+|                                                                          |
+| - name: Copy .env                                                        |
+|                                                                          |
+| run: cp .env.example .env.testing                                        |
+|                                                                          |
+| - name: Generate key                                                     |
+|                                                                          |
+| run: php artisan key:generate --env=testing                              |
+|                                                                          |
+| - name: Run migrations                                                   |
+|                                                                          |
+| run: php artisan migrate --env=testing --force                           |
+|                                                                          |
+| env:                                                                     |
+|                                                                          |
+| DB_HOST: 127.0.0.1                                                       |
+|                                                                          |
+| DB_DATABASE: studytrack_test                                             |
+|                                                                          |
+| DB_USERNAME: studytrack                                                  |
+|                                                                          |
+| DB_PASSWORD: secret                                                      |
+|                                                                          |
+| - name: Laravel Pint (code style)                                        |
+|                                                                          |
+| run: ./vendor/bin/pint --test                                            |
+|                                                                          |
+| - name: Larastan (static analysis level 5)                               |
+|                                                                          |
+| run: ./vendor/bin/phpstan analyse --level=5 --no-progress                |
+|                                                                          |
+| - name: PHPUnit with coverage                                            |
+|                                                                          |
+| run: php artisan test --coverage --min=70                                |
+|                                                                          |
+| env:                                                                     |
+|                                                                          |
+| DB_HOST: 127.0.0.1                                                       |
+|                                                                          |
+| REDIS_HOST: 127.0.0.1                                                    |
+|                                                                          |
+| - name: Upload coverage report                                           |
+|                                                                          |
+| uses: actions/upload-artifact@v4                                         |
+|                                                                          |
+| if: always()                                                             |
+|                                                                          |
+| with:                                                                    |
+|                                                                          |
+| name: backend-coverage                                                   |
+|                                                                          |
+| path: backend/coverage/                                                  |
++--------------------------------------------------------------------------+
+
+7.2 Frontend CI
+
++-----------------------------------------------------------------------+
+| # .github/workflows/frontend-ci.yml                                   |
+|                                                                       |
+| name: Frontend CI                                                     |
+|                                                                       |
+| on:                                                                   |
+|                                                                       |
+| push: { branches: [main, develop] }                                   |
+|                                                                       |
+| pull_request: { branches: [main] }                                    |
+|                                                                       |
+| jobs:                                                                 |
+|                                                                       |
+| test:                                                                 |
+|                                                                       |
+| runs-on: ubuntu-latest                                                |
+|                                                                       |
+| defaults:                                                             |
+|                                                                       |
+| run:                                                                  |
+|                                                                       |
+| working-directory: ./frontend                                         |
+|                                                                       |
+| steps:                                                                |
+|                                                                       |
+| - uses: actions/checkout@v4                                           |
+|                                                                       |
+| - name: Setup Node 20                                                 |
+|                                                                       |
+| uses: actions/setup-node@v4                                           |
+|                                                                       |
+| with:                                                                 |
+|                                                                       |
+| node-version: '20'                                                    |
+|                                                                       |
+| cache: 'npm'                                                          |
+|                                                                       |
+| cache-dependency-path: frontend/package-lock.json                     |
+|                                                                       |
+| - name: Install dependencies                                          |
+|                                                                       |
+| run: npm ci                                                           |
+|                                                                       |
+| - name: TypeScript check (tsc --noEmit)                               |
+|                                                                       |
+| run: npm run type-check                                               |
+|                                                                       |
+| - name: ESLint                                                        |
+|                                                                       |
+| run: npm run lint                                                     |
+|                                                                       |
+| - name: Vitest with coverage                                          |
+|                                                                       |
+| run: npm run test:coverage                                            |
+|                                                                       |
+| - name: Build check (garante que compila para produção)               |
+|                                                                       |
+| run: npm run build                                                    |
+|                                                                       |
+| - name: Upload coverage                                               |
+|                                                                       |
+| uses: actions/upload-artifact@v4                                      |
+|                                                                       |
+| if: always()                                                          |
+|                                                                       |
+| with:                                                                 |
+|                                                                       |
+| name: frontend-coverage                                               |
+|                                                                       |
+| path: frontend/coverage/                                              |
++-----------------------------------------------------------------------+
+
+8. Checklist — O que Testar em Cada Módulo
+
+  -----------------------------------------------------------------------------------------------------------------------
+  Módulo                     Deve ter teste                                                      Tipo        Prioridade
+  -------------------------- ------------------------------------------------------------------- ----------- ------------
+  POST /api/v1/auth/login           Credenciais corretas, erradas, resposta genérica (sem info leak)    Feature     Alta
+
+  POST /api/v1/auth/logout          Token revogado funciona 401 após logout                             Feature     Alta
+
+  GET /api/v1/technologies          Usuário vê apenas suas tecnologias                                  Feature     Alta
+
+  POST /api/v1/study-sessions       Evento disparado, job enfileirado, duration_min calculado           Feature     Alta
+
+  POST /api/v1/study-sessions/start       Máx 1 sessão ativa (409 na segunda)                                 Feature     Alta
+
+  GET /api/v1/analytics/dashboard   Estrutura correta, cache HIT sem queries ao banco                   Feature     Alta
+
+  UserMetricsAggregator      Streak 0, 1, N, gap, personal best, múltiplas sessões/dia           Unit        Alta
+
+  RecalculateMetricsJob      3 aggregators chamados, evento disparado, failed() loga             Unit        Alta
+
+  analytics.store            fetchDashboard, isFresh, updateFromWebSocket, computed              Unit        Alta
+
+  useSessionTimer            Init com elapsed do server, incremento, HH:MM:SS, unmount cleanup   Unit        Alta
+
+  Autorização cross-user     Usuário B não acessa recursos do usuário A (403)                    Feature     Alta
+
+  Rate limiting              POST /api/v1/auth/login: exceder 3 req/min (por IP) retorna 429       Feature     Média
+
+  Cache invalidation         Criar sessão → cache analytics removido                             Feature     Média
+
+  TechDistributionWidget     Top 6 + Outros, click navega com query param                        Unit/Comp   Média
+  -----------------------------------------------------------------------------------------------------------------------
+
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ARMADILHA: TESTAR APENAS O CAMINHO FELIZ                                                                                                                                                                         |
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Erro comum: escrever apenas 'test_user_can_create_session' e ignorar os casos de falha. Recrutadores técnicos que revisam código de portfólio olham especificamente para os testes de casos negativos.           |
+|                                                                                                                                                                                                                  |
+| Para cada endpoint, pergunte: O que acontece se o usuário tentar acessar o recurso de outro usuário? Se enviar dados inválidos? Se o token expirar no meio da operação? Se o campo obrigatório estiver faltando? |
+|                                                                                                                                                                                                                  |
+| Regra: Para cada feature test de sucesso, escreva ao menos 2 testes de falha. A cobertura de casos negativos é o que separa um portfólio sólido de um tutorial renomeado.                                        |
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+

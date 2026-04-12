@@ -134,6 +134,23 @@ class StudySessionController extends Controller
     public function start(StartStudySessionRequest $request): JsonResponse
     {
         $user = $request->user();
+        // #region agent log
+        @file_put_contents(
+            base_path('../debug-ba100a.log'),
+            json_encode([
+                'sessionId' => 'ba100a',
+                'runId' => 'project-smoke',
+                'hypothesisId' => 'H5',
+                'location' => 'backend/app/Http/Controllers/V1/StudySessionController.php',
+                'message' => 'session_start_request',
+                'data' => [
+                    'hasTechnologyId' => (bool) $request->validated('technology_id'),
+                ],
+                'timestamp' => (int) round(microtime(true) * 1000),
+            ], JSON_UNESCAPED_SLASHES).PHP_EOL,
+            FILE_APPEND
+        );
+        // #endregion
         if ($this->studySessionService->getActiveForUser($user->id)) {
             throw new ConcurrentSessionException('O usuário já possui uma sessão ativa.');
         }
@@ -149,7 +166,51 @@ class StudySessionController extends Controller
             mood: null,
         );
 
-        $session = $this->studySessionService->create($user->id, $dto);
+        try {
+            $session = $this->studySessionService->create($user->id, $dto);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // #region agent log
+            @file_put_contents(
+                base_path('../debug-ba100a.log'),
+                json_encode([
+                    'sessionId' => 'ba100a',
+                    'runId' => 'project-smoke',
+                    'hypothesisId' => 'H5',
+                    'location' => 'backend/app/Http/Controllers/V1/StudySessionController.php',
+                    'message' => 'session_start_query_exception',
+                    'data' => [
+                        'code' => $e->getCode(),
+                        'error' => $e->getMessage(),
+                    ],
+                    'timestamp' => (int) round(microtime(true) * 1000),
+                ], JSON_UNESCAPED_SLASHES).PHP_EOL,
+                FILE_APPEND
+            );
+            // #endregion
+            if (str_contains($e->getMessage(), 'sessão ativa') || $e->getCode() === 'P0001') {
+                throw new ConcurrentSessionException('O usuário já possui uma sessão ativa.');
+            }
+            throw $e;
+        }
+
+        // #region agent log
+        @file_put_contents(
+            base_path('../debug-ba100a.log'),
+            json_encode([
+                'sessionId' => 'ba100a',
+                'runId' => 'project-smoke',
+                'hypothesisId' => 'H5',
+                'location' => 'backend/app/Http/Controllers/V1/StudySessionController.php',
+                'message' => 'session_start_success',
+                'data' => [
+                    'hasEndedAt' => $session->ended_at !== null,
+                    'hasTechnology' => $session->technology_id !== null,
+                ],
+                'timestamp' => (int) round(microtime(true) * 1000),
+            ], JSON_UNESCAPED_SLASHES).PHP_EOL,
+            FILE_APPEND
+        );
+        // #endregion
 
         return $this->success(new StudySessionResource($session->load('technology')), 'Sessão iniciada.', 201);
     }
@@ -161,6 +222,23 @@ class StudySessionController extends Controller
     public function end(Request $request, string $id): JsonResponse
     {
         $session = $this->studySessionService->findForUser($id, $request->user()->id);
+        // #region agent log
+        @file_put_contents(
+            base_path('../debug-ba100a.log'),
+            json_encode([
+                'sessionId' => 'ba100a',
+                'runId' => 'project-smoke',
+                'hypothesisId' => 'H5',
+                'location' => 'backend/app/Http/Controllers/V1/StudySessionController.php',
+                'message' => 'session_end_request',
+                'data' => [
+                    'alreadyEnded' => $session->ended_at !== null,
+                ],
+                'timestamp' => (int) round(microtime(true) * 1000),
+            ], JSON_UNESCAPED_SLASHES).PHP_EOL,
+            FILE_APPEND
+        );
+        // #endregion
         if ($session->ended_at) {
             return $this->error('Sessão já finalizada.', 'VALIDATION_ERROR', null, 422);
         }

@@ -1,4 +1,5 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
+import { useQuerySessionEnabled } from '@/composables/useQueryAuthEnabled'
 import { useQuery } from '@tanstack/vue-query'
 import { useQueryClient } from '@tanstack/vue-query'
 import { sessionsApi } from '@/api/modules/sessions.api'
@@ -20,6 +21,7 @@ const STALE_MS = 60 * 1000 // 1 min
  */
 export function useSessionsListQuery(params: MaybeRefOrGetter<SessionsListParams | undefined>) {
   const queryKey = computed(() => queryKeys.sessions.list(toValue(params) as Record<string, unknown> | undefined))
+  const enabled = useQuerySessionEnabled()
   const query = useQuery({
     queryKey,
     queryFn: async () => {
@@ -29,7 +31,9 @@ export function useSessionsListQuery(params: MaybeRefOrGetter<SessionsListParams
       return { data: data as StudySession[], meta: meta as PaginationMeta | undefined }
     },
     staleTime: STALE_MS,
-    enabled: () => true,
+    gcTime: 4 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    enabled,
   })
 
   const sessions = computed<StudySession[]>(() => query.data.value?.data ?? [])

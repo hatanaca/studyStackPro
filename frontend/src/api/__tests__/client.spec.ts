@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest'
 import { getApiErrorMessage } from '../client'
 
 describe('client', () => {

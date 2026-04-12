@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useTechnologiesStore } from '../technologies.store'
 import { technologiesApi } from '@/api/modules/technologies.api'

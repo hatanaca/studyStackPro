@@ -162,3 +162,10 @@ Quando WebSocket está desconectado, o dashboard usa polling de fallback.
 ## Backend
 
 O frontend espera a API Laravel em `/api/v1`. Em dev com Docker, o Vite pode fazer proxy para o Nginx.
+
+---
+
+## Documentação
+
+- Índice do repositório: [../docs/README.md](../docs/README.md)
+- Design system e UX: [docs/README.md](docs/README.md)

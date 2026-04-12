@@ -8,10 +8,29 @@ import { computed, inject, useAttrs, watch } from 'vue'
 
 defineOptions({ inheritAttrs: false })
 import { RouterLink, useRoute } from 'vue-router'
+import {
+  prefetchDashboardView,
+  prefetchExportView,
+  prefetchGoalsView,
+  prefetchHelpView,
+  prefetchProfileView,
+  prefetchReportsView,
+  prefetchSessionsView,
+  prefetchSettingsView,
+  prefetchTechnologiesView,
+} from '@/router/prefetch'
+
+/** Referências explícitas para o vue-tsc reconhecer uso (handlers no template). */
+const prefetch = {
+  help: prefetchHelpView,
+  profile: prefetchProfileView,
+  settings: prefetchSettingsView,
+}
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 import RealtimeBadge from '@/features/dashboard/components/RealtimeBadge.vue'
+import { disconnectWebSocket } from '@/composables/useWebSocket'
 
 const attrs = useAttrs()
 const authStore = useAuthStore()
@@ -49,11 +68,10 @@ watch(() => route.path, () => {
   uiStore.closeMobileSidebar()
 })
 
-async function handleLogout() {
+function handleLogout() {
   try {
-    const { useWebSocket } = await import('@/composables/useWebSocket')
-    useWebSocket().disconnect()
-  } catch { /* ws already disconnected or never loaded */ }
+    disconnectWebSocket()
+  } catch { /* ws already disconnected */ }
   uiStore.closeMobileSidebar()
   authStore.logout()
 }
@@ -150,6 +168,7 @@ async function handleLogout() {
         to="/"
         class="app-sidebar__pill"
         :class="{ active: route.path === '/' }"
+        @mouseenter="prefetchDashboardView"
       >
         Estudo
       </RouterLink>
@@ -157,6 +176,7 @@ async function handleLogout() {
         to="/goals"
         class="app-sidebar__pill"
         :class="{ active: route.path.startsWith('/goals') }"
+        @mouseenter="prefetchGoalsView"
       >
         Metas
       </RouterLink>
@@ -168,6 +188,7 @@ async function handleLogout() {
         class="app-sidebar__link"
         title="Dashboard"
         aria-label="Ir para Dashboard"
+        @mouseenter="prefetchDashboardView"
       >
         <span
           class="app-sidebar__icon"
@@ -212,11 +233,12 @@ async function handleLogout() {
         <span class="app-sidebar__link-text">Dashboard</span>
       </RouterLink>
       <RouterLink
-        to="/sessions"
+        :to="{ name: 'sessions' }"
         active-class="active"
         class="app-sidebar__link"
         title="Sessões"
         aria-label="Ir para Sessões"
+        @mouseenter="prefetchSessionsView"
       >
         <span
           class="app-sidebar__icon"
@@ -232,11 +254,7 @@ async function handleLogout() {
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-          ><circle
-            cx="12"
-            cy="12"
-            r="10"
-          /><polyline points="12 6 12 12 16 14" /></svg>
+          ><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /><path d="M8 7h8" /><path d="M8 11h8" /></svg>
         </span>
         <span class="app-sidebar__link-text">Sessões</span>
       </RouterLink>
@@ -246,6 +264,7 @@ async function handleLogout() {
         class="app-sidebar__link"
         title="Tecnologias"
         aria-label="Ir para Tecnologias"
+        @mouseenter="prefetchTechnologiesView"
       >
         <span
           class="app-sidebar__icon"
@@ -271,6 +290,7 @@ async function handleLogout() {
         class="app-sidebar__link"
         title="Metas"
         aria-label="Ir para Metas"
+        @mouseenter="prefetchGoalsView"
       >
         <span
           class="app-sidebar__icon"
@@ -300,6 +320,7 @@ async function handleLogout() {
         class="app-sidebar__link"
         title="Exportar"
         aria-label="Ir para Exportar"
+        @mouseenter="prefetchExportView"
       >
         <span
           class="app-sidebar__icon"
@@ -330,6 +351,7 @@ async function handleLogout() {
         class="app-sidebar__link"
         title="Relatórios"
         aria-label="Ir para Relatórios"
+        @mouseenter="prefetchReportsView"
       >
         <span
           class="app-sidebar__icon"
@@ -365,6 +387,7 @@ async function handleLogout() {
         class="app-sidebar__link"
         title="Ajuda"
         aria-label="Ir para Ajuda"
+        @mouseenter="prefetch.help"
       >
         <span
           class="app-sidebar__icon"
@@ -392,8 +415,9 @@ async function handleLogout() {
         to="/settings"
         active-class="active"
         class="app-sidebar__link"
-        title="Preferências"
+        title="Configurações"
         aria-label="Ir para Configurações"
+        @mouseenter="prefetch.settings"
       >
         <span
           class="app-sidebar__icon"
@@ -415,7 +439,7 @@ async function handleLogout() {
             r="3"
           /></svg>
         </span>
-        <span class="app-sidebar__link-text">Preferências</span>
+        <span class="app-sidebar__link-text">Configurações</span>
       </RouterLink>
       <RouterLink
         to="/profile"
@@ -423,6 +447,7 @@ async function handleLogout() {
         class="app-sidebar__link"
         title="Perfil"
         aria-label="Ir para Perfil"
+        @mouseenter="prefetch.profile"
       >
         <span
           class="app-sidebar__icon"
@@ -672,7 +697,7 @@ async function handleLogout() {
   flex: 1;
   text-align: center;
   padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: 600;
   text-decoration: none;
@@ -854,14 +879,14 @@ async function handleLogout() {
   scrollbar-color: var(--color-border) transparent;
 }
 .app-sidebar__nav::-webkit-scrollbar {
-  width: 4px;
+  width: var(--spacing-xs);
 }
 .app-sidebar__nav::-webkit-scrollbar-track {
   background: transparent;
 }
 .app-sidebar__nav::-webkit-scrollbar-thumb {
   background: var(--color-border);
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
 }
 .app-sidebar__link {
   display: flex;
@@ -883,7 +908,7 @@ async function handleLogout() {
 .app-sidebar__link:hover {
   color: var(--sidebar-link-color-hover);
   background: var(--color-bg-soft);
-  transform: translateX(2px);
+  transform: translateX(var(--spacing-2xs));
 }
 .app-sidebar__link.active {
   color: var(--color-primary);
@@ -981,7 +1006,7 @@ async function handleLogout() {
 /* Desktop: sidebar em flow normal — o layout de scroll isolado (height: 100dvh + overflow-y: auto no main-wrap)
    mantém a sidebar "fixa" sem precisar de position: fixed.
    z-index: 2 garante que a sidebar fique acima do gradient ::before (z-index: 0) do main. */
-@media (min-width: 769px) {
+@media (min-width: 768px) {
   .app-sidebar {
     position: relative;
     z-index: 2;
@@ -1001,7 +1026,7 @@ async function handleLogout() {
     top: 0;
     left: 0;
     bottom: 0;
-    z-index: 100;
+    z-index: var(--z-overlay, 500);
     transform: translateX(-100%);
     transition: transform var(--duration-slow) var(--ease-out-expo);
     width: var(--sidebar-drawer-width);
@@ -1024,7 +1049,7 @@ async function handleLogout() {
     background: var(--overlay-backdrop);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
-    z-index: 99;
+    z-index: calc(var(--z-overlay, 500) - 1);
   }
   .app-sidebar {
     box-shadow: var(--overlay-shadow);

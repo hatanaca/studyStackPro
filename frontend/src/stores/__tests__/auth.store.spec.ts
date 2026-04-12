@@ -1,8 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '../auth.store'
 import { authApi } from '@/api/modules/auth.api'
-import { resetBackgroundRefresh } from '@/router/guards'
 
 vi.mock('@/api/modules/auth.api', () => ({
   authApi: {
@@ -11,10 +9,6 @@ vi.mock('@/api/modules/auth.api', () => ({
     logout: vi.fn(),
     me: vi.fn(),
   },
-}))
-
-vi.mock('@/router/guards', () => ({
-  resetBackgroundRefresh: vi.fn(),
 }))
 
 const mockUser = {
@@ -45,16 +39,18 @@ describe('auth.store', () => {
 
     expect(store.token).toBe(mockToken)
     expect(store.user).toEqual(mockUser)
+    expect(store.sessionValidated).toBe(true)
     expect(localStorage.getItem('studytrack_token')).toBe(mockToken)
     expect(localStorage.getItem('studytrack_user')).toBe(JSON.stringify(mockUser))
   })
 
-  it('logout clears token and user and calls resetBackgroundRefresh', async () => {
+  it('logout clears token and user', async () => {
     vi.mocked(authApi.logout).mockResolvedValue({} as never)
 
     const store = useAuthStore()
     store.token = mockToken
     store.user = mockUser
+    store.sessionValidated = true
     localStorage.setItem('studytrack_token', mockToken)
     localStorage.setItem('studytrack_user', JSON.stringify(mockUser))
 
@@ -62,9 +58,9 @@ describe('auth.store', () => {
 
     expect(store.token).toBe(null)
     expect(store.user).toBe(null)
+    expect(store.sessionValidated).toBe(false)
     expect(localStorage.getItem('studytrack_token')).toBe(null)
     expect(localStorage.getItem('studytrack_user')).toBe(null)
-    expect(resetBackgroundRefresh).toHaveBeenCalledOnce()
     expect(authApi.logout).toHaveBeenCalledOnce()
   })
 
@@ -72,12 +68,14 @@ describe('auth.store', () => {
     const store = useAuthStore()
     store.token = mockToken
     store.user = mockUser
+    store.sessionValidated = true
     localStorage.setItem('studytrack_token', mockToken)
 
     store.clearSessionLocally()
 
     expect(store.token).toBe(null)
     expect(store.user).toBe(null)
+    expect(store.sessionValidated).toBe(false)
     expect(localStorage.getItem('studytrack_token')).toBe(null)
     expect(authApi.logout).not.toHaveBeenCalled()
   })
@@ -93,6 +91,7 @@ describe('auth.store', () => {
     await store.fetchMe()
 
     expect(store.user).toEqual(updatedUser)
+    expect(store.sessionValidated).toBe(true)
     expect(localStorage.getItem('studytrack_user')).toBe(JSON.stringify(updatedUser))
   })
 

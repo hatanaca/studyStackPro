@@ -23,7 +23,10 @@ const activeTab = ref('appearance')
     <template #hint>
       Alterações em Aparência são salvas automaticamente. Em Dados você pode limpar cache ou exportar.
     </template>
-    <Tabs v-model:value="activeTab" class="settings-view__tabs">
+    <Tabs
+      v-model:value="activeTab"
+      class="settings-view__tabs"
+    >
       <TabList>
         <Tab value="appearance">Aparência</Tab>
         <Tab value="data">Dados</Tab>
@@ -49,11 +52,15 @@ const activeTab = ref('appearance')
 </template>
 
 <style scoped>
+.settings-view__tabs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
 .settings-view__card {
   margin-top: 0;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
+}
+.settings-view__card :deep(.p-card-body) {
+  padding: var(--spacing-lg) var(--spacing-xl);
 }
 </style>

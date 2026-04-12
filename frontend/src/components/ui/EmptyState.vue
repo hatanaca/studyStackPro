@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import { getCurrentInstance } from 'vue'
+
+const instanceSuffix = String(getCurrentInstance()?.uid ?? 0)
+const titleId = `empty-state-title-${instanceSuffix}`
+const descId = `empty-state-desc-${instanceSuffix}`
+
 withDefaults(
   defineProps<{
     /** Título principal */
@@ -29,8 +35,8 @@ function handleAction() {
     class="empty-state"
     role="status"
     aria-live="polite"
-    aria-labelledby="empty-state-title"
-    :aria-describedby="(description || $slots.description) ? 'empty-state-desc' : undefined"
+    :aria-labelledby="titleId"
+    :aria-describedby="(description || $slots.description) ? descId : undefined"
   >
     <div
       class="empty-state__icon"
@@ -39,14 +45,14 @@ function handleAction() {
       {{ icon }}
     </div>
     <h3
-      id="empty-state-title"
+      :id="titleId"
       class="empty-state__title"
     >
       {{ title }}
     </h3>
     <p
       v-if="description || $slots.description"
-      id="empty-state-desc"
+      :id="descId"
       class="empty-state__description"
     >
       <slot name="description">
@@ -79,9 +85,14 @@ function handleAction() {
   justify-content: center;
   padding: var(--spacing-2xl) var(--spacing-xl);
   text-align: center;
-  background: color-mix(in srgb, var(--color-bg-soft) 50%, var(--color-bg-card));
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-md);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-soft)) 0%,
+    color-mix(in srgb, var(--color-bg-soft) 45%, var(--color-bg-card)) 100%
+  );
+  border: var(--empty-state-border);
+  border-radius: var(--empty-state-radius);
+  box-shadow: var(--shadow-sm);
   min-height: var(--empty-state-min-height);
 }
 .empty-state__icon {
@@ -91,11 +102,13 @@ function handleAction() {
   opacity: 0.85;
 }
 .empty-state__title {
-  font-size: var(--text-base);
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
   color: var(--color-text);
   margin: 0 0 var(--spacing-xs);
   letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
 }
 .empty-state__description {
   font-size: var(--text-sm);
@@ -127,6 +140,6 @@ function handleAction() {
 .empty-state__button:hover {
   background: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
-  transform: translateY(-1px);
+  transform: var(--state-hover-lift);
 }
 </style>

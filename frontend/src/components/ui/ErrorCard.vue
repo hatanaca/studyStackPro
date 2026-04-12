@@ -1,5 +1,7 @@
 <script setup lang="ts">
 defineProps<{
+  /** Título opcional acima da mensagem (hierarquia visual e SR) */
+  title?: string
   message?: string
   onRetry?: () => void
 }>()
@@ -12,6 +14,12 @@ defineProps<{
     aria-live="assertive"
     aria-atomic="true"
   >
+    <h2
+      v-if="title"
+      class="title"
+    >
+      {{ title }}
+    </h2>
     <p
       id="error-card-message"
       class="message"
@@ -34,13 +42,23 @@ defineProps<{
 .error-card {
   background: var(--color-error-soft);
   border: 1px solid color-mix(in srgb, var(--color-error) 40%, transparent);
-  border-radius: var(--radius-md);
+  border-radius: var(--card-chrome-radius);
+  box-shadow: var(--card-chrome-shadow);
   padding: var(--spacing-xl);
   text-align: center;
 }
+.title {
+  margin: 0 0 var(--spacing-sm);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+}
 .message {
   color: var(--color-error);
-  margin-bottom: var(--spacing-lg);
+  margin: 0 0 var(--spacing-lg);
   font-size: var(--text-sm);
   line-height: var(--leading-normal);
 }

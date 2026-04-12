@@ -64,15 +64,21 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::put('technologies/{technology}', [\App\Http\Controllers\V1\TechnologyController::class, 'update']);
             Route::delete('technologies/{technology}', [\App\Http\Controllers\V1\TechnologyController::class, 'destroy']);
             Route::post('study-sessions/start', [\App\Http\Controllers\V1\StudySessionController::class, 'start'])
+                ->middleware('throttle.sliding:10')
                 ->name('study-sessions.start');
-            Route::post('study-sessions', [\App\Http\Controllers\V1\StudySessionController::class, 'store']);
+            Route::post('study-sessions', [\App\Http\Controllers\V1\StudySessionController::class, 'store'])
+                ->middleware('throttle.sliding:30');
             Route::patch('study-sessions/{id}/end', [\App\Http\Controllers\V1\StudySessionController::class, 'end'])
+                ->middleware('throttle.sliding:10')
                 ->name('study-sessions.end');
             Route::put('study-sessions/{id}', [\App\Http\Controllers\V1\StudySessionController::class, 'update'])
+                ->middleware('throttle.sliding:30')
                 ->name('study-sessions.put');
             Route::patch('study-sessions/{id}', [\App\Http\Controllers\V1\StudySessionController::class, 'update'])
+                ->middleware('throttle.sliding:30')
                 ->name('study-sessions.patch');
-            Route::delete('study-sessions/{id}', [\App\Http\Controllers\V1\StudySessionController::class, 'destroy']);
+            Route::delete('study-sessions/{id}', [\App\Http\Controllers\V1\StudySessionController::class, 'destroy'])
+                ->middleware('throttle.sliding:30');
             Route::post('analytics/recalculate', [\App\Http\Controllers\V1\AnalyticsController::class, 'recalculate'])
                 ->middleware('throttle:recalculate');
         });

@@ -73,7 +73,7 @@ function formatValue(): string {
   gap: var(--spacing-sm);
 }
 .goal-card__actions :deep(.p-button) {
-  min-height: 2.75rem;
+  min-height: var(--touch-target-min);
   padding: var(--spacing-sm) var(--spacing-md);
 }
 .goal-card__actions :deep(.p-button:focus-visible) {

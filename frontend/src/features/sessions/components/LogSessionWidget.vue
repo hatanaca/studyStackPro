@@ -31,19 +31,21 @@ function onSuccess(payload: SessionSavedPayload) {
 <style scoped>
 .log-session-widget {
   background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border: var(--card-chrome-border);
+  border-radius: var(--card-chrome-radius);
   padding: var(--spacing-xl);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--card-chrome-shadow);
 }
 .log-session-widget__title {
   margin: 0;
+  font-family: var(--font-display);
   font-size: var(--text-lg);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-text);
-  line-height: var(--leading-snug);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
 }
 </style>

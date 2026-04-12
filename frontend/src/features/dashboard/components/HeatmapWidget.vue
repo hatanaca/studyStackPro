@@ -162,17 +162,17 @@ const years = computed(() => {
   color: var(--color-text);
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
-.year-select:focus {
+.year-select:focus-visible {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  box-shadow: var(--shadow-focus);
 }
 .heatmap {
   overflow-x: auto;
 }
 .heatmap-svg {
   width: 100%;
-  min-width: 300px;
+  min-width: var(--widget-heatmap-svg-min-width);
   height: auto;
 }
 .heatmap-skeleton {

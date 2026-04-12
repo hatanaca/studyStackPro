@@ -55,6 +55,7 @@ async function onSubmit(payload: {
 
 <style scoped>
 h1 {
+  font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: 700;
   letter-spacing: var(--tracking-tight);

@@ -49,9 +49,13 @@ class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
 
     public function handle(MetricsAggregator $aggregator, AnalyticsService $analyticsService): void
     {
-        // MetricsRecalculating já é disparado imediatamente pelo listener BroadcastMetricsRecalculating
         $user = User::find($this->userId);
-        $timezone = $user?->timezone ?? 'UTC';
+        if (! $user) {
+            Log::info('RecalculateMetricsJob: user not found, skipping.', ['userId' => $this->userId]);
+
+            return;
+        }
+        $timezone = $user->timezone ?? 'UTC';
 
         DB::transaction(function () use ($aggregator, $timezone) {
             $aggregator->recalculateUserMetrics($this->userId, $timezone);
@@ -59,7 +63,7 @@ class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
             $aggregator->recalculateDailyMinutes($this->userId, $timezone);
         });
 
-        Cache::tags(['analytics', "user:{$this->userId}"])->flush();
+        Cache::tags(['analytics', "analytics:user:{$this->userId}"])->flush();
         $dashboardData = $analyticsService->getDashboardData($this->userId);
 
         event(new \App\Events\Analytics\MetricsRecalculated($this->userId, $dashboardData));

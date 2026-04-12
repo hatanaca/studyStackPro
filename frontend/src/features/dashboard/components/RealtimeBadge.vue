@@ -23,7 +23,7 @@ const { isConnected } = useWebSocket()
   font-size: var(--text-xs);
   font-weight: 600;
   padding: var(--spacing-2xs) var(--spacing-sm);
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   border: 1px solid transparent;
 }
 .realtime-badge .dot {

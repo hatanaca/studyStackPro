@@ -18,6 +18,7 @@ const props = withDefaults(
 const triggerRef = ref<HTMLElement | null>(null)
 const tooltipRef = ref<HTMLElement | null>(null)
 const isVisible = ref(false)
+const tooltipId = `base-tooltip-${Math.random().toString(36).slice(2, 8)}`
 let showTimeout: ReturnType<typeof setTimeout> | null = null
 
 const placementClass = computed(() => `base-tooltip--${props.placement}`)
@@ -62,19 +63,18 @@ onUnmounted(() => {
     <div
       ref="triggerRef"
       class="base-tooltip-trigger"
-      role="button"
-      tabindex="0"
+      :aria-describedby="isVisible ? tooltipId : undefined"
     >
       <slot />
     </div>
     <Transition name="tooltip-fade">
       <div
         v-show="isVisible"
+        :id="tooltipId"
         ref="tooltipRef"
         class="base-tooltip"
         :class="placementClass"
         role="tooltip"
-        :aria-hidden="!isVisible"
       >
         {{ content }}
       </div>
@@ -93,7 +93,7 @@ onUnmounted(() => {
 }
 .base-tooltip {
   position: absolute;
-  z-index: 9999;
+  z-index: var(--z-tooltip, 1200);
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--text-xs);
   font-weight: 500;

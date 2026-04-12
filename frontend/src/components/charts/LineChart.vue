@@ -51,12 +51,7 @@ const valueFormatter = (val: number): string =>
 const chartOptions = computed<ApexOptions>(() => {
   const categories = props.data?.labels ?? []
   const isStockPreset = props.preset === 'stock'
-  const styleReader = globalThis.getComputedStyle?.bind(globalThis)
-  const stockColor = typeof document !== 'undefined'
-    ? (styleReader?.(document.documentElement)
-      .getPropertyValue('--chart-line-stock-color')
-      .trim() || '#3b82f6')
-    : '#3b82f6'
+  const stockColor = theme.value.stockColor
   return {
   ...baseOptions.value,
   chart: {

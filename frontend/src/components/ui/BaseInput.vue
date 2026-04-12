@@ -79,7 +79,7 @@ const inputId = computed(() => props.id ?? props.name ?? undefined)
 .base-input__field::placeholder {
   color: var(--form-input-placeholder);
 }
-.base-input__field:focus {
+.base-input__field:focus-visible {
   border-color: var(--form-input-border-focus);
   box-shadow: var(--form-input-shadow-focus);
 }
@@ -87,7 +87,7 @@ const inputId = computed(() => props.id ?? props.name ?? undefined)
   background: var(--form-input-bg-disabled);
   color: var(--form-label-color);
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: var(--state-disabled-opacity);
 }
 .base-input__field--error {
   border-color: var(--form-input-border-error);

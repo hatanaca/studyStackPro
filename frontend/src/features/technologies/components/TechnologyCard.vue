@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { useRouter } from 'vue-router'
+import { prefetchTechnologyDetailView } from '@/router/prefetch'
 import BaseButton from '@/components/ui/BaseButton.vue'
+// RouterLink removed — using programmatic navigation to avoid nesting interactive elements
 import BaseCard from '@/components/ui/BaseCard.vue'
 import type { Technology } from '@/types/domain.types'
+
+const router = useRouter()
 
 defineProps<{
   technology: Technology
@@ -12,25 +16,6 @@ const emit = defineEmits<{
   edit: [Technology]
   delete: [Technology]
 }>()
-
-// #region agent log
-fetch('http://127.0.0.1:7573/ingest/086e8d00-457e-4a30-82b0-abf450d19c28', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'X-Debug-Session-Id': '7879a4',
-  },
-  body: JSON.stringify({
-    sessionId: '7879a4',
-    runId: 'pre-fix',
-    hypothesisId: 'H-tech-card-standardization',
-    location: 'TechnologyCard.vue:16',
-    message: 'TechnologyCard rendered using BaseCard/BaseButton',
-    data: {},
-    timestamp: Date.now(),
-  }),
-}).catch(() => {})
-// #endregion agent log
 </script>
 
 <template>
@@ -39,7 +24,10 @@ fetch('http://127.0.0.1:7573/ingest/086e8d00-457e-4a30-82b0-abf450d19c28', {
     :style="{ '--tech-color': technology.color }"
   >
     <template #default>
-      <div class="technology-card__content">
+      <div
+        class="technology-card__content"
+        @mouseenter="prefetchTechnologyDetailView"
+      >
         <div class="technology-card__main">
           <span class="technology-card__name">{{ technology.name }}</span>
           <span class="technology-card__slug">{{ technology.slug }}</span>
@@ -51,18 +39,14 @@ fetch('http://127.0.0.1:7573/ingest/086e8d00-457e-4a30-82b0-abf450d19c28', {
           {{ technology.description }}
         </p>
         <div class="technology-card__actions">
-          <RouterLink
-            :to="{ name: 'technology-detail', params: { id: technology.id } }"
-            class="technology-card__primary-link"
+          <BaseButton
+            variant="primary"
+            size="md"
+            class="technology-card__primary-button"
+            @click="router.push({ name: 'technology-detail', params: { id: technology.id } })"
           >
-            <BaseButton
-              variant="primary"
-              size="md"
-              class="technology-card__primary-button"
-            >
-              Ver detalhes
-            </BaseButton>
-          </RouterLink>
+            Sessões &amp; Detalhes
+          </BaseButton>
           <div class="technology-card__secondary">
             <BaseButton
               variant="secondary"
@@ -101,9 +85,11 @@ fetch('http://127.0.0.1:7573/ingest/086e8d00-457e-4a30-82b0-abf450d19c28', {
   min-width: 0;
 }
 .technology-card__name {
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 700;
   font-size: var(--text-base);
   color: var(--color-text);
+  letter-spacing: var(--tracking-tight);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -133,12 +119,6 @@ fetch('http://127.0.0.1:7573/ingest/086e8d00-457e-4a30-82b0-abf450d19c28', {
 .technology-card__secondary {
   display: flex;
   gap: var(--spacing-sm);
-}
-.technology-card__primary-link {
-  display: inline-flex;
-  flex: 1;
-  min-width: 0;
-  text-decoration: none;
 }
 .technology-card__primary-button {
   width: 100%;

@@ -5,6 +5,8 @@ import Card from 'primevue/card'
 import Button from 'primevue/button'
 import Skeleton from 'primevue/skeleton'
 import PageView from '@/components/layout/PageView.vue'
+import ErrorCard from '@/components/ui/ErrorCard.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import { technologiesApi } from '@/api/modules/technologies.api'
 import { formatDate } from '@/utils/formatters'
@@ -18,8 +20,13 @@ const technology = ref<Technology | null>(null)
 const sessions = ref<StudySession[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const sessionsError = ref<string | null>(null)
 
 const id = computed(() => route.params.id as string)
+
+function goToSessions() {
+  router.push({ name: 'sessions' })
+}
 
 interface DayRow {
   date: string
@@ -40,8 +47,8 @@ const tableRows = computed((): DayRow[] => {
 })
 
 const breadcrumbItems = computed(() => [
-  { label: 'Sessões', to: '/sessions' },
-  { label: 'Por tecnologia', to: '/sessions' },
+  { label: 'Dashboard', to: '/' },
+  { label: 'Tecnologias', to: '/technologies' },
   { label: technology.value?.name ?? 'Detalhes', to: undefined },
 ])
 
@@ -58,6 +65,7 @@ async function loadTechnology() {
 
 async function loadSessions() {
   if (!id.value) return
+  sessionsError.value = null
   try {
     const { data } = await sessionsApi.list({
       technology_id: id.value,
@@ -70,6 +78,7 @@ async function loadSessions() {
     }
   } catch {
     sessions.value = []
+    sessionsError.value = 'Não foi possível carregar as sessões desta tecnologia.'
   }
 }
 
@@ -82,20 +91,26 @@ onMounted(async () => {
 })
 
 watch(id, async () => {
+  sessionsError.value = null
   await loadTechnology()
   if (technology.value) await loadSessions()
 })
 
 function goBack() {
-  router.push({ name: 'sessions' })
+  router.push({ name: 'technologies' })
 }
 
 async function retry() {
   loading.value = true
   error.value = null
+  sessionsError.value = null
   await loadTechnology()
   if (technology.value) await loadSessions()
   loading.value = false
+}
+
+async function retrySessionsOnly() {
+  await loadSessions()
 }
 
 function formatMinutes(m: number) {
@@ -123,21 +138,19 @@ function formatMinutes(m: number) {
     </div>
     <div
       v-else-if="error"
-      class="technology-sessions-view__error"
+      class="technology-sessions-view__error-wrap"
     >
-      <p>{{ error }}</p>
-      <div class="technology-sessions-view__error-actions">
-        <Button
-          label="Tentar novamente"
-          @click="retry"
-        />
-        <Button
-          label="Voltar"
-          severity="secondary"
-          variant="outlined"
-          @click="goBack"
-        />
-      </div>
+      <ErrorCard
+        :message="error"
+        :on-retry="retry"
+      />
+      <Button
+        class="technology-sessions-view__back-btn"
+        label="Voltar para tecnologias"
+        severity="secondary"
+        variant="outlined"
+        @click="goBack"
+      />
     </div>
     <template v-else-if="technology">
       <header class="technology-sessions-view__header">
@@ -153,8 +166,20 @@ function formatMinutes(m: number) {
         </h1>
       </header>
 
-      <Card class="technology-sessions-view__card">
-        <div class="technology-sessions-view__table-wrap scroll-pretty">
+      <ErrorCard
+        v-if="sessionsError"
+        title="Erro ao carregar sessões"
+        :message="sessionsError"
+        :on-retry="retrySessionsOnly"
+      />
+      <Card
+        v-else
+        class="technology-sessions-view__card"
+      >
+        <div
+          v-if="tableRows.length"
+          class="technology-sessions-view__table-wrap scroll-pretty"
+        >
           <table class="technology-sessions-view__table">
             <thead>
               <tr>
@@ -173,12 +198,15 @@ function formatMinutes(m: number) {
             </tbody>
           </table>
         </div>
-        <p
-          v-if="!loading && !tableRows.length"
-          class="technology-sessions-view__empty"
-        >
-          Nenhuma sessão registrada para esta tecnologia.
-        </p>
+        <EmptyState
+          v-else
+          icon="📅"
+          title="Nenhuma sessão registrada"
+          description="Quando você registrar estudos nesta tecnologia, o resumo por dia aparece aqui."
+          action-label="Ir para Sessões"
+          :hide-action="false"
+          @action="goToSessions"
+        />
       </Card>
     </template>
   </PageView>
@@ -186,10 +214,9 @@ function formatMinutes(m: number) {
 
 <style scoped>
 .technology-sessions-view {
-  max-width: 800px;
+  max-width: var(--page-max-width-detail);
 }
-.technology-sessions-view__loading,
-.technology-sessions-view__error {
+.technology-sessions-view__loading {
   padding: var(--spacing-2xl);
   text-align: center;
   color: var(--color-text-muted);
@@ -199,13 +226,16 @@ function formatMinutes(m: number) {
   font-size: var(--text-sm);
   line-height: var(--leading-normal);
 }
-.technology-sessions-view__error p {
-  margin: 0 0 var(--spacing-lg);
-}
-.technology-sessions-view__error-actions {
+.technology-sessions-view__error-wrap {
   display: flex;
-  gap: var(--spacing-sm);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  align-items: stretch;
+  max-width: 28rem;
+  margin: 0 auto;
+}
+.technology-sessions-view__back-btn {
+  align-self: center;
 }
 .technology-sessions-view__skeleton {
   border-radius: var(--radius-md);
@@ -230,6 +260,11 @@ function formatMinutes(m: number) {
 .technology-sessions-view__back:hover {
   color: var(--color-primary);
 }
+.technology-sessions-view__back:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-sm);
+}
 .technology-sessions-view__title {
   font-size: var(--text-xl);
   font-weight: 700;
@@ -248,7 +283,7 @@ function formatMinutes(m: number) {
 }
 .technology-sessions-view__table {
   width: 100%;
-  min-width: 280px;
+  min-width: var(--data-table-min-width);
   border-collapse: collapse;
   font-size: var(--text-sm);
   line-height: var(--leading-normal);
@@ -277,13 +312,5 @@ function formatMinutes(m: number) {
 }
 .technology-sessions-view__table tbody tr:hover {
   background: var(--color-bg-soft);
-}
-.technology-sessions-view__empty {
-  margin: 0;
-  padding: var(--spacing-2xl);
-  text-align: center;
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-  line-height: var(--leading-normal);
 }
 </style>

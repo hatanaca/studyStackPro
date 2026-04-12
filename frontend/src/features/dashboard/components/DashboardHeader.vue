@@ -136,6 +136,7 @@ function onPeriodChange(period: TimeSeriesPeriod) {
   min-width: 0;
 }
 .dashboard-header__title {
+  font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: 700;
   letter-spacing: var(--tracking-tight);
@@ -157,11 +158,18 @@ function onPeriodChange(period: TimeSeriesPeriod) {
   gap: var(--spacing-sm);
 }
 .dashboard-header__summary-item {
-  padding: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
-  background: var(--color-bg-soft);
+  background: color-mix(in srgb, var(--color-bg-soft) 88%, var(--color-bg-card));
   min-width: 0;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
+}
+.dashboard-header__summary-item:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 32%, var(--color-border));
+  box-shadow: var(--shadow-sm);
 }
 .dashboard-header__summary-label {
   display: block;
@@ -172,6 +180,8 @@ function onPeriodChange(period: TimeSeriesPeriod) {
 .dashboard-header__summary-value {
   display: block;
   font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   color: var(--color-text);
   line-height: var(--leading-snug);
 }
@@ -216,6 +226,11 @@ function onPeriodChange(period: TimeSeriesPeriod) {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+@media (min-width: 768px) {
+  .dashboard-header__title {
+    font-size: var(--text-2xl);
   }
 }
 @media (max-width: 640px) {

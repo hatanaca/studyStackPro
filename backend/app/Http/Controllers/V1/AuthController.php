@@ -11,6 +11,7 @@ use App\Http\Resources\UserResource;
 use App\Modules\Auth\DTOs\LoginDTO;
 use App\Modules\Auth\DTOs\RegisterDTO;
 use App\Modules\Auth\Services\AuthService;
+use App\Modules\Auth\Services\TokenService;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,7 +30,8 @@ class AuthController extends Controller
      * Injeta o AuthService para centralizar a lógica de autenticação.
      */
     public function __construct(
-        private AuthService $authService
+        private AuthService $authService,
+        private TokenService $tokenService
     ) {}
 
     /**
@@ -82,7 +84,11 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        $currentToken = $request->user()->currentAccessToken();
+
+        if ($currentToken) {
+            $this->tokenService->revoke($currentToken);
+        }
 
         return $this->success(null, 'Token revogado com sucesso.');
     }
@@ -144,8 +150,7 @@ class AuthController extends Controller
      */
     public function revokeAllTokens(Request $request): JsonResponse
     {
-        $count = $request->user()->tokens()->count();
-        $request->user()->tokens()->delete();
+        $count = $this->tokenService->revokeMany($request->user()->tokens()->get());
 
         return $this->success(
             ['revoked_count' => $count],

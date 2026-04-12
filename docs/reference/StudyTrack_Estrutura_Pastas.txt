@@ -1,0 +1,1061 @@
++------------------------------------------------------------------------+
+| STUDYTRACK PRO                                                         |
+|                                                                        |
+| Estrutura de Pastas Profissional                                       |
+|                                                                        |
+| Vue 3 + TypeScript · Laravel · PostgreSQL · Redis · Docker · WebSocket |
+|                                                                        |
+| Monorepo · Domain-Driven · Event-Driven · CQRS parcial                 |
++------------------------------------------------------------------------+
+
++----------------------------------------------------------------------------------------------------------------------------------------------------+
+| POR QUE ESTRUTURA DE PASTAS IMPORTA                                                                                                                |
++----------------------------------------------------------------------------------------------------------------------------------------------------+
+| Consistência: Todo colaborador sabe onde encontrar cada tipo de arquivo sem perguntar. Onboarding reduzido a zero.                                 |
+|                                                                                                                                                    |
+| Testabilidade: Cada camada isolada é uma camada testável de forma independente. Services, Repositories e Composables não têm dependências ocultas. |
+|                                                                                                                                                    |
+| Escalonamento: Adicionar uma nova feature significa adicionar arquivos em locais previsíveis, sem redesenhar estruturas existentes.                |
+|                                                                                                                                                    |
+| Portfólio: Um repositório organizado é a primeira impressão técnica. Recrutadores sênior abrem o GitHub antes da entrevista.                       |
++----------------------------------------------------------------------------------------------------------------------------------------------------+
+
+1. Visão Geral: Monorepo
+
+O projeto é organizado como um monorepo: um único repositório Git contendo backend, frontend e infraestrutura. Essa abordagem facilita o versionamento coordenado, o CI/CD único e a navegação entre camadas sem trocar de contexto.
+
+  ---------------------------------------------------------------------------------------------------------------
+  LEGENDA: ■ Diretório ■ Arquivo ■ Raiz / Ponto de entrada ■ Arquivo especial / config ■ Comentário explicativo
+
+  ---------------------------------------------------------------------------------------------------------------
+
++-----------------------------------------------------------------------+
+| studytrack-pro/ # Raiz do monorepo                                    |
+|                                                                       |
+| ├── backend/ # Laravel 11 API                                         |
+|                                                                       |
+| ├── frontend/ # Vue 3 + TypeScript SPA                                |
+|                                                                       |
+| ├── docker/ # Dockerfiles e configs                                   |
+|                                                                       |
+| ├── .github/ # CI/CD pipelines (GitHub Actions)                       |
+|                                                                       |
+| ├── docker-compose.yml # Orquestra todos os serviços                  |
+|                                                                       |
+| ├── docker-compose.dev.yml # Override para desenvolvimento            |
+|                                                                       |
+| ├── Makefile # Atalhos: make dev, make test, make migrate             |
+|                                                                       |
+| ├── .env.example # Template de variáveis de ambiente                  |
+|                                                                       |
+| └── README.md # Documentação principal do projeto                     |
++-----------------------------------------------------------------------+
+
+1.1 Makefile — Atalhos de Produtividade
+
+Um Makefile na raiz centraliza os comandos mais usados. Elimina a necessidade de decorar flags e caminhos de containers.
+
++-----------------------------------------------------------------------+
+| # Comandos disponíveis via 'make <target>'                            |
+|                                                                       |
+| make dev # Sobe todos os containers em modo desenvolvimento           |
+|                                                                       |
+| make stop # Para todos os containers                                  |
+|                                                                       |
+| make migrate # Executa migrations dentro do container PHP             |
+|                                                                       |
+| make seed # Executa seeders com dados de desenvolvimento              |
+|                                                                       |
+| make test-back # Roda PHPUnit dentro do container                     |
+|                                                                       |
+| make test-front # Roda Vitest no container frontend                   |
+|                                                                       |
+| make horizon # Abre dashboard do Laravel Horizon                      |
+|                                                                       |
+| make pint # Formata código PHP (Laravel Pint)                         |
+|                                                                       |
+| make lint # Roda ESLint + Prettier no frontend                        |
+|                                                                       |
+| make fresh # Dropa e recria banco completo com seeders                |
+|                                                                       |
+| make logs # Exibe logs de todos os containers em tempo real           |
+|                                                                       |
+| make shell-php # Abre bash dentro do container php-fpm                |
+|                                                                       |
+| make shell-vue # Abre bash dentro do container frontend               |
++-----------------------------------------------------------------------+
+
+2. Backend — Laravel 11
+
+A estrutura do backend segue o princípio de organização por domínio dentro das convenções do Laravel. Cada módulo de negócio (Auth, StudySessions, Technologies, Analytics) tem seu próprio conjunto de DTO, Repository, Service e Controller, co-localizados na pasta Modules.
+
+  -----------------------------------------------------------------------
+  backend/ — Laravel 11 API REST
+
+  -----------------------------------------------------------------------
+
++-------------------------------------------------------------------------+
+| backend/                                                                |
+|                                                                         |
+| ├── app/                                                                |
+|                                                                         |
+| │ ├── Console/                                                          |
+|                                                                         |
+| │ │ └── Commands/ # Artisan commands customizados                       |
+|                                                                         |
+| │ │ ├── RecalculateAllMetrics.php                                       |
+|                                                                         |
+| │ │ └── PruneOldJobs.php                                                |
+|                                                                         |
+| │ ├── Events/ # Domain events (disparo de jobs)                         |
+|                                                                         |
+| │ │ ├── StudySession/                                                   |
+|                                                                         |
+| │ │ │ ├── StudySessionCreated.php                                       |
+|                                                                         |
+| │ │ │ ├── StudySessionUpdated.php                                       |
+|                                                                         |
+| │ │ │ └── StudySessionDeleted.php                                       |
+|                                                                         |
+| │ │ └── Analytics/                                                      |
+|                                                                         |
+| │ │ └── MetricsRecalculated.php # Dispara broadcast WebSocket           |
+|                                                                         |
+| │ ├── Exceptions/                                                       |
+|                                                                         |
+| │ │ ├── Handler.php # Global JSON error handler                         |
+|                                                                         |
+| │ │ ├── Domain/ # Exceções de domínio tipadas                           |
+|                                                                         |
+| │ │ │ ├── ConcurrentSessionException.php                                |
+|                                                                         |
+| │ │ │ ├── TechnologyNotFoundException.php                               |
+|                                                                         |
+| │ │ │ └── MetricsCalculationException.php                               |
+|                                                                         |
+| │ │ └── ApiException.php # Base para exceções com status HTTP           |
+|                                                                         |
+| │ ├── Http/                                                             |
+|                                                                         |
+| │ │ ├── Controllers/                                                    |
+|                                                                         |
+| │ │ │ └── V1/ # Namespace versionado                                    |
+|                                                                         |
+| │ │ │ ├── Auth/                                                         |
+|                                                                         |
+| │ │ │ │ └── AuthController.php                                          |
+|                                                                         |
+| │ │ │ ├── StudySessions/                                                |
+|                                                                         |
+| │ │ │ │ └── StudySessionController.php                                  |
+|                                                                         |
+| │ │ │ ├── Technologies/                                                 |
+|                                                                         |
+| │ │ │ │ └── TechnologyController.php                                    |
+|                                                                         |
+| │ │ │ └── Analytics/                                                    |
+|                                                                         |
+| │ │ │ └── AnalyticsController.php                                       |
+|                                                                         |
+| │ │ ├── Middleware/                                                     |
+|                                                                         |
+| │ │ │ ├── EnsureJsonResponse.php # Forca Content-Type: application/json |
+|                                                                         |
+| │ │ │ ├── SetUserTimezone.php # Aplica timezone do usuário na request   |
+|                                                                         |
+| │ │ │ └── LogApiRequests.php # Log estruturado de requisições           |
+|                                                                         |
+| │ │ └── Requests/ # Form Requests (validação)                           |
+|                                                                         |
+| │ │ ├── Auth/                                                           |
+|                                                                         |
+| │ │ │ ├── RegisterRequest.php                                           |
+|                                                                         |
+| │ │ │ └── LoginRequest.php                                              |
+|                                                                         |
+| │ │ ├── StudySessions/                                                  |
+|                                                                         |
+| │ │ │ ├── StoreStudySessionRequest.php                                  |
+|                                                                         |
+| │ │ │ └── UpdateStudySessionRequest.php                                 |
+|                                                                         |
+| │ │ └── Technologies/                                                   |
+|                                                                         |
+| │ │ ├── StoreTechnologyRequest.php                                      |
+|                                                                         |
+| │ │ └── UpdateTechnologyRequest.php                                     |
++-------------------------------------------------------------------------+
+
++--------------------------------------------------------------------------------+
+| │ ├── Jobs/ # Queue Jobs (assíncronos)                                         |
+|                                                                                |
+| │ │ ├── RecalculateMetricsJob.php # Recalcula analytics.* para um usuário      |
+|                                                                                |
+| │ │ ├── GenerateWeeklySummaryJob.php # Agendado: toda segunda-feira            |
+|                                                                                |
+| │ │ └── BroadcastDashboardUpdateJob.php # Emite evento WebSocket pós-recalculo |
+|                                                                                |
+| │ ├── Listeners/ # Handlers de Events                                          |
+|                                                                                |
+| │ │ ├── StudySession/                                                          |
+|                                                                                |
+| │ │ │ ├── DispatchMetricsRecalculation.php                                     |
+|                                                                                |
+| │ │ │ └── InvalidateSessionCache.php                                           |
+|                                                                                |
+| │ │ └── Analytics/                                                             |
+|                                                                                |
+| │ │ └── BroadcastMetricsUpdate.php                                             |
+|                                                                                |
+| │ ├── Models/ # Eloquent models                                                |
+|                                                                                |
+| │ │ ├── BaseModel.php # Abstract: UUID, timestamps UTC                         |
+|                                                                                |
+| │ │ ├── User.php                                                               |
+|                                                                                |
+| │ │ ├── Technology.php                                                         |
+|                                                                                |
+| │ │ ├── StudySession.php                                                       |
+|                                                                                |
+| │ │ └── Analytics/ # Models do schema analytics.*                              |
+|                                                                                |
+| │ │ ├── UserMetrics.php # $table = 'analytics.user_metrics'                    |
+|                                                                                |
+| │ │ ├── TechnologyMetrics.php                                                  |
+|                                                                                |
+| │ │ ├── DailyMinutes.php                                                       |
+|                                                                                |
+| │ │ └── WeeklySummary.php                                                      |
+|                                                                                |
+| │ ├── Modules/ # Domínios de negócio (co-localização)                          |
+|                                                                                |
+| │ │ ├── Auth/                                                                  |
+|                                                                                |
+| │ │ │ ├── DTOs/                                                                |
+|                                                                                |
+| │ │ │ │ ├── LoginDTO.php                                                       |
+|                                                                                |
+| │ │ │ │ └── RegisterDTO.php                                                    |
+|                                                                                |
+| │ │ │ ├── Repositories/                                                        |
+|                                                                                |
+| │ │ │ │ └── AuthRepository.php                                                 |
+|                                                                                |
+| │ │ │ └── Services/                                                            |
+|                                                                                |
+| │ │ │ └── AuthService.php                                                      |
+|                                                                                |
+| │ │ ├── StudySessions/                                                         |
+|                                                                                |
+| │ │ │ ├── DTOs/                                                                |
+|                                                                                |
+| │ │ │ │ ├── StudySessionDTO.php # Imutável: readonly properties                |
+|                                                                                |
+| │ │ │ │ └── StudySessionFilterDTO.php # Parâmetros de filtro/paginação         |
+|                                                                                |
+| │ │ │ ├── Repositories/                                                        |
+|                                                                                |
+| │ │ │ │ ├── Contracts/                                                         |
+|                                                                                |
+| │ │ │ │ │ └── StudySessionRepositoryInterface.php                              |
+|                                                                                |
+| │ │ │ │ └── EloquentStudySessionRepository.php                                 |
+|                                                                                |
+| │ │ │ └── Services/                                                            |
+|                                                                                |
+| │ │ │ └── StudySessionService.php                                              |
+|                                                                                |
+| │ │ ├── Technologies/                                                          |
+|                                                                                |
+| │ │ │ ├── DTOs/                                                                |
+|                                                                                |
+| │ │ │ │ └── TechnologyDTO.php                                                  |
+|                                                                                |
+| │ │ │ ├── Repositories/                                                        |
+|                                                                                |
+| │ │ │ │ ├── Contracts/                                                         |
+|                                                                                |
+| │ │ │ │ │ └── TechnologyRepositoryInterface.php                                |
+|                                                                                |
+| │ │ │ │ └── EloquentTechnologyRepository.php                                   |
+|                                                                                |
+| │ │ │ └── Services/                                                            |
+|                                                                                |
+| │ │ │ └── TechnologyService.php                                                |
+|                                                                                |
+| │ │ └── Analytics/                                                             |
+|                                                                                |
+| │ │ ├── Aggregators/ # Lógica de cálculo das métricas                          |
+|                                                                                |
+| │ │ │ ├── UserMetricsAggregator.php                                            |
+|                                                                                |
+| │ │ │ ├── TechnologyMetricsAggregator.php                                      |
+|                                                                                |
+| │ │ │ └── DailyMinutesAggregator.php                                           |
+|                                                                                |
+| │ │ ├── Repositories/                                                          |
+|                                                                                |
+| │ │ │ ├── Contracts/                                                           |
+|                                                                                |
+| │ │ │ │ └── AnalyticsRepositoryInterface.php                                   |
+|                                                                                |
+| │ │ │ └── EloquentAnalyticsRepository.php                                      |
+|                                                                                |
+| │ │ └── Services/                                                              |
+|                                                                                |
+| │ │ └── AnalyticsService.php # Cache + leitura do schema analytics             |
++--------------------------------------------------------------------------------+
+
++---------------------------------------------------------------------------+
+| │ ├── Providers/ # Service Providers                                      |
+|                                                                           |
+| │ │ ├── AppServiceProvider.php                                            |
+|                                                                           |
+| │ │ └── RepositoryServiceProvider.php # Bind interfaces -> implementações |
+|                                                                           |
+| │ ├── Http/Resources/ # API Resources (transformação de output)           |
+|                                                                           |
+| │ │ ├── V1/                                                               |
+|                                                                           |
+| │ │ ├── UserResource.php                                                  |
+|                                                                           |
+| │ │ ├── StudySessionResource.php                                          |
+|                                                                           |
+| │ │ ├── StudySessionCollection.php                                        |
+|                                                                           |
+| │ │ ├── TechnologyResource.php                                            |
+|                                                                           |
+| │ │ └── DashboardResource.php # Agrega todos os dados do dashboard        |
+|                                                                           |
+| │ └── Traits/ # Traits reutilizáveis                                      |
+|                                                                           |
+| │ ├── HasApiResponse.php # Métodos success/error JSON padronizados        |
+|                                                                           |
+| │ └── HasCacheInvalidation.php # Helper para invalidar cache por tags     |
+|                                                                           |
+| ├── bootstrap/                                                            |
+|                                                                           |
+| │ ├── app.php # Registra middleware e providers (Laravel 11)              |
+|                                                                           |
+| │ └── cache.php # Config de cache bootstrap                               |
+|                                                                           |
+| ├── config/                                                               |
+|                                                                           |
+| │ ├── app.php # Timezone, locale, providers                               |
+|                                                                           |
+| │ ├── database.php # PostgreSQL schemas + Redis multi-DB                  |
+|                                                                           |
+| │ ├── cache.php # Driver Redis, tags, TTLs                                |
+|                                                                           |
+| │ ├── queue.php # Filas: metrics, notifications, default                  |
+|                                                                           |
+| │ ├── broadcasting.php # Reverb WebSocket                                 |
+|                                                                           |
+| │ └── horizon.php # Config do Laravel Horizon                             |
+|                                                                           |
+| ├── database/                                                             |
+|                                                                           |
+| │ ├── migrations/ # Organizadas por data e domínio                        |
+|                                                                           |
+| │ │ ├── 2025_01_01_000001_create_users_table.php                          |
+|                                                                           |
+| │ │ ├── 2025_01_01_000002_create_technologies_table.php                   |
+|                                                                           |
+| │ │ ├── 2025_01_01_000003_create_study_sessions_table.php                 |
+|                                                                           |
+| │ │ ├── 2025_01_02_000001_create_analytics_schema.php                     |
+|                                                                           |
+| │ │ ├── 2025_01_02_000002_create_analytics_tables.php                     |
+|                                                                           |
+| │ │ └── 2025_01_03_000001_create_db_functions_and_triggers.php            |
+|                                                                           |
+| │ ├── factories/                                                          |
+|                                                                           |
+| │ │ ├── UserFactory.php                                                   |
+|                                                                           |
+| │ │ ├── TechnologyFactory.php                                             |
+|                                                                           |
+| │ │ └── StudySessionFactory.php                                           |
+|                                                                           |
+| │ └── seeders/                                                            |
+|                                                                           |
+| │ ├── DatabaseSeeder.php # Orquestra todos os seeders                     |
+|                                                                           |
+| │ ├── UserSeeder.php # Cria usuário dev@studytrack.local                  |
+|                                                                           |
+| │ └── DemoDataSeeder.php # 6 meses de sessões realistas                   |
+|                                                                           |
+| ├── routes/                                                               |
+|                                                                           |
+| │ ├── api.php # Agrupa v1 com prefix e middleware                         |
+|                                                                           |
+| │ ├── channels.php # Canais privados WebSocket                            |
+|                                                                           |
+| │ └── console.php # Jobs agendados (schedule)                             |
+|                                                                           |
+| ├── tests/                                                                |
+|                                                                           |
+| │ ├── Feature/ # Testes de integração (HTTP)                              |
+|                                                                           |
+| │ │ ├── Auth/                                                             |
+|                                                                           |
+| │ │ │ └── AuthTest.php                                                    |
+|                                                                           |
+| │ │ ├── StudySessions/                                                    |
+|                                                                           |
+| │ │ │ └── StudySessionCrudTest.php                                        |
+|                                                                           |
+| │ │ └── Analytics/                                                        |
+|                                                                           |
+| │ │ └── DashboardTest.php                                                 |
+|                                                                           |
+| │ └── Unit/ # Testes unitários isolados                                   |
+|                                                                           |
+| │ ├── Services/                                                           |
+|                                                                           |
+| │ │ └── StudySessionServiceTest.php # Service com Repository mockado      |
+|                                                                           |
+| │ └── Aggregators/                                                        |
+|                                                                           |
+| │ └── MetricsAggregatorTest.php # Lógica de streak, médias                |
+|                                                                           |
+| ├── .env # Variáveis de ambiente (não versionar)                          |
+|                                                                           |
+| ├── .env.example # Template público                                       |
+|                                                                           |
+| ├── phpunit.xml # Config de testes com banco in-memory                    |
+|                                                                           |
+| └── pint.json # Regras do Laravel Pint (code style)                       |
++---------------------------------------------------------------------------+
+
+3. Convenções do Backend
+
+3.1 Nomenclatura de Arquivos PHP
+
+  -------------------------------------------------------------------------------------
+  Tipo             Convenção                      Exemplo
+  ---------------- ------------------------------ -------------------------------------
+  Controller       PascalCase + Controller        StudySessionController.php
+
+  Model            PascalCase singular            StudySession.php
+
+  Service          PascalCase + Service           StudySessionService.php
+
+  Repository       Eloquent + Repository          EloquentStudySessionRepository.php
+
+  Interface        PascalCase + Interface         StudySessionRepositoryInterface.php
+
+  DTO              PascalCase + DTO               StudySessionDTO.php
+
+  Form Request     Verb + Resource + Request      StoreStudySessionRequest.php
+
+  API Resource     PascalCase + Resource          StudySessionResource.php
+
+  Event            PascalCase (passado simples)   StudySessionCreated.php
+
+  Job              PascalCase + Job               RecalculateMetricsJob.php
+
+  Listener         Descrição da ação              DispatchMetricsRecalculation.php
+
+  Test             Nome do alvo + Test            StudySessionServiceTest.php
+
+  Migration        timestamp_verb_subject         create_study_sessions_table.php
+  -------------------------------------------------------------------------------------
+
+3.2 Fluxo de Uma Request (De ponta a ponta)
+
++---------------------------------------------------------------------------+
+| REQUEST → RESPOSTA: Criar Sessão de Estudo                                |
++---------------------------------------------------------------------------+
+| 1. Nginx → Recebe POST /api/v1/study-sessions, passa para php-fpm         |
+|                                                                           |
+| 2. EnsureJsonResponse → Middleware garante Accept: application/json       |
+|                                                                           |
+| 3. auth:sanctum → Middleware valida Bearer token, popula $request->user() |
+|                                                                           |
+| 4. throttle:api → Rate limit 60/min por user_id (Redis)                   |
+|                                                                           |
+| 5. StoreStudySessionRequest → Valida campos, retorna 422 se inválido      |
+|                                                                           |
+| 6. StudySessionController → Monta DTO, delega ao Service                  |
+|                                                                           |
+| 7. StudySessionService → Valida regras de negócio, chama Repository       |
+|                                                                           |
+| 8. EloquentStudySessionRepository → Persiste no banco                     |
+|                                                                           |
+| 9. event(StudySessionCreated) → Listeners despacham RecalculateMetricsJob |
+|                                                                           |
+| 10. StudySessionResource → Formata resposta 201 com shape padronizado     |
++---------------------------------------------------------------------------+
+
+4. Frontend — Vue 3 + TypeScript
+
+O frontend segue a estrutura Feature-First dentro das convenções do Vite: cada funcionalidade tem seus próprios componentes, composables e tipos. A camada de API, stores e tipos globais ficam em pastas separadas acessíveis de qualquer feature.
+
+  -----------------------------------------------------------------------
+  frontend/ — Vue 3 + TypeScript + Pinia + ApexCharts + Laravel Echo (Reverb)
+
+  -----------------------------------------------------------------------
+
++-----------------------------------------------------------------------+
+| frontend/                                                             |
+|                                                                       |
+| ├── src/                                                              |
+|                                                                       |
+| │ ├── api/ # Camada de comunicação HTTP                               |
+|                                                                       |
+| │ │ ├── client.ts # Axios: base URL, interceptors 401/429             |
+|                                                                       |
+| │ │ ├── endpoints.ts # Constantes de endpoints (/api/v1/...)          |
+|                                                                       |
+| │ │ └── modules/ # Um arquivo por domínio de API                      |
+|                                                                       |
+| │ │ ├── auth.api.ts # login, register, logout, me                     |
+|                                                                       |
+| │ │ ├── sessions.api.ts # CRUD de study-sessions                      |
+|                                                                       |
+| │ │ ├── technologies.api.ts # CRUD de technologies                    |
+|                                                                       |
+| │ │ └── analytics.api.ts # dashboard, metrics, timeSeries             |
+|                                                                       |
+| │ ├── assets/                                                         |
+|                                                                       |
+| │ │ ├── styles/                                                       |
+|                                                                       |
+| │ │ │ ├── main.css # Entry point de estilos                           |
+|                                                                       |
+| │ │ │ ├── variables.css # Design tokens (cores, espaçamentos)         |
+|                                                                       |
+| │ │ │ └── transitions.css # Animações de rota e componentes           |
+|                                                                       |
+| │ │ └── icons/ # SVG icons locais                                     |
+|                                                                       |
+| │ ├── components/ # Componentes reutilizáveis (genéricos)             |
+|                                                                       |
+| │ │ ├── ui/ # Design system interno                                   |
+|                                                                       |
+| │ │ │ ├── BaseButton.vue                                              |
+|                                                                       |
+| │ │ │ ├── BaseInput.vue                                               |
+|                                                                       |
+| │ │ │ ├── BaseModal.vue                                               |
+|                                                                       |
+| │ │ │ ├── BaseCard.vue                                                |
+|                                                                       |
+| │ │ │ ├── BaseBadge.vue # Tags de tecnologia coloridas                |
+|                                                                       |
+| │ │ │ └── BaseToast.vue # Notificações toast (global)                 |
+|                                                                       |
+| │ │ ├── charts/ # Wrappers de gráficos ApexCharts                       |
+|                                                                       |
+| │ │ │ ├── LineChart.vue # Série temporal de minutos/dia               |
+|                                                                       |
+| │ │ │ ├── PieChart.vue # Distribuição por tecnologia                  |
+|                                                                       |
+| │ │ │ ├── BarChart.vue # Comparação semanal                           |
+|                                                                       |
+| │ │ │ └── HeatmapChart.vue # Calendário de atividade (GitHub style)   |
+|                                                                       |
+| │ │ └── layout/ # Estrutura de página                                 |
+|                                                                       |
+| │ │ ├── AppLayout.vue # Shell: sidebar + header + main                |
+|                                                                       |
+| │ │ ├── AppSidebar.vue                                                |
+|                                                                       |
+| │ │ ├── AppHeader.vue                                                 |
+|                                                                       |
+| │ │ └── AuthLayout.vue # Layout minimalista para login/register       |
++-----------------------------------------------------------------------+
+
++-------------------------------------------------------------------------+
+| │ ├── composables/ # Lógica reutilizável (Vue Composition API)          |
+|                                                                         |
+| │ │ ├── useWebSocket.ts # Echo + Reverb: connect, disconnect, listen    |
+|                                                                         |
+| │ │ ├── useToast.ts # Sistema de notificações global                    |
+|                                                                         |
+| │ │ ├── useConfirm.ts # Modal de confirmação programático               |
+|                                                                         |
+| │ │ ├── usePagination.ts # Lógica de paginação reutilizável             |
+|                                                                         |
+| │ │ ├── useLocalStorage.ts # Persistência tipada no localStorage        |
+|                                                                         |
+| │ │ └── useChartDefaults.ts # Config padrão ApexCharts (tema, fontes)     |
+|                                                                         |
+| │ ├── features/ # Feature-First: um folder por funcionalidade           |
+|                                                                         |
+| │ │ ├── auth/                                                           |
+|                                                                         |
+| │ │ │ ├── components/                                                   |
+|                                                                         |
+| │ │ │ │ ├── LoginForm.vue                                               |
+|                                                                         |
+| │ │ │ │ └── RegisterForm.vue                                            |
+|                                                                         |
+| │ │ │ └── composables/                                                  |
+|                                                                         |
+| │ │ │ └── useAuth.ts # Login, register, logout, redirect pós-auth       |
+|                                                                         |
+| │ │ ├── sessions/                                                       |
+|                                                                         |
+| │ │ │ ├── components/                                                   |
+|                                                                         |
+| │ │ │ │ ├── SessionCard.vue # Card de sessão na listagem                |
+|                                                                         |
+| │ │ │ │ ├── SessionForm.vue # Formulário criar/editar                   |
+|                                                                         |
+| │ │ │ │ ├── SessionList.vue # Lista paginada de sessões                 |
+|                                                                         |
+| │ │ │ │ ├── SessionTimer.vue # Timer ao vivo para sessões ativas        |
+|                                                                         |
+| │ │ │ │ └── SessionFilters.vue # Filtros: tecnologia, período, humor    |
+|                                                                         |
+| │ │ │ └── composables/                                                  |
+|                                                                         |
+| │ │ │ ├── useStudySessions.ts # CRUD + estado local da lista            |
+|                                                                         |
+| │ │ │ └── useSessionTimer.ts # Lógica do timer (start, stop, elapsed)   |
+|                                                                         |
+| │ │ ├── technologies/                                                   |
+|                                                                         |
+| │ │ │ ├── components/                                                   |
+|                                                                         |
+| │ │ │ │ ├── TechnologyCard.vue                                          |
+|                                                                         |
+| │ │ │ │ ├── TechnologyForm.vue # Criador dinâmico (nome + cor + ícone)  |
+|                                                                         |
+| │ │ │ │ └── TechnologyPicker.vue # Selector com busca/autocomplete      |
+|                                                                         |
+| │ │ │ └── composables/                                                  |
+|                                                                         |
+| │ │ │ └── useTechnologies.ts # CRUD + busca por trigrama                |
+|                                                                         |
+| │ │ └── dashboard/                                                      |
+|                                                                         |
+| │ │ ├── components/                                                     |
+|                                                                         |
+| │ │ │ ├── KpiCards.vue # Horas totais, streak, média, top tech          |
+|                                                                         |
+| │ │ │ ├── TimeSeriesWidget.vue # Gráfico linha: últimos 30 dias         |
+|                                                                         |
+| │ │ │ ├── TechDistributionWidget.vue # Gráfico pizza por tecnologia     |
+|                                                                         |
+| │ │ │ ├── WeeklyComparisonWidget.vue # Barras: semana atual vs anterior |
+|                                                                         |
+| │ │ │ └── RealtimeBadge.vue # Indicador de conexão WebSocket            |
+|                                                                         |
+| │ │ └── composables/                                                    |
+|                                                                         |
+| │ │ └── useDashboard.ts # Busca inicial + subscribe WebSocket           |
++-------------------------------------------------------------------------+
+
++-----------------------------------------------------------------------+
+| │ ├── router/                                                         |
+|                                                                       |
+| │ │ ├── index.ts # createRouter, history mode                         |
+|                                                                       |
+| │ │ ├── guards.ts # beforeEach: auth check, redirecionar /login       |
+|                                                                       |
+| │ │ └── routes/                                                       |
+|                                                                       |
+| │ │ ├── auth.routes.ts # /login, /register                            |
+|                                                                       |
+| │ │ ├── dashboard.routes.ts # /dashboard (lazy loaded)                |
+|                                                                       |
+| │ │ ├── sessions.routes.ts # /sessions, /sessions/new, /sessions/:id  |
+|                                                                       |
+| │ │ └── technologies.routes.ts # /technologies, /technologies/:id     |
+|                                                                       |
+| │ ├── stores/ # Pinia stores (estado global)                          |
+|                                                                       |
+| │ │ ├── auth.store.ts # user, token, isAuthenticated                  |
+|                                                                       |
+| │ │ ├── sessions.store.ts # sessões paginadas, filtros ativos         |
+|                                                                       |
+| │ │ ├── technologies.store.ts # lista de tecnologias do usuário       |
+|                                                                       |
+| │ │ ├── analytics.store.ts # dashboard data + WebSocket update        |
+|                                                                       |
+| │ │ └── ui.store.ts # theme, sidebar collapsed, modais globais        |
+|                                                                       |
+| │ ├── types/ # TypeScript: contratos de dados                         |
+|                                                                       |
+| │ │ ├── api.types.ts # ApiResponse<T>, PaginationMeta, ApiError       |
+|                                                                       |
+| │ │ ├── domain.types.ts # StudySession, Technology, UserMetrics       |
+|                                                                       |
+| │ │ ├── websocket.types.ts # MetricsUpdatedEvent, WebSocketState      |
+|                                                                       |
+| │ │ └── chart.types.ts # ChartDataset, TimeSeriesPoint                |
+|                                                                       |
+| │ ├── views/ # Páginas (conectam features + router)                   |
+|                                                                       |
+| │ │ ├── auth/                                                         |
+|                                                                       |
+| │ │ │ ├── LoginView.vue                                               |
+|                                                                       |
+| │ │ │ └── RegisterView.vue                                            |
+|                                                                       |
+| │ │ ├── DashboardView.vue # Monta widgets do dashboard                |
+|                                                                       |
+| │ │ ├── sessions/                                                     |
+|                                                                       |
+| │ │ │ ├── SessionsView.vue                                            |
+|                                                                       |
+| │ │ │ └── SessionDetailView.vue                                       |
+|                                                                       |
+| │ │ └── technologies/                                                 |
+|                                                                       |
+| │ │ └── TechnologiesView.vue                                          |
+|                                                                       |
+| │ ├── utils/ # Utilititários puros (sem efeito colateral)             |
+|                                                                       |
+| │ │ ├── formatters.ts # formatDuration(), formatDate(), formatHours() |
+|                                                                       |
+| │ │ ├── validators.ts # isValidHexColor(), isValidDuration()          |
+|                                                                       |
+| │ │ └── color.ts # darken(), lighten(), hexToRgb()                    |
+|                                                                       |
+| │ ├── App.vue # Root component                                        |
+|                                                                       |
+| │ └── main.ts # createApp, plugins, mount                             |
+|                                                                       |
+| ├── public/ # Assets estáticos (sem bundle)                           |
+|                                                                       |
+| │ └── favicon.svg                                                     |
+|                                                                       |
+| ├── tests/ # Vitest + Vue Test Utils                                  |
+|                                                                       |
+| │ ├── unit/                                                           |
+|                                                                       |
+| │ │ ├── composables/ # Testes de composables isolados                 |
+|                                                                       |
+| │ │ │ ├── useWebSocket.spec.ts                                        |
+|                                                                       |
+| │ │ │ └── usePagination.spec.ts                                       |
+|                                                                       |
+| │ │ └── utils/ # Testes de formatação e validação                     |
+|                                                                       |
+| │ │ └── formatters.spec.ts                                            |
+|                                                                       |
+| │ └── components/ # Testes de componentes                             |
+|                                                                       |
+| │ └── SessionCard.spec.ts                                             |
+|                                                                       |
+| ├── .env.development # VITE_API_URL, VITE_REVERB_HOST                 |
+|                                                                       |
+| ├── .env.example # Template sem valores sensíveis                     |
+|                                                                       |
+| ├── vite.config.ts # Alias @/ -> src/, proxy /api -> backend          |
+|                                                                       |
+| ├── tsconfig.json # strict: true, paths, lib                          |
+|                                                                       |
+| └── .eslintrc.cjs # ESLint + Vue + TypeScript rules                   |
++-----------------------------------------------------------------------+
+
+5. Convenções do Frontend
+
+5.1 Nomenclatura de Arquivos Vue/TS
+
+  ------------------------------------------------------------------------------
+  Tipo                  Convenção                Exemplo
+  --------------------- ------------------------ -------------------------------
+  View (página)         PascalCase + View.vue    DashboardView.vue
+
+  Componente genérico   PascalCase.vue           BaseButton.vue
+
+  Componente feature    PascalCase.vue           SessionCard.vue
+
+  Composable            use + PascalCase.ts      useWebSocket.ts
+
+  Store (Pinia)         kebab-case + .store.ts   analytics.store.ts
+
+  API module            kebab-case + .api.ts     analytics.api.ts
+
+  Types file            kebab-case + .types.ts   domain.types.ts
+
+  Test                  nome + .spec.ts          SessionCard.spec.ts
+
+  Utils                 kebab-case.ts            formatters.ts
+
+  Config                kebab-case.config.ts     chart.config.ts
+  ------------------------------------------------------------------------------
+
+5.2 Regra: Views vs Components vs Features
+
++-----------------------------------------------------------------------------------------------------------------+
+| ONDE COLOCAR CADA ARQUIVO?                                                                                      |
++-----------------------------------------------------------------------------------------------------------------+
+| features/{name}/components/ → Componentes específicos de uma funcionalidade. Não reutilizáveis fora da feature. |
+|                                                                                                                 |
+| components/ui/ → Design system: botões, inputs, modais. Sem lógica de negócio. Sem chamadas à API.              |
+|                                                                                                                 |
+| components/charts/ → Wrappers de ApexCharts genéricos. Recebem data via props. Não conhecem Pinia.                |
+|                                                                                                                 |
+| views/ → Páginas puras. Montam componentes de features. Não têm lógica: delegam para composables.               |
+|                                                                                                                 |
+| composables/ → Lógica reutilizável entre múltiplas features. Exemplo: useToast usado em qualquer componente.    |
++-----------------------------------------------------------------------------------------------------------------+
+
+5.3 Fluxo de Dados no Frontend
+
++-----------------------------------------------------------------------------------+
+| FLUXO: WebSocket atualiza o dashboard                                             |
++-----------------------------------------------------------------------------------+
+| 1. main.ts → App monta, plugins registrados (Pinia, Router)                       |
+|                                                                                   |
+| 2. router/guards.ts → beforeEach verifica auth.store.isAuthenticated              |
+|                                                                                   |
+| 3. DashboardView.vue → onMounted chama useDashboard composable                    |
+|                                                                                   |
+| 4. useDashboard.ts → analytics.api.getDashboard() + useWebSocket().connect()      |
+|                                                                                   |
+| 5. analytics.store → Armazena dashboard data, exibe loading state                 |
+|                                                                                   |
+| 6. KpiCards, Charts → Computed do store, renderiza gráficos                       |
+|                                                                                   |
+| 7. WebSocket event → '.metrics.updated' chega via Laravel Echo                    |
+|                                                                                   |
+| 8. analytics.store.updateFromWebSocket() → Atualiza ref() reativa                 |
+|                                                                                   |
+| 9. Vue reatividade → Componentes re-renderizam automaticamente. Zero boilerplate. |
++-----------------------------------------------------------------------------------+
+
+6. Docker e Infraestrutura
+
+  -----------------------------------------------------------------------
+  docker/ — Dockerfiles, configs e orquestração
+
+  -----------------------------------------------------------------------
+
++-----------------------------------------------------------------------+
+| docker/                                                               |
+|                                                                       |
+| ├── nginx/                                                            |
+|                                                                       |
+| │ ├── nginx.conf # Proxy reverso: API, SPA, WebSocket                 |
+|                                                                       |
+| │ └── ssl/ # Certificados (Let's Encrypt / self-signed dev)           |
+|                                                                       |
+| ├── php/                                                              |
+|                                                                       |
+| │ ├── Dockerfile # PHP 8.3-FPM + extensões: pgsql, redis, pcntl       |
+|                                                                       |
+| │ ├── php.ini # memory_limit, upload_max, opcache                     |
+|                                                                       |
+| │ └── php-fpm.conf # PM dynamic, max_children, timeout                |
+|                                                                       |
+| ├── frontend/                                                         |
+|                                                                       |
+| │ └── Dockerfile # Node 20 + build stage (multi-stage)                |
+|                                                                       |
+| ├── postgres/                                                         |
+|                                                                       |
+| │ └── init.sql # CREATE SCHEMA analytics; extensões; roles            |
+|                                                                       |
+| └── redis/                                                            |
+|                                                                       |
+| └── redis.conf # maxmemory, eviction policy, persistência AOF         |
++-----------------------------------------------------------------------+
+
++-----------------------------------------------------------------------+
+| # Serviços no docker-compose.yml                                      |
+|                                                                       |
+| services:                                                             |
+|                                                                       |
+| nginx: # Proxy reverso. Porta 80/443 expostas.                        |
+|                                                                       |
+| php-fpm: # Laravel app server. Sem porta exposta.                     |
+|                                                                       |
+| reverb: # WebSocket server (php artisan reverb:start)                 |
+|                                                                       |
+| horizon: # Queue worker (php artisan horizon)                         |
+|                                                                       |
+| scheduler: # Cron jobs (php artisan schedule:work)                    |
+|                                                                       |
+| postgres: # PostgreSQL 16. Volume persistente.                        |
+|                                                                       |
+| redis: # Redis 7. Volume persistente. Multi-DB.                       |
+|                                                                       |
+| # Só em desenvolvimento:                                              |
+|                                                                       |
+| frontend-dev: # Vite dev server com HMR                               |
+|                                                                       |
+| pgadmin: # Administração visual do PostgreSQL                         |
+|                                                                       |
+| mailpit: # Captura e-mails de desenvolvimento                         |
++-----------------------------------------------------------------------+
+
+6.1 Portas Expostas por Ambiente
+
+  -----------------------------------------------------------------------------------
+  Serviço         Porta Dev    Porta Prod   Descrição
+  --------------- ------------ ------------ -----------------------------------------
+  nginx           :80, :443    :80, :443    Entrada principal. API + SPA + WS
+
+  php-fpm         interna      interna      Nunca exposta. Nginx conecta via socket
+
+  reverb          :8080        via nginx    Dev: acesso direto. Prod: proxy Nginx
+
+  postgres        :5432        interna      Dev: acesso local. Prod: nunca exposta
+
+  redis           :6379        interna      Dev: acesso local. Prod: nunca exposta
+
+  pgadmin         :5050        n/a          Somente desenvolvimento
+
+  horizon         interna      interna      Dashboard via /horizon (rota Laravel)
+
+  frontend-dev    :5173        n/a          Vite HMR. Somente desenvolvimento
+  -----------------------------------------------------------------------------------
+
+7. GitHub Actions — CI/CD
+
++-----------------------------------------------------------------------+
+| .github/                                                              |
+|                                                                       |
+| ├── workflows/                                                        |
+|                                                                       |
+| │ ├── backend-ci.yml # PHPUnit + Pint + Larastan                      |
+|                                                                       |
+| │ ├── frontend-ci.yml # Vitest + ESLint + tsc --noEmit                |
+|                                                                       |
+| │ └── deploy.yml # Build + push Docker Hub + deploy (main)            |
+|                                                                       |
+| ├── PULL_REQUEST_TEMPLATE.md # Checklist: testes, tipos, docs         |
+|                                                                       |
+| └── ISSUE_TEMPLATE/                                                   |
+|                                                                       |
+| ├── bug_report.md                                                     |
+|                                                                       |
+| └── feature_request.md                                                |
++-----------------------------------------------------------------------+
+
++-----------------------------------------------------------------------+
+| PIPELINE DE CI (backend-ci.yml)                                       |
++-----------------------------------------------------------------------+
+| Trigger: Push para main ou qualquer PR                                |
+|                                                                       |
+| -   Checkout + PHP 8.3 setup                                          |
+|                                                                       |
+| -   Composer install (cache de vendor/)                               |
+|                                                                       |
+| -   Laravel Pint — verifica code style (não executa, só checa)        |
+|                                                                       |
+| -   Larastan nivel 6 — análise estática de tipos                      |
+|                                                                       |
+| -   PHPUnit com banco SQLite in-memory para velocidade                |
+|                                                                       |
+| -   Falha o PR se qualquer step falhar                                |
++-----------------------------------------------------------------------+
+
+8. Mapa de Responsabilidades por Camada
+
+8.1 Backend: O que cada camada pode e não pode fazer
+
+  --------------------------------------------------------------------------------------------------------------------------
+  Camada        Pode fazer                                                NÃO pode fazer
+  ------------- --------------------------------------------------------- --------------------------------------------------
+  Controller    Chamar Service, retornar Resource, 1-3 linhas de lógica   Tocar em Model diretamente, lógica de negócio
+
+  Service       Regras de negócio, chamar Repository, disparar Events     Acessar $request, retornar Response HTTP
+
+  Repository    Queries Eloquent, filtros, paginação, eager loading       Lógica de negócio, enviar e-mails, disparar jobs
+
+  DTO           Transportar dados validados entre camadas (readonly)      Qualquer método com efeito colateral
+
+  Job           Processar de forma assíncrona, usar Aggregator, cache     Chamar outros Jobs diretamente, HTTP requests
+
+  Model         Relações, scopes, casts, acessors                         Lógica de negócio complexa, chamadas externas
+
+  Resource      Formatar o array de saída JSON da API                     Disparar eventos, chamar services
+  --------------------------------------------------------------------------------------------------------------------------
+
+8.2 Frontend: O que cada camada pode e não pode fazer
+
+  ---------------------------------------------------------------------------------------------------------------------------
+  Camada              Pode fazer                                                NÃO pode fazer
+  ------------------- --------------------------------------------------------- ---------------------------------------------
+  View                Montar componentes de feature, delegar para composables   Lógica de negócio, chamar API diretamente
+
+  Feature Component   Lógica de UI da feature, usar composables/stores          Chamar axios diretamente, lógica global
+
+  UI Component        Renderizar UI com props/emits puros, emit eventos         Usar store, chamar API, lógica de negócio
+
+  Composable          Encapsular lógica reativa, usar store e API modules       Acessar DOM diretamente sem onMounted
+
+  Store (Pinia)       Estado global, actions assíncronas, getters derivados     Renderizar HTML, acessar router diretamente
+
+  API module          Axios calls, tipar request/response, paths de endpoint    Estado local, lógica de UI
+
+  Utils               Funções puras: formatação, validação, transformação       Efeitos colaterais, chamadas HTTP, store
+  ---------------------------------------------------------------------------------------------------------------------------
+
+9. Checklist de Setup Inicial
+
+Semana 1 — Estrutura e Ambiente
+
+-   [ ] Criar monorepo: mkdir studytrack-pro && git init
+
+-   [ ] Criar backend/ com laravel new backend --no-interaction
+
+-   [ ] Criar frontend/ com npm create vue@latest frontend (escolher TS + Router + Pinia)
+
+-   [ ] Criar docker/ com Dockerfiles e docker-compose.yml
+
+-   [ ] Criar Makefile na raiz com os targets listados neste documento
+
+-   [ ] Configurar .gitignore na raiz cobrindo /backend/.env e /frontend/.env.*
+
+-   [ ] Criar .env.example com todas as variáveis (sem valores sensíveis)
+
+-   [ ] Testar: make dev sobe todos os containers sem erro
+
+Semana 2 — Backend Base
+
+-   [ ] Criar pasta app/Modules/ com subpastas DTOs, Repositories/Contracts, Services
+
+-   [ ] Criar RepositoryServiceProvider e registrar em bootstrap/providers.php
+
+-   [ ] Criar BaseModel.php com UUID, serializeDate()
+
+-   [ ] Criar Handler.php com tratamento global de erros JSON
+
+-   [ ] Criar EnsureJsonResponse middleware e registrar em bootstrap/app.php
+
+-   [ ] Criar Trait HasApiResponse com métodos success() e error()
+
+-   [ ] Configurar routes/api.php com prefixo v1 e middleware corretos
+
+Semana 2 — Frontend Base
+
+-   [ ] Criar src/api/client.ts com Axios e interceptors
+
+-   [ ] Criar src/types/api.types.ts, domain.types.ts
+
+-   [ ] Criar src/stores/ com auth.store.ts (token, user)
+
+-   [ ] Criar router/guards.ts com beforeEach de autent.
+
+-   [ ] Criar components/layout/ (AppLayout, AppSidebar, AppHeader)
+
+-   [ ] Configurar vite.config.ts com alias @/ e proxy /api
+
+-   [ ] Testar: login funciona de ponta a ponta (frontend -> nginx -> laravel)
+
++-------------------------------------------------------------------------------------------+
+| DICA FINAL: COMMIT CONVENCIONAL                                                           |
++-------------------------------------------------------------------------------------------+
+| Adote Conventional Commits desde o primeiro dia. Isso diferencia portfolios amadurecidos: |
+|                                                                                           |
+| -   feat(sessions): add concurrent session guard trigger                                  |
+|                                                                                           |
+| -   fix(analytics): correct daily_minutes timezone conversion                             |
+|                                                                                           |
+| -   refactor(auth): extract token refresh logic to composable                             |
+|                                                                                           |
+| -   test(metrics): add streak calculation edge cases                                      |
+|                                                                                           |
+| -   chore(docker): add pgadmin service for dev environment                                |
+|                                                                                           |
+| Com esta convenção, o git log se torna documentação automática do projeto.                |
++-------------------------------------------------------------------------------------------+

@@ -30,20 +30,25 @@
 .auth-layout__card {
   position: relative;
   z-index: 1;
-  background: var(--color-bg-card);
-  padding: var(--spacing-2xl) var(--spacing-3xl);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--color-border);
   width: 100%;
-  max-width: 24rem;
-  min-height: 18rem;
+  max-width: var(--auth-card-max-width);
+  min-height: calc(var(--spacing-3xl) * 6);
+  padding: var(--spacing-2xl) var(--spacing-3xl);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--color-bg-card) 97%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
 }
 @media (max-width: 640px) {
   .auth-layout__card {
     padding: var(--spacing-xl) var(--spacing-lg);
-    border-radius: var(--radius-md);
-    min-height: 260px;
+    border-radius: var(--radius-lg);
+    min-height: var(--auth-card-min-height-mobile);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--color-bg-card);
   }
 }
 </style>

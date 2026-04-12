@@ -62,7 +62,7 @@ const hasImage = computed(() => Boolean(props.src))
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   overflow: hidden;
   background: var(--color-primary-soft);
   color: var(--color-primary);

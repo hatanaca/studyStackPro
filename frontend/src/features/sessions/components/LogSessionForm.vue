@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
+import Skeleton from 'primevue/skeleton'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import { useTechnologiesStore } from '@/stores/technologies.store'
 import { getApiErrorMessage } from '@/api/client'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import { useToast } from '@/composables/useToast'
 
-defineProps<{
+const props = defineProps<{
   showCancel?: boolean
+  defaultTechnologyId?: string
 }>()
 
 export interface SessionSavedPayload {
@@ -23,6 +27,7 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
+const router = useRouter()
 const technologiesStore = useTechnologiesStore()
 const toast = useToast()
 
@@ -36,16 +41,31 @@ const errors = ref<{
   duration?: string
 }>({})
 const loading = ref(false)
+/** Evita flash de “empty” antes do primeiro fetch da store (loading ainda false). */
+const listReady = ref(false)
 
 const today = computed(() => {
   const d = new Date()
-  return d.toISOString().slice(0, 10)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 })
 
 onMounted(async () => {
-  await technologiesStore.fetchTechnologies()
+  try {
+    if (!technologiesStore.technologies.length) {
+      await technologiesStore.fetchTechnologies()
+    }
+  } catch {
+    /* 401/outros: interceptor redireciona; evita unhandled rejection no mount */
+  } finally {
+    listReady.value = true
+  }
   date.value = today.value
-  if (technologiesStore.technologies.length) {
+  if (props.defaultTechnologyId) {
+    technologyId.value = props.defaultTechnologyId
+  } else if (technologiesStore.technologies.length) {
     technologyId.value = technologiesStore.technologies[0].id
   }
 })
@@ -69,12 +89,22 @@ async function onSubmit(e: Event) {
 
   loading.value = true
   try {
-    const startedAt = new Date(`${date.value}T12:00:00`)
-    const endedAt = new Date(startedAt.getTime() + durationMinutes.value * 60 * 1000)
+    const start = new Date(`${date.value}T12:00:00`)
+    const end = new Date(start.getTime() + durationMinutes.value * 60_000)
+    const toISO = (d: Date) => {
+      const yy = d.getFullYear()
+      const mm = String(d.getMonth() + 1).padStart(2, '0')
+      const dd = String(d.getDate()).padStart(2, '0')
+      const hh = String(d.getHours()).padStart(2, '0')
+      const mi = String(d.getMinutes()).padStart(2, '0')
+      const ss = String(d.getSeconds()).padStart(2, '0')
+      return `${yy}-${mm}-${dd}T${hh}:${mi}:${ss}`
+    }
     await sessionsApi.create({
       technology_id: technologyId.value,
-      started_at: startedAt.toISOString(),
-      ended_at: endedAt.toISOString(),
+      started_at: toISO(start),
+      ended_at: toISO(end),
+      duration_min: durationMinutes.value,
       notes: notes.value.trim() || undefined,
     })
     toast.success('Sessão registrada com sucesso!')
@@ -82,7 +112,8 @@ async function onSubmit(e: Event) {
     const savedTechId = technologyId.value
     const savedDate = date.value
     const savedDuration = durationMinutes.value
-    technologyId.value = technologiesStore.technologies.length ? technologiesStore.technologies[0].id : ''
+    technologyId.value = props.defaultTechnologyId
+      ?? (technologiesStore.technologies.length ? technologiesStore.technologies[0].id : '')
     date.value = today.value
     durationMinutes.value = 30
     notes.value = ''
@@ -107,14 +138,26 @@ function onCancel() {
 </script>
 
 <template>
-  <p
-    v-if="!technologiesStore.loading && !technologiesStore.technologies.length"
-    class="log-session-form__empty"
+  <div
+    v-if="!listReady || technologiesStore.loading"
+    class="log-session-form__loading"
+    role="status"
+    aria-live="polite"
+    aria-label="Carregando tecnologias"
   >
-    Cadastre ao menos uma tecnologia em <router-link to="/technologies">
-      Tecnologias
-    </router-link> antes de registrar sessões.
-  </p>
+    <Skeleton height="2.75rem" class="log-session-form__skel" />
+    <Skeleton height="2.75rem" class="log-session-form__skel" />
+    <Skeleton height="5rem" class="log-session-form__skel" />
+  </div>
+  <EmptyState
+    v-else-if="!technologiesStore.technologies.length"
+    icon="⚡"
+    title="Nenhuma tecnologia cadastrada"
+    description="Cadastre ao menos uma tecnologia para categorizar e registrar suas sessões de estudo."
+    action-label="Ir para Tecnologias"
+    :hide-action="false"
+    @action="router.push('/technologies')"
+  />
   <form
     v-else
     class="log-session-form"
@@ -127,12 +170,13 @@ function onCancel() {
       >
         Tecnologia
       </label>
-      <select
+        <select
         id="log-tech"
         v-model="technologyId"
         class="log-session-form__select"
         :class="{ 'log-session-form__select--error': errors.technology_id }"
         aria-label="Selecionar tecnologia da sessão"
+        @change="errors.technology_id = undefined"
       >
         <option
           value=""
@@ -171,6 +215,7 @@ function onCancel() {
           class="log-session-form__input"
           :class="{ 'log-session-form__input--error': errors.date }"
           max="2099-12-31"
+          @input="errors.date = undefined"
         >
         <p
           v-if="errors.date"
@@ -199,6 +244,7 @@ function onCancel() {
           class="log-session-form__input"
           :class="{ 'log-session-form__input--error': errors.duration }"
           placeholder="ex: 10, 45, 120"
+          @input="errors.duration = undefined"
         >
         <p
           v-if="errors.duration"
@@ -218,7 +264,6 @@ function onCancel() {
           id="log-notes"
           v-model="notes"
           class="log-session-form__textarea"
-          rows="2"
           placeholder="Ex.: revisar ponto X, praticar exercícios..."
         />
       </div>
@@ -292,9 +337,10 @@ function onCancel() {
 .log-session-form__textarea::placeholder {
   color: var(--form-input-placeholder);
 }
-.log-session-form__select:focus,
-.log-session-form__input:focus,
-.log-session-form__textarea:focus {
+.log-session-form__select:focus-visible,
+.log-session-form__input:focus-visible,
+.log-session-form__textarea:focus-visible {
+  outline: none;
   border-color: var(--form-input-border-focus);
   box-shadow: var(--form-input-shadow-focus);
 }
@@ -305,8 +351,13 @@ function onCancel() {
   box-shadow: var(--form-input-shadow-error);
 }
 .log-session-form__textarea {
-  resize: vertical;
+  resize: none !important;
+  field-sizing: fixed;
+  align-self: flex-start;
+  height: calc(var(--form-input-height) * 2.5);
   min-height: calc(var(--form-input-height) * 2.5);
+  max-height: calc(var(--form-input-height) * 2.5);
+  overflow-y: auto;
 }
 .log-session-form__error {
   font-size: var(--form-label-size);
@@ -319,21 +370,14 @@ function onCancel() {
   gap: var(--spacing-sm);
   flex-wrap: wrap;
 }
-.log-session-form__empty {
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-  margin: 0;
-  line-height: var(--leading-normal);
+.log-session-form__loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-sm) 0;
 }
-.log-session-form__empty a {
-  color: var(--color-primary);
-  font-weight: 500;
-  text-decoration: none;
-  transition: color var(--duration-fast) ease;
-}
-.log-session-form__empty a:hover {
-  color: var(--color-primary-hover);
-  text-decoration: underline;
+.log-session-form__skel {
+  border-radius: var(--radius-md);
 }
 @media (max-width: 640px) {
   .log-session-form__row {

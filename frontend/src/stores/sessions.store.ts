@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, shallowRef, computed } from 'vue'
 import type { StudySession } from '@/types/domain.types'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import type { ActiveSessionResponse } from '@/api/modules/sessions.api'
 
 /** Store de sessões: lista, sessão ativa, timer (elapsedSeconds, formattedTimer). */
 export const useSessionsStore = defineStore('sessions', () => {
-  const sessions = ref<StudySession[]>([])
-  const activeSession = ref<ActiveSessionResponse | null>(null)
+  const sessions = shallowRef<StudySession[]>([])
+  const activeSession = shallowRef<ActiveSessionResponse | null>(null)
   const elapsedSeconds = ref(0)
   const isLoading = ref(false)
   const total = ref(0)
@@ -38,17 +38,23 @@ export const useSessionsStore = defineStore('sessions', () => {
     }
   }
 
-  /** Busca sessão ativa (timer). Retorna null se não houver. */
+  /** Busca sessão ativa (timer). Retorna null se não houver ou em caso de erro. */
   async function fetchActiveSession() {
-    const { data } = await sessionsApi.getActive()
-    if (data.success && data.data) {
-      activeSession.value = data.data
-      elapsedSeconds.value = data.data.elapsed_seconds
-      return data.data
+    try {
+      const { data } = await sessionsApi.getActive()
+      if (data.success && data.data) {
+        activeSession.value = data.data
+        elapsedSeconds.value = data.data.elapsed_seconds
+        return data.data
+      }
+      activeSession.value = null
+      elapsedSeconds.value = 0
+      return null
+    } catch {
+      activeSession.value = null
+      elapsedSeconds.value = 0
+      return null
     }
-    activeSession.value = null
-    elapsedSeconds.value = 0
-    return null
   }
 
   /** Atualiza segundos decorridos (usado pelo timer) */
@@ -56,15 +62,26 @@ export const useSessionsStore = defineStore('sessions', () => {
     elapsedSeconds.value = s
   }
 
-  /** Define sessão ativa (ex.: via WebSocket) */
+  /** Define sessão ativa (ex.: via WebSocket). Sincroniza elapsedSeconds quando disponível. */
   function setActiveSession(session: StudySession | ActiveSessionResponse | null) {
     activeSession.value = session as ActiveSessionResponse | null
+    if (session && 'elapsed_seconds' in session) {
+      elapsedSeconds.value = (session as ActiveSessionResponse).elapsed_seconds
+    }
   }
 
   /** Limpa sessão ativa (ex.: ao encerrar via WebSocket) */
   function clearActiveSession() {
     activeSession.value = null
     elapsedSeconds.value = 0
+  }
+
+  function $reset() {
+    sessions.value = []
+    activeSession.value = null
+    elapsedSeconds.value = 0
+    isLoading.value = false
+    total.value = 0
   }
 
   return {
@@ -79,6 +96,7 @@ export const useSessionsStore = defineStore('sessions', () => {
     fetchActiveSession,
     setElapsedSeconds,
     setActiveSession,
-    clearActiveSession
+    clearActiveSession,
+    $reset,
   }
 })

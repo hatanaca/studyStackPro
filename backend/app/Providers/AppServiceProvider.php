@@ -44,19 +44,14 @@ class AppServiceProvider extends ServiceProvider
 
         if (class_exists(\Laravel\Horizon\Horizon::class)) {
             \Laravel\Horizon\Horizon::auth(function ($request) {
-                if (app()->environment('local')) {
-                    return true;
-                }
-
                 $user = $request->user();
                 if (! $user) {
                     return false;
                 }
 
-                // Only allow configured admin emails to access Horizon
                 $adminEmails = array_map('trim', explode(',', config('app.horizon_admin_emails', '')));
 
-                return in_array($user->email, $adminEmails, true);
+                return in_array($user->email, array_filter($adminEmails), true);
             });
         }
     }

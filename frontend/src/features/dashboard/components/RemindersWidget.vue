@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import Button from 'primevue/button'
+import EmptyState from '@/components/ui/EmptyState.vue'
 
 interface Reminder {
   id: string
@@ -132,13 +133,14 @@ onMounted(() => {
             @keyup.meta.enter.prevent="saveEdit(r)"
             @keyup.ctrl.enter.prevent="saveEdit(r)"
           />
-          <p
+          <button
             v-else
+            type="button"
             class="reminders-item__text"
             @click="startEdit(r)"
           >
             {{ r.text }}
-          </p>
+          </button>
         </div>
         <div class="reminders-item__actions">
           <button
@@ -167,12 +169,16 @@ onMounted(() => {
         </div>
       </article>
     </div>
-    <p
+    <div
       v-else
-      class="reminders-empty"
+      class="reminders-widget__empty-wrap"
     >
-      Nenhum lembrete ainda. Use o campo acima para criar o primeiro.
-    </p>
+      <EmptyState
+        icon="📝"
+        title="Nenhum lembrete ainda"
+        description="Use o campo acima para criar o primeiro."
+      />
+    </div>
   </section>
 </template>
 
@@ -221,7 +227,7 @@ onMounted(() => {
 .reminders-input__field {
   flex: 1;
   min-width: 0;
-  min-height: 2rem;
+  min-height: var(--input-height-sm);
   padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
@@ -230,10 +236,10 @@ onMounted(() => {
   color: var(--color-text);
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
-.reminders-input__field:focus {
+.reminders-input__field:focus-visible {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  box-shadow: var(--shadow-focus);
 }
 .reminders-input__field::placeholder {
   color: var(--color-text-muted);
@@ -267,11 +273,19 @@ onMounted(() => {
   width: 100%;
 }
 .reminders-item__text {
-  margin: 0;
+  all: unset;
+  display: block;
+  width: 100%;
   font-size: var(--text-sm);
   line-height: var(--leading-snug);
   color: var(--color-text);
-  cursor: text;
+  cursor: pointer;
+  text-align: left;
+}
+.reminders-item__text:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-sm);
 }
 .reminders-item__textarea {
   width: 100%;
@@ -285,10 +299,10 @@ onMounted(() => {
   background: var(--color-bg-card);
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
-.reminders-item__textarea:focus {
+.reminders-item__textarea:focus-visible {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  box-shadow: var(--shadow-focus);
 }
 .reminders-item__actions {
   display: flex;
@@ -298,7 +312,7 @@ onMounted(() => {
 }
 .reminders-chip {
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: var(--spacing-2xs) var(--spacing-sm);
   font-size: var(--text-xs);
   font-weight: 600;
@@ -326,12 +340,17 @@ onMounted(() => {
   background: var(--color-error);
   color: var(--color-primary-contrast);
 }
+.reminders-chip:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
 
-.reminders-empty {
-  margin: var(--spacing-sm) 0 0;
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  line-height: var(--leading-normal);
+.reminders-widget__empty-wrap {
+  margin-top: var(--spacing-sm);
+}
+.reminders-widget__empty-wrap :deep(.empty-state) {
+  min-height: 0;
+  padding: var(--spacing-md) var(--spacing-sm);
 }
 
 @media (max-width: 640px) {
@@ -343,7 +362,7 @@ onMounted(() => {
 
 .reminders-input :deep(.base-button) {
   min-width: 6.5rem;
-  min-height: 2rem;
+  min-height: var(--input-height-sm);
 }
 </style>
 

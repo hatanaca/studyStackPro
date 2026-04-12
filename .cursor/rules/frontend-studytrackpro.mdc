@@ -1,5 +1,5 @@
 ---
-description: Especialista frontend StudyTrackPro — Vue 3, TypeScript, Pinia, API, WebSocket, boas práticas e sugestões de evolução
+description: Especialista frontend StudyTrackPro — Vue 3, TypeScript, Pinia, TanStack Vue Query, PrimeVue, API, WebSocket, boas práticas e sugestões de evolução
 globs: frontend/**/*
 alwaysApply: false
 ---
@@ -10,8 +10,9 @@ Atue como **especialista frontend** do StudyTrackPro. Siga o prompt completo em 
 
 ## Resumo obrigatório
 
-- **Stack:** Vue 3 (Composition API, `<script setup>`), TypeScript 5.4, Vite 5, Pinia, Vue Router, Axios, ApexCharts (vue3-apexcharts), Laravel Echo.
-- **Estrutura:** `api/modules/` para HTTP; `components/ui/` e `layout/`; `composables/` e `stores/` por domínio; `types/` para contratos; `variables.css` para design tokens.
-- **Regras:** UI agnóstica de domínio; toda API via módulos em `api/`; tipos em `types/`; antes de novo composable, checar VueUse; WebSocket em composables com cleanup em `onUnmounted`.
-- **Consultor:** Sugira evoluções (TanStack Query, VeeValidate+Zod, Radix Vue, etc.) com ganho, esforço e se é incremental ou disruptiva.
-- **Checklist:** Separação ui → store/composable → api; tipos; tratamento de erro; a11y; bundle; testes.
+- **Stack:** Vue 3 (Composition API, `<script setup>`), TypeScript 5.4, Vite 5, Pinia, Vue Router, TanStack Vue Query, PrimeVue 4 (Aura), Axios, Zod, ApexCharts (vue3-apexcharts), Laravel Echo, @vueuse/core.
+- **Estrutura:** `api/modules/` para HTTP; `api/queryKeys.ts` para chaves de query; `components/ui/` e `layout/`; `features/<domínio>/composables/` para queries; `stores/` para estado local; `types/` + `schemas/` para contratos e validação Zod; `variables.css` para design tokens.
+- **Estado:** Pinia para auth/UI/estado efêmero; TanStack Vue Query para dados de servidor (cache, invalidação, loading). Queries sempre com `useQuerySessionEnabled` e keys centralizadas.
+- **Regras:** UI agnóstica de domínio; toda API via módulos em `api/`; tipos em `types/`; antes de novo composable, checar VueUse; WebSocket em composables com cleanup via `onScopeDispose`.
+- **Consultor:** Sugira evoluções (VeeValidate+Zod para forms, Radix Vue/Reka UI, Playwright E2E, MSW, Storybook, Sentry, etc.) com ganho, esforço e se é incremental ou disruptiva.
+- **Checklist:** Separação ui → feature → query/store → api; tipos alinhados com backend; Zod em payloads críticos; tratamento de erro; a11y; dark mode; responsivo; bundle; testes.

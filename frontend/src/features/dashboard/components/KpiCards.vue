@@ -49,7 +49,7 @@ const items = computed(() => {
     aria-label="Métricas principais"
   >
     <Card
-      v-for="(item, i) in items"
+      v-for="item in items"
       :key="item.label"
       class="kpi-card"
       :class="`kpi-card--${item.variant}`"
@@ -88,7 +88,7 @@ const items = computed(() => {
 }
 .kpi-card:hover {
   box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  transform: translateY(calc(-1 * var(--spacing-2xs)));
 }
 .kpi-card:focus-within {
   box-shadow: var(--shadow-md);

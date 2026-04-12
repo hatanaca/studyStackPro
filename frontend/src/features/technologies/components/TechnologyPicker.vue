@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, getCurrentInstance } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
+import Skeleton from 'primevue/skeleton'
 import { useTechnologiesStore } from '@/stores/technologies.store'
 import type { Technology } from '@/types/domain.types'
 
@@ -12,7 +13,13 @@ const props = withDefaults(
     id?: string
     ariaLabel?: string
   }>(),
-  { modelValue: null, placeholder: 'Buscar tecnologia...', minSearchLength: 2 }
+  {
+    modelValue: null,
+    placeholder: 'Buscar tecnologia...',
+    minSearchLength: 2,
+    id: undefined,
+    ariaLabel: undefined,
+  }
 )
 
 const emit = defineEmits<{
@@ -26,29 +33,51 @@ const loading = ref(false)
 const open = ref(false)
 const highlightIndex = ref(0)
 
+const pickerUid = String(getCurrentInstance()?.uid ?? 0)
+const listboxId = `tech-picker-listbox-${pickerUid}`
+const optionId = (i: number) => `tech-picker-option-${pickerUid}-${i}`
+
+function closePanelIfQueryTooShort(q: string) {
+  if (q.length >= props.minSearchLength) return
+  results.value = []
+  loading.value = false
+  open.value = false
+}
+
 const debouncedSearch = useDebounceFn(async (q: string) => {
   if (q.length < props.minSearchLength) {
-    results.value = []
+    closePanelIfQueryTooShort(q)
     return
   }
-  const local = store.searchLocal(q)
+  const searchQ = q
+  const local = store.searchLocal(searchQ)
   if (local.length > 0) {
+    if (query.value !== searchQ) return
     results.value = local
     open.value = true
     highlightIndex.value = 0
-  } else {
-    loading.value = true
-    try {
-      results.value = await store.searchFromApi(q)
-      open.value = results.value.length > 0
-      highlightIndex.value = 0
-    } finally {
-      loading.value = false
-    }
+    return
+  }
+  loading.value = true
+  open.value = true
+  results.value = []
+  highlightIndex.value = 0
+  try {
+    const data = await store.searchFromApi(searchQ)
+    if (query.value !== searchQ) return
+    results.value = data
+    highlightIndex.value = 0
+  } catch {
+    if (query.value === searchQ) results.value = []
+  } finally {
+    if (query.value === searchQ) loading.value = false
   }
 }, 300)
 
-watch(query, (q) => debouncedSearch(q))
+watch(query, (q) => {
+  closePanelIfQueryTooShort(q)
+  debouncedSearch(q)
+})
 
 watch(
   () => props.modelValue,
@@ -59,7 +88,9 @@ watch(
 )
 
 onMounted(() => {
-  store.fetchTechnologies()
+  if (!store.technologies.length) {
+    void store.fetchTechnologies()
+  }
 })
 
 function select(tech: Technology) {
@@ -80,9 +111,21 @@ function onFocus() {
   }
 }
 
+let _blurTimer: ReturnType<typeof setTimeout> | null = null
+
 function onBlur() {
-  setTimeout(() => { open.value = false }, 150)
+  _blurTimer = setTimeout(() => {
+    open.value = false
+    _blurTimer = null
+  }, 150)
 }
+
+onBeforeUnmount(() => {
+  if (_blurTimer) {
+    clearTimeout(_blurTimer)
+    _blurTimer = null
+  }
+})
 
 function onKeydown(e: KeyboardEvent) {
   if (!open.value || !results.value.length) {
@@ -125,9 +168,10 @@ function onKeydown(e: KeyboardEvent) {
         autocomplete="off"
         role="combobox"
         :aria-label="props.ariaLabel"
-        :aria-expanded="open && results.length > 0"
-        :aria-activedescendant="open && results.length ? `tech-picker-option-${highlightIndex}` : undefined"
-        aria-controls="tech-picker-listbox"
+        :aria-expanded="open && (results.length > 0 || loading)"
+        :aria-busy="loading"
+        :aria-activedescendant="open && results.length ? optionId(highlightIndex) : undefined"
+        :aria-controls="listboxId"
         aria-autocomplete="list"
         @focus="onFocus"
         @blur="onBlur"
@@ -144,33 +188,53 @@ function onKeydown(e: KeyboardEvent) {
       </button>
     </div>
     <div
-      v-if="open && results.length"
-      id="tech-picker-listbox"
+      v-if="open && (results.length || loading)"
+      :id="listboxId"
       role="listbox"
       class="technology-picker__dropdown"
     >
-      <button
-        v-for="(tech, i) in results"
-        :id="`tech-picker-option-${i}`"
-        :key="tech.id"
-        type="button"
-        role="option"
-        :aria-selected="i === highlightIndex"
-        class="technology-picker__option"
-        :class="{ 'technology-picker__option--highlight': i === highlightIndex }"
-        @mousedown.prevent="select(tech)"
+      <div
+        v-if="loading && !results.length"
+        class="technology-picker__loading-skel"
+        role="status"
+        aria-live="polite"
+        aria-label="Buscando tecnologias"
       >
-        <span
-          class="technology-picker__color-dot"
-          :style="{ background: tech.color }"
-        />
-        {{ tech.name }}
-      </button>
+        <Skeleton height="2.25rem" class="technology-picker__skel" />
+        <Skeleton height="2.25rem" class="technology-picker__skel" />
+        <Skeleton height="2.25rem" class="technology-picker__skel" />
+      </div>
+      <template v-else-if="results.length">
+        <button
+          v-for="(tech, i) in results"
+          :id="optionId(i)"
+          :key="tech.id"
+          type="button"
+          role="option"
+          :aria-selected="i === highlightIndex"
+          class="technology-picker__option"
+          :class="{ 'technology-picker__option--highlight': i === highlightIndex }"
+          @mousedown.prevent="select(tech)"
+        >
+          <span
+            class="technology-picker__color-dot"
+            :style="{ background: tech.color }"
+          />
+          {{ tech.name }}
+        </button>
+        <p
+          v-if="loading"
+          class="technology-picker__loading"
+        >
+          Atualizando resultados…
+        </p>
+      </template>
       <p
-        v-if="loading"
-        class="technology-picker__loading"
+        v-else
+        class="technology-picker__empty"
+        role="status"
       >
-        Buscando...
+        Nenhuma tecnologia encontrada.
       </p>
     </div>
   </div>
@@ -195,10 +259,10 @@ function onKeydown(e: KeyboardEvent) {
   color: var(--color-text);
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
-.technology-picker__input:focus {
+.technology-picker__input:focus-visible {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  box-shadow: var(--shadow-focus);
 }
 .technology-picker__clear {
   position: absolute;
@@ -227,9 +291,18 @@ function onKeydown(e: KeyboardEvent) {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
-  max-height: 200px;
+  max-height: min(12.5rem, 50vh);
   overflow-y: auto;
-  z-index: 10;
+  z-index: var(--z-dropdown, 100);
+}
+.technology-picker__loading-skel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+}
+.technology-picker__skel {
+  border-radius: var(--radius-sm);
 }
 .technology-picker__option {
   display: flex;
@@ -249,9 +322,13 @@ function onKeydown(e: KeyboardEvent) {
 .technology-picker__option--highlight {
   background: var(--color-bg-soft);
 }
+.technology-picker__option:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
 .technology-picker__color-dot {
-  width: 0.5rem;
-  height: 0.5rem;
+  width: var(--spacing-xs);
+  height: var(--spacing-xs);
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -260,5 +337,19 @@ function onKeydown(e: KeyboardEvent) {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
   margin: 0;
+  border-top: 1px solid var(--color-border);
+}
+.technology-picker__empty {
+  padding: var(--spacing-lg);
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+  line-height: var(--leading-normal);
+}
+.technology-picker__clear:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-sm);
 }
 </style>

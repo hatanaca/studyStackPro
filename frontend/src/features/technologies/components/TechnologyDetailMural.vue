@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useElementSize } from '@vueuse/core'
 import Button from 'primevue/button'
+import { measureText } from '@/composables/useTextMeasure'
 
 const props = defineProps<{
   technologyId: string
@@ -13,14 +15,86 @@ export interface MuralItem {
   text?: string
 }
 
+interface PositionedItem {
+  item: MuralItem
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+const MIN_COL_WIDTH = 180
+const COL_GAP = 16
+const IMAGE_ASPECT = 1
+const QUOTE_PADDING = 32
+
 const STORAGE_KEY_PREFIX = 'studytrack.mural.'
 const newUrl = ref('')
 const newQuote = ref('')
 const showAddImage = ref(false)
 const showAddQuote = ref(false)
+const gridRef = ref<HTMLElement>()
+const { width: containerWidth } = useElementSize(gridRef)
 
 const storageKey = computed(() => `${STORAGE_KEY_PREFIX}${props.technologyId}`)
 const items = ref<MuralItem[]>([])
+
+// Cached fora do computed para evitar getComputedStyle (layout reflow) a cada resize
+let _quoteFontCache: { font: string; lineHeightPx: number } | null = null
+function getQuoteFont(): { font: string; lineHeightPx: number } {
+  if (_quoteFontCache) return _quoteFontCache
+  const rootSize = parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16
+  const sizePx = 0.875 * rootSize
+  const lineHeightPx = sizePx * 1.5
+  _quoteFontCache = {
+    font: `italic ${sizePx}px 'DM Sans', system-ui, sans-serif`,
+    lineHeightPx,
+  }
+  return _quoteFontCache
+}
+
+const masonry = computed<{ items: PositionedItem[]; totalHeight: number }>(() => {
+  const w = containerWidth.value
+  if (w <= 0 || items.value.length === 0) return { items: [], totalHeight: 0 }
+
+  const cols = Math.max(1, Math.floor((w + COL_GAP) / (MIN_COL_WIDTH + COL_GAP)))
+  const colWidth = (w - COL_GAP * (cols - 1)) / cols
+  const colHeights = new Array(cols).fill(0)
+  const positioned: PositionedItem[] = []
+  const { font, lineHeightPx } = getQuoteFont()
+
+  for (const item of items.value) {
+    const shortest = colHeights.indexOf(Math.min(...colHeights))
+    const x = shortest * (colWidth + COL_GAP)
+    const y = colHeights[shortest]
+
+    let height: number
+    if (item.type === 'image') {
+      height = colWidth * IMAGE_ASPECT
+    } else if (item.text) {
+      const { height: textH } = measureText(item.text, font, colWidth - QUOTE_PADDING, lineHeightPx)
+      height = textH + QUOTE_PADDING + 3
+    } else {
+      height = 60
+    }
+
+    positioned.push({ item, x, y, width: colWidth, height })
+    colHeights[shortest] = y + height + COL_GAP
+  }
+
+  return { items: positioned, totalHeight: Math.max(...colHeights) }
+})
+
+function isValidMuralItem(v: unknown): v is MuralItem {
+  if (!v || typeof v !== 'object') return false
+  const obj = v as Record<string, unknown>
+  return (
+    typeof obj.id === 'string' &&
+    (obj.type === 'image' || obj.type === 'quote') &&
+    (obj.url === undefined || typeof obj.url === 'string') &&
+    (obj.text === undefined || typeof obj.text === 'string')
+  )
+}
 
 function loadFromStorage() {
   try {
@@ -29,16 +103,23 @@ function loadFromStorage() {
       items.value = []
       return
     }
-    const parsed = JSON.parse(raw) as MuralItem[]
-    if (Array.isArray(parsed)) items.value = parsed
-    else items.value = []
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) {
+      items.value = parsed.filter(isValidMuralItem)
+    } else {
+      items.value = []
+    }
   } catch {
     items.value = []
   }
 }
 
 function saveToStorage() {
-  localStorage.setItem(storageKey.value, JSON.stringify(items.value))
+  try {
+    localStorage.setItem(storageKey.value, JSON.stringify(items.value))
+  } catch {
+    // QuotaExceededError — localStorage limit reached
+  }
 }
 
 function addImage() {
@@ -73,6 +154,10 @@ function removeItem(item: MuralItem) {
 function onImageError(e: Event) {
   const target = (e.target as HTMLImageElement)
   if (target) target.style.display = 'none'
+  const item = items.value.find(
+    (i) => i.type === 'image' && i.url === target?.src
+  )
+  if (item) item.type = 'quote' as MuralItem['type']
 }
 
 onMounted(loadFromStorage)
@@ -134,20 +219,29 @@ watch(() => props.technologyId, loadFromStorage)
 
     <div
       v-if="items.length"
-      class="tech-mural__grid"
+      ref="gridRef"
+      class="tech-mural__masonry"
+      :style="{ height: `${masonry.totalHeight}px` }"
     >
       <div
-        v-for="item in items"
-        :key="item.id"
+        v-for="pos in masonry.items"
+        :key="pos.item.id"
         class="tech-mural__item"
-        :class="`tech-mural__item--${item.type}`"
+        :class="`tech-mural__item--${pos.item.type}`"
+        :style="{
+          position: 'absolute',
+          left: `${pos.x}px`,
+          top: `${pos.y}px`,
+          width: `${pos.width}px`,
+          height: `${pos.height}px`,
+        }"
       >
         <div
-          v-if="item.type === 'image' && item.url"
+          v-if="pos.item.type === 'image' && pos.item.url"
           class="tech-mural__image-wrap"
         >
           <img
-            :src="item.url"
+            :src="pos.item.url"
             :alt="'Imagem do mural'"
             class="tech-mural__image"
             loading="lazy"
@@ -155,27 +249,30 @@ watch(() => props.technologyId, loadFromStorage)
           >
         </div>
         <blockquote
-          v-else-if="item.type === 'quote' && item.text"
+          v-else-if="pos.item.type === 'quote' && pos.item.text"
           class="tech-mural__quote"
         >
-          {{ item.text }}
+          {{ pos.item.text }}
         </blockquote>
         <button
           type="button"
           class="tech-mural__remove"
           aria-label="Remover"
-          @click="removeItem(item)"
+          @click="removeItem(pos.item)"
         >
           ✕
         </button>
       </div>
     </div>
-    <p
+    <div
       v-else
-      class="tech-mural__empty"
+      ref="gridRef"
+      class="tech-mural__masonry tech-mural__masonry--empty"
     >
-      Nenhum item no mural. Adicione uma imagem ou citação acima.
-    </p>
+      <p class="tech-mural__empty">
+        Nenhum item no mural. Adicione uma imagem ou citação acima.
+      </p>
+    </div>
   </section>
 </template>
 
@@ -226,13 +323,9 @@ watch(() => props.technologyId, loadFromStorage)
   color: var(--color-text);
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
-.tech-mural__input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-focus);
-}
 .tech-mural__input:focus-visible {
   outline: none;
+  border-color: var(--color-primary);
   box-shadow: var(--shadow-focus);
 }
 .tech-mural__textarea {
@@ -248,33 +341,29 @@ watch(() => props.technologyId, loadFromStorage)
   color: var(--color-text);
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
-.tech-mural__textarea:focus {
+.tech-mural__textarea:focus-visible {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: var(--shadow-focus);
 }
-.tech-mural__textarea:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
+.tech-mural__masonry {
+  position: relative;
+  width: 100%;
+  min-height: 60px;
+  transition: height var(--duration-normal) ease;
 }
-.tech-mural__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: var(--spacing-lg);
+.tech-mural__masonry--empty {
+  height: auto !important;
 }
 .tech-mural__item {
-  position: relative;
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--color-border);
   background: var(--color-bg-soft);
-  transition: border-color var(--duration-fast) ease;
+  transition: border-color var(--duration-fast) ease, transform var(--duration-normal) ease, top var(--duration-normal) ease;
 }
 .tech-mural__item:hover {
   border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
-}
-.tech-mural__item--image {
-  aspect-ratio: 1;
 }
 .tech-mural__image-wrap {
   width: 100%;

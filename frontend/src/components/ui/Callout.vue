@@ -51,9 +51,10 @@ const variantIcon: Record<string, string> = {
   display: flex;
   align-items: flex-start;
   gap: var(--spacing-sm);
-  padding: var(--spacing-lg);
-  border-radius: var(--radius-md);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-radius: var(--radius-lg);
   border: 1px solid transparent;
+  box-shadow: var(--shadow-sm);
   font-size: var(--text-sm);
   line-height: var(--leading-normal);
 }
@@ -75,7 +76,11 @@ const variantIcon: Record<string, string> = {
 .callout__title {
   display: block;
   margin-bottom: var(--spacing-2xs);
-  font-size: var(--text-sm);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
 }
 .callout__body {
   color: inherit;

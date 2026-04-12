@@ -1,4 +1,4 @@
-import axios, { type AxiosError } from 'axios'
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth.store'
 
@@ -43,9 +43,39 @@ export const apiClient = axios.create({
   }
 })
 
-/** Request interceptor: adiciona Authorization Bearer ao header se token existir */
+/** Erro síncrono quando há token mas a sessão ainda não foi validada (evita 401 em cascata). */
+export const SESSION_NOT_READY = 'SESSION_NOT_READY'
+
+function joinAxiosUrl(baseURL: string, url: string): string {
+  const b = String(baseURL ?? '').replace(/\/+$/, '')
+  const u = String(url ?? '').replace(/^\/+/, '').split('?')[0]
+  if (!u) return b
+  if (!b) return `/${u}`
+  return `${b}/${u}`
+}
+
+/**
+ * Corresponde GET …/auth/me e …/auth/logout após juntar baseURL + url (evita bloquear fetchMe do guard).
+ */
+function isAllowedBeforeSessionReady(config: InternalAxiosRequestConfig): boolean {
+  const method = String(config.method ?? 'get').toLowerCase()
+  const path = joinAxiosUrl(String(config.baseURL ?? ''), String(config.url ?? '')).replace(/\/+/g, '/')
+  if (method === 'get' && /\/auth\/me$/i.test(path)) return true
+  if (/\/auth\/logout/i.test(path)) return true
+  return false
+}
+
+/** Request interceptor: Bearer; bloqueia demais rotas se token existe e sessionValidated é false */
 apiClient.interceptors.request.use((config) => {
-  const token = useAuthStore().token
+  const authStore = useAuthStore()
+  const token = authStore.token
+
+  if (token && !authStore.sessionValidated && !isAllowedBeforeSessionReady(config)) {
+    const err = new Error(SESSION_NOT_READY) as Error & { __sessionNotReady?: true }
+    err.__sessionNotReady = true
+    return Promise.reject(err)
+  }
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -69,6 +99,10 @@ let handlingUnauthorized = false
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (error && typeof error === 'object' && (error as { __sessionNotReady?: boolean }).__sessionNotReady) {
+      return Promise.reject(error)
+    }
+
     const status = error.response?.status
     const reqUrl = String(error.config?.url ?? '')
 
@@ -76,6 +110,7 @@ apiClient.interceptors.response.use(
       if (
         reqUrl.includes('/auth/login') ||
         reqUrl.includes('/auth/register') ||
+        reqUrl.includes('auth/logout') ||
         handlingUnauthorized
       ) {
         return Promise.reject(error)

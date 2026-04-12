@@ -12,17 +12,17 @@ function handleExport() {
 <template>
   <Fieldset legend="Dados">
     <p class="data-section__desc">
-      Exporte ou limpe dados locais (ex.: metas salvas no navegador).
+      Na página Exportar você baixa sessões e métricas por período (dados do servidor). Metas e preferências continuam armazenadas no navegador.
     </p>
     <div class="data-section">
       <Button
-        label="Exportar dados locais"
+        label="Ir para exportação"
         severity="secondary"
         variant="outlined"
         @click="handleExport"
       />
       <p class="data-section__hint">
-        Isso exporta metas e preferências armazenadas no seu navegador. As sessões de estudo vêm do servidor.
+        O download em CSV ou JSON usa os dados sincronizados com o servidor, não um backup completo do app.
       </p>
     </div>
   </Fieldset>
@@ -49,7 +49,7 @@ function handleExport() {
   letter-spacing: var(--tracking-tight);
 }
 .data-section :deep(.p-button) {
-  min-height: 2.75rem;
+  min-height: var(--touch-target-min);
 }
 .data-section :deep(.p-button:focus-visible) {
   outline: none;

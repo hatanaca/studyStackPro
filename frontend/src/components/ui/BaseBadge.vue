@@ -21,7 +21,7 @@ defineProps<{
   padding: var(--spacing-2xs) var(--spacing-sm);
   font-size: var(--text-xs);
   font-weight: 600;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   background-color: var(--color-bg-soft);
   color: var(--color-text-muted);
   border: 1px solid transparent;

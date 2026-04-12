@@ -1,6 +1,7 @@
 <?php
 
 // Fallback para constantes de sinal quando pcntl não está disponível (ex: ambientes Docker sem pcntl)
+// Valores POSIX padrão Linux: SIGINT=2, SIGTERM=15, SIGTSTP=20 (macOS também usa 20 via POSIX)
 if (! defined('SIGINT')) {
     define('SIGINT', 2);
 }
@@ -8,7 +9,7 @@ if (! defined('SIGTERM')) {
     define('SIGTERM', 15);
 }
 if (! defined('SIGTSTP')) {
-    define('SIGTSTP', 18);
+    define('SIGTSTP', 20);
 }
 
 use Illuminate\Foundation\Application;
@@ -24,6 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->alias([
+            'throttle.sliding' => \App\Http\Middleware\SlidingWindowRateLimit::class,
+        ]);
+
         $middleware->api(prepend: [
             \App\Http\Middleware\EnsureJsonResponse::class,
         ]);

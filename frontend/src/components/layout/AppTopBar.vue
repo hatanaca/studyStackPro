@@ -16,7 +16,7 @@ const searchQuery = ref('')
 const pageTitle = computed(() => {
   const name = route.name?.toString() ?? ''
   const map: Record<string, string> = {
-    dashboard: 'Top Métricas de Estudo',
+    dashboard: 'Dashboard',
     sessions: 'Sessões',
     'session-focus': 'Sessão ativa',
     technologies: 'Tecnologias',
@@ -24,7 +24,7 @@ const pageTitle = computed(() => {
     export: 'Exportar',
     reports: 'Relatórios',
     help: 'Ajuda',
-    settings: 'Preferências',
+    settings: 'Configurações',
     profile: 'Perfil',
   }
   return map[name] ?? 'Dashboard'
@@ -89,8 +89,7 @@ const userInitials = computed(() => {
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
+            class="app-topbar__search-svg"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -119,8 +118,7 @@ const userInitials = computed(() => {
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
+          class="app-topbar__action-svg"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -140,14 +138,14 @@ const userInitials = computed(() => {
 
 <style scoped>
 .app-topbar {
-  height: var(--header-height, 4rem);
-  min-height: 4rem;
+  height: var(--header-height);
+  min-height: var(--header-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--spacing-xl);
-  background: var(--color-bg-soft);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--shell-topbar-bg);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
   gap: var(--spacing-lg);
   flex-shrink: 0;
 }
@@ -160,6 +158,7 @@ const userInitials = computed(() => {
 .app-topbar__brand {
   text-decoration: none;
   color: var(--color-text);
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: var(--text-base);
   letter-spacing: var(--tracking-tight);
@@ -174,9 +173,11 @@ const userInitials = computed(() => {
   box-shadow: var(--shadow-focus);
 }
 .app-topbar__pagetitle {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--color-text-muted);
-  font-weight: 500;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -192,7 +193,7 @@ const userInitials = computed(() => {
   align-items: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   cursor: default;
@@ -201,8 +202,8 @@ const userInitials = computed(() => {
   flex-shrink: 0;
 }
 .app-topbar__avatar {
-  width: 2rem;
-  height: 2rem;
+  width: var(--avatar-size-sm);
+  height: var(--avatar-size-sm);
   border-radius: 50%;
   object-fit: cover;
   display: inline-flex;
@@ -239,7 +240,7 @@ const userInitials = computed(() => {
   letter-spacing: var(--tracking-wide);
 }
 .app-topbar__chevron {
-  font-size: 0.5rem;
+  font-size: var(--text-2xs);
   color: var(--color-text-muted);
   opacity: 0.8;
 }
@@ -254,11 +255,13 @@ const userInitials = computed(() => {
   align-items: center;
   gap: var(--spacing-xs);
   width: clamp(10rem, 24vw, 14rem);
-  height: 2.25rem;
+  min-height: var(--header-control-size);
   padding: 0 var(--spacing-sm);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-card);
+  border-radius: var(--radius-full);
+  border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
+  background: color-mix(in srgb, var(--color-bg-card) 94%, var(--color-bg-soft));
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--color-text) 5%, transparent);
+  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
 .app-topbar__search-icon {
   flex-shrink: 0;
@@ -267,24 +270,46 @@ const userInitials = computed(() => {
   align-items: center;
   justify-content: center;
 }
+.app-topbar__search-svg {
+  width: var(--icon-size-md);
+  height: var(--icon-size-md);
+  flex-shrink: 0;
+}
+.app-topbar__action-svg {
+  width: var(--icon-size-md);
+  height: var(--icon-size-md);
+}
 .app-topbar__search-input {
   flex: 1;
   min-width: 0;
+  min-height: var(--input-height-sm);
   border: none;
   background: transparent;
-  color: var(--color-text);
+  color: var(--form-input-text);
   font-size: var(--text-sm);
+  line-height: var(--leading-snug);
   outline: none;
 }
 .app-topbar__search-input::placeholder {
-  color: var(--color-text-muted);
+  color: var(--form-input-placeholder);
+}
+.app-topbar__search-input:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-sm);
+}
+.app-topbar__search:focus-within {
+  border-color: var(--color-primary);
+  box-shadow:
+    inset 0 1px 2px color-mix(in srgb, var(--color-text) 5%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--color-primary) 25%, transparent);
 }
 .app-topbar__icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: var(--header-control-size);
+  height: var(--header-control-size);
   border-radius: var(--radius-md);
   color: var(--color-text-muted);
   transition: color var(--duration-fast) ease, background var(--duration-fast) ease;

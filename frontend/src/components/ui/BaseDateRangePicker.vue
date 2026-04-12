@@ -131,13 +131,13 @@ function clear() {
   min-width: 10rem;
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
-.base-date-range__input:focus {
+.base-date-range__input:focus-visible {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  box-shadow: var(--shadow-focus);
 }
 .base-date-range__input:disabled {
-  opacity: 0.6;
+  opacity: var(--state-disabled-opacity);
   cursor: not-allowed;
 }
 .base-date-range__sep {

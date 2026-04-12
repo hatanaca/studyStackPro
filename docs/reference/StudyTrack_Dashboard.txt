@@ -1,0 +1,1622 @@
++--------------------------------------------------------------------------------------+
+| STUDYTRACK PRO                                                                       |
+|                                                                                      |
+| Estrutura do Dashboard                                                               |
+|                                                                                      |
+| Vue 3 + TypeScript · Pinia · ApexCharts · Composition API · WebSocket Realtime         |
+|                                                                                      |
+| 6 widgets · Fluxo de dados completo · Código de produção · ApexCharts config detalhado |
++--------------------------------------------------------------------------------------+
+
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| O QUE TORNA UM DASHBOARD PROFISSIONAL?                                                                                                                                 |
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Estado centralizado: Pinia store é a única fonte da verdade. Widgets não buscam dados individualmente — todos leem do mesmo store, garantindo consistência visual.     |
+|                                                                                                                                                                        |
+| Dados pré-computados no backend: Nenhum widget faz cálculo de agregação no frontend. GROUP BY, percentuais, streaks — tudo vem pronto do schema analytics.*.           |
+|                                                                                                                                                                        |
+| Atualização cirúrgica via WebSocket: O evento .metrics.updated substitui apenas o estado do store. Vue reatividade propaga a mudança para todos os widgets sem reload. |
+|                                                                                                                                                                        |
+| Loading states granulares: Cada widget exibe skeleton loader independente. O dashboard nunca trava esperando todos os dados ao mesmo tempo.                            |
+|                                                                                                                                                                        |
+| Composables como camada de lógica: Views são dumb. useDashboard() encapsula fetch, WebSocket, estado de erro e lógica de refresh. Reutilizável e testável.             |
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+1. Arquitetura do Dashboard
+
+1.1 Hierarquia de Componentes
+
+O dashboard segue uma hierarquia rígida de três camadas: View orquestra, Widgets consomem store, UI Components são puros. Nenhuma camada pula a próxima.
+
++--------------------------------------------------------------------------+
+| # HIERARQUIA DE COMPONENTES DO DASHBOARD                                 |
+|                                                                          |
+| DashboardView.vue ← Page component (orquestra)                           |
+|                                                                          |
+| │ onMounted: useDashboard().init()                                       |
+|                                                                          |
+| │ onUnmounted: disconnect WebSocket                                      |
+|                                                                          |
+| │                                                                        |
+|                                                                          |
+| ├── AppHeader.vue ← Layout (fora do dashboard)                           |
+|                                                                          |
+| │ └── RealtimeBadge.vue ← Indicador de conexão WS                        |
+|                                                                          |
+| │                                                                        |
+|                                                                          |
+| ├── DashboardHeader.vue ← Título + botão refresh + spinner               |
+|                                                                          |
+| │                                                                        |
+|                                                                          |
+| ├── KpiCards.vue ← Widget: 4 cards de métricas                           |
+|                                                                          |
+| │ ├── KpiCard.vue (×4) ← UI Component reutilizável                       |
+|                                                                          |
+| │ └── [reads: analyticsStore.userMetrics]                                |
+|                                                                          |
+| │                                                                        |
+|                                                                          |
+| ├── TimeSeriesWidget.vue ← Widget: gráfico linha 30 dias                 |
+|                                                                          |
+| │ ├── LineChart.vue ← ApexCharts wrapper genérico                          |
+|                                                                          |
+| │ ├── PeriodSelector.vue ← Toggle: 7d / 30d / 90d                        |
+|                                                                          |
+| │ └── [reads: analyticsStore.timeSeries, computed chartData]             |
+|                                                                          |
+| │                                                                        |
+|                                                                          |
+| ├── TechDistributionWidget.vue ← Widget: gráfico pizza + tabela          |
+|                                                                          |
+| │ ├── PieChart.vue ← ApexCharts wrapper                                    |
+|                                                                          |
+| │ ├── TechRankingTable.vue ← Lista ordenada por horas                    |
+|                                                                          |
+| │ └── [reads: analyticsStore.techMetrics]                                |
+|                                                                          |
+| │                                                                        |
+|                                                                          |
+| ├── WeeklyComparisonWidget.vue ← Widget: barras semana atual vs anterior |
+|                                                                          |
+| │ ├── BarChart.vue ← ApexCharts wrapper                                    |
+|                                                                          |
+| │ └── [reads: analyticsStore.weeklyComparison]                           |
+|                                                                          |
+| │                                                                        |
+|                                                                          |
+| ├── HeatmapWidget.vue ← Widget: calendário anual de atividade            |
+|                                                                          |
+| │ ├── HeatmapGrid.vue ← SVG grid 53×7                                    |
+|                                                                          |
+| │ ├── HeatmapTooltip.vue ← Tooltip ao hover                              |
+|                                                                          |
+| │ └── [reads: analyticsStore.heatmap]                                    |
+|                                                                          |
+| │                                                                        |
+|                                                                          |
+| └── ActiveSessionBanner.vue ← Widget condicional: sessão em andamento    |
+|                                                                          |
+| ├── SessionTimer.vue ← Timer ao vivo (setInterval)                       |
+|                                                                          |
+| └── [reads: sessionsStore.activeSession]                                 |
+|                                                                          |
+| # Stores: analyticsStore (Pinia) ← WebSocket updates direto              |
+|                                                                          |
+| # Composable: useDashboard() — fetch + WS + error + loading              |
++--------------------------------------------------------------------------+
+
+1.2 Fluxo de Dados Completo
+
++------------------------------------------------------------------------+
+| # CICLO DE VIDA DO DASHBOARD                                           |
+|                                                                        |
+| 1. MOUNT (onMounted em DashboardView)                                  |
+|                                                                        |
+| │                                                                      |
+|                                                                        |
+| ├── analyticsStore.fetchDashboard() ← HTTP GET /api/v1/analytics/dashboard |
+|                                                                        |
+| │ → cache HIT? Redis retorna (0.2ms)                                   |
+|                                                                        |
+| │ → cache MISS? banco analytics.* (5ms) → popula store                 |
+|                                                                        |
+| │                                                                      |
+|                                                                        |
+| └── useWebSocket().connect(userId) ← Conecta Reverb via Echo           |
+|                                                                        |
+| → Canal privado: dashboard.{userId}                                    |
+|                                                                        |
+| 2. RENDER (Vue reatividade)                                            |
+|                                                                        |
+| │                                                                      |
+|                                                                        |
+| ├── KpiCards: computed(analyticsStore.userMetrics) → renderiza 4 cards |
+|                                                                        |
+| ├── TimeSeriesWidget: computed chartData → renderiza LineChart         |
+|                                                                        |
+| ├── TechDistributionWidget: computed pieData → renderiza PieChart      |
+|                                                                        |
+| ├── WeeklyComparisonWidget: computed barData → renderiza BarChart      |
+|                                                                        |
+| └── HeatmapWidget: computed heatmapWeeks → renderiza SVG grid          |
+|                                                                        |
+| 3. USUÁRIO REGISTRA SESSÃO (outro contexto ou aba)                     |
+|                                                                        |
+| │                                                                      |
+|                                                                        |
+| ├── POST /api/v1/study-sessions → 201 Created                          |
+|                                                                        |
+| ├── WebSocket .metrics.recalculating → spinner aparece no dashboard    |
+|                                                                        |
+| └── [~2s depois] WebSocket .metrics.updated                            |
+|                                                                        |
+| → analyticsStore.updateFromWebSocket(newData)                          |
+|                                                                        |
+| → Vue reatividade: todos os computed re-avaliam                        |
+|                                                                        |
+| → Todos os 5 widgets re-renderizam com dados frescos                   |
+|                                                                        |
+| → spinner desaparece                                                   |
+|                                                                        |
+| 4. UNMOUNT (onUnmounted em DashboardView)                              |
+|                                                                        |
+| └── useWebSocket().disconnect() ← Evita memory leak                    |
++------------------------------------------------------------------------+
+
+2. Analytics Store (Pinia) — Fonte Única da Verdade
+
+O store é o coração do dashboard. Todos os widgets leem exclusivamente dele via computed properties reativas. Quando o WebSocket atualiza o store, Vue propaga automaticamente para todos os consumidores.
+
++-------------------------------------------------------------------------------------------------------+
+| // src/stores/analytics.store.ts                                                                      |
+|                                                                                                       |
+| import { defineStore } from 'pinia';                                                                  |
+|                                                                                                       |
+| import { ref, computed } from 'vue';                                                                  |
+|                                                                                                       |
+| import type { DashboardData, UserMetrics, TechMetrics, TimeSeriesPoint } from '@/types/domain.types'; |
+|                                                                                                       |
+| import { analyticsApi } from '@/api/modules/analytics.api';                                           |
+|                                                                                                       |
+| export const useAnalyticsStore = defineStore('analytics', () => {                                     |
+|                                                                                                       |
+| // ── RAW STATE ────────────────────────────────────────────────────                                  |
+|                                                                                                       |
+| const dashboard = ref<DashboardData | null>(null);                                                    |
+|                                                                                                       |
+| const isLoading = ref(false);                                                                         |
+|                                                                                                       |
+| const isRecalculating= ref(false); // spinner WebSocket                                               |
+|                                                                                                       |
+| const error = ref<string | null>(null);                                                               |
+|                                                                                                       |
+| const lastFetchAt = ref<Date | null>(null);                                                           |
+|                                                                                                       |
+| const selectedPeriod = ref<'7d' | '30d' | '90d'>('30d');                                              |
+|                                                                                                       |
+| const STALE_MS = 5 * 60 * 1000; // 5 minutos (igual ao TTL do backend)                                |
+|                                                                                                       |
+| // ── COMPUTED (granular — cada widget consume o que precisa) ──────                                  |
+|                                                                                                       |
+| const userMetrics = computed(() => dashboard.value?.user_metrics ?? null);                            |
+|                                                                                                       |
+| const techMetrics = computed(() => dashboard.value?.technology_metrics ?? []);                        |
+|                                                                                                       |
+| const timeSeries = computed(() => dashboard.value?.time_series_30d ?? []);                            |
+|                                                                                                       |
+| const topTechs = computed(() => dashboard.value?.top_technologies ?? []);                             |
+|                                                                                                       |
+| const weeklyComp = computed(() => dashboard.value?.weekly_comparison ?? null);                        |
+|                                                                                                       |
+| // Streak formatado para o KpiCard                                                                    |
+|                                                                                                       |
+| const currentStreak = computed(() => ({                                                               |
+|                                                                                                       |
+| value: userMetrics.value?.current_streak_days ?? 0,                                                   |
+|                                                                                                       |
+| label: userMetrics.value?.current_streak_days === 1 ? 'dia' : 'dias',                                 |
+|                                                                                                       |
+| isPersonalBest: (userMetrics.value?.current_streak_days ?? 0) ===                                     |
+|                                                                                                       |
+| (userMetrics.value?.max_streak_days ?? 0),                                                            |
+|                                                                                                       |
+| }));                                                                                                  |
+|                                                                                                       |
+| // Total de horas formatado                                                                           |
+|                                                                                                       |
+| const totalHoursFormatted = computed(() => {                                                          |
+|                                                                                                       |
+| const h = userMetrics.value?.total_hours ?? 0;                                                        |
+|                                                                                                       |
+| if (h < 1) return `${Math.round(h * 60)}min`;                                                         |
+|                                                                                                       |
+| return `${h.toFixed(1)}h`;                                                                            |
+|                                                                                                       |
+| });                                                                                                   |
+|                                                                                                       |
+| const isFresh = computed(() =>                                                                        |
+|                                                                                                       |
+| lastFetchAt.value !== null &&                                                                         |
+|                                                                                                       |
+| !isRecalculating.value &&                                                                             |
+|                                                                                                       |
+| Date.now() - lastFetchAt.value.getTime() < STALE_MS                                                   |
+|                                                                                                       |
+| );                                                                                                    |
+|                                                                                                       |
+| // ── ACTIONS ──────────────────────────────────────────────────────                                  |
+|                                                                                                       |
+| async function fetchDashboard(force = false): Promise<void> {                                         |
+|                                                                                                       |
+| if (!force && isFresh.value) return;                                                                  |
+|                                                                                                       |
+| isLoading.value = true;                                                                               |
+|                                                                                                       |
+| error.value = null;                                                                                   |
+|                                                                                                       |
+| try {                                                                                                 |
+|                                                                                                       |
+| const res = await analyticsApi.getDashboard();                                                        |
+|                                                                                                       |
+| dashboard.value = res.data;                                                                           |
+|                                                                                                       |
+| lastFetchAt.value = new Date();                                                                       |
+|                                                                                                       |
+| } catch (e: any) {                                                                                    |
+|                                                                                                       |
+| error.value = e.response?.data?.error?.message ?? 'Erro ao carregar dashboard';                       |
+|                                                                                                       |
+| } finally {                                                                                           |
+|                                                                                                       |
+| isLoading.value = false;                                                                              |
+|                                                                                                       |
+| }                                                                                                     |
+|                                                                                                       |
+| }                                                                                                     |
+|                                                                                                       |
+| // Chamado pelo WebSocket listener — substitui estado completo                                        |
+|                                                                                                       |
+| function updateFromWebSocket(newData: DashboardData): void {                                          |
+|                                                                                                       |
+| dashboard.value = newData;                                                                            |
+|                                                                                                       |
+| lastFetchAt.value = new Date();                                                                       |
+|                                                                                                       |
+| isRecalculating.value = false;                                                                        |
+|                                                                                                       |
+| }                                                                                                     |
+|                                                                                                       |
+| function setRecalculating(value: boolean): void {                                                     |
+|                                                                                                       |
+| isRecalculating.value = value;                                                                        |
+|                                                                                                       |
+| }                                                                                                     |
+|                                                                                                       |
+| return {                                                                                              |
+|                                                                                                       |
+| // State (read-only externally — widgets usam computed)                                               |
+|                                                                                                       |
+| isLoading, isRecalculating, error, selectedPeriod,                                                    |
+|                                                                                                       |
+| // Computed (granulares por widget)                                                                   |
+|                                                                                                       |
+| userMetrics, techMetrics, timeSeries, topTechs, weeklyComp,                                           |
+|                                                                                                       |
+| currentStreak, totalHoursFormatted, isFresh,                                                          |
+|                                                                                                       |
+| // Actions                                                                                            |
+|                                                                                                       |
+| fetchDashboard, updateFromWebSocket, setRecalculating,                                                |
+|                                                                                                       |
+| };                                                                                                    |
+|                                                                                                       |
+| });                                                                                                   |
++-------------------------------------------------------------------------------------------------------+
+
+3. Composable useDashboard — Lógica da View
+
+O composable encapsula tudo que a View precisa: inicialização, WebSocket, polling de fallback e refresh manual. A View vira um template puro.
+
++----------------------------------------------------------------------------+
+| // src/features/dashboard/composables/useDashboard.ts                      |
+|                                                                            |
+| import { onMounted, onUnmounted, ref } from 'vue';                         |
+|                                                                            |
+| import { useAnalyticsStore } from '@/stores/analytics.store';              |
+|                                                                            |
+| import { useAuthStore } from '@/stores/auth.store';                        |
+|                                                                            |
+| import { useWebSocket } from '@/composables/useWebSocket';                 |
+|                                                                            |
+| export function useDashboard() {                                           |
+|                                                                            |
+| const analyticsStore = useAnalyticsStore();                                |
+|                                                                            |
+| const authStore = useAuthStore();                                          |
+|                                                                            |
+| const { connect, disconnect, isConnected } = useWebSocket();               |
+|                                                                            |
+| let pollingInterval: ReturnType<typeof setInterval> | null = null;         |
+|                                                                            |
+| async function init(): Promise<void> {                                     |
+|                                                                            |
+| // 1. Busca dados (usa cache in-memory se frescos)                         |
+|                                                                            |
+| await analyticsStore.fetchDashboard();                                     |
+|                                                                            |
+| // 2. Conecta WebSocket                                                    |
+|                                                                            |
+| connect(authStore.user!.id);                                               |
+|                                                                            |
+| // 3. Polling de fallback: se WS desconectar, refetch a cada 2 minutos     |
+|                                                                            |
+| // (garante dados atualizados mesmo sem WebSocket funcionando)             |
+|                                                                            |
+| pollingInterval = setInterval(() => {                                      |
+|                                                                            |
+| if (!isConnected.value) {                                                  |
+|                                                                            |
+| analyticsStore.fetchDashboard(true); // force=true: ignora cache in-memory |
+|                                                                            |
+| }                                                                          |
+|                                                                            |
+| }, 2 * 60 * 1000);                                                         |
+|                                                                            |
+| }                                                                          |
+|                                                                            |
+| function teardown(): void {                                                |
+|                                                                            |
+| disconnect();                                                              |
+|                                                                            |
+| if (pollingInterval) clearInterval(pollingInterval);                       |
+|                                                                            |
+| }                                                                          |
+|                                                                            |
+| async function forceRefresh(): Promise<void> {                             |
+|                                                                            |
+| await analyticsStore.fetchDashboard(true);                                 |
+|                                                                            |
+| }                                                                          |
+|                                                                            |
+| // Visibilidade: refetch quando usuário volta para a aba                   |
+|                                                                            |
+| function handleVisibilityChange(): void {                                  |
+|                                                                            |
+| if (document.visibilityState === 'visible' && !analyticsStore.isFresh) {   |
+|                                                                            |
+| analyticsStore.fetchDashboard();                                           |
+|                                                                            |
+| }                                                                          |
+|                                                                            |
+| }                                                                          |
+|                                                                            |
+| onMounted(() => {                                                          |
+|                                                                            |
+| init();                                                                    |
+|                                                                            |
+| document.addEventListener('visibilitychange', handleVisibilityChange);     |
+|                                                                            |
+| });                                                                        |
+|                                                                            |
+| onUnmounted(() => {                                                        |
+|                                                                            |
+| teardown();                                                                |
+|                                                                            |
+| document.removeEventListener('visibilitychange', handleVisibilityChange);  |
+|                                                                            |
+| });                                                                        |
+|                                                                            |
+| return { forceRefresh, isConnected };                                      |
+|                                                                            |
+| }                                                                          |
++----------------------------------------------------------------------------+
+
+3.1 DashboardView (Pura — zero lógica)
+
++--------------------------------------------------------------------------------------------------+
+| <!-- src/views/DashboardView.vue -->                                                             |
+|                                                                                                  |
+| <script setup lang='ts'>                                                                         |
+|                                                                                                  |
+| import { useDashboard } from '@/features/dashboard/composables/useDashboard';                    |
+|                                                                                                  |
+| import { useAnalyticsStore } from '@/stores/analytics.store';                                    |
+|                                                                                                  |
+| import { useSessionsStore } from '@/stores/sessions.store';                                      |
+|                                                                                                  |
+| import { useUiStore } from '@/stores/ui.store';                                                  |
+|                                                                                                  |
+| import KpiCards from '@/features/dashboard/components/KpiCards.vue';                             |
+|                                                                                                  |
+| import TimeSeriesWidget from '@/features/dashboard/components/TimeSeriesWidget.vue';             |
+|                                                                                                  |
+| import TechDistributionWidget from '@/features/dashboard/components/TechDistributionWidget.vue'; |
+|                                                                                                  |
+| import WeeklyComparisonWidget from '@/features/dashboard/components/WeeklyComparisonWidget.vue'; |
+|                                                                                                  |
+| import HeatmapWidget from '@/features/dashboard/components/HeatmapWidget.vue';                   |
+|                                                                                                  |
+| import ActiveSessionBanner from '@/features/dashboard/components/ActiveSessionBanner.vue';       |
+|                                                                                                  |
+| import DashboardHeader from '@/features/dashboard/components/DashboardHeader.vue';               |
+|                                                                                                  |
+| const { forceRefresh, isConnected } = useDashboard();                                            |
+|                                                                                                  |
+| const analyticsStore = useAnalyticsStore();                                                      |
+|                                                                                                  |
+| const sessionsStore = useSessionsStore();                                                        |
+|                                                                                                  |
+| const uiStore = useUiStore();                                                                    |
+|                                                                                                  |
+| </script>                                                                                        |
+|                                                                                                  |
+| <template>                                                                                       |
+|                                                                                                  |
+| <div class='dashboard'>                                                                          |
+|                                                                                                  |
+| <!-- Banner de sessão ativa (condicional) -->                                                    |
+|                                                                                                  |
+| <ActiveSessionBanner                                                                             |
+|                                                                                                  |
+| v-if='sessionsStore.activeSession'                                                               |
+|                                                                                                  |
+| :session='sessionsStore.activeSession'                                                           |
+|                                                                                                  |
+| />                                                                                               |
+|                                                                                                  |
+| <!-- Header: título, badge WS, botão refresh -->                                                 |
+|                                                                                                  |
+| <DashboardHeader                                                                                 |
+|                                                                                                  |
+| :is-connected='isConnected'                                                                      |
+|                                                                                                  |
+| :is-recalculating='analyticsStore.isRecalculating'                                               |
+|                                                                                                  |
+| :last-updated='analyticsStore.lastFetchAt'                                                       |
+|                                                                                                  |
+| @refresh='forceRefresh'                                                                          |
+|                                                                                                  |
+| />                                                                                               |
+|                                                                                                  |
+| <!-- KPIs: 4 cards de métricas -->                                                               |
+|                                                                                                  |
+| <KpiCards                                                                                        |
+|                                                                                                  |
+| :metrics='analyticsStore.userMetrics'                                                            |
+|                                                                                                  |
+| :streak='analyticsStore.currentStreak'                                                           |
+|                                                                                                  |
+| :loading='analyticsStore.isLoading'                                                              |
+|                                                                                                  |
+| />                                                                                               |
+|                                                                                                  |
+| <!-- Linha 2: Gráfico de linha + Pizza -->                                                       |
+|                                                                                                  |
+| <div class='dashboard-row'>                                                                      |
+|                                                                                                  |
+| <TimeSeriesWidget                                                                                |
+|                                                                                                  |
+| :data='analyticsStore.timeSeries'                                                                |
+|                                                                                                  |
+| :loading='analyticsStore.isLoading'                                                              |
+|                                                                                                  |
+| class='col-7'                                                                                    |
+|                                                                                                  |
+| />                                                                                               |
+|                                                                                                  |
+| <TechDistributionWidget                                                                          |
+|                                                                                                  |
+| :tech-metrics='analyticsStore.techMetrics'                                                       |
+|                                                                                                  |
+| :loading='analyticsStore.isLoading'                                                              |
+|                                                                                                  |
+| class='col-5'                                                                                    |
+|                                                                                                  |
+| />                                                                                               |
+|                                                                                                  |
+| </div>                                                                                           |
+|                                                                                                  |
+| <!-- Linha 3: Barras semanais + Heatmap -->                                                      |
+|                                                                                                  |
+| <div class='dashboard-row'>                                                                      |
+|                                                                                                  |
+| <WeeklyComparisonWidget                                                                          |
+|                                                                                                  |
+| :data='analyticsStore.weeklyComp'                                                                |
+|                                                                                                  |
+| :loading='analyticsStore.isLoading'                                                              |
+|                                                                                                  |
+| class='col-4'                                                                                    |
+|                                                                                                  |
+| />                                                                                               |
+|                                                                                                  |
+| <HeatmapWidget                                                                                   |
+|                                                                                                  |
+| :loading='analyticsStore.isLoading'                                                              |
+|                                                                                                  |
+| class='col-8'                                                                                    |
+|                                                                                                  |
+| />                                                                                               |
+|                                                                                                  |
+| </div>                                                                                           |
+|                                                                                                  |
+| </div>                                                                                           |
+|                                                                                                  |
+| </template>                                                                                      |
++--------------------------------------------------------------------------------------------------+
+
+4. Widgets — Especificação Completa
+
+4.1 KpiCards
+
+  -----------------------------------------------------------------------
+  WIDGET KpiCards
+
+  Propósito
+
+  Store / Dados
+
+  Props
+
+  WebSocket
+
+  Notas
+  -----------------------------------------------------------------------
+
++-----------------------------------------------------------------------+
+| // src/features/dashboard/components/KpiCards.vue                     |
+|                                                                       |
+| <script setup lang='ts'>                                              |
+|                                                                       |
+| import KpiCard from '@/components/ui/KpiCard.vue';                    |
+|                                                                       |
+| import type { UserMetrics } from '@/types/domain.types';              |
+|                                                                       |
+| interface Props {                                                     |
+|                                                                       |
+| metrics: UserMetrics | null;                                          |
+|                                                                       |
+| streak: { value: number; label: string; isPersonalBest: boolean };    |
+|                                                                       |
+| loading: boolean;                                                     |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| const props = defineProps<Props>();                                   |
+|                                                                       |
+| // Formata minutos em '2h 30min' (sem request, apenas cálculo local)  |
+|                                                                       |
+| function formatAvgSession(minutes: number | null): string {           |
+|                                                                       |
+| if (!minutes) return '—';                                             |
+|                                                                       |
+| const h = Math.floor(minutes / 60);                                   |
+|                                                                       |
+| const m = Math.round(minutes % 60);                                   |
+|                                                                       |
+| return h > 0 ? `${h}h ${m}min` : `${m}min`;                           |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| </script>                                                             |
+|                                                                       |
+| <template>                                                            |
+|                                                                       |
+| <div class='kpi-grid'>                                                |
+|                                                                       |
+| <KpiCard                                                              |
+|                                                                       |
+| :loading='loading'                                                    |
+|                                                                       |
+| icon='clock'                                                          |
+|                                                                       |
+| label='Horas Totais'                                                  |
+|                                                                       |
+| :value='metrics?.total_hours?.toFixed(1) ?? "0"'                      |
+|                                                                       |
+| value-suffix='h'                                                      |
+|                                                                       |
+| />                                                                    |
+|                                                                       |
+| <KpiCard                                                              |
+|                                                                       |
+| :loading='loading'                                                    |
+|                                                                       |
+| icon='calendar-check'                                                 |
+|                                                                       |
+| label='Sessões'                                                       |
+|                                                                       |
+| :value='metrics?.total_sessions ?? 0'                                 |
+|                                                                       |
+| />                                                                    |
+|                                                                       |
+| <KpiCard                                                              |
+|                                                                       |
+| :loading='loading'                                                    |
+|                                                                       |
+| icon='fire'                                                           |
+|                                                                       |
+| label='Streak Atual'                                                  |
+|                                                                       |
+| :value='streak.value'                                                 |
+|                                                                       |
+| :value-suffix='streak.label'                                          |
+|                                                                       |
+| :badge='streak.isPersonalBest ? "Recorde!" : undefined'               |
+|                                                                       |
+| />                                                                    |
+|                                                                       |
+| <KpiCard                                                              |
+|                                                                       |
+| :loading='loading'                                                    |
+|                                                                       |
+| icon='trending-up'                                                    |
+|                                                                       |
+| label='Média por Sessão'                                              |
+|                                                                       |
+| :value='formatAvgSession(metrics?.avg_session_min)'                   |
+|                                                                       |
+| />                                                                    |
+|                                                                       |
+| </div>                                                                |
+|                                                                       |
+| </template>                                                           |
++-----------------------------------------------------------------------+
+
+4.2 TimeSeriesWidget
+
+  -----------------------------------------------------------------------
+  WIDGET TimeSeriesWidget
+
+  Propósito
+
+  Store / Dados
+
+  Props
+
+  ApexCharts
+
+  Notas
+  -----------------------------------------------------------------------
+
++------------------------------------------------------------------------------------------+
+| // src/features/dashboard/components/TimeSeriesWidget.vue                                |
+|                                                                                          |
+| <script setup lang='ts'>                                                                 |
+|                                                                                          |
+| import { computed, ref, watch } from 'vue';                                              |
+|                                                                                          |
+| import { useAnalyticsStore } from '@/stores/analytics.store';                            |
+|                                                                                          |
+| import { analyticsApi } from '@/api/modules/analytics.api';                              |
+|                                                                                          |
+| import LineChart from '@/components/charts/LineChart.vue';                               |
+|                                                                                          |
+| import type { TimeSeriesPoint, ChartDataset } from '@/types/domain.types';               |
+|                                                                                          |
+| interface Props { data: TimeSeriesPoint[]; loading: boolean; }                           |
+|                                                                                          |
+| const props = defineProps<Props>();                                                      |
+|                                                                                          |
+| const period = ref<'7d'|'30d'|'90d'>('30d');                                             |
+|                                                                                          |
+| const extData = ref<TimeSeriesPoint[] | null>(null); // dados de 90d (fetch sob demanda) |
+|                                                                                          |
+| const extLoading = ref(false);                                                           |
+|                                                                                          |
+| // Dados exibidos: locais (7d/30d) ou fetchados (90d)                                    |
+|                                                                                          |
+| const displayData = computed<TimeSeriesPoint[]>(() => {                                  |
+|                                                                                          |
+| if (period.value === '90d' && extData.value) return extData.value;                       |
+|                                                                                          |
+| if (period.value === '7d') return props.data.slice(-7);                                  |
+|                                                                                          |
+| return props.data; // 30d: dados do store                                                |
+|                                                                                          |
+| });                                                                                      |
+|                                                                                          |
+| // Transforma dados para ApexCharts dataset                                                |
+|                                                                                          |
+| const chartData = computed<ChartDataset>(() => ({                                        |
+|                                                                                          |
+| labels: displayData.value.map(d => formatDate(d.date)),                                  |
+|                                                                                          |
+| datasets: [{                                                                             |
+|                                                                                          |
+| label: 'Minutos estudados',                                                              |
+|                                                                                          |
+| data: displayData.value.map(d => d.total_minutes),                                       |
+|                                                                                          |
+| borderColor: '#1976D2',                                                                  |
+|                                                                                          |
+| backgroundColor: 'rgba(25, 118, 210, 0.08)',                                             |
+|                                                                                          |
+| fill: true,                                                                              |
+|                                                                                          |
+| tension: 0.4,                                                                            |
+|                                                                                          |
+| pointRadius: 3,                                                                          |
+|                                                                                          |
+| pointHoverRadius: 6,                                                                     |
+|                                                                                          |
+| }],                                                                                      |
+|                                                                                          |
+| }));                                                                                     |
+|                                                                                          |
+| // Fetch 90d apenas quando selecionado e ainda não carregado                             |
+|                                                                                          |
+| watch(period, async (newPeriod) => {                                                     |
+|                                                                                          |
+| if (newPeriod === '90d' && !extData.value) {                                             |
+|                                                                                          |
+| extLoading.value = true;                                                                 |
+|                                                                                          |
+| try {                                                                                    |
+|                                                                                          |
+| const res = await analyticsApi.getTimeSeries('90d');                                     |
+|                                                                                          |
+| extData.value = res.data;                                                                |
+|                                                                                          |
+| } finally { extLoading.value = false; }                                                  |
+|                                                                                          |
+| }                                                                                        |
+|                                                                                          |
+| });                                                                                      |
+|                                                                                          |
+| function formatDate(dateStr: string): string {                                           |
+|                                                                                          |
+| return new Date(dateStr).toLocaleDateString('pt-BR', { day:'2-digit', month:'short' });  |
+|                                                                                          |
+| }                                                                                        |
+|                                                                                          |
+| </script>                                                                                |
+|                                                                                          |
+| <template>                                                                               |
+|                                                                                          |
+| <BaseCard title='Minutos por Dia'>                                                       |
+|                                                                                          |
+| <template #actions>                                                                      |
+|                                                                                          |
+| <div class='period-toggle'>                                                              |
+|                                                                                          |
+| <button v-for='p in ["7d","30d","90d"]' :key='p'                                         |
+|                                                                                          |
+| :class='["toggle-btn", { active: period === p }]'                                        |
+|                                                                                          |
+| @click='period = p as "7d"|"30d"|"90d"'>{{ p }}</button>                                 |
+|                                                                                          |
+| </div>                                                                                   |
+|                                                                                          |
+| </template>                                                                              |
+|                                                                                          |
+| <LineChart                                                                               |
+|                                                                                          |
+| v-if='!loading && !extLoading'                                                           |
+|                                                                                          |
+| :chart-data='chartData'                                                                  |
+|                                                                                          |
+| :options='chartOptions'                                                                  |
+|                                                                                          |
+| />                                                                                       |
+|                                                                                          |
+| <ChartSkeleton v-else />                                                                 |
+|                                                                                          |
+| </BaseCard>                                                                              |
+|                                                                                          |
+| </template>                                                                              |
++------------------------------------------------------------------------------------------+
+
+4.3 TechDistributionWidget
+
+  -----------------------------------------------------------------------
+  WIDGET TechDistributionWidget
+
+  Propósito
+
+  Store / Dados
+
+  Props
+
+  ApexCharts
+
+  Notas
+  -----------------------------------------------------------------------
+
++----------------------------------------------------------------------------------+
+| // src/features/dashboard/components/TechDistributionWidget.vue                  |
+|                                                                                  |
+| <script setup lang='ts'>                                                         |
+|                                                                                  |
+| import { computed } from 'vue';                                                  |
+|                                                                                  |
+| import { useRouter } from 'vue-router';                                          |
+|                                                                                  |
+| import PieChart from '@/components/charts/PieChart.vue';                         |
+|                                                                                  |
+| import type { TechMetrics } from '@/types/domain.types';                         |
+|                                                                                  |
+| interface Props { techMetrics: TechMetrics[]; loading: boolean; }                |
+|                                                                                  |
+| const props = defineProps<Props>();                                              |
+|                                                                                  |
+| const router = useRouter();                                                      |
+|                                                                                  |
+| // Top 6 + 'Outros' (evita pizza com muitos slices)                              |
+|                                                                                  |
+| const displayTechs = computed(() => {                                            |
+|                                                                                  |
+| const top = props.techMetrics.slice(0, 6);                                       |
+|                                                                                  |
+| const rest = props.techMetrics.slice(6);                                         |
+|                                                                                  |
+| if (rest.length === 0) return top;                                               |
+|                                                                                  |
+| const otherMinutes = rest.reduce((sum, t) => sum + t.total_minutes, 0);          |
+|                                                                                  |
+| return [...top, { technology: { id: 'other', name: 'Outros', color: '#9E9E9E' }, |
+|                                                                                  |
+| total_minutes: otherMinutes, total_hours: otherMinutes / 60,                     |
+|                                                                                  |
+| session_count: rest.reduce((sum,t) => sum + t.session_count, 0),                 |
+|                                                                                  |
+| percentage_total: rest.reduce((sum,t) => sum + t.percentage_total, 0),           |
+|                                                                                  |
+| }];                                                                              |
+|                                                                                  |
+| });                                                                              |
+|                                                                                  |
+| const pieData = computed(() => ({                                                |
+|                                                                                  |
+| labels: displayTechs.value.map(t => t.technology.name),                          |
+|                                                                                  |
+| datasets: [{                                                                     |
+|                                                                                  |
+| data: displayTechs.value.map(t => t.total_hours),                                |
+|                                                                                  |
+| backgroundColor: displayTechs.value.map(t => t.technology.color),                |
+|                                                                                  |
+| borderWidth: 2,                                                                  |
+|                                                                                  |
+| borderColor: '#ffffff',                                                          |
+|                                                                                  |
+| hoverOffset: 8,                                                                  |
+|                                                                                  |
+| }],                                                                              |
+|                                                                                  |
+| }));                                                                             |
+|                                                                                  |
+| // Click na pizza: navega para /sessions?technology_id=X                         |
+|                                                                                  |
+| function onSliceClick(techId: string): void {                                    |
+|                                                                                  |
+| if (techId === 'other') return;                                                  |
+|                                                                                  |
+| router.push({ name: 'sessions', query: { technology_id: techId } });             |
+|                                                                                  |
+| }                                                                                |
+|                                                                                  |
+| </script>                                                                        |
+|                                                                                  |
+| <template>                                                                       |
+|                                                                                  |
+| <BaseCard title='Por Tecnologia'>                                                |
+|                                                                                  |
+| <div class='tech-distribution'>                                                  |
+|                                                                                  |
+| <PieChart :chart-data='pieData' @slice-click='onSliceClick' />                   |
+|                                                                                  |
+| <!-- Ranking list abaixo da pizza -->                                            |
+|                                                                                  |
+| <div class='tech-ranking'>                                                       |
+|                                                                                  |
+| <div v-for='tech in displayTechs' :key='tech.technology.id' class='tech-row'>    |
+|                                                                                  |
+| <span class='tech-dot' :style='{ background: tech.technology.color }' />         |
+|                                                                                  |
+| <span class='tech-name'>{{ tech.technology.name }}</span>                        |
+|                                                                                  |
+| <span class='tech-hours'>{{ tech.total_hours.toFixed(1) }}h</span>               |
+|                                                                                  |
+| <span class='tech-pct'>{{ tech.percentage_total.toFixed(0) }}%</span>            |
+|                                                                                  |
+| </div>                                                                           |
+|                                                                                  |
+| </div>                                                                           |
+|                                                                                  |
+| </div>                                                                           |
+|                                                                                  |
+| </BaseCard>                                                                      |
+|                                                                                  |
+| </template>                                                                      |
++----------------------------------------------------------------------------------+
+
+4.4 HeatmapWidget
+
+  -----------------------------------------------------------------------
+  WIDGET HeatmapWidget
+
+  Propósito
+
+  Store / Dados
+
+  Props
+
+  Notas
+  -----------------------------------------------------------------------
+
++--------------------------------------------------------------------------------------------------+
+| // src/features/dashboard/components/HeatmapWidget.vue                                           |
+|                                                                                                  |
+| <script setup lang='ts'>                                                                         |
+|                                                                                                  |
+| import { ref, computed, onMounted, watch } from 'vue';                                           |
+|                                                                                                  |
+| import { analyticsApi } from '@/api/modules/analytics.api';                                      |
+|                                                                                                  |
+| import type { HeatmapData, HeatmapDay } from '@/types/domain.types';                             |
+|                                                                                                  |
+| // Cores por intensidade (0=sem estudo, 4=muito estudo)                                          |
+|                                                                                                  |
+| const INTENSITY_COLORS = ['#EBEDF0','#9BE9A8','#40C463','#30A14E','#216E39'];                    |
+|                                                                                                  |
+| const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];        |
+|                                                                                                  |
+| const DAYS = ['Dom','','Ter','','Qui','','Sáb'];                                                 |
+|                                                                                                  |
+| const selectedYear = ref(new Date().getFullYear());                                              |
+|                                                                                                  |
+| const heatmapData = ref<HeatmapData | null>(null);                                               |
+|                                                                                                  |
+| const isLoading = ref(false);                                                                    |
+|                                                                                                  |
+| const tooltip = ref<{ day: HeatmapDay; x: number; y: number } | null>(null);                     |
+|                                                                                                  |
+| async function fetchHeatmap(year: number): Promise<void> {                                       |
+|                                                                                                  |
+| isLoading.value = true;                                                                          |
+|                                                                                                  |
+| try {                                                                                            |
+|                                                                                                  |
+| const res = await analyticsApi.getHeatmap(year);                                                 |
+|                                                                                                  |
+| heatmapData.value = res.data;                                                                    |
+|                                                                                                  |
+| } finally { isLoading.value = false; }                                                           |
+|                                                                                                  |
+| }                                                                                                |
+|                                                                                                  |
+| onMounted(() => fetchHeatmap(selectedYear.value));                                               |
+|                                                                                                  |
+| watch(selectedYear, fetchHeatmap);                                                               |
+|                                                                                                  |
+| // Gera células SVG: cada célula 12x12, gap 2                                                    |
+|                                                                                                  |
+| const cells = computed<Array<{ x:number; y:number; color:string; day:HeatmapDay }>>(() => {      |
+|                                                                                                  |
+| if (!heatmapData.value) return [];                                                               |
+|                                                                                                  |
+| return heatmapData.value.weeks.flatMap((week, wi) =>                                             |
+|                                                                                                  |
+| week.days.map((day, di) => ({                                                                    |
+|                                                                                                  |
+| x: wi * 14, // 12px célula + 2px gap                                                             |
+|                                                                                                  |
+| y: di * 14,                                                                                      |
+|                                                                                                  |
+| color: INTENSITY_COLORS[day.intensity],                                                          |
+|                                                                                                  |
+| day,                                                                                             |
+|                                                                                                  |
+| }))                                                                                              |
+|                                                                                                  |
+| );                                                                                               |
+|                                                                                                  |
+| });                                                                                              |
+|                                                                                                  |
+| // Labels de mês posicionados dinamicamente                                                      |
+|                                                                                                  |
+| const monthLabels = computed(() => {                                                             |
+|                                                                                                  |
+| if (!heatmapData.value) return [];                                                               |
+|                                                                                                  |
+| return heatmapData.value.weeks                                                                   |
+|                                                                                                  |
+| .filter(w => new Date(w.days[0]?.date).getDate() <= 7)                                           |
+|                                                                                                  |
+| .map(w => ({ x: /* week index */ 0 * 14, month: MONTHS[new Date(w.days[0].date).getMonth()] })); |
+|                                                                                                  |
+| });                                                                                              |
+|                                                                                                  |
+| </script>                                                                                        |
+|                                                                                                  |
+| <template>                                                                                       |
+|                                                                                                  |
+| <BaseCard title='Atividade Anual'>                                                               |
+|                                                                                                  |
+| <template #actions>                                                                              |
+|                                                                                                  |
+| <select v-model='selectedYear' class='year-select'>                                              |
+|                                                                                                  |
+| <option :value='new Date().getFullYear()'>{{ new Date().getFullYear() }}</option>                |
+|                                                                                                  |
+| <option :value='new Date().getFullYear()-1'>{{ new Date().getFullYear()-1 }}</option>            |
+|                                                                                                  |
+| </select>                                                                                        |
+|                                                                                                  |
+| </template>                                                                                      |
+|                                                                                                  |
+| <div v-if='isLoading' class='heatmap-skeleton' />                                                |
+|                                                                                                  |
+| <div v-else class='heatmap-container'>                                                           |
+|                                                                                                  |
+| <svg :width='53*14' :height='7*14+20' class='heatmap-svg'>                                       |
+|                                                                                                  |
+| <!-- Células -->                                                                                 |
+|                                                                                                  |
+| <rect v-for='cell in cells' :key='cell.day.date'                                                 |
+|                                                                                                  |
+| :x='cell.x' :y='cell.y + 20'                                                                     |
+|                                                                                                  |
+| width='12' height='12' rx='2'                                                                    |
+|                                                                                                  |
+| :fill='cell.color'                                                                               |
+|                                                                                                  |
+| @mouseenter='tooltip = { day: cell.day, x: cell.x, y: cell.y }'                                  |
+|                                                                                                  |
+| @mouseleave='tooltip = null'                                                                     |
+|                                                                                                  |
+| class='heatmap-cell'                                                                             |
+|                                                                                                  |
+| />                                                                                               |
+|                                                                                                  |
+| </svg>                                                                                           |
+|                                                                                                  |
+| <!-- Tooltip -->                                                                                 |
+|                                                                                                  |
+| <HeatmapTooltip v-if='tooltip' :day='tooltip.day' :x='tooltip.x' :y='tooltip.y' />               |
+|                                                                                                  |
+| <!-- Legenda de intensidade -->                                                                  |
+|                                                                                                  |
+| <div class='heatmap-legend'>                                                                     |
+|                                                                                                  |
+| <span>Menos</span>                                                                               |
+|                                                                                                  |
+| <span v-for='(color, i) in INTENSITY_COLORS' :key='i'                                            |
+|                                                                                                  |
+| class='legend-cell' :style='{ background: color }' />                                            |
+|                                                                                                  |
+| <span>Mais</span>                                                                                |
+|                                                                                                  |
+| </div>                                                                                           |
+|                                                                                                  |
+| </div>                                                                                           |
+|                                                                                                  |
+| </BaseCard>                                                                                      |
+|                                                                                                  |
+| </template>                                                                                      |
++--------------------------------------------------------------------------------------------------+
+
+4.5 ActiveSessionBanner
+
+  -----------------------------------------------------------------------
+  WIDGET ActiveSessionBanner
+
+  Propósito
+
+  Store / Dados
+
+  Props
+
+  Notas
+  -----------------------------------------------------------------------
+
++-----------------------------------------------------------------------+
+| // src/features/sessions/composables/useSessionTimer.ts               |
+|                                                                       |
+| // Gerencia o timer ao vivo da sessão ativa                           |
+|                                                                       |
+| import { ref, computed, onMounted, onUnmounted } from 'vue';          |
+|                                                                       |
+| import type { ActiveSession } from '@/types/domain.types';            |
+|                                                                       |
+| export function useSessionTimer(session: ActiveSession) {             |
+|                                                                       |
+| // elapsed_seconds vem do backend (NOW() - started_at)                |
+|                                                                       |
+| // Garante sincronização após reload de página                        |
+|                                                                       |
+| const elapsed = ref(session.elapsed_seconds);                         |
+|                                                                       |
+| let interval: ReturnType<typeof setInterval> | null = null;           |
+|                                                                       |
+| function start(): void {                                              |
+|                                                                       |
+| interval = setInterval(() => { elapsed.value++; }, 1000);             |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| function stop(): void {                                               |
+|                                                                       |
+| if (interval) { clearInterval(interval); interval = null; }           |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| // Formata segundos em HH:MM:SS                                       |
+|                                                                       |
+| const formatted = computed(() => {                                    |
+|                                                                       |
+| const h = Math.floor(elapsed.value / 3600);                           |
+|                                                                       |
+| const m = Math.floor((elapsed.value % 3600) / 60);                    |
+|                                                                       |
+| const s = elapsed.value % 60;                                         |
+|                                                                       |
+| return [h, m, s].map(n => n.toString().padStart(2, '0')).join(':');   |
+|                                                                       |
+| });                                                                   |
+|                                                                       |
+| onMounted(start);                                                     |
+|                                                                       |
+| onUnmounted(stop);                                                    |
+|                                                                       |
+| return { formatted, elapsed };                                        |
+|                                                                       |
+| }                                                                     |
++-----------------------------------------------------------------------+
+
+5. ApexCharts Wrappers Reutilizáveis
+
+Os componentes de chart são wrappers thin ao redor do ApexCharts. Recebem chartData e options como props e não conhecem stores nem domínio. Podem ser usados em qualquer contexto.
+
+5.1 LineChart.vue (Base para todos os line charts)
+
++------------------------------------------------------------------------+
+| // frontend/src/components/charts/LineChart.vue (ilustrativo)          |
+|                                                                        |
+| <script setup lang="ts">                                               |
+| import { computed } from 'vue';                                        |
+| import VueApexCharts from 'vue3-apexcharts';                           |
+| import type { ApexOptions } from 'apexcharts';                         |
+|                                                                        |
+| const props = defineProps<{ series: unknown[]; chartOptions?: ApexOptions }>(); |
+|                                                                        |
+| const options = computed(() => ({                                      |
+| chart: { toolbar: { show: false }, animations: { enabled: true } },    |
+| ...props.chartOptions,                                                 |
+| }));                                                                   |
+|                                                                        |
+| // Dados vindos do Pinia/WebSocket: séries reativas → Apex re-renderiza |
+| </script>                                                              |
+|                                                                        |
+| <template>                                                             |
+| <div class="chart-container">                                          |
+| <VueApexCharts type="line" :options="options" :series="props.series" /> |
+| </div>                                                                 |
+| </template>                                                            |
++------------------------------------------------------------------------+
+
+5.2 Configurações ApexCharts por Tipo
+
+  ---------------------------------------------------------------------------------------------------------
+  Componente        Tipo ApexCharts   Dados de entrada    Config especial
+  ----------------- --------------- ------------------- ---------------------------------------------------
+  LineChart.vue     line            TimeSeriesPoint[]   fill: true, tension: 0.4, tooltip em horas
+
+  PieChart.vue      doughnut        TechMetrics[]       cores hex das tecnologias, cutout: '60%'
+
+  BarChart.vue      bar             WeeklySummary[]     barras empilhadas por dia da semana, cor primária
+
+  HeatmapGrid.vue   SVG manual      HeatmapData         Sem ApexCharts: SVG <rect> 53×7, intensity colors
+  ---------------------------------------------------------------------------------------------------------
+
+6. Tipos TypeScript do Dashboard
+
++--------------------------------------------------------------------------+
+| // src/types/domain.types.ts — Tipos do domínio do dashboard             |
+|                                                                          |
+| // ── API Response envelope ───────────────────────────────────────────  |
+|                                                                          |
+| export interface ApiResponse<T> {                                        |
+|                                                                          |
+| success: boolean;                                                        |
+|                                                                          |
+| data: T;                                                                 |
+|                                                                          |
+| message?: string;                                                        |
+|                                                                          |
+| meta?: PaginationMeta;                                                   |
+|                                                                          |
+| }                                                                        |
+|                                                                          |
+| // ── Dashboard (payload de GET /api/v1/analytics/dashboard) ───────────  |
+|                                                                          |
+| export interface DashboardData {                                         |
+|                                                                          |
+| user_metrics: UserMetrics;                                               |
+|                                                                          |
+| technology_metrics: TechMetrics[];                                       |
+|                                                                          |
+| time_series_30d: TimeSeriesPoint[];                                      |
+|                                                                          |
+| top_technologies: TechMetrics[];                                         |
+|                                                                          |
+| weekly_comparison: WeeklyComparison;                                     |
+|                                                                          |
+| }                                                                        |
+|                                                                          |
+| // ── User Metrics (analytics.user_metrics) ───────────────────────────  |
+|                                                                          |
+| export interface UserMetrics {                                           |
+|                                                                          |
+| total_sessions: number;                                                  |
+|                                                                          |
+| total_minutes: number;                                                   |
+|                                                                          |
+| total_hours: number; // GENERATED STORED no banco                        |
+|                                                                          |
+| avg_session_min: number;                                                 |
+|                                                                          |
+| longest_session_min: number;                                             |
+|                                                                          |
+| current_streak_days: number;                                             |
+|                                                                          |
+| max_streak_days: number;                                                 |
+|                                                                          |
+| avg_mood: number | null;                                                 |
+|                                                                          |
+| avg_focus_score: number | null;                                          |
+|                                                                          |
+| last_session_at: string; // ISO 8601                                     |
+|                                                                          |
+| recalculated_at: string;                                                 |
+|                                                                          |
+| }                                                                        |
+|                                                                          |
+| // ── Technology Metrics ─────────────────────────────────────────────── |
+|                                                                          |
+| export interface TechMetrics {                                           |
+|                                                                          |
+| technology: TechnologyRef;                                               |
+|                                                                          |
+| total_minutes: number;                                                   |
+|                                                                          |
+| total_hours: number;                                                     |
+|                                                                          |
+| session_count: number;                                                   |
+|                                                                          |
+| avg_session_min: number;                                                 |
+|                                                                          |
+| percentage_total: number;                                                |
+|                                                                          |
+| first_studied_at: string;                                                |
+|                                                                          |
+| last_studied_at: string;                                                 |
+|                                                                          |
+| }                                                                        |
+|                                                                          |
+| export interface TechnologyRef {                                         |
+|                                                                          |
+| id: string;                                                              |
+|                                                                          |
+| name: string;                                                            |
+|                                                                          |
+| color: string; // hex: '#3498DB'                                         |
+|                                                                          |
+| icon: string | null;                                                     |
+|                                                                          |
+| slug: string;                                                            |
+|                                                                          |
+| }                                                                        |
+|                                                                          |
+| // ── Time Series ────────────────────────────────────────────────────── |
+|                                                                          |
+| export interface TimeSeriesPoint {                                       |
+|                                                                          |
+| date: string; // 'YYYY-MM-DD' (no fuso do usuário)                       |
+|                                                                          |
+| total_minutes: number;                                                   |
+|                                                                          |
+| session_count: number;                                                   |
+|                                                                          |
+| avg_mood: number | null;                                                 |
+|                                                                          |
+| }                                                                        |
+|                                                                          |
+| // ── Weekly Comparison ──────────────────────────────────────────────── |
+|                                                                          |
+| export interface WeeklyComparison {                                      |
+|                                                                          |
+| current_week: WeekSummary;                                               |
+|                                                                          |
+| previous_week: WeekSummary;                                              |
+|                                                                          |
+| }                                                                        |
+|                                                                          |
+| export interface WeekSummary {                                           |
+|                                                                          |
+| week_start: string;                                                      |
+|                                                                          |
+| total_minutes: number;                                                   |
+|                                                                          |
+| session_count: number;                                                   |
+|                                                                          |
+| active_days: number; // 0-7                                              |
+|                                                                          |
+| }                                                                        |
+|                                                                          |
+| // ── Heatmap ────────────────────────────────────────────────────────── |
+|                                                                          |
+| export interface HeatmapData {                                           |
+|                                                                          |
+| year: number;                                                            |
+|                                                                          |
+| weeks: HeatmapWeek[];                                                    |
+|                                                                          |
+| meta: { total_days_studied: number; max_daily_minutes: number };         |
+|                                                                          |
+| }                                                                        |
+|                                                                          |
+| export interface HeatmapWeek { week: number; days: HeatmapDay[]; }       |
+|                                                                          |
+| export interface HeatmapDay {                                            |
+|                                                                          |
+| date: string;                                                            |
+|                                                                          |
+| total_minutes: number;                                                   |
+|                                                                          |
+| intensity: 0 | 1 | 2 | 3 | 4; // 0=nenhum, 4=máximo                      |
+|                                                                          |
+| }                                                                        |
+|                                                                          |
+| // ── Active Session ─────────────────────────────────────────────────── |
+|                                                                          |
+| export interface ActiveSession {                                         |
+|                                                                          |
+| id: string;                                                              |
+|                                                                          |
+| technology: TechnologyRef;                                               |
+|                                                                          |
+| started_at: string;                                                      |
+|                                                                          |
+| elapsed_seconds: number; // calculado no backend (NOW() - started_at)    |
+|                                                                          |
+| }                                                                        |
++--------------------------------------------------------------------------+
+
+7. Loading States e Skeleton Loaders
+
+Skeleton loaders são fundamentais para um dashboard profissional. O usuário vê a estrutura da página imediatamente, sem tela em branco ou spinner centralizado que trava a navegação.
+
+7.1 Estados do Dashboard
+
+  ----------------------------------------------------------------------------------------------------
+  Estado           Trigger                             Exibição
+  ---------------- ----------------------------------- -----------------------------------------------
+  Initial Load     onMounted, store vazio              Todos os 5 widgets com SkeletonLoader
+
+  Loaded           fetchDashboard() resolve            Dados reais em todos os widgets
+
+  Recalculating    WS .metrics.recalculating           Overlay semi-transparente + spinner no header
+
+  WS Updated       WS .metrics.updated                 Transição suave: séries/options reativas (ApexCharts)
+
+  Period Switch    Toggle 7d/90d no TimeSeriesWidget   Skeleton só no widget, outros permanecem
+
+  Error            fetchDashboard() rejeita            ErrorCard com botão 'Tentar novamente'
+
+  Disconnected     WS desconecta                       Badge vermelho no header + polling ativo
+  ----------------------------------------------------------------------------------------------------
+
+7.2 Skeleton Loader Genérico
+
++----------------------------------------------------------------------------+
+| // src/components/ui/SkeletonLoader.vue                                    |
+|                                                                            |
+| // Componente base para qualquer skeleton                                  |
+|                                                                            |
+| <script setup lang='ts'>                                                   |
+|                                                                            |
+| interface Props {                                                          |
+|                                                                            |
+| width?: string; // '100%' padrão                                           |
+|                                                                            |
+| height?: string; // '20px' padrão                                          |
+|                                                                            |
+| rounded?: boolean; // border-radius para cards                             |
+|                                                                            |
+| }                                                                          |
+|                                                                            |
+| defineProps<Props>();                                                      |
+|                                                                            |
+| </script>                                                                  |
+|                                                                            |
+| <template>                                                                 |
+|                                                                            |
+| <div                                                                       |
+|                                                                            |
+| class='skeleton-pulse'                                                     |
+|                                                                            |
+| :style='{ width: width ?? "100%", height: height ?? "20px",                |
+|                                                                            |
+| borderRadius: rounded ? "8px" : "4px" }'                                   |
+|                                                                            |
+| />                                                                         |
+|                                                                            |
+| </template>                                                                |
+|                                                                            |
+| <style scoped>                                                             |
+|                                                                            |
+| .skeleton-pulse {                                                          |
+|                                                                            |
+| background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); |
+|                                                                            |
+| background-size: 200% 100%;                                                |
+|                                                                            |
+| animation: shimmer 1.5s infinite;                                          |
+|                                                                            |
+| }                                                                          |
+|                                                                            |
+| @keyframes shimmer {                                                       |
+|                                                                            |
+| 0% { background-position: 200% 0; }                                        |
+|                                                                            |
+| 100% { background-position: -200% 0; }                                     |
+|                                                                            |
+| }                                                                          |
+|                                                                            |
+| </style>                                                                   |
+|                                                                            |
+| // Uso no KpiCard:                                                         |
+|                                                                            |
+| // <SkeletonLoader v-if='loading' height='48px' rounded />                 |
+|                                                                            |
+| // <span v-else>{{ value }}</span>                                         |
++----------------------------------------------------------------------------+
+
+8. Layout Responsivo do Dashboard
+
++-----------------------------------------------------------------------+
+| /* src/assets/styles/dashboard.css */                                 |
+|                                                                       |
+| .dashboard {                                                          |
+|                                                                       |
+| display: flex;                                                        |
+|                                                                       |
+| flex-direction: column;                                               |
+|                                                                       |
+| gap: 1.5rem;                                                          |
+|                                                                       |
+| padding: 1.5rem;                                                      |
+|                                                                       |
+| max-width: 1600px;                                                    |
+|                                                                       |
+| margin: 0 auto;                                                       |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| /* Grid de KPIs: 4 colunas desktop, 2 tablet, 1 mobile */             |
+|                                                                       |
+| .kpi-grid {                                                           |
+|                                                                       |
+| display: grid;                                                        |
+|                                                                       |
+| grid-template-columns: repeat(4, 1fr);                                |
+|                                                                       |
+| gap: 1rem;                                                            |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| /* Linhas do dashboard: proporções com CSS Grid */                    |
+|                                                                       |
+| .dashboard-row {                                                      |
+|                                                                       |
+| display: grid;                                                        |
+|                                                                       |
+| gap: 1.5rem;                                                          |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| /* Linha 2: 70% série temporal, 30% pizza */                          |
+|                                                                       |
+| .dashboard-row:nth-child(3) {                                         |
+|                                                                       |
+| grid-template-columns: 7fr 5fr;                                       |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| /* Linha 3: 40% barras semanais, 60% heatmap */                       |
+|                                                                       |
+| .dashboard-row:nth-child(4) {                                         |
+|                                                                       |
+| grid-template-columns: 4fr 8fr;                                       |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| /* Tablet (< 1024px): empilha as colunas */                           |
+|                                                                       |
+| @media (max-width: 1024px) {                                          |
+|                                                                       |
+| .kpi-grid { grid-template-columns: repeat(2, 1fr); }                  |
+|                                                                       |
+| .dashboard-row { grid-template-columns: 1fr !important; }             |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| /* Mobile (< 640px): 1 coluna total */                                |
+|                                                                       |
+| @media (max-width: 640px) {                                           |
+|                                                                       |
+| .kpi-grid { grid-template-columns: 1fr; }                             |
+|                                                                       |
+| .dashboard { padding: 1rem; gap: 1rem; }                              |
+|                                                                       |
+| }                                                                     |
++-----------------------------------------------------------------------+
+
+9. Checklist de Implementação
+
+Store e Composables
+
+-   [ ] analytics.store.ts com computed granulares por widget
+
+-   [ ] fetchDashboard() com isFresh check para evitar refetch desnecessário
+
+-   [ ] updateFromWebSocket() substitui estado completo do store
+
+-   [ ] setRecalculating() ativa spinner overlay
+
+-   [ ] useDashboard() composable encapsula init, WebSocket, polling e visibilitychange
+
+-   [ ] DashboardView.vue delegando tudo para useDashboard() — zero lógica na View
+
+Widgets
+
+-   [ ] KpiCards com skeleton loader quando loading=true
+
+-   [ ] TimeSeriesWidget com toggle 7d/30d/90d e fetch lazy para 90d
+
+-   [ ] TechDistributionWidget com top 6 + 'Outros' para evitar pizza poluída
+
+-   [ ] Click na pizza navega para /sessions com filtro por technology_id
+
+-   [ ] HeatmapWidget com SVG manual, 53×7 células, tooltip ao hover
+
+-   [ ] ActiveSessionBanner condicional (v-if sessionsStore.activeSession)
+
+-   [ ] useSessionTimer com elapsed_seconds inicial do backend (sincronização)
+
+ApexCharts
+
+-   [ ] LineChart.vue: props reativas (séries/options) para atualização suave com WebSocket
+
+-   [ ] Tooltip customizado: converte minutos em '2h 30min'
+
+-   [ ] Desmontagem do componente sem vazamentos (timers/listeners limpos em onUnmounted)
+
+-   [ ] PieChart cores dinâmicas via technology.color (hex do banco)
+
+WebSocket e Tempo Real
+
+-   [ ] useWebSocket composable com estado isConnected
+
+-   [ ] .metrics.recalculating → setRecalculating(true)
+
+-   [ ] .metrics.updated → updateFromWebSocket(e.dashboard) + setRecalculating(false)
+
+-   [ ] .session.started → sessionsStore.setActiveSession(e.session)
+
+-   [ ] Reconexão automática (Pusher/Echo gerencia automaticamente)
+
+-   [ ] RealtimeBadge muda cor: verde (conectado) / vermelho (desconectado)
+
++-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ANTIPADRÃO MAIS COMUM: WIDGET FAZENDO FETCH PRÓPRIO                                                                                                                                                         |
++-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Errado: Widget faz useAnalyticsApi().getDashboard() dentro do onMounted próprio. Resultado: waterfall de N requests paralelos, estados de loading dessincronizados, impossível de testar.                   |
+|                                                                                                                                                                                                             |
+| Certo: Widget recebe dados via props (lidos do store pelo componente pai). Store é a única fonte que faz fetch. Quando o WebSocket atualiza o store, TODOS os widgets atualizam sem nenhum fetch adicional. |
+|                                                                                                                                                                                                             |
+| Exceção permitida: HeatmapWidget e TimeSeriesWidget para 90d fazem fetch próprio porque carregam dados sob demanda (lazy), não incluídos no payload inicial do dashboard. Isso é explícito e documentado.   |
++-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+

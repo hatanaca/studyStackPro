@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import Skeleton from 'primevue/skeleton'
 
 export interface DataTableColumn<T = unknown> {
   key: string
@@ -93,9 +94,35 @@ function onRowClick(row: unknown) {
     <div
       v-if="loading"
       class="base-data-table__loading"
+      role="status"
+      aria-live="polite"
+      aria-label="Carregando tabela"
     >
-      <span class="base-data-table__spinner" />
-      Carregando...
+      <div
+        class="base-data-table__skeleton"
+        :style="{ '--table-skel-cols': columns.length || 1 }"
+      >
+        <div class="base-data-table__skeleton-row base-data-table__skeleton-row--head">
+          <Skeleton
+            v-for="col in columns"
+            :key="`h-${col.key}`"
+            height="0.75rem"
+            class="base-data-table__skel-block"
+          />
+        </div>
+        <div
+          v-for="ri in 6"
+          :key="`r-${ri}`"
+          class="base-data-table__skeleton-row"
+        >
+          <Skeleton
+            v-for="col in columns"
+            :key="`${ri}-${col.key}`"
+            height="1.125rem"
+            class="base-data-table__skel-block"
+          />
+        </div>
+      </div>
     </div>
     <div
       v-else
@@ -121,17 +148,35 @@ function onRowClick(row: unknown) {
                 { 'base-data-table__th--sorted': sortBy === col.key },
               ]"
               :style="col.width ? { width: col.width } : undefined"
-              @click="col.sortable ? toggleSort(col.key) : undefined"
+              :aria-sort="col.sortable && internalSortBy === col.key
+                ? (internalSortOrder === 'asc' ? 'ascending' : 'descending')
+                : col.sortable ? 'none' : undefined"
+              scope="col"
             >
-              <span class="base-data-table__th-content">
-                {{ col.label }}
-                <span
-                  v-if="col.sortable && sortBy === col.key"
-                  class="base-data-table__sort-icon"
-                  aria-hidden="true"
-                >
-                  {{ sortOrder === 'asc' ? '↑' : '↓' }}
+              <button
+                v-if="col.sortable"
+                type="button"
+                class="base-data-table__sort-btn"
+                :aria-label="`Ordenar por ${col.label}`"
+                @click="toggleSort(col.key)"
+                @keydown.enter.space.prevent="toggleSort(col.key)"
+              >
+                <span class="base-data-table__th-content">
+                  {{ col.label }}
+                  <span
+                    v-if="internalSortBy === col.key"
+                    class="base-data-table__sort-icon"
+                    aria-hidden="true"
+                  >
+                    {{ internalSortOrder === 'asc' ? '↑' : '↓' }}
+                  </span>
                 </span>
+              </button>
+              <span
+                v-else
+                class="base-data-table__th-content"
+              >
+                {{ col.label }}
               </span>
             </th>
           </tr>
@@ -180,24 +225,30 @@ function onRowClick(row: unknown) {
   overflow: visible;
 }
 .base-data-table__loading {
+  padding: var(--spacing-lg) var(--widget-padding);
+}
+.base-data-table__skeleton {
   display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+.base-data-table__skeleton-row {
+  display: grid;
+  grid-template-columns: repeat(var(--table-skel-cols, 4), minmax(0, 1fr));
+  gap: var(--spacing-md);
   align-items: center;
-  justify-content: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-2xl);
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
 }
-.base-data-table__spinner {
-  width: 1.25rem;
-  height: 1.25rem;
-  border: 2px solid var(--color-border);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+.base-data-table__skeleton-row--head {
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--spacing-2xs);
 }
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.base-data-table__skel-block {
+  width: 100%;
+  max-width: 100%;
+}
+.base-data-table__skeleton-row:not(.base-data-table__skeleton-row--head) .base-data-table__skel-block :deep(.p-skeleton) {
+  border-radius: var(--radius-sm);
 }
 .base-data-table__scroll {
   border-radius: inherit;
@@ -229,13 +280,23 @@ function onRowClick(row: unknown) {
 }
 .base-data-table__th--center { text-align: center; }
 .base-data-table__th--right { text-align: right; }
-.base-data-table__th--sortable {
+.base-data-table__sort-btn {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
   cursor: pointer;
   user-select: none;
+  color: inherit;
+  font: inherit;
   transition: color var(--duration-fast) ease;
 }
-.base-data-table__th--sortable:hover {
+.base-data-table__sort-btn:hover {
   color: var(--color-primary);
+}
+.base-data-table__sort-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-sm);
 }
 .base-data-table__th-content {
   display: inline-flex;

@@ -3,8 +3,8 @@ import { ref, computed } from 'vue'
 import Card from 'primevue/card'
 import Button from 'primevue/button'
 import Fieldset from 'primevue/fieldset'
-import Message from 'primevue/message'
 import PageView from '@/components/layout/PageView.vue'
+import ErrorCard from '@/components/ui/ErrorCard.vue'
 import { analyticsApi } from '@/api/modules/analytics.api'
 
 const dateRange = ref<{ start: string; end: string }>({ start: '', end: '' })
@@ -179,14 +179,12 @@ async function doExport() {
         >✓</span>
         <span>Exportação gerada. O download foi iniciado. Verifique a pasta de downloads do navegador.</span>
       </div>
-        <Message
+        <ErrorCard
           v-if="exportError"
-          severity="error"
-          :closable="false"
-          class="export-view__error-msg"
-        >
-          {{ exportError }}
-        </Message>
+          title="Falha na exportação"
+          :message="exportError"
+          :on-retry="doExport"
+        />
       </template>
     </Card>
   </PageView>
@@ -195,8 +193,9 @@ async function doExport() {
 <style scoped>
 .export-view__card {
   margin-top: 0;
-  border-radius: var(--radius-md);
-  overflow: hidden;
+}
+.export-view__card :deep(.p-card-content) {
+  padding: var(--spacing-lg) var(--spacing-xl);
 }
 .export-view__dates {
   display: flex;
@@ -256,7 +255,7 @@ async function doExport() {
   margin-top: var(--spacing-lg);
 }
 .export-view__actions :deep(.p-button) {
-  min-height: 2.75rem;
+  min-height: var(--touch-target-min);
 }
 .export-view__actions :deep(.p-button:focus-visible),
 .export-view__dates input:focus-visible {
@@ -279,16 +278,6 @@ async function doExport() {
 .export-view__success-icon {
   font-weight: 700;
   flex-shrink: 0;
-}
-.export-view__error {
-  margin-top: var(--spacing-lg);
-  padding: var(--spacing-lg);
-  background: var(--color-error-soft);
-  border: 1px solid color-mix(in srgb, var(--color-error) 35%, transparent);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  color: var(--color-error);
-  line-height: var(--leading-snug);
 }
 @media (max-width: 640px) {
   .export-view__dates {

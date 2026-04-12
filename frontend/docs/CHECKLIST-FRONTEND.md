@@ -58,4 +58,4 @@ Use frases como as abaixo no Composer para escopo claro:
 - **Checklist antes de PR** — “Rode o checklist de entrega: build, lint, format:check, tokens, a11y e me diga o que falhar.”
 - **Média** — “Implemente os itens de média prioridade do checklist: tokens de ícones, responsividade 375/1440, ARIA EmptyState/ErrorCard, tratamento de erro nas APIs.”
 
-Referência completa do checklist: `frontend/docs/CHECKLIST-FRONTEND.md`.
+Documentação frontend (índice, design system): ver [`README.md`](./README.md) nesta pasta.

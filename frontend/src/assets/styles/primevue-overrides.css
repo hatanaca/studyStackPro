@@ -1,0 +1,281 @@
+/**
+ * Overrides PrimeVue 4 (Aura) para alinhar ao design system StudyTrackPro.
+ * Carregado após variables.css via main.css.
+ */
+
+/* ── Card ── */
+.p-card.p-component {
+  border-radius: var(--card-chrome-radius);
+  box-shadow: var(--card-chrome-shadow);
+  border: var(--card-chrome-border);
+  background: var(--color-bg-card);
+  overflow: hidden;
+}
+.p-card .p-card-title {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+  color: var(--color-text);
+}
+.p-card .p-card-subtitle {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-top: var(--spacing-2xs);
+  line-height: var(--leading-snug);
+}
+
+/* ── Fieldset ── */
+.p-fieldset.p-component {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.p-fieldset .p-fieldset-legend {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+.p-fieldset .p-fieldset-content {
+  padding-top: var(--spacing-xs);
+}
+
+/* ── Accordion (FAQ / Ajuda) ── */
+.p-accordion.p-component {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+.p-accordionpanel {
+  border: var(--card-chrome-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.p-accordionheader {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+  transition: background var(--duration-fast) ease, color var(--duration-fast) ease;
+}
+.p-accordionheader:hover {
+  background: color-mix(in srgb, var(--color-bg-soft) 55%, var(--color-bg-card));
+}
+.p-accordionheader-toggle-icon {
+  color: var(--color-text-muted);
+}
+.p-accordioncontent-content {
+  padding: 0 var(--spacing-lg) var(--spacing-lg);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-text);
+}
+
+/* ── Tabs (Perfil, Configurações) ── */
+.p-tabs.p-component {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+.p-tablist {
+  background: color-mix(in srgb, var(--color-bg-soft) 45%, var(--color-bg-card));
+  border: var(--card-chrome-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xs);
+  box-shadow: var(--shadow-sm);
+}
+.p-tablist-tab-list {
+  gap: var(--spacing-2xs);
+}
+.p-tablist-active-bar {
+  display: none;
+}
+.p-tab {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
+}
+.p-tab:not(.p-tab-active):hover {
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-bg-card) 70%, transparent);
+}
+.p-tab.p-tab-active {
+  color: var(--color-primary-contrast);
+  background: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+.p-tabpanels {
+  padding-top: 0;
+}
+.p-tabpanel {
+  outline: none;
+}
+
+/* ── InputText & Textarea ── */
+.p-inputtext.p-component,
+.p-textarea.p-component {
+  border-radius: var(--form-input-radius);
+  border: 1px solid var(--form-input-border);
+  background: var(--form-input-bg);
+  color: var(--form-input-text);
+  font-size: var(--form-input-font-size);
+  padding: var(--form-input-padding);
+  min-height: var(--form-input-height);
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
+}
+.p-textarea.p-component {
+  min-height: calc(var(--form-input-height) * 2);
+  line-height: var(--leading-normal);
+}
+.p-inputtext.p-component:enabled:hover,
+.p-textarea.p-component:enabled:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--form-input-border));
+}
+.p-inputtext.p-component:enabled:focus,
+.p-textarea.p-component:enabled:focus {
+  border-color: var(--form-input-border-focus);
+  box-shadow: var(--form-input-shadow-focus);
+}
+.p-inputtext.p-component.p-invalid,
+.p-textarea.p-component.p-invalid {
+  border-color: var(--form-input-border-error);
+}
+/* Campos de data nativos costumam usar a classe Aura sem ser InputText real */
+input.p-inputtext[type='date'],
+input.p-inputtext[type='time'],
+input.p-inputtext[type='datetime-local'] {
+  min-height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+/* Tamanho small do Prime */
+.p-inputtext.p-inputfield-sm {
+  min-height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--text-xs);
+}
+.p-textarea.p-inputfield-sm {
+  min-height: calc(var(--input-height-sm) * 2);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--text-xs);
+}
+
+/* ── Dialog ── */
+.p-dialog.p-component {
+  border-radius: var(--radius-lg);
+  border: var(--card-chrome-border);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.p-dialog .p-dialog-header {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-bg-soft) 35%, var(--color-bg-card));
+}
+.p-dialog .p-dialog-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+.p-dialog .p-dialog-content {
+  padding: var(--spacing-xl);
+  background: var(--color-bg-card);
+}
+.p-dialog .p-dialog-footer {
+  padding: var(--spacing-md) var(--spacing-xl) var(--spacing-xl);
+  gap: var(--spacing-sm);
+  background: var(--color-bg-card);
+}
+
+/* ── Button ── */
+.p-button {
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  transition:
+    background var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-out-expo);
+}
+.p-button:not(:disabled):active {
+  transform: scale(0.98);
+}
+@media (prefers-reduced-motion: reduce) {
+  .p-button:not(:disabled):active {
+    transform: none;
+  }
+}
+
+/* ── Popover / OverlayPanel ── */
+.p-popover.p-component {
+  border-radius: var(--radius-lg);
+  border: var(--card-chrome-border);
+  box-shadow: var(--dropdown-shadow, var(--shadow-lg));
+  background: var(--color-bg-card);
+}
+.p-popover-content {
+  padding: var(--spacing-sm);
+}
+
+/* ── Tag ── */
+.p-tag.p-component {
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+}
+
+/* ── ProgressBar ── */
+.p-progressbar.p-component {
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  height: 0.65rem;
+}
+.p-progressbar .p-progressbar-value {
+  border-radius: var(--radius-full);
+}
+
+/* ── Toast ── */
+.p-toast .p-toast-message {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: var(--card-chrome-border);
+}
+
+/* ── ConfirmDialog ── */
+.p-confirmdialog .p-dialog-content {
+  padding-top: var(--spacing-lg);
+}
+.p-confirmdialog-message {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-text);
+}
+
+/* ── Skeleton ── */
+.p-skeleton {
+  border-radius: var(--radius-md);
+}

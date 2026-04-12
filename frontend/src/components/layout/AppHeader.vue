@@ -23,8 +23,11 @@ defineProps<{
   border-bottom: 1px solid var(--color-border);
 }
 .app-header__title {
+  font-family: var(--font-display);
   font-size: var(--text-lg);
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
   color: var(--color-text);
 }
 </style>

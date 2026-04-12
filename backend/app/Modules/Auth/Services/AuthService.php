@@ -7,6 +7,7 @@ use App\Modules\Auth\DTOs\LoginDTO;
 use App\Modules\Auth\DTOs\RegisterDTO;
 use App\Modules\Auth\Repositories\Contracts\AuthRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -21,7 +22,8 @@ class AuthService
      * Injeta o repositório de auth para abstrair persistência.
      */
     public function __construct(
-        private AuthRepositoryInterface $authRepository
+        private AuthRepositoryInterface $authRepository,
+        private TokenService $tokenService
     ) {}
 
     /**
@@ -29,12 +31,71 @@ class AuthService
      */
     public function register(RegisterDTO $dto): User
     {
-        return $this->authRepository->create([
+        $startedAt = microtime(true);
+
+        // #region agent log
+        @file_put_contents(
+            base_path('../debug-ba100a.log'),
+            json_encode([
+                'sessionId' => 'ba100a',
+                'runId' => 'project-smoke',
+                'hypothesisId' => 'H7',
+                'location' => 'backend/app/Modules/Auth/Services/AuthService.php',
+                'message' => 'register_start',
+                'data' => ['hasTimezone' => $dto->timezone !== null],
+                'timestamp' => (int) round(microtime(true) * 1000),
+            ], JSON_UNESCAPED_SLASHES).PHP_EOL,
+            FILE_APPEND
+        );
+        // #endregion
+
+        $hashStartedAt = microtime(true);
+        $passwordHash = Hash::make($dto->password);
+
+        // #region agent log
+        @file_put_contents(
+            base_path('../debug-ba100a.log'),
+            json_encode([
+                'sessionId' => 'ba100a',
+                'runId' => 'project-smoke',
+                'hypothesisId' => 'H7',
+                'location' => 'backend/app/Modules/Auth/Services/AuthService.php',
+                'message' => 'register_hash_complete',
+                'data' => ['duration_ms' => round((microtime(true) - $hashStartedAt) * 1000, 2)],
+                'timestamp' => (int) round(microtime(true) * 1000),
+            ], JSON_UNESCAPED_SLASHES).PHP_EOL,
+            FILE_APPEND
+        );
+        // #endregion
+
+        $createStartedAt = microtime(true);
+        $user = $this->authRepository->create([
             'name' => $dto->name,
             'email' => $dto->email,
-            'password' => Hash::make($dto->password),
+            'password' => $passwordHash,
             'timezone' => $dto->timezone,
         ]);
+
+        // #region agent log
+        @file_put_contents(
+            base_path('../debug-ba100a.log'),
+            json_encode([
+                'sessionId' => 'ba100a',
+                'runId' => 'project-smoke',
+                'hypothesisId' => 'H7',
+                'location' => 'backend/app/Modules/Auth/Services/AuthService.php',
+                'message' => 'register_create_complete',
+                'data' => [
+                    'duration_ms' => round((microtime(true) - $createStartedAt) * 1000, 2),
+                    'total_duration_ms' => round((microtime(true) - $startedAt) * 1000, 2),
+                ],
+                'timestamp' => (int) round(microtime(true) * 1000),
+            ], JSON_UNESCAPED_SLASHES).PHP_EOL,
+            FILE_APPEND
+        );
+        // #endregion
+
+        return $user;
     }
 
     /**
@@ -48,7 +109,7 @@ class AuthService
             return null;
         }
         $user = Auth::user();
-        $user->tokens()->delete();
+        $this->tokenService->revokeMany($user->tokens()->get());
         $token = $user->createToken('api-token')->plainTextToken;
 
         return ['user' => $user, 'token' => $token];
@@ -60,6 +121,10 @@ class AuthService
     public function updateProfile(User $user, array $data): User
     {
         $user->update($data);
+
+        if (array_key_exists('timezone', $data)) {
+            Cache::forget("user_timezone:{$user->id}");
+        }
 
         return $user->fresh();
     }
@@ -75,7 +140,7 @@ class AuthService
 
         $updated = $this->authRepository->updatePassword($user, Hash::make($newPassword));
         if ($updated) {
-            $user->tokens()->delete();
+            $this->tokenService->revokeMany($user->tokens()->get());
         }
 
         return $updated;

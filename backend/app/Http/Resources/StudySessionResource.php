@@ -23,6 +23,7 @@ class StudySessionResource extends JsonResource
             'started_at' => $this->started_at?->toIso8601String(),
             'ended_at' => $this->ended_at?->toIso8601String(),
             'duration_min' => $this->duration_min,
+            'productivity_score' => $this->productivity_score,
             'duration_formatted' => $this->duration_formatted,
             'notes' => $this->notes,
             'mood' => $this->mood,

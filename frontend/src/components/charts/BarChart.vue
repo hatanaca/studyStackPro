@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type { ApexOptions } from 'apexcharts'
 import VueApexCharts from 'vue3-apexcharts'
 import { useApexChartTheme } from '@/composables/useApexChartTheme'
+import { useMediaQuery } from '@/composables/useMediaQuery'
 
 const props = withDefaults(
   defineProps<{
@@ -43,6 +44,31 @@ const props = withDefaults(
 )
 
 const { baseOptions, theme } = useApexChartTheme()
+const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
+/** Evita Apex `responsive` nativo: em viewports estreitas ele reaplica Config várias vezes e pode corromper yaxis.title. */
+const compactViewport = useMediaQuery('(max-width: 639px)')
+const tinyViewport = useMediaQuery('(max-width: 479px)')
+
+const resolvedChartHeight = computed(() => {
+  const h = props.chartHeight
+  if (typeof h === 'string') return h
+
+  const isHorizontal = props.orientation === 'horizontal'
+  const n = props.data?.values?.length ?? 0
+
+  // Barras horizontais: nunca comprimir abaixo do espaço por categoria (evita “faixa” no topo).
+  if (isHorizontal && n > 0) {
+    const per = tinyViewport.value ? 46 : compactViewport.value ? 44 : 40
+    // Espaço extra para eixo X, título e linhas de grade (evita “fatiar” em 100% zoom).
+    const pad = tinyViewport.value ? 130 : compactViewport.value ? 140 : 150
+    const floor = Math.min(n * per + pad, 680)
+    return Math.max(h, floor)
+  }
+
+  if (tinyViewport.value) return Math.min(h, 240)
+  if (compactViewport.value) return Math.min(h, 280)
+  return h
+})
 
 type Rgb = { r: number; g: number; b: number }
 
@@ -96,12 +122,17 @@ const chartOptions = computed<ApexOptions>(() => {
   const isHorizontal = props.orientation === 'horizontal'
   const t = theme.value
   const unit = props.valueUnit || 'min'
+  const chartHeight = resolvedChartHeight.value
+  const yLabelMaxW = tinyViewport.value ? 88 : compactViewport.value ? 108 : 160
+  const yLabelFont = tinyViewport.value ? '10px' : compactViewport.value ? '11px' : t.fontSizeAxis
+  const xTitleText = props.xAxisTitle ?? ''
+  const barH = isHorizontal ? (compactViewport.value ? '82%' : '72%') : '75%'
   return {
     ...baseOptions.value,
     chart: {
       ...baseOptions.value.chart,
       type: 'bar',
-      height: props.chartHeight,
+      height: chartHeight,
       background: 'transparent',
       toolbar: {
         show: props.showToolbar,
@@ -111,11 +142,17 @@ const chartOptions = computed<ApexOptions>(() => {
         export: { csv: { headerCategory: 'Categoria', headerValue: 'Valor' }, svg: {}, png: {} },
       },
       animations: {
-        enabled: true,
+        enabled: !prefersReducedMotion.value,
         easing: 'easeinout',
-        speed: 500,
-        animateGradually: { enabled: true, delay: 60 },
-        dynamicAnimation: { enabled: true, speed: 300 },
+        speed: prefersReducedMotion.value ? 0 : 650,
+        animateGradually: {
+          enabled: !prefersReducedMotion.value,
+          delay: prefersReducedMotion.value ? 0 : 40,
+        },
+        dynamicAnimation: {
+          enabled: !prefersReducedMotion.value,
+          speed: prefersReducedMotion.value ? 0 : 400,
+        },
       },
       dropShadow: { enabled: false },
       zoom: { enabled: false },
@@ -145,7 +182,7 @@ const chartOptions = computed<ApexOptions>(() => {
       bar: {
         horizontal: isHorizontal,
         columnWidth: '60%',
-        barHeight: isHorizontal ? '72%' : '75%',
+        barHeight: barH,
         borderRadius: props.borderRadius,
         borderRadiusApplication: 'end',
         borderRadiusWhenStacked: 'last',
@@ -170,13 +207,18 @@ const chartOptions = computed<ApexOptions>(() => {
     },
     grid: {
       ...baseOptions.value.grid,
-      xaxis: { lines: { show: false } },
+      xaxis: {
+        lines: {
+          show: isHorizontal,
+          strokeDashArray: isHorizontal ? 3 : 0,
+        },
+      },
       yaxis: { lines: { show: true, strokeDashArray: 2 } },
       padding: {
-        top: isHorizontal ? 4 : 12,
-        right: 12,
-        bottom: isHorizontal ? 12 : 36,
-        left: isHorizontal ? 4 : 12,
+        top: isHorizontal ? 18 : 12,
+        right: isHorizontal ? (compactViewport.value ? 10 : 18) : 12,
+        bottom: isHorizontal ? (tinyViewport.value ? 36 : compactViewport.value ? 44 : 52) : 36,
+        left: isHorizontal ? (compactViewport.value ? 4 : 10) : 12,
       },
     },
     xaxis: {
@@ -184,26 +226,60 @@ const chartOptions = computed<ApexOptions>(() => {
       categories: props.data?.labels ?? [],
       tickAmount: undefined,
       max: undefined,
-      title: props.xAxisTitle ? { text: props.xAxisTitle, style: { color: t.textMuted, fontSize: t.fontSize } } : undefined,
+      axisBorder: { show: isHorizontal, color: t.gridColor },
+      axisTicks: { show: isHorizontal, color: t.gridColor },
+      // ApexCharts acessa yaxis/xaxis title.text sem optional chaining — title deve ser objeto com text string.
+      title: {
+        text: xTitleText,
+        offsetY: isHorizontal ? 4 : 0,
+        style: {
+          color: t.textMuted,
+          fontSize: compactViewport.value && isHorizontal ? '10px' : t.fontSize,
+          fontFamily: t.fontFamily,
+        },
+      },
       labels: {
         ...baseOptions.value.xaxis?.labels,
+        show: true,
         rotate: isHorizontal ? 0 : -40,
         maxHeight: 72,
         trim: true,
+        offsetY: isHorizontal ? 4 : 0,
       },
       crosshairs: { show: false },
     },
-    yaxis: {
-      ...(isHorizontal ? {} : { min: 0, tickAmount: 5, forceNiceScale: true }),
-      title: props.yAxisTitle ? { text: props.yAxisTitle, style: { color: t.textMuted, fontSize: t.fontSize } } : undefined,
-      labels: {
-        style: { colors: t.textMuted, fontSize: t.fontSizeAxis },
-        align: isHorizontal ? 'left' : 'right',
-        offsetX: isHorizontal ? -10 : 0,
-        formatter: (val: number | string) => (isHorizontal ? String(val) : String(Math.round(Number(val)))),
+    // Array com um eixo: o Apex faz merge via extendArray e exige yaxe.title definido
+    // (getyAxisTitleCoords usa yaxe.title.text sem checar title — title ausente quebra).
+    yaxis: [
+      {
+        show: true,
+        ...(isHorizontal ? {} : { min: 0, tickAmount: 5, forceNiceScale: true }),
+        title: {
+          text: props.yAxisTitle ?? '',
+          rotate: isHorizontal ? 0 : -90,
+          offsetY: 0,
+          offsetX: 0,
+          style: {
+            color: t.textMuted,
+            fontSize: t.fontSize,
+            fontFamily: t.fontFamily,
+            fontWeight: 600,
+          },
+        },
+        labels: {
+          maxWidth: isHorizontal ? yLabelMaxW : 160,
+          trim: true,
+          style: { colors: t.textMuted, fontSize: yLabelFont },
+          align: isHorizontal ? 'left' : 'right',
+          offsetX: isHorizontal ? (compactViewport.value ? -4 : -10) : 0,
+          formatter: (val: number | string) => (isHorizontal ? String(val) : String(Math.round(Number(val)))),
+        },
+        axisBorder: { show: false },
+        axisTicks: { show: false },
+        crosshairs: { show: false },
+        tooltip: { enabled: false },
       },
-      crosshairs: { show: false },
-    },
+    ],
     legend: { show: false },
     tooltip: {
       ...baseOptions.value.tooltip,
@@ -215,11 +291,7 @@ const chartOptions = computed<ApexOptions>(() => {
         title: { formatter: () => (props.valueUnit === 'h' ? 'Horas' : 'Minutos') },
       },
     },
-    responsive: [
-      { breakpoint: 640, options: { chart: { height: 280 }, xaxis: { title: undefined } } },
-      { breakpoint: 480, options: { chart: { height: 260 }, dataLabels: { style: { fontSize: '10px' } }, plotOptions: { bar: { columnWidth: '65%' } } } },
-      { breakpoint: 360, options: { chart: { height: 240 }, legend: { fontSize: '10px' } } },
-    ],
+    responsive: [],
   }
 })
 </script>
@@ -238,7 +310,7 @@ const chartOptions = computed<ApexOptions>(() => {
     >
       <VueApexCharts
         type="bar"
-        :height="chartHeight"
+        :height="resolvedChartHeight"
         :options="chartOptions"
         :series="series"
         class="apex-bar"

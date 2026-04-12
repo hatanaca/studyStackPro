@@ -1,6 +1,7 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAnalyticsStore } from '@/stores/analytics.store'
+import { isConnected } from '@/composables/useWebSocket'
 
 /** Intervalo de polling do dashboard quando WebSocket desconectado (2min) */
 const POLLING_INTERVAL_MS = 120_000
@@ -21,13 +22,11 @@ export function useDashboard(options?: UseDashboardOptions) {
   const analyticsStore = useAnalyticsStore()
   const refetchDashboard = options?.refetchDashboard
 
-  const wsIsConnected = ref(false)
-
   let pollingIntervalId: ReturnType<typeof setInterval> | null = null
-  let reconnectCheckId: ReturnType<typeof setInterval> | null = null
-  let lastConnectedAt = Date.now()
+  let disconnectTimeoutId: ReturnType<typeof setTimeout> | null = null
   let lastVisibilityFetchAt = 0
   let consecutiveErrors = 0
+  let stopWatcher: (() => void) | null = null
 
   function getFetchFn() {
     return refetchDashboard ?? (() => analyticsStore.fetchDashboard(true))
@@ -56,6 +55,28 @@ export function useDashboard(options?: UseDashboardOptions) {
     }
   }
 
+  function clearDisconnectTimeout() {
+    if (disconnectTimeoutId) {
+      clearTimeout(disconnectTimeoutId)
+      disconnectTimeoutId = null
+    }
+  }
+
+  function onWsConnectionChange(connected: boolean) {
+    clearDisconnectTimeout()
+    if (connected) {
+      consecutiveErrors = 0
+      stopPolling()
+    } else if (authStore.user?.id && consecutiveErrors < 3) {
+      disconnectTimeoutId = setTimeout(() => {
+        disconnectTimeoutId = null
+        if (!isConnected.value) {
+          startPolling()
+        }
+      }, DISCONNECTED_POLLING_DELAY_MS)
+    }
+  }
+
   async function handleVisibilityChange() {
     if (document.visibilityState !== 'visible') return
 
@@ -73,29 +94,8 @@ export function useDashboard(options?: UseDashboardOptions) {
 
   onMounted(() => {
     document.addEventListener('visibilitychange', handleVisibilityChange)
-
     try {
-      import('@/composables/useWebSocket').then(({ useWebSocket }) => {
-        const ws = useWebSocket()
-        wsIsConnected.value = ws.isConnected.value
-
-        reconnectCheckId = setInterval(() => {
-          const prev = wsIsConnected.value
-          wsIsConnected.value = ws.isConnected.value
-          if (wsIsConnected.value) {
-            lastConnectedAt = Date.now()
-            consecutiveErrors = 0
-            stopPolling()
-          } else if (authStore.user?.id && consecutiveErrors < 3) {
-            const disconnectedFor = Date.now() - lastConnectedAt
-            if (disconnectedFor > DISCONNECTED_POLLING_DELAY_MS) {
-              startPolling()
-            }
-          }
-        }, 5000)
-      }).catch(() => {
-        startPolling()
-      })
+      stopWatcher = watch(isConnected, onWsConnectionChange, { immediate: true })
     } catch {
       startPolling()
     }
@@ -104,10 +104,9 @@ export function useDashboard(options?: UseDashboardOptions) {
   onUnmounted(() => {
     document.removeEventListener('visibilitychange', handleVisibilityChange)
     stopPolling()
-    if (reconnectCheckId) {
-      clearInterval(reconnectCheckId)
-      reconnectCheckId = null
-    }
+    clearDisconnectTimeout()
+    stopWatcher?.()
+    stopWatcher = null
   })
 
   /**
@@ -115,15 +114,20 @@ export function useDashboard(options?: UseDashboardOptions) {
    * O dashboard principal é carregado via useDashboardQuery (TanStack Query).
    */
   async function initDashboard() {
-    analyticsStore.fetchHeatmap().catch(() => {})
-    analyticsStore.fetchWeekly().catch(() => {})
+    await Promise.all([
+      analyticsStore.fetchHeatmap().catch(() => {}),
+      analyticsStore.fetchWeekly().catch(() => {}),
+    ])
 
-    if (!analyticsStore.timeSeriesData['90d']?.length) {
-      analyticsStore.fetchTimeSeries('90d').catch(() => {})
-    }
+    // 30d: widgets padrão; 7d: progresso de metas (useGoalProgress); 90d: sob demanda no TimeSeriesWidget
+    const series: Promise<unknown>[] = []
     if (!analyticsStore.timeSeriesData['30d']?.length) {
-      analyticsStore.fetchTimeSeries('30d').catch(() => {})
+      series.push(analyticsStore.fetchTimeSeries('30d').catch(() => {}))
     }
+    if (!analyticsStore.timeSeriesData['7d']?.length) {
+      series.push(analyticsStore.fetchTimeSeries('7d').catch(() => {}))
+    }
+    if (series.length) await Promise.all(series)
   }
 
   return {

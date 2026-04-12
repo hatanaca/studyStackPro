@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch, shallowRef } from 'vue'
-import { use, init, type ECharts, type EChartsCoreOption } from 'echarts/core'
-import { PieChart } from 'echarts/charts'
-import { TooltipComponent } from 'echarts/components'
-import { CanvasRenderer } from 'echarts/renderers'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import type { ApexOptions } from 'apexcharts'
+import VueApexCharts from 'vue3-apexcharts'
 import Skeleton from 'primevue/skeleton'
 import { useApexChartTheme } from '@/composables/useApexChartTheme'
+import { useUiStore } from '@/stores/ui.store'
 import BarChart from '@/components/charts/BarChart.vue'
 import type { TechnologyMetric } from '@/types/domain.types'
 
@@ -20,25 +19,34 @@ const props = defineProps<{
   loading?: boolean
 }>()
 
-use([PieChart, TooltipComponent, CanvasRenderer])
-
 const currentType = ref<'polar' | 'bar'>('polar')
-const roseChartRef = ref<HTMLElement | null>(null)
-let roseChartInstance: ECharts | null = null
 
-const barChartHeight = shallowRef(340)
-function updateBarChartHeight() {
-  barChartHeight.value = Math.min(Math.max(Math.round(window.innerHeight * 0.48), 280), 460)
+const viewport = ref({ w: 1024, h: 800 })
+function syncViewport() {
+  if (typeof window === 'undefined') return
+  viewport.value = { w: window.innerWidth, h: window.innerHeight }
 }
 onMounted(() => {
-  updateBarChartHeight()
-  window.addEventListener('resize', updateBarChartHeight, { passive: true })
+  syncViewport()
+  window.addEventListener('resize', syncViewport, { passive: true })
 })
 onUnmounted(() => {
-  window.removeEventListener('resize', updateBarChartHeight)
+  window.removeEventListener('resize', syncViewport)
+})
+
+/** Altura do gráfico de barras: sobe no mobile conforme N categorias (evita área vazia + barras minúsculas). */
+const barChartHeight = computed(() => {
+  const n = Math.max(slices.value.length, 1)
+  const { w, h } = viewport.value
+  const narrow = w < 640
+  const base = Math.min(Math.max(Math.round(h * 0.45), 260), 480)
+  const perBar = narrow ? 50 : 42
+  const minByCategories = n * perBar + 108
+  return Math.min(narrow ? 680 : 580, Math.max(base, minByCategories))
 })
 
 const { theme: chartTheme } = useApexChartTheme()
+const uiStore = useUiStore()
 
 const fallbackColors = computed(() => {
   const p = chartTheme.value.palette
@@ -77,113 +85,76 @@ const totalHoursLabel = computed(() => {
   return `${v.toFixed(1)}h`
 })
 
-const roseSeriesData = computed(() =>
-  slices.value.map((s) => ({
-    name: s.label,
-    value: Math.max(0, s.value),
-    itemStyle: { color: s.color },
-  }))
-)
+const polarSeries = computed(() => slices.value.map((s) => s.value))
 
-function ensureRoseInstance(): boolean {
-  const el = roseChartRef.value
-  if (!el || currentType.value !== 'polar') return false
+const polarOptions = computed<ApexOptions>(() => {
+  const colors = slices.value.map((s) => s.color)
+  const labels = slices.value.map((s) => s.label)
+  const total = Math.max(totalValue.value, 1e-6)
 
-  const w = el.clientWidth
-  const h = el.clientHeight
-  if (w < 2 || h < 2) return false
-
-  const dom = roseChartInstance?.getDom?.()
-  if (roseChartInstance && dom !== el) {
-    try {
-      roseChartInstance.dispose()
-    } catch {
-      /* já descartado */
-    }
-    roseChartInstance = null
-  }
-  if (!roseChartInstance) {
-    try {
-      roseChartInstance = init(el)
-    } catch {
-      roseChartInstance = null
-      return false
-    }
-  }
-  return !!roseChartInstance
-}
-
-function renderRoseChart() {
-  if (currentType.value !== 'polar' || !roseChartRef.value) return
-  if (!ensureRoseInstance() || !roseChartInstance) return
-
-  const data = roseSeriesData.value.filter((d) => Number.isFinite(d.value) && d.value >= 0)
-  if (!data.length) return
-
-  const rawTotal = Math.max(totalValue.value, 1e-6)
-  const option: EChartsCoreOption = {
-    animation: true,
-    animationDuration: 700,
-    animationEasing: 'quinticOut' as const,
-    animationDelay: (idx: number) => idx * 45,
-    animationDurationUpdate: 350,
-    animationEasingUpdate: 'cubicOut' as const,
-    tooltip: {
-      trigger: 'item',
-        formatter: (params: unknown) => {
-        const p = params as { dataIndex?: number; name?: string; value?: number }
-        const idx = p.dataIndex ?? 0
-        const rawValue = typeof p.value === 'number' ? p.value : data[idx]?.value ?? 0
-        const pct = ((rawValue / rawTotal) * 100).toFixed(1)
-        return `${p.name ?? ''}<br/>${rawValue.toFixed(1)}h (${pct}%)`
+  return {
+    chart: {
+      type: 'polarArea',
+      background: 'transparent',
+      fontFamily: chartTheme.value.fontFamily,
+      toolbar: { show: false },
+      animations: {
+        enabled: true,
+        easing: 'easeinout',
+        speed: 600,
+        dynamicAnimation: { enabled: true, speed: 350 },
       },
     },
-    legend: { show: false },
-    series: [
+    labels,
+    colors,
+    stroke: {
+      width: 1,
+      colors: [chartTheme.value.background],
+    },
+    fill: {
+      opacity: 0.85,
+    },
+    plotOptions: {
+      polarArea: {
+        rings: { strokeWidth: 0 },
+        spokes: { strokeWidth: 0.5 },
+      },
+    },
+    yaxis: { show: false },
+    legend: {
+      show: true,
+      position: 'bottom',
+      fontSize: chartTheme.value.fontSize,
+      fontFamily: chartTheme.value.fontFamily,
+      labels: { colors: chartTheme.value.textMuted },
+      markers: { size: 5, offsetX: -2 },
+      itemMargin: { horizontal: 8, vertical: 4 },
+    },
+    dataLabels: { enabled: false },
+    tooltip: {
+      theme: uiStore.theme === 'dark' ? 'dark' : 'light',
+      style: { fontSize: chartTheme.value.fontSize, fontFamily: chartTheme.value.fontFamily },
+      y: {
+        formatter: (val: number) => {
+          const pct = ((val / total) * 100).toFixed(1)
+          return `${val.toFixed(1)}h (${pct}%)`
+        },
+      },
+    },
+    responsive: [
       {
-        name: 'Tecnologias',
-        type: 'pie',
-        roseType: 'radius',
-        radius: ['14%', '74%'],
-        center: ['50%', '50%'],
-        avoidLabelOverlap: true,
-        selectedMode: false,
-        itemStyle: {
-          borderRadius: 5,
-          borderColor: chartTheme.value.background,
-          borderWidth: 2,
+        breakpoint: 640,
+        options: {
+          legend: { position: 'bottom', fontSize: '11px' },
         },
-        label: {
-          show: true,
-          color: chartTheme.value.textMuted,
-          fontSize: 12,
-          formatter: '{b}',
-        },
-        labelLine: {
-          show: true,
-          lineStyle: { color: chartTheme.value.gridColor, width: 1 },
-          length: 8,
-          length2: 12,
-        },
-        emphasis: { scale: false, label: { show: true } },
-        data,
       },
     ],
   }
+})
 
-  try {
-    roseChartInstance.setOption(option, true)
-    roseChartInstance.resize()
-  } catch (e) {
-    console.warn('[TechDistributionWidget] ECharts polar:', e)
-    try {
-      roseChartInstance.dispose()
-    } catch {
-      /* ignore */
-    }
-    roseChartInstance = null
-  }
-}
+const polarChartHeight = computed(() =>
+  Math.min(Math.max(Math.round(viewport.value.h * 0.44), 260), 420)
+)
 
 const barChartData = computed(() => {
   const values = slices.value.map((s) => Number(s.value) || 0)
@@ -194,63 +165,13 @@ const barChartData = computed(() => {
   const scores = values.map((v) => (max === min ? 60 : Math.round(10 + ((v - min) / range) * 90)))
   return { labels, values, scores }
 })
-
-function onResize() {
-  if (currentType.value === 'polar' && roseChartInstance) roseChartInstance.resize()
-}
-
-onMounted(() => {
-  nextTick(() => {
-    requestAnimationFrame(() => renderRoseChart())
-  })
-  window.addEventListener('resize', onResize)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', onResize)
-  if (roseChartInstance) {
-    roseChartInstance.dispose()
-    roseChartInstance = null
-  }
-})
-
-watch(currentType, () => {
-  if (currentType.value === 'bar') {
-    if (roseChartInstance) {
-      try {
-        roseChartInstance.dispose()
-      } catch {
-        /* ignore */
-      }
-      roseChartInstance = null
-    }
-  }
-  if (currentType.value === 'polar') {
-    nextTick(() => {
-      requestAnimationFrame(() => renderRoseChart())
-    })
-  }
-})
-
-watch(
-  () => [
-    props.loading,
-    slices.value.length,
-    chartTheme.value.textColor,
-    chartTheme.value.textMuted,
-    chartTheme.value.gridColor,
-    chartTheme.value.background,
-  ],
-  () => {
-    if (props.loading || !slices.value.length || currentType.value !== 'polar') return
-    nextTick(() => requestAnimationFrame(() => renderRoseChart()))
-  },
-  { immediate: true }
-)
 </script>
 
 <template>
-  <div class="tech-dist-widget">
+  <div
+    class="tech-dist-widget"
+    :class="{ 'tech-dist-widget--bar-mode': currentType === 'bar' }"
+  >
     <div class="widget-header">
       <div class="widget-header__top">
         <h3 class="widget-title">Distribuição por tecnologia</h3>
@@ -285,8 +206,14 @@ watch(
 
     <div v-else-if="slices.length" class="chart-area">
       <Transition name="chart-switch" mode="out-in">
-        <div v-if="currentType === 'polar'" key="polar" class="chart-wrap chart-wrap--svg">
-          <div ref="roseChartRef" class="tech-pie-chart" />
+        <div v-if="currentType === 'polar'" key="polar" class="chart-wrap chart-wrap--polar">
+          <VueApexCharts
+            type="polarArea"
+            :height="polarChartHeight"
+            :options="polarOptions"
+            :series="polarSeries"
+            class="apex-polar"
+          />
         </div>
         <div v-else key="bar" class="chart-wrap chart-wrap--bar">
           <div class="bar-chart-slot">
@@ -329,6 +256,13 @@ watch(
   min-height: calc(var(--chart-stage-height) + 5rem);
   display: flex;
   flex-direction: column;
+}
+
+.tech-dist-widget--bar-mode {
+  --chart-stage-height: clamp(340px, min(56vh, 600px), 620px);
+  overflow-x: hidden;
+  overflow-y: visible;
+  min-height: calc(var(--chart-stage-height) + 5rem);
 }
 
 .widget-header {
@@ -403,10 +337,6 @@ watch(
   padding: var(--spacing-lg);
   justify-content: center;
 }
-.chart-skeleton--inline {
-  min-height: var(--chart-stage-height);
-  width: 100%;
-}
 
 .skeleton-item {
   width: 70%;
@@ -437,16 +367,24 @@ watch(
   justify-content: center;
 }
 
-.chart-wrap--svg {
+.chart-wrap--polar {
   padding: var(--spacing-sm);
   height: var(--chart-stage-height);
 }
 
+/* Barras horizontais: sem clip no SVG (eixo X, grade e última barra). */
 .chart-wrap--bar {
+  overflow: visible;
+  align-items: flex-start;
+  justify-content: flex-start;
   padding: var(--spacing-sm);
   height: var(--chart-stage-height);
-  align-items: stretch;
-  justify-content: stretch;
+}
+
+.apex-polar {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .bar-chart-slot {
@@ -459,14 +397,6 @@ watch(
 
 .bar-chart-slot :deep(.bar-chart) {
   padding-top: 0;
-}
-
-.bar-chart-slot :deep(.bar-chart .score-scale) {
-  justify-content: flex-start;
-  margin-top: var(--spacing-xs);
-}
-
-.bar-chart-slot :deep(.bar-chart) {
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -474,16 +404,15 @@ watch(
   flex-direction: column;
 }
 
-.bar-chart-slot :deep(.bar-chart .chart-wrap) {
-  flex: 1;
-  min-height: 0;
-  height: 100% !important;
+.bar-chart-slot :deep(.bar-chart .score-scale) {
+  justify-content: flex-start;
+  margin-top: var(--spacing-xs);
 }
 
-.tech-pie-chart {
-  width: 100%;
-  height: 100%;
-  min-height: var(--chart-stage-min-height, 260px);
+.bar-chart-slot :deep(.bar-chart .chart-wrap) {
+  flex: 1 1 auto;
+  min-height: min(var(--widget-chart-min-height-sm), 100%);
+  height: auto;
 }
 
 .hint {
@@ -495,10 +424,20 @@ watch(
   text-align: center;
 }
 
-@media (max-width: 767px) {
+/* Abaixo de --screen-md (768px) */
+@media (max-width: calc(768px - 1px)) {
   .tech-dist-widget {
     --chart-stage-height: clamp(250px, 50vh, 340px);
     min-height: calc(var(--chart-stage-height) + 7rem);
+  }
+  .tech-dist-widget--bar-mode {
+    --chart-stage-height: clamp(300px, min(68vh, 620px), 640px);
+    min-height: calc(var(--chart-stage-height) + 6.5rem);
+  }
+  .tech-dist-widget--bar-mode .chart-wrap--bar {
+    height: auto;
+    min-height: var(--chart-stage-height);
+    max-height: none;
   }
 }
 
