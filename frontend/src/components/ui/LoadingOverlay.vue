@@ -33,7 +33,7 @@ withDefaults(
 .loading-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9998;
+  z-index: var(--z-overlay, 500);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -33,7 +33,7 @@ const { toasts, dismiss } = useToast()
   position: fixed;
   top: var(--spacing-lg);
   right: var(--spacing-lg);
-  z-index: 9999;
+  z-index: var(--z-toast, 1100);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
@@ -84,7 +84,7 @@ const { toasts, dismiss } = useToast()
   opacity: 1;
   width: var(--icon-size-md);
   height: var(--icon-size-md);
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   display: inline-flex;
   align-items: center;
   justify-content: center;

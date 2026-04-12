@@ -1,4 +1,5 @@
 import { watch } from 'vue'
+import { useQuerySessionEnabled } from '@/composables/useQueryAuthEnabled'
 import { useQuery } from '@tanstack/vue-query'
 import { useQueryClient } from '@tanstack/vue-query'
 import { technologiesApi } from '@/api/modules/technologies.api'
@@ -7,7 +8,9 @@ import { queryKeys } from '@/api/queryKeys'
 import { parseTechnologiesListResponse } from '@/types/schemas/api.schemas'
 import type { Technology } from '@/types/domain.types'
 
-const STALE_MS = 60 * 1000 // 1 min
+const STALE_MS = 5 * 60 * 1000 // 5 min — technologies rarely change
+/** Mantém o payload pequeno em memória mais tempo ao navegar entre rotas (menos GET duplicados). */
+const GC_MS = 30 * 60 * 1000
 
 /**
  * Query da lista de tecnologias com cache e sincronização com a store.
@@ -15,6 +18,9 @@ const STALE_MS = 60 * 1000 // 1 min
  */
 export function useTechnologiesQuery(options?: { enabled?: boolean }) {
   const store = useTechnologiesStore()
+  const enabled = useQuerySessionEnabled(
+    options?.enabled !== undefined ? () => options.enabled! : undefined,
+  )
 
   const query = useQuery({
     queryKey: queryKeys.technologies.list(),
@@ -23,15 +29,17 @@ export function useTechnologiesQuery(options?: { enabled?: boolean }) {
       return parseTechnologiesListResponse(res.data) as Technology[]
     },
     staleTime: STALE_MS,
-    enabled: options?.enabled ?? true,
+    gcTime: GC_MS,
+    refetchOnWindowFocus: false,
+    enabled,
   })
 
   watch(
     () => query.data.value,
     (data) => {
-      if (data?.length !== undefined) store.setTechnologies(data)
+      if (Array.isArray(data)) store.setTechnologies(data)
     },
-    { immediate: true }
+    { immediate: true },
   )
 
   return query

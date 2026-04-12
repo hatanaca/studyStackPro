@@ -88,7 +88,7 @@ const variantClass = computed(() => `base-progress--${props.variant}`)
   position: relative;
   width: 100%;
   background: var(--color-bg-soft);
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   overflow: hidden;
 }
 .base-progress--sm { height: 0.375rem; }
@@ -97,7 +97,7 @@ const variantClass = computed(() => `base-progress--${props.variant}`)
 
 .base-progress__bar {
   height: 100%;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   background: var(--color-primary);
   transition: width var(--duration-normal) var(--ease-out-expo);
 }

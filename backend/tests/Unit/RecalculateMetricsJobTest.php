@@ -37,7 +37,7 @@ class RecalculateMetricsJobTest extends TestCase
 
         $taggedCache = Mockery::mock();
         $taggedCache->shouldReceive('flush')->once();
-        Cache::shouldReceive('tags')->with(['analytics', "user:{$user->id}"])->andReturn($taggedCache);
+        Cache::shouldReceive('tags')->with(['analytics', "analytics:user:{$user->id}"])->andReturn($taggedCache);
 
         $job = new RecalculateMetricsJob($user->id, true);
         $job->handle($aggregator, $analyticsService);

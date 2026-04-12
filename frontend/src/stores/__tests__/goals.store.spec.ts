@@ -1,5 +1,4 @@
 import { setActivePinia, createPinia } from 'pinia'
-import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { useGoalsStore } from '../goals.store'
 
 describe('goals.store', () => {

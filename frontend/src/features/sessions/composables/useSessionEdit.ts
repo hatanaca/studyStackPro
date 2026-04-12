@@ -39,7 +39,9 @@ export function useSessionEdit() {
       notes: session.notes ?? '',
     }
     showEditModal.value = true
-    technologiesStore.fetchTechnologies()
+    if (!technologiesStore.technologies.length) {
+      void technologiesStore.fetchTechnologies()
+    }
   }
 
   function closeEdit() {
@@ -52,18 +54,29 @@ export function useSessionEdit() {
     const session = editingSession.value
     const form = editForm.value
     if (!session || editLoading.value) return
+    editLoading.value = true
     if (!form.technology_id || !form.date || form.duration < 1) {
       toast.error('Preencha todos os campos obrigatórios')
+      editLoading.value = false
       return
     }
-    editLoading.value = true
     try {
-      const startedAt = new Date(`${form.date}T12:00:00`)
-      const endedAt = new Date(startedAt.getTime() + form.duration * 60 * 1000)
+      const start = new Date(`${form.date}T12:00:00`)
+      const end = new Date(start.getTime() + form.duration * 60_000)
+      const toISO = (d: Date) => {
+        const y = d.getFullYear()
+        const mo = String(d.getMonth() + 1).padStart(2, '0')
+        const dd = String(d.getDate()).padStart(2, '0')
+        const hh = String(d.getHours()).padStart(2, '0')
+        const mi = String(d.getMinutes()).padStart(2, '0')
+        const ss = String(d.getSeconds()).padStart(2, '0')
+        return `${y}-${mo}-${dd}T${hh}:${mi}:${ss}`
+      }
       await sessionsApi.update(session.id, {
         technology_id: form.technology_id,
-        started_at: startedAt.toISOString(),
-        ended_at: endedAt.toISOString(),
+        started_at: toISO(start),
+        ended_at: toISO(end),
+        duration_min: form.duration,
         notes: form.notes.trim() || undefined,
       } as Partial<StudySession>)
       toast.success('Sessão atualizada!')

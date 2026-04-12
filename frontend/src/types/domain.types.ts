@@ -19,6 +19,7 @@ export interface Technology {
   description?: string
   is_active: boolean
   created_at?: string
+  updated_at?: string
 }
 
 /** Sessão de estudo. ended_at null = sessão ativa. */
@@ -59,7 +60,7 @@ export interface DashboardData {
 
 /** Métricas por tecnologia (minutos, sessões, % do total) */
 export interface TechnologyMetric {
-  technology: Technology
+  technology: Technology | null
   total_minutes: number
   total_hours?: number
   session_count: number

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import { useEndSession } from '@/features/sessions/composables/useEndSession'
 
 const router = useRouter()
@@ -7,7 +8,7 @@ const { activeSession, formattedTime, ending, endSession: doEndSession } = useEn
 
 async function endSession() {
   const success = await doEndSession()
-  if (success) router.push('/sessions')
+  if (success) router.push({ name: 'sessions' })
 }
 </script>
 
@@ -15,7 +16,7 @@ async function endSession() {
   <section class="session-focus" aria-label="Modo foco da sessão ativa">
     <div v-if="activeSession" class="session-focus__card">
       <p class="session-focus__label">Sessão em andamento</p>
-      <h1 class="session-focus__timer">{{ formattedTime }}</h1>
+      <h1 class="session-focus__timer" aria-live="off" aria-atomic="true" role="timer">{{ formattedTime }}</h1>
       <p v-if="activeSession.technology" class="session-focus__tech">
         {{ activeSession.technology.name }}
       </p>
@@ -34,23 +35,24 @@ async function endSession() {
           type="button"
           class="session-focus__btn"
           aria-label="Ver lista de sessões"
-          @click="router.push('/sessions')"
+          @click="router.push({ name: 'sessions' })"
         >
           Ver sessões
         </button>
       </div>
     </div>
-    <div v-else class="session-focus__empty">
-      <h1>Nenhuma sessão ativa</h1>
-      <p>Inicie uma sessão para entrar no modo foco.</p>
-      <button
-        type="button"
-        class="session-focus__btn"
-        aria-label="Ir para lista de sessões"
-        @click="router.push('/sessions')"
-      >
-        Ir para Sessões
-      </button>
+    <div
+      v-else
+      class="session-focus__empty"
+    >
+      <EmptyState
+        icon="🎯"
+        title="Nenhuma sessão ativa"
+        description="Inicie uma sessão em tempo real em Sessões para usar o modo foco."
+        action-label="Ir para Sessões"
+        :hide-action="false"
+        @action="router.push({ name: 'sessions' })"
+      />
     </div>
   </section>
 </template>
@@ -62,8 +64,7 @@ async function endSession() {
   place-items: center;
   padding: var(--spacing-xl);
 }
-.session-focus__card,
-.session-focus__empty {
+.session-focus__card {
   width: min(40rem, 100%);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
@@ -71,6 +72,22 @@ async function endSession() {
   box-shadow: var(--shadow-md);
   padding: var(--spacing-2xl);
   text-align: center;
+}
+.session-focus__empty {
+  width: min(40rem, 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-md);
+  padding: 0;
+  overflow: hidden;
+}
+.session-focus__empty :deep(.empty-state) {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+  padding: var(--spacing-2xl) var(--spacing-xl);
 }
 .session-focus__label {
   margin: 0 0 var(--spacing-sm);
@@ -102,7 +119,7 @@ async function endSession() {
   flex-wrap: wrap;
 }
 .session-focus__btn {
-  min-height: 2.75rem; /* 44px touch target a11y */
+  min-height: var(--touch-target-min);
   padding: var(--spacing-sm) var(--spacing-lg);
   font-size: var(--text-sm);
   font-weight: 600;
@@ -134,21 +151,5 @@ async function endSession() {
 .session-focus__btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
-}
-.session-focus__empty h1 {
-  font-size: var(--text-xl);
-  font-weight: 700;
-  line-height: var(--leading-tight);
-  color: var(--color-text);
-  margin: 0 0 var(--spacing-sm);
-}
-.session-focus__empty p {
-  font-size: var(--text-sm);
-  line-height: var(--leading-normal);
-  color: var(--color-text-muted);
-  margin: 0 0 var(--spacing-xl);
-}
-.session-focus__empty .session-focus__btn {
-  margin-top: var(--spacing-md);
 }
 </style>

@@ -86,6 +86,10 @@ function toggle() {
   color: var(--color-text);
   background: var(--color-bg-soft);
 }
+.theme-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
 .theme-toggle__icon {
   flex-shrink: 0;
 }

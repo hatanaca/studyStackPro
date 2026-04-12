@@ -21,7 +21,13 @@ class UpdateStudySessionRequest extends FormRequest
         return [
             'technology_id' => ['sometimes', 'uuid', 'exists:technologies,id'],
             'started_at' => ['sometimes', 'date'],
-            'ended_at' => ['nullable', 'date'],
+            // 'after:started_at' só se aplica quando started_at também está presente
+            // na requisição; PATCH parcial com apenas ended_at não deve falhar.
+            'ended_at' => array_filter([
+                'nullable',
+                'date',
+                $this->has('started_at') ? 'after:started_at' : null,
+            ]),
             'notes' => ['nullable', 'string', 'max:2000'],
             'mood' => ['nullable', 'integer', 'min:1', 'max:5'],
             'focus_score' => ['nullable', 'integer', 'min:1', 'max:10'],

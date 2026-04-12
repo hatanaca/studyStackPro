@@ -11,6 +11,8 @@ import Tab from 'primevue/tab'
 import TabPanels from 'primevue/tabpanels'
 import TabPanel from 'primevue/tabpanel'
 import Avatar from 'primevue/avatar'
+import Skeleton from 'primevue/skeleton'
+import { useConfirm } from 'primevue/useconfirm'
 import { useAuthStore } from '@/stores/auth.store'
 import { authApi, type TokenInfo } from '@/api/modules/auth.api'
 import { useToast } from '@/composables/useToast'
@@ -18,6 +20,7 @@ import { useToast } from '@/composables/useToast'
 const authStore = useAuthStore()
 const router = useRouter()
 const toast = useToast()
+const confirm = useConfirm()
 
 const profileTabs = [
   { id: 'profile', label: 'Perfil' },
@@ -138,24 +141,29 @@ async function changePassword() {
   }
 }
 
-async function revokeAllTokens() {
-  const ok = window.confirm(
-    'Revogar todas as sessões? Você será desconectado de todos os dispositivos e precisará fazer login novamente.'
-  )
-  if (!ok) return
-  revokeLoading.value = true
-  try {
-    const { data } = await authApi.revokeAllTokens()
-    if (data.success && data.data) {
-      toast.success(`${data.data.revoked_count} sessão(ões) revogada(s)`)
-      authStore.logout()
-      router.push('/login')
-    }
-  } catch {
-    toast.error('Erro ao revogar sessões')
-  } finally {
-    revokeLoading.value = false
-  }
+function revokeAllTokens() {
+  confirm.require({
+    header: 'Revogar todas as sessões',
+    message: 'Você será desconectado de todos os dispositivos e precisará fazer login novamente.',
+    acceptLabel: 'Revogar',
+    rejectLabel: 'Cancelar',
+    acceptClass: 'p-button-danger',
+    async accept() {
+      revokeLoading.value = true
+      try {
+        const { data } = await authApi.revokeAllTokens()
+        if (data.success && data.data) {
+          toast.success(`${data.data.revoked_count} sessão(ões) revogada(s)`)
+          authStore.logout()
+          router.push('/login')
+        }
+      } catch {
+        toast.error('Erro ao revogar sessões')
+      } finally {
+        revokeLoading.value = false
+      }
+    },
+  })
 }
 
 function formatDate(iso: string | null): string {
@@ -309,9 +317,13 @@ function formatDate(iso: string | null): string {
                 </p>
                 <div
                   v-if="tokensLoading"
-                  class="loading-msg"
+                  class="profile-view__tokens-skeleton"
+                  role="status"
+                  aria-live="polite"
+                  aria-label="Carregando sessões ativas"
                 >
-                  Carregando...
+                  <Skeleton height="4.5rem" class="profile-view__token-skel" />
+                  <Skeleton height="4.5rem" class="profile-view__token-skel" />
                 </div>
                 <template v-else>
                   <ul
@@ -369,8 +381,9 @@ function formatDate(iso: string | null): string {
 }
 .profile-view__card {
   margin-top: 0;
-  border-radius: var(--radius-md);
-  overflow: hidden;
+}
+.profile-view__card :deep(.p-card-content) {
+  padding: var(--spacing-lg) var(--spacing-xl);
 }
 .profile-form {
   display: flex;
@@ -378,8 +391,9 @@ function formatDate(iso: string | null): string {
   gap: var(--spacing-lg);
 }
 .section-title {
+  font-family: var(--font-display);
   font-size: var(--text-base);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-text);
   margin: 0 0 var(--spacing-sm);
   letter-spacing: var(--tracking-tight);
@@ -433,7 +447,7 @@ function formatDate(iso: string | null): string {
 }
 .revoke-btn :deep(.p-button),
 .profile-form :deep(.p-button) {
-  min-height: 2.75rem;
+  min-height: var(--touch-target-min);
 }
 .profile-form :deep(.p-button:focus-visible),
 .profile-form :deep(.p-inputtext:focus-visible),
@@ -441,10 +455,14 @@ function formatDate(iso: string | null): string {
   outline: none;
   box-shadow: var(--shadow-focus);
 }
-.loading-msg {
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  padding: var(--spacing-lg) 0;
+.profile-view__tokens-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) 0 var(--spacing-lg);
+}
+.profile-view__token-skel {
+  border-radius: var(--radius-md);
 }
 .p-field {
   display: flex;

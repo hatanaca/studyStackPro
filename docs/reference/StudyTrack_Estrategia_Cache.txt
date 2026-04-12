@@ -1,0 +1,1309 @@
++-------------------------------------------------------------------------------------------+
+| STUDYTRACK PRO                                                                            |
+|                                                                                           |
+| Estratégia Completa de Cache                                                              |
+|                                                                                           |
+| Redis 7 · Cache Tags · TTL por Camada · Invalidação Event-Driven · Cache-Aside · Multi-DB |
+|                                                                                           |
+| 4 camadas · 12 chaves de cache documentadas · Pipeline de invalidação completo            |
++-------------------------------------------------------------------------------------------+
+
++---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| POR QUE CACHE É ARQUITETURALMENTE CRÍTICO NESTE SISTEMA                                                                                                                                                                                                                                                                               |
++---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| O StudyTrack possui um desafio específico: o dashboard precisa ser ágil e em tempo real, mas as métricas derivam de agregações complexas sobre potencialmente anos de dados. Sem cache, cada visita ao dashboard executaria GROUP BY sobre milhares de sessões. Com cache, a resposta é um SELECT simples em uma linha pré-calculada. |
+|                                                                                                                                                                                                                                                                                                                                       |
+| Problema: Usuário com 3 anos de uso pode ter 5.000+ sessões. GROUP BY sobre essa tabela leva 80-200ms por query.                                                                                                                                                                                                                      |
+|                                                                                                                                                                                                                                                                                                                                       |
+| Solução 1 (banco): Schema analytics.* pré-calculado pelos jobs. Leitura = SELECT de 1 linha. 1-3ms.                                                                                                                                                                                                                                   |
+|                                                                                                                                                                                                                                                                                                                                       |
+| Solução 2 (cache): Redis à frente do analytics.*. Dashboard payload cacheado por 5min. 0.1-0.3ms.                                                                                                                                                                                                                                     |
+|                                                                                                                                                                                                                                                                                                                                       |
+| Resultado: 3 ordens de magnitude de diferença entre sem cache (200ms) e com cache Redis (0.2ms).                                                                                                                                                                                                                                      |
++---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+1. Visão Geral da Estratégia
+
+A estratégia de cache do StudyTrack é organizada em quatro camadas independentes, cada uma com responsabilidades e TTLs distintos. Cada camada usa um banco Redis diferente para isolar responsabilidades operacionais:
+
+  ---------------------------------------------------------------------------------------------------------------------
+  DB     Camada                  TTL máx      Padrão          Dados cacheados
+  ------ ----------------------- ------------ --------------- ---------------------------------------------------------
+  DB 1   Analytics / Dashboard   5–15 min     Cache-Aside     Payload do dashboard, métricas, série temporal, heatmap
+
+  DB 2   Dados operacionais      1h           Cache-Aside     Tecnologias do usuário, perfil, busca por trigrama
+
+  DB 3   Sessões de aplicação    7 dias       Write-Through   Tokens Sanctum, sessão ativa do usuário
+
+  DB 4   Filas (Queue)           Permanente   Queue Backend   Jobs RecalculateMetrics, BroadcastUpdate etc.
+  ---------------------------------------------------------------------------------------------------------------------
+
+1.1 Padrão Cache-Aside (Lazy Loading)
+
+O padrão principal utilizado no sistema. A aplicação tenta o cache primeiro; em caso de miss, busca no banco, armazena no cache e retorna. O banco é a fonte da verdade — o cache é apenas uma cópia acelerada.
+
++---------------------------------------------------------------------------------------+
+| # FLUXO CACHE-ASIDE (GET /api/v1/analytics/dashboard)                                 |
+|                                                                                       |
+| REQUEST ──────────────────────────────────────────────────────────────                |
+|                                                                                       |
+| │                                                                                     |
+|                                                                                       |
+| ├── AnalyticsService::getDashboardData($userId)                                       |
+|                                                                                       |
+| │ │                                                                                   |
+|                                                                                       |
+| │ ├── Cache::tags(['analytics', 'user:'.$userId])                                     |
+|                                                                                       |
+| │ │ ::get('dashboard:'.$userId)                                                       |
+|                                                                                       |
+| │ │                                                                                   |
+|                                                                                       |
+| │ ├── [HIT] ────────────────────────────────────────────────────────► RETORNA (0.2ms) |
+|                                                                                       |
+| │ │                                                                                   |
+|                                                                                       |
+| │ └── [MISS] ── Busca analytics.user_metrics (SELECT simples, 1-2ms)                  |
+|                                                                                       |
+| │ ── Busca analytics.technology_metrics (1-2ms)                                       |
+|                                                                                       |
+| │ ── Busca analytics.daily_minutes 30d (1-2ms)                                        |
+|                                                                                       |
+| │ ── Monta payload estruturado                                                        |
+|                                                                                       |
+| │ ── Cache::tags(...)->put(key, payload, 300) [5min TTL]                              |
+|                                                                                       |
+| │ ─────────────────────────────────────────────────► RETORNA (5-8ms)                  |
+|                                                                                       |
+| RESULTADO: cache HIT = 0.2ms | cache MISS = 5-8ms | sem cache = 80-200ms              |
++---------------------------------------------------------------------------------------+
+
+1.2 Configuração Redis Multi-Database
+
+Redis suporta até 16 bancos de dados lógicos (DB 0–15) em uma única instância. Usar bancos separados por responsabilidade é a forma correta de isolar dados sem precisar de múcias instâncias Redis em um projeto de portfólio.
+
++-----------------------------------------------------------------------+
+| # docker/redis/redis.conf                                             |
+|                                                                       |
+| maxmemory 512mb                                                       |
+|                                                                       |
+| maxmemory-policy allkeys-lru # Evict LRU quando atingir limite        |
+|                                                                       |
+| activerehashing yes                                                   |
+|                                                                       |
+| lazyfree-lazy-eviction yes # Evicção assíncrona (não bloqueia)        |
+|                                                                       |
+| # Persistência: AOF para queue (dados críticos), RDB para cache       |
+|                                                                       |
+| appendonly yes                                                        |
+|                                                                       |
+| appendfilename "appendonly.aof"                                       |
+|                                                                       |
+| appendfsync everysec                                                  |
+|                                                                       |
+| # databases 16 (padrão, suficiente para nosso modelo)                 |
+|                                                                       |
+| databases 16                                                          |
++-----------------------------------------------------------------------+
+
++-----------------------------------------------------------------------+
+| # config/database.php — Mapeamento de databases Redis                 |
+|                                                                       |
+| 'redis' => [                                                          |
+|                                                                       |
+| 'client' => env('REDIS_CLIENT', 'phpredis'),                          |
+|                                                                       |
+| 'default' => [ # DB 0: uso geral (Horizon UI etc.)                    |
+|                                                                       |
+| 'host' => env('REDIS_HOST', 'redis'),                                 |
+|                                                                       |
+| 'password' => env('REDIS_PASSWORD'),                                  |
+|                                                                       |
+| 'port' => 6379,                                                       |
+|                                                                       |
+| 'database' => 0,                                                      |
+|                                                                       |
+| ],                                                                    |
+|                                                                       |
+| 'cache' => [ # DB 1: Cache de dados (analytics, tecnologias)          |
+|                                                                       |
+| 'host' => env('REDIS_HOST', 'redis'),                                 |
+|                                                                       |
+| 'password' => env('REDIS_PASSWORD'),                                  |
+|                                                                       |
+| 'port' => 6379,                                                       |
+|                                                                       |
+| 'database' => 1,                                                      |
+|                                                                       |
+| ],                                                                    |
+|                                                                       |
+| 'session' => [ # DB 2: Sessões e tokens                               |
+|                                                                       |
+| 'host' => env('REDIS_HOST', 'redis'),                                 |
+|                                                                       |
+| 'password' => env('REDIS_PASSWORD'),                                  |
+|                                                                       |
+| 'port' => 6379,                                                       |
+|                                                                       |
+| 'database' => 2,                                                      |
+|                                                                       |
+| ],                                                                    |
+|                                                                       |
+| 'queue' => [ # DB 3: Filas de jobs                                    |
+|                                                                       |
+| 'host' => env('REDIS_HOST', 'redis'),                                 |
+|                                                                       |
+| 'password' => env('REDIS_PASSWORD'),                                  |
+|                                                                       |
+| 'port' => 6379,                                                       |
+|                                                                       |
+| 'database' => 3,                                                      |
+|                                                                       |
+| ],                                                                    |
+|                                                                       |
+| 'horizon' => [ # DB 4: Métricas do Laravel Horizon                    |
+|                                                                       |
+| 'host' => env('REDIS_HOST', 'redis'),                                 |
+|                                                                       |
+| 'password' => env('REDIS_PASSWORD'),                                  |
+|                                                                       |
+| 'port' => 6379,                                                       |
+|                                                                       |
+| 'database' => 4,                                                      |
+|                                                                       |
+| ],                                                                    |
+|                                                                       |
+| ],                                                                    |
++-----------------------------------------------------------------------+
+
+2. Cache Tags — O Mecanismo Central
+
+Cache Tags é a funcionalidade mais importante para este sistema. Permite associar múltiplas chaves de cache a uma ou mais "tags" e depois invalidar todas elas com uma única chamada. Isso resolve o problema de invalidar dados de um usuário específico sem afetar outros.
+
++-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| POR QUE CACHE TAGS E NÃO CHAVES INDIVIDUAIS?                                                                                                                                              |
++-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Imagine um usuário que acessou o dashboard com parâmetros diferentes:                                                                                                                     |
+|                                                                                                                                                                                           |
+| -   dashboard:uuid-123                                                                                                                                                                    |
+|                                                                                                                                                                                           |
+| -   timeseries:uuid-123:30d                                                                                                                                                               |
+|                                                                                                                                                                                           |
+| -   timeseries:uuid-123:90d                                                                                                                                                               |
+|                                                                                                                                                                                           |
+| -   timeseries:uuid-123:custom:...                                                                                                                                                        |
+|                                                                                                                                                                                           |
+| -   tech-stats:uuid-123:sort:total_min                                                                                                                                                    |
+|                                                                                                                                                                                           |
+| -   heatmap:uuid-123:2025                                                                                                                                                                 |
+|                                                                                                                                                                                           |
+| Quando as métricas são recalculadas, todas essas chaves ficam desatualizadas. Com Tags:                                                                                                   |
+|                                                                                                                                                                                           |
+| -   Cache::tags(['analytics', 'user:uuid-123'])->flush();                                                                                                                                 |
+|                                                                                                                                                                                           |
+| Uma linha de código invalida todas. Com chaves individuais, você precisaria de 6+ chamadas e teria que manter uma lista de todas as chaves possíveis — inviável com parâmetros dinâmicos. |
++-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+2.1 Hierarquia de Tags do Sistema
+
+  ---------------------------------------------------------------------------------------------------------
+  Tag Principal   Tag Secundária       Dados cobertos                     Invalidado por
+  --------------- -------------------- ---------------------------------- ---------------------------------
+  analytics       user:{uuid}          Todo cache analítico do usuário    RecalculateMetricsJob
+
+  analytics       user:{uuid}:ts       Série temporal específica          RecalculateMetricsJob
+
+  analytics       user:{uuid}:heat     Heatmap anual                      RecalculateMetricsJob (semanal)
+
+  technologies    user:{uuid}          Lista e detalhes de tecnologias    POST/PUT/DELETE /api/v1/technologies
+
+  technologies    user:{uuid}:search   Resultados de busca por trigrama   POST/PUT/DELETE /api/v1/technologies
+
+  profile         user:{uuid}          Dados de perfil (/api/v1/auth/me)  PUT /api/v1/auth/me
+
+  rate-limit      ip:{ip}              Contadores de rate limit por IP    Expiração automática
+
+  sessions        user:{uuid}          Cache de sessão ativa              POST /api/v1/study-sessions/start, PATCH …/end
+  ---------------------------------------------------------------------------------------------------------
+
+2.2 Implementação: AnalyticsService
+
+O padrão Cache::tags()->remember() encapsula todo o fluxo cache-aside em uma única expressão: tenta o cache, executa o callback em caso de miss, armazena e retorna.
+
++--------------------------------------------------------------------------------+
+| <?php // app/Modules/Analytics/Services/AnalyticsService.php                   |
+|                                                                                |
+| class AnalyticsService                                                         |
+|                                                                                |
+| {                                                                              |
+|                                                                                |
+| public function getDashboardData(string $userId): array                        |
+|                                                                                |
+| {                                                                              |
+|                                                                                |
+| return Cache::tags(['analytics', "user:{$userId}"])                            |
+|                                                                                |
+| ->remember(                                                                    |
+|                                                                                |
+| "dashboard:{$userId}",                                                         |
+|                                                                                |
+| now()->addMinutes(5),                                                          |
+|                                                                                |
+| fn () => $this->buildDashboardPayload($userId)                                 |
+|                                                                                |
+| );                                                                             |
+|                                                                                |
+| }                                                                              |
+|                                                                                |
+| public function getTimeSeries(string $userId, string $period): array           |
+|                                                                                |
+| {                                                                              |
+|                                                                                |
+| // Tag secundária 'ts' permite invalidar só a série temporal                   |
+|                                                                                |
+| // sem afetar o cache do dashboard e das métricas de usuário                   |
+|                                                                                |
+| return Cache::tags(['analytics', "user:{$userId}", 'ts'])                      |
+|                                                                                |
+| ->remember(                                                                    |
+|                                                                                |
+| "timeseries:{$userId}:{$period}",                                              |
+|                                                                                |
+| now()->addMinutes(15),                                                         |
+|                                                                                |
+| fn () => $this->analyticsRepo->getTimeSeries($userId, $period)                 |
+|                                                                                |
+| );                                                                             |
+|                                                                                |
+| }                                                                              |
+|                                                                                |
+| public function getHeatmap(string $userId, int $year): array                   |
+|                                                                                |
+| {                                                                              |
+|                                                                                |
+| return Cache::tags(['analytics', "user:{$userId}", 'heat'])                    |
+|                                                                                |
+| ->remember(                                                                    |
+|                                                                                |
+| "heatmap:{$userId}:{$year}",                                                   |
+|                                                                                |
+| now()->addHour(), // TTL maior: heatmap muda menos                             |
+|                                                                                |
+| fn () => $this->analyticsRepo->getHeatmap($userId, $year)                      |
+|                                                                                |
+| );                                                                             |
+|                                                                                |
+| }                                                                              |
+|                                                                                |
+| private function buildDashboardPayload(string $userId): array                  |
+|                                                                                |
+| {                                                                              |
+|                                                                                |
+| // Leituras paralelas no schema analytics.* (já pré-calculado)                 |
+|                                                                                |
+| return [                                                                       |
+|                                                                                |
+| 'user_metrics' => $this->userMetricsRepo->findByUser($userId),                 |
+|                                                                                |
+| 'technology_metrics' => $this->techMetricsRepo->getByUser($userId, limit: 20), |
+|                                                                                |
+| 'time_series_30d' => $this->dailyRepo->getLast30Days($userId),                 |
+|                                                                                |
+| 'top_technologies' => $this->techMetricsRepo->getTop5($userId),                |
+|                                                                                |
+| 'weekly_comparison' => $this->weeklyRepo->getCurrentAndPrevious($userId),      |
+|                                                                                |
+| ];                                                                             |
+|                                                                                |
+| }                                                                              |
+|                                                                                |
+| }                                                                              |
++--------------------------------------------------------------------------------+
+
+3. TTL por Camada de Dado
+
+O TTL (Time To Live) de cada chave é definido com base na frequência de atualização do dado e no impacto de servir dados levemente desatualizados. Dados mais voláteis têm TTL menor; dados mais estáveis podem ser cacheados por mais tempo.
+
+Classificação por Temperatura de Dado:
+
+  ----------- --------- ---------------------------------------------------------------------------------------------------------------------------------------------------------
+  QUENTE      2–5 min   Dados que mudam freqüentemente e são lidos com alta frequência. Sessão ativa, métricas do dashboard. Stale data por >5min seria perceptivel ao usuário.
+
+  ----------- --------- ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  ----------- ----------- ------------------------------------------------------------------------------------------------------------------------------------------------------
+  MORNO       10–15 min   Dados que mudam com eventos específicos (nova sessão) mas não continuamente. Série temporal, resumos semanais. Lag de 15min não afeta a experiência.
+
+  ----------- ----------- ------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  ----------- -------- ---------------------------------------------------------------------------------------------------------------------------------------------------
+  FRIO        1 hora   Dados estáveis que mudam apenas em ações explícitas do usuário. Lista de tecnologias, perfil, heatmap anual. Invalidados por evento, não por TTL.
+
+  ----------- -------- ---------------------------------------------------------------------------------------------------------------------------------------------------
+
+  ----------- -------- -------------------------------------------------------------------------------------------------------------------------------
+  GELADO      7 dias   Dados de sessão e autenticação. Tokens Sanctum, sessões da aplicação. Gerenciados pelo middleware, não pelo AnalyticsService.
+
+  ----------- -------- -------------------------------------------------------------------------------------------------------------------------------
+
+  ------------------------------------------------------------------------------------------
+  Chave de Cache                   TTL      Temp.    Evento de Invalidação
+  -------------------------------- -------- -------- ---------------------------------------
+  dashboard:{userId}               5 min    Quente   RecalculateMetricsJob finalizado
+
+  user-metrics:{userId}            5 min    Quente   RecalculateMetricsJob finalizado
+
+  tech-stats:{userId}:{sort}       5 min    Quente   RecalculateMetricsJob finalizado
+
+  active-session:{userId}          2 min    Quente   POST /api/v1/study-sessions/start, PATCH …/end
+
+  user-profile:{userId}            5 min    Quente   PUT /api/v1/auth/me
+
+  timeseries:{userId}:{period}     15 min   Morno    RecalculateMetricsJob finalizado
+
+  weekly:{userId}:{weeks}          15 min   Morno    RecalculateMetricsJob finalizado
+
+  tech-search:{userId}:{q}         5 min    Morno    POST/PUT/DELETE /api/v1/technologies
+
+  technologies:{userId}:{params}   1 hora   Frio     POST/PUT/DELETE /api/v1/technologies
+
+  technology:{id}:{userId}         1 hora   Frio     PUT/DELETE /api/v1/technologies/{id}
+
+  heatmap:{userId}:{year}          1 hora   Frio     RecalculateMetricsJob (semanal)
+
+  rate-limit:auth:{ip}             1 min    Quente   Expiração automática (sliding window)
+  ------------------------------------------------------------------------------------------
+
+4. Pipeline de Invalidação de Cache
+
+A invalidação é o problema mais difícil em caching. O sistema usa Event-Driven invalidation: eventos de domínio disparam listeners que invalidam as tags corretas. A aplicação nunca invalida cache diretamente no Controller — isso é responsabilidade dos Listeners.
+
+4.1 Fluxo Completo: Criar Sessão → Invalidação → Recalculo → WebSocket
+
++------------------------------------------------------------------------------------------+
+| # PIPELINE COMPLETO DE INVALIDAÇÃO                                                       |
+|                                                                                          |
+| 1. POST /api/v1/study-sessions                                                           |
+|                                                                                          |
+| │                                                                                        |
+|                                                                                          |
+| ├── StudySessionService::create()                                                        |
+|                                                                                          |
+| │ └── EloquentStudySessionRepository::create()                                           |
+|                                                                                          |
+| │ └── StudySession persisted to PostgreSQL public.*                                      |
+|                                                                                          |
+| │                                                                                        |
+|                                                                                          |
+| ├── event(new StudySessionCreated($session))                                             |
+|                                                                                          |
+| │                                                                                        |
+|                                                                                          |
+| │ [LISTENERS execut. em ordem]                                                           |
+|                                                                                          |
+| ├── InvalidateSessionCache::handle()                                                     |
+|                                                                                          |
+| │ └── Cache::tags(['sessions', 'user:'.$userId])->flush()                                |
+|                                                                                          |
+| │ # Remove: active-session:{userId}                                                      |
+|                                                                                          |
+| │                                                                                        |
+|                                                                                          |
+| ├── DispatchMetricsRecalculation::handle()                                               |
+|                                                                                          |
+| │ └── RecalculateMetricsJob::dispatch($userId)->onQueue('metrics')                       |
+|                                                                                          |
+| │ # Job enfileirado no Redis DB 3                                                        |
+|                                                                                          |
+| │                                                                                        |
+|                                                                                          |
+| ├── BroadcastMetricsRecalculating::handle()                                              |
+|                                                                                          |
+| │ └── broadcast(new MetricsRecalculating($userId))->toOthers()                           |
+|                                                                                          |
+| │ # WebSocket: frontend exibe spinner 'Atualizando...'                                   |
+|                                                                                          |
+| │                                                                                        |
+|                                                                                          |
+| └── 201 CREATED retornado ao cliente                                                     |
+|                                                                                          |
+| 2. [ASYNC] Horizon Worker processa RecalculateMetricsJob                                 |
+|                                                                                          |
+| │                                                                                        |
+|                                                                                          |
+| ├── DB::transaction() {                                                                  |
+|                                                                                          |
+| │ ├── UserMetricsAggregator::recalculate($userId) ── UPSERT analytics.user_metrics       |
+|                                                                                          |
+| │ ├── TechMetricsAggregator::recalculate($userId) ── UPSERT analytics.technology_metrics |
+|                                                                                          |
+| │ └── DailyMinutesAggregator::recalculate($userId) ── UPSERT analytics.daily_minutes     |
+|                                                                                          |
+| │ }                                                                                      |
+|                                                                                          |
+| │                                                                                        |
+|                                                                                          |
+| ├── Cache::tags(['analytics', 'user:'.$userId])->flush()                                 |
+|                                                                                          |
+| │ # Remove: dashboard:X, user-metrics:X, tech-stats:X, timeseries:X, weekly:X            |
+|                                                                                          |
+| │                                                                                        |
+|                                                                                          |
+| └── event(new MetricsRecalculated($userId, $dashboardData))                              |
+|                                                                                          |
+| └── broadcast(new MetricsUpdated($userId, $dashboardData))                               |
+|                                                                                          |
+| # WebSocket: frontend recebe dados novos, remove spinner                                 |
+|                                                                                          |
+| [HIT] = Redis retorna dado (sem tocar no banco)                                          |
+|                                                                                          |
+| [MISS] = Redis vazio, busca no banco analytics.* (dado pré-calculado, rápido)            |
++------------------------------------------------------------------------------------------+
+
+4.2 Implementação: RecalculateMetricsJob
+
++-----------------------------------------------------------------------+
+| <?php // app/Jobs/RecalculateMetricsJob.php                           |
+|                                                                       |
+| class RecalculateMetricsJob implements ShouldQueue                    |
+|                                                                       |
+| {                                                                     |
+|                                                                       |
+| use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;    |
+|                                                                       |
+| // Configurações de resiliência                                       |
+|                                                                       |
+| public int $tries = 3;                                                |
+|                                                                       |
+| public int $timeout = 30; // segundos                                 |
+|                                                                       |
+| public array $backoff = [30, 60, 120]; // espera entre tentativas     |
+|                                                                       |
+| public string $queue = 'metrics';                                     |
+|                                                                       |
+| public function __construct(                                          |
+|                                                                       |
+| public readonly string $userId,                                       |
+|                                                                       |
+| public readonly bool $fullRecalc = false,                             |
+|                                                                       |
+| ) {}                                                                  |
+|                                                                       |
+| public function handle(                                               |
+|                                                                       |
+| UserMetricsAggregator $userAgg,                                       |
+|                                                                       |
+| TechMetricsAggregator $techAgg,                                       |
+|                                                                       |
+| DailyMinutesAggregator $dailyAgg,                                     |
+|                                                                       |
+| ): void {                                                             |
+|                                                                       |
+| // 1. Recalcula no banco (UPSERT atômico no schema analytics.*)       |
+|                                                                       |
+| DB::transaction(function () use ($userAgg, $techAgg, $dailyAgg) {     |
+|                                                                       |
+| $userAgg->recalculate($this->userId);                                 |
+|                                                                       |
+| $techAgg->recalculate($this->userId);                                 |
+|                                                                       |
+| $dailyAgg->recalculate($this->userId);                                |
+|                                                                       |
+| });                                                                   |
+|                                                                       |
+| // 2. Invalida TODO o cache analítico do usuário (tag flush)          |
+|                                                                       |
+| Cache::tags(['analytics', "user:{$this->userId}"])->flush();          |
+|                                                                       |
+| // 3. Opcional: pré-aquecer o cache com os novos dados                |
+|                                                                       |
+| // (evita cache miss no próximo request do dashboard)                 |
+|                                                                       |
+| $freshData = app(AnalyticsService::class)                             |
+|                                                                       |
+| ->buildDashboardPayload($this->userId);                               |
+|                                                                       |
+| Cache::tags(['analytics', "user:{$this->userId}"])                    |
+|                                                                       |
+| ->put("dashboard:{$this->userId}", $freshData, now()->addMinutes(5)); |
+|                                                                       |
+| // 4. Dispara evento: Listener fará o broadcast WebSocket             |
+|                                                                       |
+| event(new MetricsRecalculated($this->userId, $freshData));            |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| // Chamado quando todas as tentativas falharem                        |
+|                                                                       |
+| public function failed(Throwable $e): void                            |
+|                                                                       |
+| {                                                                     |
+|                                                                       |
+| Log::error('RecalculateMetricsJob falhou', [                          |
+|                                                                       |
+| 'userId' => $this->userId,                                            |
+|                                                                       |
+| 'exception' => $e->getMessage(),                                      |
+|                                                                       |
+| 'trace' => $e->getTraceAsString(),                                    |
+|                                                                       |
+| ]);                                                                   |
+|                                                                       |
+| // Não re-lançar: o job vai para failed_jobs automaticamente          |
+|                                                                       |
+| // Horizon Dashboard mostrará o erro para investigação                |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| }                                                                     |
++-----------------------------------------------------------------------+
+
+5. Cache Warming e Cache Stampede
+
+5.1 Cache Warming (Pré-aquecimento)
+
+O passo 3 do RecalculateMetricsJob ilustra cache warming: após invalidar e recalcular, o job imediatamente popula o cache com os dados frescos. Isso garante que o próximo request do dashboard seja um HIT, mesmo que o WebSocket chegue antes do usuário navegar até o dashboard.
+
++-----------------------------------------------------------------------------------------------------------------------+
+| QUANDO USAR CACHE WARMING?                                                                                            |
++-----------------------------------------------------------------------------------------------------------------------+
+| -   Após recalculo de métricas: O job já tem os dados — é gratuíto populá-los no cache antes de terminar.             |
+|                                                                                                                       |
+| -   No login do usuário: AuthService pode pre-warm dashboard cache após autenticação. Primeira visita será HIT.       |
+|                                                                                                                       |
+| -   Agendamento noturno: Job agendado às 3h da manhã pode warm heatmap e weekly para usuários ativos. TTL até amanhã. |
+|                                                                                                                       |
+| -   NÃO usar para: Dados que mudam com alta frequência sem evento previsível. Cache-aside é suficiente.               |
++-----------------------------------------------------------------------------------------------------------------------+
+
+5.2 Cache Stampede (Thundering Herd)
+
+Cache stampede ocorre quando o TTL de uma chave expira e múltiplos workers tentam regenerar o cache simultaneamente, sobrecarregando o banco. Em produção com muitos usuários, isso é crítico. Para um portfólio com poucos usuários, o risco é baixo, mas a solução deve ser documentada.
+
++-------------------------------------------------------------------------------------+
+| // Solução: Probabilistic Early Expiration (PER) + Lock                             |
+|                                                                                     |
+| // Em vez de esperar o TTL zerar, regenera alguns segundos antes (aleatório)        |
+|                                                                                     |
+| class AnalyticsService                                                              |
+|                                                                                     |
+| {                                                                                   |
+|                                                                                     |
+| public function getDashboardData(string $userId): array                             |
+|                                                                                     |
+| {                                                                                   |
+|                                                                                     |
+| $cacheKey = "dashboard:{$userId}";                                                  |
+|                                                                                     |
+| $tags = ['analytics', "user:{$userId}"];                                            |
+|                                                                                     |
+| $ttl = 300; // 5 minutos                                                            |
+|                                                                                     |
+| // Tenta obter do cache                                                             |
+|                                                                                     |
+| $cached = Cache::tags($tags)->get($cacheKey);                                       |
+|                                                                                     |
+| if ($cached !== null) {                                                             |
+|                                                                                     |
+| return $cached;                                                                     |
+|                                                                                     |
+| }                                                                                   |
+|                                                                                     |
+| // Usa Lock para prevenir stampede: apenas 1 worker recalcula por vez               |
+|                                                                                     |
+| $lock = Cache::lock("lock:dashboard:{$userId}", seconds: 10);                       |
+|                                                                                     |
+| try {                                                                               |
+|                                                                                     |
+| if ($lock->get()) {                                                                 |
+|                                                                                     |
+| // Double-check após obter lock (outro worker pode ter populado)                    |
+|                                                                                     |
+| $cached = Cache::tags($tags)->get($cacheKey);                                       |
+|                                                                                     |
+| if ($cached !== null) {                                                             |
+|                                                                                     |
+| return $cached;                                                                     |
+|                                                                                     |
+| }                                                                                   |
+|                                                                                     |
+| $data = $this->buildDashboardPayload($userId);                                      |
+|                                                                                     |
+| Cache::tags($tags)->put($cacheKey, $data, $ttl);                                    |
+|                                                                                     |
+| return $data;                                                                       |
+|                                                                                     |
+| }                                                                                   |
+|                                                                                     |
+| } finally {                                                                         |
+|                                                                                     |
+| $lock->release();                                                                   |
+|                                                                                     |
+| }                                                                                   |
+|                                                                                     |
+| // Se não conseguiu o lock: espera e tenta novamente (outro worker está calculando) |
+|                                                                                     |
+| usleep(100_000); // 100ms                                                           |
+|                                                                                     |
+| return Cache::tags($tags)->get($cacheKey)                                           |
+|                                                                                     |
+| ?? $this->buildDashboardPayload($userId); // fallback sem cache                     |
+|                                                                                     |
+| }                                                                                   |
+|                                                                                     |
+| }                                                                                   |
++-------------------------------------------------------------------------------------+
+
+6. Cache para Rate Limiting
+
+O Rate Limiting do Laravel usa Redis internamente para armazenar contadores por chave. A configuração usa Sliding Window (janela deslizante), mais precisa que Fixed Window para limitar burst de requisições.
+
+6.1 Configuração dos Limitadores
+
++---------------------------------------------------------------------------------+
+| <?php // app/Providers/AppServiceProvider.php (ou bootstrap/app.php Laravel 11) |
+|                                                                                 |
+| RateLimiter::for('api', function (Request $request): Limit|array {              |
+|                                                                                 |
+| $key = $request->user()?->id ?: $request->ip();                                 |
+|                                                                                 |
+| return [                                                                        |
+|                                                                                 |
+| Limit::perMinute(60)->by($key), // Limite base                                  |
+|                                                                                 |
+| Limit::perHour(1000)->by($key), // Limite hora (burst protection)               |
+|                                                                                 |
+| ];                                                                              |
+|                                                                                 |
+| });                                                                             |
+|                                                                                 |
+| RateLimiter::for('auth', function (Request $request): Limit {                   |
+|                                                                                 |
+| // Ver implementação atual: limiters nomeados login (3/min IP) e register (5/min IP) |
+|                                                                                 |
+| return Limit::perMinute(5)                                                      |
+|                                                                                 |
+| ->by($request->ip())                                                            |
+|                                                                                 |
+| ->response(function (Request $request, array $headers) {                        |
+|                                                                                 |
+| return response()->json([                                                       |
+|                                                                                 |
+| 'success' => false,                                                             |
+|                                                                                 |
+| 'error' => [                                                                    |
+|                                                                                 |
+| 'code' => 'RATE_LIMITED',                                                       |
+|                                                                                 |
+| 'message' => 'Muitas tentativas de login. Aguarde.',                            |
+|                                                                                 |
+| 'retry_after' => $headers['Retry-After'],                                       |
+|                                                                                 |
+| ]                                                                               |
+|                                                                                 |
+| ], 429, $headers);                                                              |
+|                                                                                 |
+| });                                                                             |
+|                                                                                 |
+| });                                                                             |
+|                                                                                 |
+| RateLimiter::for('write', function (Request $request): Limit {                  |
+|                                                                                 |
+| return Limit::perMinute(30)->by($request->user()->id);                          |
+|                                                                                 |
+| });                                                                             |
+|                                                                                 |
+| RateLimiter::for('search', function (Request $request): Limit {                 |
+|                                                                                 |
+| // Autocomplete pode ter alta frequência: limit maior                           |
+|                                                                                 |
+| return Limit::perMinute(120)->by($request->user()->id);                         |
+|                                                                                 |
+| });                                                                             |
++---------------------------------------------------------------------------------+
+
+6.2 O que o Redis Armazena por Rate Limit
+
+Cada contagem de rate limit gera uma chave Redis no formato usado pelo Laravel internamente. Entender isso ajuda na depuração:
+
++-----------------------------------------------------------------------+
+| # Chaves geradas pelo RateLimiter no Redis (DB 1 ou 0)                |
+|                                                                       |
+| laravel_cache:illuminate:cache:api|user-uuid-123 # Contador por user  |
+|                                                                       |
+| laravel_cache:illuminate:cache:api|192.168.1.1 # Contador por IP      |
+|                                                                       |
+| laravel_cache:illuminate:cache:auth|192.168.1.1 # Auth brute-force    |
+|                                                                       |
+| # Inspecionar no Redis CLI:                                           |
+|                                                                       |
+| redis-cli -n 1 KEYS 'laravel_cache:*rate*'                            |
+|                                                                       |
+| redis-cli -n 1 GET 'laravel_cache:illuminate:cache:auth|192.168.1.1'  |
+|                                                                       |
+| redis-cli -n 1 TTL 'laravel_cache:illuminate:cache:auth|192.168.1.1'  |
+|                                                                       |
+| # Reset manual de rate limit (dev/debug):                             |
+|                                                                       |
+| redis-cli -n 1 DEL 'laravel_cache:illuminate:cache:api|user-uuid-123' |
++-----------------------------------------------------------------------+
+
+7. Cache de Sessões e Tokens
+
+7.1 Tokens Sanctum no Redis
+
+Por padrão, o Laravel Sanctum persiste tokens no PostgreSQL (tabela personal_access_tokens). Para melhorar a performance de autenticação, os tokens verificados recentemente são cacheados no Redis para evitar a query ao banco em cada request.
+
++------------------------------------------------------------------------------------+
+| <?php // config/sanctum.php                                                        |
+|                                                                                    |
+| // Configurar cache de tokens (verificação rápida sem banco)                       |
+|                                                                                    |
+| 'expiration' => null, // Sem expiração por padrão (controlado por remember)        |
+|                                                                                    |
+| 'token_prefix' => env('SANCTUM_TOKEN_PREFIX', ''),                                 |
+|                                                                                    |
+| // Middleware Sanctum verifica token em cada request.                              |
+|                                                                                    |
+| // Para evitar N queries ao banco, usar cache manual no AuthService:               |
+|                                                                                    |
+| // app/Modules/Auth/Services/AuthService.php                                       |
+|                                                                                    |
+| public function validateToken(string $token): ?User                                |
+|                                                                                    |
+| {                                                                                  |
+|                                                                                    |
+| $hash = hash('sha256', $token);                                                    |
+|                                                                                    |
+| $cacheKey = "token:{$hash}";                                                       |
+|                                                                                    |
+| return Cache::store('session')->remember($cacheKey, 300, function () use ($hash) { |
+|                                                                                    |
+| // Cache MISS: busca no banco (apenas 1x a cada 5min por token)                    |
+|                                                                                    |
+| $pat = PersonalAccessToken::where('token', $hash)->first();                        |
+|                                                                                    |
+| return $pat?->tokenable; // retorna User ou null                                   |
+|                                                                                    |
+| });                                                                                |
+|                                                                                    |
+| }                                                                                  |
+|                                                                                    |
+| // Invalidação no logout:                                                          |
+|                                                                                    |
+| public function logout(User $user, string $token): void                            |
+|                                                                                    |
+| {                                                                                  |
+|                                                                                    |
+| $hash = hash('sha256', $token);                                                    |
+|                                                                                    |
+| Cache::store('session')->forget("token:{$hash}");                                  |
+|                                                                                    |
+| $user->currentAccessToken()->delete();                                             |
+|                                                                                    |
+| }                                                                                  |
++------------------------------------------------------------------------------------+
+
+7.2 Sessão Ativa do Usuário
+
+A sessão de estudo ativa (ended_at IS NULL) é consultada frequentemente pelo timer no frontend. Cache com TTL curto evita queries repetidas ao banco:
+
++------------------------------------------------------------------------------+
+| <?php // app/Modules/StudySessions/Services/StudySessionService.php          |
+|                                                                              |
+| public function getActiveSession(string $userId): ?StudySession              |
+|                                                                              |
+| {                                                                            |
+|                                                                              |
+| return Cache::tags(['sessions', "user:{$userId}"])                           |
+|                                                                              |
+| ->remember(                                                                  |
+|                                                                              |
+| "active-session:{$userId}",                                                  |
+|                                                                              |
+| now()->addSeconds(30), // TTL curto: timer precisa de dado fresco            |
+|                                                                              |
+| fn () => $this->repository->findActiveByUser($userId)                        |
+|                                                                              |
+| );                                                                           |
+|                                                                              |
+| }                                                                            |
+|                                                                              |
+| public function startSession(User $user, StudySessionDTO $dto): StudySession |
+|                                                                              |
+| {                                                                            |
+|                                                                              |
+| $session = $this->repository->create($dto);                                  |
+|                                                                              |
+| // Popula imediatamente o cache com a nova sessão                            |
+|                                                                              |
+| Cache::tags(['sessions', "user:{$user->id}"])                                |
+|                                                                              |
+| ->put("active-session:{$user->id}", $session, 30);                           |
+|                                                                              |
+| event(new StudySessionCreated($session));                                    |
+|                                                                              |
+| return $session;                                                             |
+|                                                                              |
+| }                                                                            |
+|                                                                              |
+| public function endSession(StudySession $session, array $data): StudySession |
+|                                                                              |
+| {                                                                            |
+|                                                                              |
+| $session = $this->repository->end($session, $data);                          |
+|                                                                              |
+| // Remove cache da sessão ativa                                              |
+|                                                                              |
+| Cache::tags(['sessions', "user:{$session->user_id}"])->flush();              |
+|                                                                              |
+| event(new StudySessionUpdated($session));                                    |
+|                                                                              |
+| return $session;                                                             |
+|                                                                              |
+| }                                                                            |
++------------------------------------------------------------------------------+
+
+8. Trait HasCacheInvalidation
+
+Para evitar repetição e garantir que a invalidação seja sempre correta, um Trait centraliza os métodos de flush por domínio. Qualquer Service ou Job usa o Trait sem precisar conhecer os detalhes das tags.
+
++-----------------------------------------------------------------------+
+| <?php // app/Traits/HasCacheInvalidation.php                          |
+|                                                                       |
+| trait HasCacheInvalidation                                            |
+|                                                                       |
+| {                                                                     |
+|                                                                       |
+| /**                                                                   |
+|                                                                       |
+| * Invalida todo o cache analítico de um usuário.                      |
+|                                                                       |
+| * Chamado após RecalculateMetricsJob.                                 |
+|                                                                       |
+| */                                                                    |
+|                                                                       |
+| protected function invalidateAnalyticsCache(string $userId): void     |
+|                                                                       |
+| {                                                                     |
+|                                                                       |
+| Cache::tags(['analytics', "user:{$userId}"])->flush();                |
+|                                                                       |
+| Log::debug('Cache analítico invalidado', ['userId' => $userId]);      |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| /**                                                                   |
+|                                                                       |
+| * Invalida apenas a série temporal (preserva dashboard e métricas).   |
+|                                                                       |
+| */                                                                    |
+|                                                                       |
+| protected function invalidateTimeSeriesCache(string $userId): void    |
+|                                                                       |
+| {                                                                     |
+|                                                                       |
+| Cache::tags(['analytics', "user:{$userId}", 'ts'])->flush();          |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| /**                                                                   |
+|                                                                       |
+| * Invalida cache de tecnologias (lista, busca, detalhe).              |
+|                                                                       |
+| * Chamado em CRUD de tecnologias.                                     |
+|                                                                       |
+| */                                                                    |
+|                                                                       |
+| protected function invalidateTechnologiesCache(string $userId): void  |
+|                                                                       |
+| {                                                                     |
+|                                                                       |
+| Cache::tags(['technologies', "user:{$userId}"])->flush();             |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| /**                                                                   |
+|                                                                       |
+| * Invalida cache de perfil.                                           |
+|                                                                       |
+| * Chamado em PUT /api/v1/auth/me.                                     |
+|                                                                       |
+| */                                                                    |
+|                                                                       |
+| protected function invalidateProfileCache(string $userId): void       |
+|                                                                       |
+| {                                                                     |
+|                                                                       |
+| Cache::tags(['profile', "user:{$userId}"])->flush();                  |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| /**                                                                   |
+|                                                                       |
+| * Nuclear: invalida TUDO para um usuário.                             |
+|                                                                       |
+| * Usado em casos extremos (delete de conta, reset admin).             |
+|                                                                       |
+| */                                                                    |
+|                                                                       |
+| protected function invalidateAllUserCache(string $userId): void       |
+|                                                                       |
+| {                                                                     |
+|                                                                       |
+| Cache::tags(["user:{$userId}"])->flush();                             |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| }                                                                     |
++-----------------------------------------------------------------------+
+
+9. Cache no Frontend (Vue 3 + Pinia)
+
+O frontend tem sua própria camada de cache em memória via Pinia stores. Isso evita refetch da API quando o usuário navega entre páginas sem que os dados tenham mudado. O WebSocket é o mecanismo de atualização em vez de polling ou refetch.
+
+9.1 Analytics Store com Cache de Estado
+
++---------------------------------------------------------------------------------------------+
+| // stores/analytics.store.ts                                                                |
+|                                                                                             |
+| export const useAnalyticsStore = defineStore('analytics', () => {                           |
+|                                                                                             |
+| // Estado: null = não carregado, objeto = carregado                                         |
+|                                                                                             |
+| const dashboard = ref<DashboardData | null>(null);                                          |
+|                                                                                             |
+| const lastFetchAt = ref<Date | null>(null);                                                 |
+|                                                                                             |
+| const isStale = ref(false); // true quando WebSocket sinalizou atualização                  |
+|                                                                                             |
+| const isLoading = ref(false);                                                               |
+|                                                                                             |
+| // TTL do cache em memória: 5 minutos (igual ao backend)                                    |
+|                                                                                             |
+| const STALE_AFTER_MS = 5 * 60 * 1000;                                                       |
+|                                                                                             |
+| // Getter: dados estão frescos?                                                             |
+|                                                                                             |
+| const isFresh = computed(() => {                                                            |
+|                                                                                             |
+| if (!lastFetchAt.value) return false;                                                       |
+|                                                                                             |
+| if (isStale.value) return false;                                                            |
+|                                                                                             |
+| return Date.now() - lastFetchAt.value.getTime() < STALE_AFTER_MS;                           |
+|                                                                                             |
+| });                                                                                         |
+|                                                                                             |
+| // Action: busca se necessário (cache-aside no frontend)                                    |
+|                                                                                             |
+| async function fetchDashboard(force = false): Promise<void> {                               |
+|                                                                                             |
+| // Se dados estão frescos e não for forçado, não refaz request                              |
+|                                                                                             |
+| if (!force && isFresh.value) return;                                                        |
+|                                                                                             |
+| isLoading.value = true;                                                                     |
+|                                                                                             |
+| try {                                                                                       |
+|                                                                                             |
+| const res = await analyticsApi.getDashboard();                                              |
+|                                                                                             |
+| dashboard.value = res.data;                                                                 |
+|                                                                                             |
+| lastFetchAt.value = new Date();                                                             |
+|                                                                                             |
+| isStale.value = false;                                                                      |
+|                                                                                             |
+| } finally {                                                                                 |
+|                                                                                             |
+| isLoading.value = false;                                                                    |
+|                                                                                             |
+| }                                                                                           |
+|                                                                                             |
+| }                                                                                           |
+|                                                                                             |
+| // Chamado pelo WebSocket handler: atualiza sem request HTTP                                |
+|                                                                                             |
+| function updateFromWebSocket(data: DashboardData): void {                                   |
+|                                                                                             |
+| dashboard.value = data;                                                                     |
+|                                                                                             |
+| lastFetchAt.value = new Date();                                                             |
+|                                                                                             |
+| isStale.value = false;                                                                      |
+|                                                                                             |
+| }                                                                                           |
+|                                                                                             |
+| // Chamado quando WebSocket informa que recalculo começou                                   |
+|                                                                                             |
+| function markAsStale(): void {                                                              |
+|                                                                                             |
+| isStale.value = true;                                                                       |
+|                                                                                             |
+| }                                                                                           |
+|                                                                                             |
+| return { dashboard, isLoading, isFresh, fetchDashboard, updateFromWebSocket, markAsStale }; |
+|                                                                                             |
+| });                                                                                         |
++---------------------------------------------------------------------------------------------+
+
+9.2 Tecnologias com Cache em Memória
+
++-------------------------------------------------------------------------------------+
+| // stores/technologies.store.ts                                                     |
+|                                                                                     |
+| export const useTechnologiesStore = defineStore('technologies', () => {             |
+|                                                                                     |
+| const list = ref<Technology[]>([]);                                                 |
+|                                                                                     |
+| const fetchedAt = ref<Date | null>(null);                                           |
+|                                                                                     |
+| const STALE_MS = 60 * 60 * 1000; // 1 hora (igual ao backend)                       |
+|                                                                                     |
+| const isFresh = computed(() =>                                                      |
+|                                                                                     |
+| fetchedAt.value !== null &&                                                         |
+|                                                                                     |
+| Date.now() - fetchedAt.value.getTime() < STALE_MS                                   |
+|                                                                                     |
+| );                                                                                  |
+|                                                                                     |
+| async function fetchAll(force = false): Promise<void> {                             |
+|                                                                                     |
+| if (!force && isFresh.value) return; // Cache HIT: não vai à API                    |
+|                                                                                     |
+| const res = await technologiesApi.getAll();                                         |
+|                                                                                     |
+| list.value = res.data;                                                              |
+|                                                                                     |
+| fetchedAt.value = new Date();                                                       |
+|                                                                                     |
+| }                                                                                   |
+|                                                                                     |
+| // Otimista: add/remove local antes da confirmação do servidor                      |
+|                                                                                     |
+| function optimisticAdd(tech: Technology): void {                                    |
+|                                                                                     |
+| list.value.push(tech);                                                              |
+|                                                                                     |
+| }                                                                                   |
+|                                                                                     |
+| function optimisticRemove(id: string): void {                                       |
+|                                                                                     |
+| list.value = list.value.filter(t => t.id !== id);                                   |
+|                                                                                     |
+| }                                                                                   |
+|                                                                                     |
+| // Busca local: evita request de search para strings já carregadas                  |
+|                                                                                     |
+| function searchLocal(q: string): Technology[] {                                     |
+|                                                                                     |
+| if (!q) return list.value.filter(t => t.is_active);                                 |
+|                                                                                     |
+| const lower = q.toLowerCase();                                                      |
+|                                                                                     |
+| return list.value.filter(t => t.is_active && t.name.toLowerCase().includes(lower)); |
+|                                                                                     |
+| }                                                                                   |
+|                                                                                     |
+| return { list, isFresh, fetchAll, optimisticAdd, optimisticRemove, searchLocal };   |
+|                                                                                     |
+| });                                                                                 |
++-------------------------------------------------------------------------------------+
+
+10. Monitoramento e Debug de Cache
+
+10.1 Comandos Redis para Inspeção
+
++-----------------------------------------------------------------------------+
+| # Conectar ao Redis do Docker                                               |
+|                                                                             |
+| docker exec -it studytrack_redis redis-cli                                  |
+|                                                                             |
+| # Selecionar banco de cache (DB 1)                                          |
+|                                                                             |
+| SELECT 1                                                                    |
+|                                                                             |
+| # Listar todas as chaves de cache                                           |
+|                                                                             |
+| KEYS 'laravel_cache:*'                                                      |
+|                                                                             |
+| # Ver valor de uma chave específica (serializado PHP)                       |
+|                                                                             |
+| GET 'laravel_cache:dashboard:550e8400-e29b-41d4-a716-446655440000'          |
+|                                                                             |
+| # Ver TTL de uma chave (em segundos, -1 = sem expiração, -2 = não existe)   |
+|                                                                             |
+| TTL 'laravel_cache:dashboard:550e8400-e29b-41d4-a716-446655440000'          |
+|                                                                             |
+| # Ver memória usada por uma chave específica                                |
+|                                                                             |
+| MEMORY USAGE 'laravel_cache:dashboard:550e8400-e29b-41d4-a716-446655440000' |
+|                                                                             |
+| # Estatísticas gerais do Redis                                              |
+|                                                                             |
+| INFO stats                                                                  |
+|                                                                             |
+| INFO memory                                                                 |
+|                                                                             |
+| # Hit rate (keyspace_hits / (keyspace_hits + keyspace_misses))              |
+|                                                                             |
+| INFO keyspace                                                               |
+|                                                                             |
+| # Monitor em tempo real (CUIDADO: alto volume em produção)                  |
+|                                                                             |
+| MONITOR                                                                     |
+|                                                                             |
+| # Deletar manualmente (debug/reset)                                         |
+|                                                                             |
+| DEL 'laravel_cache:dashboard:uuid'                                          |
+|                                                                             |
+| FLUSHDB # PERIGO: limpa TODO o banco atual                                  |
++-----------------------------------------------------------------------------+
+
+10.2 Artisan Commands para Cache
+
++-----------------------------------------------------------------------+
+| # Ver todos os drivers de cache configurados                          |
+|                                                                       |
+| php artisan cache:clear # Limpa o cache padrão                        |
+|                                                                       |
+| # Custom commands que você pode implementar:                          |
+|                                                                       |
+| # Inspecionar cache de um usuário específico                          |
+|                                                                       |
+| php artisan cache:inspect {userId}                                    |
+|                                                                       |
+| # Forçar recalculo + warm de todos os usuários ativos                 |
+|                                                                       |
+| php artisan metrics:recalculate-all --warm                            |
+|                                                                       |
+| # Limpar cache de tecnologias de um usuário (debug)                   |
+|                                                                       |
+| php artisan cache:invalidate-user {userId} --scope=technologies       |
+|                                                                       |
+| # Verificar hit rate do Redis                                         |
+|                                                                       |
+| php artisan redis:stats                                               |
++-----------------------------------------------------------------------+
+
+10.3 Logging de Cache para Debug
+
++----------------------------------------------------------------------------------------+
+| <?php // config/logging.php — Canal dedicado a eventos de cache                        |
+|                                                                                        |
+| 'channels' => [                                                                        |
+|                                                                                        |
+| 'cache' => [                                                                           |
+|                                                                                        |
+| 'driver' => 'daily',                                                                   |
+|                                                                                        |
+| 'path' => storage_path('logs/cache.log'),                                              |
+|                                                                                        |
+| 'level' => env('CACHE_LOG_LEVEL', 'debug'),                                            |
+|                                                                                        |
+| 'days' => 7,                                                                           |
+|                                                                                        |
+| ],                                                                                     |
+|                                                                                        |
+| ],                                                                                     |
+|                                                                                        |
+| // app/Modules/Analytics/Services/AnalyticsService.php                                 |
+|                                                                                        |
+| public function getDashboardData(string $userId): array                                |
+|                                                                                        |
+| {                                                                                      |
+|                                                                                        |
+| $start = microtime(true);                                                              |
+|                                                                                        |
+| $result = Cache::tags([...])->remember($key, $ttl, function () use ($userId, $start) { |
+|                                                                                        |
+| $buildTime = microtime(true) - $start;                                                 |
+|                                                                                        |
+| Log::channel('cache')->info('Cache MISS: dashboard', [                                 |
+|                                                                                        |
+| 'userId' => $userId,                                                                   |
+|                                                                                        |
+| 'build_ms' => round($buildTime * 1000, 2),                                             |
+|                                                                                        |
+| ]);                                                                                    |
+|                                                                                        |
+| return $this->buildDashboardPayload($userId);                                          |
+|                                                                                        |
+| });                                                                                    |
+|                                                                                        |
+| $total = microtime(true) - $start;                                                     |
+|                                                                                        |
+| if ($total < 0.001) { // < 1ms = provavelmente foi HIT                                 |
+|                                                                                        |
+| Log::channel('cache')->debug('Cache HIT: dashboard', ['userId' => $userId]);           |
+|                                                                                        |
+| }                                                                                      |
+|                                                                                        |
+| return $result;                                                                        |
+|                                                                                        |
+| }                                                                                      |
++----------------------------------------------------------------------------------------+
+
+11. Checklist de Implementação
+
+Redis e Configuração
+
+-   [ ] Redis 7 no docker-compose.yml com volume persistente
+
+-   [ ] redis.conf com maxmemory, allkeys-lru e AOF habilitado
+
+-   [ ] config/database.php com 5 bancos Redis mapeados (default, cache, session, queue, horizon)
+
+-   [ ] config/cache.php com driver Redis, store 'cache' apontando para DB 1
+
+-   [ ] CACHE_DRIVER=redis e CACHE_STORE=cache no .env
+
+Cache Tags e Services
+
+-   [ ] AnalyticsService usa Cache::tags(['analytics', 'user:{id}'])->remember()
+
+-   [ ] TechnologyService usa Cache::tags(['technologies', 'user:{id}'])->remember()
+
+-   [ ] AuthService usa Cache::tags(['profile', 'user:{id}'])->remember() para /auth/me
+
+-   [ ] Trait HasCacheInvalidation implementado e incluido nos Services
+
+-   [ ] StudySessionService invalida cache de sessão ativa em start/end
+
+Jobs e Invalidação
+
+-   [ ] RecalculateMetricsJob invalida via Tag flush após UPSERT
+
+-   [ ] RecalculateMetricsJob faz cache warming após invalidação
+
+-   [ ] Job configura $tries=3, $backoff=[30,60,120], $timeout=30
+
+-   [ ] failed() method implementado com Log::error()
+
+-   [ ] Listeners disparam job via event, não via Controller
+
+Frontend (Pinia Stores)
+
+-   [ ] analytics.store.ts com isFresh computed + lastFetchAt
+
+-   [ ] fetchDashboard() verifica isFresh antes de chamar API
+
+-   [ ] updateFromWebSocket() atualiza estado sem request HTTP
+
+-   [ ] markAsStale() chamado quando WebSocket emite .metrics.recalculating
+
+-   [ ] technologies.store.ts com searchLocal() para autocomplete sem API
+
++-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ERRO MAIS COMUM: CACHE SEM TAG INVALIDATION                                                                                                                                                                                                   |
++-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Sintoma: Usuário registra sessão mas dashboard continua mostrando dados antigos após 5 minutos.                                                                                                                                               |
+|                                                                                                                                                                                                                                               |
+| Causa: Job recalcula o banco mas não invalida o cache. Ou invalida o cache mas sem usar tags, deixando chaves de series temporais com parâmetros dinâmicos intactas.                                                                          |
+|                                                                                                                                                                                                                                               |
+| Diagnóstico: redis-cli SELECT 1; KEYS 'laravel_cache:*uuid*' — ver se chave ainda existe após o job rodar.                                                                                                                                    |
+|                                                                                                                                                                                                                                               |
+| Correção: Garantir que o job chama Cache::tags(['analytics', 'user:'.$userId])->flush() ANTES do evento MetricsRecalculated. Sem tags, use pattern delete: Cache::store('cache')->deletePattern('*uuid*') — mas tags são a abordagem correta. |
++-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+

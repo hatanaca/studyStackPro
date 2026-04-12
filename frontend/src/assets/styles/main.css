@@ -1,5 +1,6 @@
 /* Entry point de estilos */
 @import './variables.css';
+@import './primevue-overrides.css';
 @import './transitions.css';
 @import './utilities.css';
 @import './utilities-2.css';
@@ -58,14 +59,31 @@ a {
   outline: none;
 }
 :focus-visible {
-  outline: none;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
   box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-sm);
 }
 button:focus-visible,
 a:focus-visible,
-[tabindex="0"]:focus-visible {
-  outline: none;
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex="0"]:focus-visible,
+[role="tab"]:focus-visible,
+[role="button"]:focus-visible,
+[role="menuitem"]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
   box-shadow: var(--shadow-focus);
+}
+
+/* Disabled state global */
+[disabled],
+[aria-disabled="true"],
+.disabled {
+  opacity: var(--state-disabled-opacity);
+  cursor: not-allowed;
 }
 
 /* ── Page header typography ── */

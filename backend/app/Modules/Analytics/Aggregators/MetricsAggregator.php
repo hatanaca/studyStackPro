@@ -178,13 +178,15 @@ class MetricsAggregator
         return $streak;
     }
 
-    /** Calcula o maior streak histórico */
+    /** Calcula o maior streak histórico (limitado aos últimos 730 dias para performance) */
     private function calculateMaxStreak(string $userId, string $userTimezone = 'UTC'): int
     {
         $dates = DB::select('
             SELECT DISTINCT (started_at AT TIME ZONE ?)::date AS d
             FROM public.study_sessions
-            WHERE user_id = ?::uuid AND ended_at IS NOT NULL
+            WHERE user_id = ?::uuid
+              AND ended_at IS NOT NULL
+              AND started_at >= NOW() - INTERVAL \'730 days\'
             ORDER BY d
         ', [$userTimezone, $userId]);
 

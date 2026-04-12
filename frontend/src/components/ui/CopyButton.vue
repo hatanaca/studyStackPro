@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onBeforeUnmount } from 'vue'
 
 const props = withDefaults(
   defineProps<{
@@ -36,6 +36,13 @@ async function copy() {
     copied.value = false
   }
 }
+
+onBeforeUnmount(() => {
+  if (resetTimer) {
+    clearTimeout(resetTimer)
+    resetTimer = null
+  }
+})
 </script>
 
 <template>

@@ -1,0 +1,1719 @@
++-------------------------------------------------------------------------------------------+
+| STUDYTRACK PRO                                                                            |
+|                                                                                           |
+| Fluxo de Eventos e Jobs                                                                   |
+|                                                                                           |
+| Event-Driven Architecture · Laravel Events · Listeners · Queue Jobs · Horizon · WebSocket |
+|                                                                                           |
+| 6 events · 4 jobs · 8 listeners · Fluxos completos com código de produção                 |
++-------------------------------------------------------------------------------------------+
+
++----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| POR QUE EVENT-DRIVEN NESTE SISTEMA?                                                                                                                                                                                                                                                          |
++----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Sem eventos, um Controller de criação de sessão faria: salvar no banco, recalcular métricas, invalidar cache, enviar WebSocket. Isso é acoplamento direto entre camadas — o Controller precisa conhecer tudo. Com o custo adicional de que, se o recalculo falhar, a requisição falha junto. |
+|                                                                                                                                                                                                                                                                                              |
+| Com eventos: o Controller salva a sessão e dispara StudySessionCreated. Pronto. Listeners cuidam do resto de forma assíncrona, em fila, com retry automático. A resposta HTTP chega em 5ms; o recalculo acontece em segundo plano.                                                           |
+|                                                                                                                                                                                                                                                                                              |
+| Princípio: O produtor do evento (Service/Controller) nunca conhece os consumidores (Listeners/Jobs). Adicionar um novo comportamento ao criar sessão é adicionar um Listener — sem tocar no código existente. Open/Closed Principle na prática.                                              |
++----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+1. Mapa Completo do Sistema Event-Driven
+
+Todos os eventos, listeners e jobs do sistema, com suas relações de disparo:
+
++---------------------------------------------------------------------------------+
+| # LEGENDA: EVENT (roxo) | LISTENER (azul) | JOB (verde) | BROADCAST (vermelho)  |
+|                                                                                 |
+| ┌─────────────────────────────────────────────────────────────────────────────┐ |
+|                                                                                 |
+| │ EVENTOS DE SESSÃO DE ESTUDO │                                                 |
+|                                                                                 |
+| ├─────────────────────────────────────────────────────────────────────────────┤ |
+|                                                                                 |
+| │ │                                                                             |
+|                                                                                 |
+| │ EVENT: StudySessionCreated ───────────────────────────────────────────── │    |
+|                                                                                 |
+| │ LISTENER: InvalidateSessionCache → Cache::tags([sessions])->flush│            |
+|                                                                                 |
+| │ LISTENER: DispatchMetricsRecalculation → JOB: RecalculateMetricsJob │         |
+|                                                                                 |
+| │ LISTENER: BroadcastSessionStarted → WS: .session.started │                    |
+|                                                                                 |
+| │ LISTENER: BroadcastMetricsRecalculating → WS: .metrics.recalculating │        |
+|                                                                                 |
+| │ │                                                                             |
+|                                                                                 |
+| │ EVENT: StudySessionUpdated ───────────────────────────────────────────── │    |
+|                                                                                 |
+| │ LISTENER: InvalidateSessionCache → Cache::tags([sessions])->flush│            |
+|                                                                                 |
+| │ LISTENER: DispatchMetricsRecalculation → JOB: RecalculateMetricsJob │         |
+|                                                                                 |
+| │ LISTENER: BroadcastMetricsRecalculating → WS: .metrics.recalculating │        |
+|                                                                                 |
+| │ │                                                                             |
+|                                                                                 |
+| │ EVENT: StudySessionDeleted ───────────────────────────────────────────── │    |
+|                                                                                 |
+| │ LISTENER: InvalidateSessionCache → Cache::tags([sessions])->flush│            |
+|                                                                                 |
+| │ LISTENER: DispatchMetricsRecalculation → JOB: RecalculateMetricsJob │         |
+|                                                                                 |
+| │ │                                                                             |
+|                                                                                 |
+| ├─────────────────────────────────────────────────────────────────────────────┤ |
+|                                                                                 |
+| │ EVENTOS DE ANALYTICS │                                                        |
+|                                                                                 |
+| ├─────────────────────────────────────────────────────────────────────────────┤ |
+|                                                                                 |
+| │ │                                                                             |
+|                                                                                 |
+| │ EVENT: MetricsRecalculated ───────────────────────────────────────────── │    |
+|                                                                                 |
+| │ LISTENER: BroadcastMetricsUpdate → WS: .metrics.updated │                     |
+|                                                                                 |
+| │ LISTENER: UpdateCacheWithFreshData → Cache::tags([analytics])->put│           |
+|                                                                                 |
+| │ │                                                                             |
+|                                                                                 |
+| ├─────────────────────────────────────────────────────────────────────────────┤ |
+|                                                                                 |
+| │ JOBS DA FILA REDIS │                                                          |
+|                                                                                 |
+| ├─────────────────────────────────────────────────────────────────────────────┤ |
+|                                                                                 |
+| │ │                                                                             |
+|                                                                                 |
+| │ JOB: RecalculateMetricsJob [queue: metrics, priority: high] │                 |
+|                                                                                 |
+| │ → DB::transaction { UPSERT analytics.user_metrics } │                         |
+|                                                                                 |
+| │ → DB::transaction { UPSERT analytics.technology_metrics } │                   |
+|                                                                                 |
+| │ → DB::transaction { UPSERT analytics.daily_minutes } │                        |
+|                                                                                 |
+| │ → Cache::tags([analytics, user:X])->flush() │                                 |
+|                                                                                 |
+| │ → event(MetricsRecalculated) ← dispara novo ciclo de eventos │                |
+|                                                                                 |
+| │ │                                                                             |
+|                                                                                 |
+| │ JOB: GenerateWeeklySummaryJob [queue: default, scheduled: Monday 03:00] │     |
+|                                                                                 |
+| │ → UPSERT analytics.weekly_summaries para todos os usuários ativos │           |
+|                                                                                 |
+| │ → Cache::tags([analytics])->flush() para cada usuário │                       |
+|                                                                                 |
+| │ │                                                                             |
+|                                                                                 |
+| │ JOB: BroadcastDashboardUpdateJob [queue: broadcasts] │                        |
+|                                                                                 |
+| │ → broadcast(MetricsUpdated)->toPrivateChannel(dashboard.{userId}) │           |
+|                                                                                 |
+| │ │                                                                             |
+|                                                                                 |
+| │ JOB: PruneFailedJobsJob [queue: maintenance, scheduled: daily] │              |
+|                                                                                 |
+| │ → Delete failed_jobs older than 7 days │                                      |
+|                                                                                 |
+| │ │                                                                             |
+|                                                                                 |
+| └─────────────────────────────────────────────────────────────────────────────┘ |
++---------------------------------------------------------------------------------+
+
+2. EventServiceProvider — Registro Completo
+
+O EventServiceProvider mapeia cada evento aos seus listeners. A ordem dos listeners dentro de um array importa — eles são executados em sequência, sincronamente, no mesmo request. Por isso a ordem: invalidação de cache primeiro, depois disparo do job assíncrono.
+
++----------------------------------------------------------------------------------------------+
+| <?php // app/Providers/EventServiceProvider.php                                              |
+|                                                                                              |
+| use App\Events\StudySession\{StudySessionCreated, StudySessionUpdated, StudySessionDeleted}; |
+|                                                                                              |
+| use App\Events\Analytics\MetricsRecalculated;                                                |
+|                                                                                              |
+| use App\Listeners\StudySession\{                                                             |
+|                                                                                              |
+| InvalidateSessionCache,                                                                      |
+|                                                                                              |
+| DispatchMetricsRecalculation,                                                                |
+|                                                                                              |
+| BroadcastSessionStarted,                                                                     |
+|                                                                                              |
+| BroadcastMetricsRecalculating,                                                               |
+|                                                                                              |
+| };                                                                                           |
+|                                                                                              |
+| use App\Listeners\Analytics\{                                                                |
+|                                                                                              |
+| BroadcastMetricsUpdate,                                                                      |
+|                                                                                              |
+| UpdateCacheWithFreshData,                                                                    |
+|                                                                                              |
+| };                                                                                           |
+|                                                                                              |
+| class EventServiceProvider extends ServiceProvider                                           |
+|                                                                                              |
+| {                                                                                            |
+|                                                                                              |
+| protected $listen = [                                                                        |
+|                                                                                              |
+| // ── SESSÕES ─────────────────────────────────────────────────────                          |
+|                                                                                              |
+| StudySessionCreated::class => [                                                              |
+|                                                                                              |
+| InvalidateSessionCache::class, // 1° sync: limpa cache de sessão ativa                       |
+|                                                                                              |
+| DispatchMetricsRecalculation::class, // 2° sync: enfileira RecalculateMetricsJob             |
+|                                                                                              |
+| BroadcastSessionStarted::class, // 3° sync: WS .session.started (se nova sessão)             |
+|                                                                                              |
+| BroadcastMetricsRecalculating::class,// 4° sync: WS .metrics.recalculating                   |
+|                                                                                              |
+| ],                                                                                           |
+|                                                                                              |
+| StudySessionUpdated::class => [                                                              |
+|                                                                                              |
+| InvalidateSessionCache::class,                                                               |
+|                                                                                              |
+| DispatchMetricsRecalculation::class,                                                         |
+|                                                                                              |
+| BroadcastMetricsRecalculating::class,                                                        |
+|                                                                                              |
+| ],                                                                                           |
+|                                                                                              |
+| StudySessionDeleted::class => [                                                              |
+|                                                                                              |
+| InvalidateSessionCache::class,                                                               |
+|                                                                                              |
+| DispatchMetricsRecalculation::class,                                                         |
+|                                                                                              |
+| // Sem broadcast: deleção não tem notificação visual                                         |
+|                                                                                              |
+| ],                                                                                           |
+|                                                                                              |
+| // ── ANALYTICS ───────────────────────────────────────────────────                          |
+|                                                                                              |
+| MetricsRecalculated::class => [                                                              |
+|                                                                                              |
+| UpdateCacheWithFreshData::class, // 1° sync: popula cache com dados frescos                  |
+|                                                                                              |
+| BroadcastMetricsUpdate::class, // 2° sync: WS .metrics.updated com payload                   |
+|                                                                                              |
+| ],                                                                                           |
+|                                                                                              |
+| ];                                                                                           |
+|                                                                                              |
+| public function boot(): void                                                                 |
+|                                                                                              |
+| {                                                                                            |
+|                                                                                              |
+| // Autodiscovery de eventos desabilitado (performance: lista explícita é mais rápida)        |
+|                                                                                              |
+| Event::listen('*', function ($event, $payload) {                                             |
+|                                                                                              |
+| if (config('app.debug')) {                                                                   |
+|                                                                                              |
+| Log::channel('events')->debug('Event fired', ['event' => $event]);                           |
+|                                                                                              |
+| }                                                                                            |
+|                                                                                              |
+| });                                                                                          |
+|                                                                                              |
+| }                                                                                            |
+|                                                                                              |
+| }                                                                                            |
++----------------------------------------------------------------------------------------------+
+
+3. Definição dos Eventos
+
+3.1 Eventos de Sessão de Estudo
+
+  -----------------------------------------------------------------------
+  EVENT StudySessionCreated
+
+  Trigger
+
+  Listeners
+
+  Payload
+
+  Notas
+  -----------------------------------------------------------------------
+
+  -----------------------------------------------------------------------
+  EVENT StudySessionUpdated
+
+  Trigger
+
+  Listeners
+
+  Payload
+
+  Notas
+  -----------------------------------------------------------------------
+
+  -----------------------------------------------------------------------
+  EVENT StudySessionDeleted
+
+  Trigger
+
+  Listeners
+
+  Payload
+
+  Notas
+  -----------------------------------------------------------------------
+
+3.2 Eventos de Analytics
+
+  -----------------------------------------------------------------------
+  EVENT MetricsRecalculated
+
+  Trigger
+
+  Listeners
+
+  Payload
+
+  Fila Redis
+
+  Broadcast
+
+  Notas
+  -----------------------------------------------------------------------
+
+3.3 Implementação dos Eventos
+
++--------------------------------------------------------------------------------+
+| <?php // app/Events/StudySession/StudySessionCreated.php                       |
+|                                                                                |
+| namespace App\Events\StudySession;                                             |
+|                                                                                |
+| use App\Models\StudySession;                                                   |
+|                                                                                |
+| use Illuminate\Foundation\Events\Dispatchable;                                 |
+|                                                                                |
+| use Illuminate\Queue\SerializesModels;                                         |
+|                                                                                |
+| class StudySessionCreated                                                      |
+|                                                                                |
+| {                                                                              |
+|                                                                                |
+| use Dispatchable, SerializesModels;                                            |
+|                                                                                |
+| public function __construct(                                                   |
+|                                                                                |
+| public readonly StudySession $session,                                         |
+|                                                                                |
+| ) {}                                                                           |
+|                                                                                |
+| }                                                                              |
+|                                                                                |
+| // ─────────────────────────────────────────────────────────────────────       |
+|                                                                                |
+| <?php // app/Events/StudySession/StudySessionDeleted.php                       |
+|                                                                                |
+| // Evento pós-delete: modelo não existe mais, carrega dados como value objects |
+|                                                                                |
+| class StudySessionDeleted                                                      |
+|                                                                                |
+| {                                                                              |
+|                                                                                |
+| use Dispatchable; // sem SerializesModels: nenhum modelo para serializar       |
+|                                                                                |
+| public function __construct(                                                   |
+|                                                                                |
+| public readonly string $userId,                                                |
+|                                                                                |
+| public readonly string $sessionId,                                             |
+|                                                                                |
+| public readonly int $durationMin,                                              |
+|                                                                                |
+| public readonly Carbon $startedAt,                                             |
+|                                                                                |
+| ) {}                                                                           |
+|                                                                                |
+| }                                                                              |
+|                                                                                |
+| // ─────────────────────────────────────────────────────────────────────       |
+|                                                                                |
+| <?php // app/Events/Analytics/MetricsRecalculated.php                          |
+|                                                                                |
+| class MetricsRecalculated                                                      |
+|                                                                                |
+| {                                                                              |
+|                                                                                |
+| use Dispatchable;                                                              |
+|                                                                                |
+| public function __construct(                                                   |
+|                                                                                |
+| public readonly string $userId,                                                |
+|                                                                                |
+| public readonly array $dashboardData, // payload pré-montado                   |
+|                                                                                |
+| ) {}                                                                           |
+|                                                                                |
+| }                                                                              |
++--------------------------------------------------------------------------------+
+
+4. Implementação dos Listeners
+
+4.1 InvalidateSessionCache
+
+Primeiro listener a executar. Remove o cache de sessão ativa do usuário. Deve ser síncrono e completar antes do job ser despachado.
+
++--------------------------------------------------------------------------------------------------+
+| <?php // app/Listeners/StudySession/InvalidateSessionCache.php                                   |
+|                                                                                                  |
+| class InvalidateSessionCache                                                                     |
+|                                                                                                  |
+| {                                                                                                |
+|                                                                                                  |
+| public function handle(StudySessionCreated|StudySessionUpdated|StudySessionDeleted $event): void |
+|                                                                                                  |
+| {                                                                                                |
+|                                                                                                  |
+| $userId = match(true) {                                                                          |
+|                                                                                                  |
+| $event instanceof StudySessionDeleted => $event->userId,                                         |
+|                                                                                                  |
+| default => $event->session->user_id,                                                             |
+|                                                                                                  |
+| };                                                                                               |
+|                                                                                                  |
+| // Invalida cache de sessão ativa e qualquer lista de sessões cacheada                           |
+|                                                                                                  |
+| Cache::tags(['sessions', "user:{$userId}"])->flush();                                            |
+|                                                                                                  |
+| Log::debug('Session cache invalidated', ['userId' => $userId]);                                  |
+|                                                                                                  |
+| }                                                                                                |
+|                                                                                                  |
+| }                                                                                                |
++--------------------------------------------------------------------------------------------------+
+
+4.2 DispatchMetricsRecalculation
+
+Analisa quais campos mudaram e decide se precisa de recalculo completo ou parcial antes de despachar o job.
+
++--------------------------------------------------------------------------------------------------+
+| <?php // app/Listeners/StudySession/DispatchMetricsRecalculation.php                             |
+|                                                                                                  |
+| class DispatchMetricsRecalculation                                                               |
+|                                                                                                  |
+| {                                                                                                |
+|                                                                                                  |
+| public function handle(StudySessionCreated|StudySessionUpdated|StudySessionDeleted $event): void |
+|                                                                                                  |
+| {                                                                                                |
+|                                                                                                  |
+| [$userId, $fullRecalc] = match(true) {                                                           |
+|                                                                                                  |
+| // Deleted: sempre recalculo completo (totais mudaram)                                           |
+|                                                                                                  |
+| $event instanceof StudySessionDeleted => [$event->userId, true],                                 |
+|                                                                                                  |
+| // Updated: fullRecalc apenas se dados de tempo/tecnologia mudaram                               |
+|                                                                                                  |
+| $event instanceof StudySessionUpdated => [                                                       |
+|                                                                                                  |
+| $event->session->user_id,                                                                        |
+|                                                                                                  |
+| !empty(array_intersect(                                                                          |
+|                                                                                                  |
+| array_keys($event->changedFields),                                                               |
+|                                                                                                  |
+| ['started_at', 'ended_at', 'technology_id', 'duration_min']                                      |
+|                                                                                                  |
+| )),                                                                                              |
+|                                                                                                  |
+| ],                                                                                               |
+|                                                                                                  |
+| // Created: sempre fullRecalc                                                                    |
+|                                                                                                  |
+| default => [$event->session->user_id, true],                                                     |
+|                                                                                                  |
+| };                                                                                               |
+|                                                                                                  |
+| RecalculateMetricsJob::dispatch($userId, $fullRecalc)                                            |
+|                                                                                                  |
+| ->onQueue('metrics')                                                                             |
+|                                                                                                  |
+| ->delay(now()->addSeconds(2)); // pequeno delay para agrupar eventos rápidos                     |
+|                                                                                                  |
+| }                                                                                                |
+|                                                                                                  |
+| }                                                                                                |
++--------------------------------------------------------------------------------------------------+
+
+4.3 BroadcastMetricsRecalculating e BroadcastSessionStarted
+
++------------------------------------------------------------------------------+
+| <?php // app/Listeners/StudySession/BroadcastMetricsRecalculating.php        |
+|                                                                              |
+| // Informa o frontend que o recalculo começou → exibir spinner no dashboard  |
+|                                                                              |
+| class BroadcastMetricsRecalculating                                          |
+|                                                                              |
+| {                                                                            |
+|                                                                              |
+| public function handle(StudySessionCreated|StudySessionUpdated $event): void |
+|                                                                              |
+| {                                                                            |
+|                                                                              |
+| $userId = $event->session->user_id;                                          |
+|                                                                              |
+| broadcast(new \App\Events\Broadcast\MetricsRecalculating($userId))           |
+|                                                                              |
+| ->toPrivateChannel("dashboard.{$userId}");                                   |
+|                                                                              |
+| }                                                                            |
+|                                                                              |
+| }                                                                            |
+|                                                                              |
+| // ─────────────────────────────────────────────────────────────────────     |
+|                                                                              |
+| <?php // app/Listeners/StudySession/BroadcastSessionStarted.php              |
+|                                                                              |
+| // Notifica frontend de nova sessão ativa (exibe badge de timer)             |
+|                                                                              |
+| class BroadcastSessionStarted                                                |
+|                                                                              |
+| {                                                                            |
+|                                                                              |
+| public function handle(StudySessionCreated $event): void                     |
+|                                                                              |
+| {                                                                            |
+|                                                                              |
+| // Só notifica se for sessão sem ended_at (sessão ativa)                     |
+|                                                                              |
+| if ($event->session->ended_at !== null) {                                    |
+|                                                                              |
+| return; // Sessão já finalizada: não exibir badge de timer                   |
+|                                                                              |
+| }                                                                            |
+|                                                                              |
+| broadcast(new \App\Events\Broadcast\SessionStarted(                          |
+|                                                                              |
+| userId: $event->session->user_id,                                            |
+|                                                                              |
+| session: $event->session,                                                    |
+|                                                                              |
+| ))->toPrivateChannel("dashboard.{$event->session->user_id}");                |
+|                                                                              |
+| }                                                                            |
+|                                                                              |
+| }                                                                            |
++------------------------------------------------------------------------------+
+
+4.4 BroadcastMetricsUpdate e UpdateCacheWithFreshData
+
++--------------------------------------------------------------------------+
+| <?php // app/Listeners/Analytics/UpdateCacheWithFreshData.php            |
+|                                                                          |
+| // Popula o cache com os dados frescos pré-montados pelo job             |
+|                                                                          |
+| // Evita cache miss no próximo request do dashboard                      |
+|                                                                          |
+| class UpdateCacheWithFreshData                                           |
+|                                                                          |
+| {                                                                        |
+|                                                                          |
+| public function handle(MetricsRecalculated $event): void                 |
+|                                                                          |
+| {                                                                        |
+|                                                                          |
+| $userId = $event->userId;                                                |
+|                                                                          |
+| $data = $event->dashboardData;                                           |
+|                                                                          |
+| // Cache warming: popula ANTES do broadcast (race condition: frontend    |
+|                                                                          |
+| // pode fazer request antes do WS processar o evento)                    |
+|                                                                          |
+| Cache::tags(['analytics', "user:{$userId}"])                             |
+|                                                                          |
+| ->put("dashboard:{$userId}", $data, now()->addMinutes(5));               |
+|                                                                          |
+| Log::debug('Dashboard cache warmed', ['userId' => $userId]);             |
+|                                                                          |
+| }                                                                        |
+|                                                                          |
+| }                                                                        |
+|                                                                          |
+| // ───────────────────────────────────────────────────────────────────── |
+|                                                                          |
+| <?php // app/Listeners/Analytics/BroadcastMetricsUpdate.php              |
+|                                                                          |
+| // Envia dados frescos ao frontend via WebSocket                         |
+|                                                                          |
+| class BroadcastMetricsUpdate                                             |
+|                                                                          |
+| {                                                                        |
+|                                                                          |
+| public function handle(MetricsRecalculated $event): void                 |
+|                                                                          |
+| {                                                                        |
+|                                                                          |
+| broadcast(new \App\Events\Broadcast\MetricsUpdated(                      |
+|                                                                          |
+| userId: $event->userId,                                                  |
+|                                                                          |
+| dashboard: $event->dashboardData,                                        |
+|                                                                          |
+| ))->toPrivateChannel("dashboard.{$event->userId}");                      |
+|                                                                          |
+| }                                                                        |
+|                                                                          |
+| }                                                                        |
++--------------------------------------------------------------------------+
+
+5. Definição dos Jobs
+
+5.1 RecalculateMetricsJob (Core)
+
+  -----------------------------------------------------------------------
+  JOB RecalculateMetricsJob [queue: metrics]
+
+  Disparado por
+
+  Tentativas
+
+  Backoff
+
+  Timeout
+
+  Etapas
+
+  Ao concluir
+
+  Ao falhar
+
+  Notas
+  -----------------------------------------------------------------------
+
++-----------------------------------------------------------------------------------+
+| <?php // app/Jobs/RecalculateMetricsJob.php                                       |
+|                                                                                   |
+| use Illuminate\Contracts\Queue\ShouldBeUnique;                                    |
+|                                                                                   |
+| class RecalculateMetricsJob implements ShouldQueue, ShouldBeUnique                |
+|                                                                                   |
+| {                                                                                 |
+|                                                                                   |
+| use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;                |
+|                                                                                   |
+| public int $tries = 3;                                                            |
+|                                                                                   |
+| public array $backoff = [30, 60, 120];                                            |
+|                                                                                   |
+| public int $timeout = 30;                                                         |
+|                                                                                   |
+| public string $queue = 'metrics';                                                 |
+|                                                                                   |
+| // ShouldBeUnique: previne jobs duplicados por userId                             |
+|                                                                                   |
+| public int $uniqueFor = 5; // segundos que o lock é mantido                       |
+|                                                                                   |
+| public function uniqueId(): string { return $this->userId; }                      |
+|                                                                                   |
+| public function __construct(                                                      |
+|                                                                                   |
+| public readonly string $userId,                                                   |
+|                                                                                   |
+| public readonly bool $fullRecalc = true,                                          |
+|                                                                                   |
+| ) {}                                                                              |
+|                                                                                   |
+| public function handle(                                                           |
+|                                                                                   |
+| UserMetricsAggregator $userAgg,                                                   |
+|                                                                                   |
+| TechMetricsAggregator $techAgg,                                                   |
+|                                                                                   |
+| DailyMinutesAggregator $dailyAgg,                                                 |
+|                                                                                   |
+| AnalyticsService $analyticsService,                                               |
+|                                                                                   |
+| ): void {                                                                         |
+|                                                                                   |
+| // 1. Recalcula no banco em uma única transação atômica                           |
+|                                                                                   |
+| DB::transaction(function () use ($userAgg, $techAgg, $dailyAgg) {                 |
+|                                                                                   |
+| $userAgg->recalculate($this->userId);                                             |
+|                                                                                   |
+| $techAgg->recalculate($this->userId);                                             |
+|                                                                                   |
+| $dailyAgg->recalculate($this->userId);                                            |
+|                                                                                   |
+| });                                                                               |
+|                                                                                   |
+| // 2. Invalida cache desatualizado                                                |
+|                                                                                   |
+| Cache::tags(['analytics', "user:{$this->userId}"])->flush();                      |
+|                                                                                   |
+| // 3. Monta payload e faz cache warming (pré-aquece para próximo request)         |
+|                                                                                   |
+| $freshData = $analyticsService->buildDashboardPayload($this->userId);             |
+|                                                                                   |
+| Cache::tags(['analytics', "user:{$this->userId}"])                                |
+|                                                                                   |
+| ->put("dashboard:{$this->userId}", $freshData, now()->addMinutes(5));             |
+|                                                                                   |
+| // 4. Dispara evento que notifica frontend via WebSocket                          |
+|                                                                                   |
+| event(new MetricsRecalculated($this->userId, $freshData));                        |
+|                                                                                   |
+| }                                                                                 |
+|                                                                                   |
+| public function failed(\Throwable $e): void                                       |
+|                                                                                   |
+| {                                                                                 |
+|                                                                                   |
+| Log::error('RecalculateMetricsJob failed', [                                      |
+|                                                                                   |
+| 'userId' => $this->userId,                                                        |
+|                                                                                   |
+| 'attempt' => $this->attempts(),                                                   |
+|                                                                                   |
+| 'error' => $e->getMessage(),                                                      |
+|                                                                                   |
+| 'fullTrace' => $e->getTraceAsString(),                                            |
+|                                                                                   |
+| ]);                                                                               |
+|                                                                                   |
+| // Notificar frontend que o spinner pode ser removido (falhou, mas não travar UI) |
+|                                                                                   |
+| broadcast(new MetricsRecalculating($this->userId))->via('reverb');                |
+|                                                                                   |
+| }                                                                                 |
+|                                                                                   |
+| }                                                                                 |
++-----------------------------------------------------------------------------------+
+
+5.2 GenerateWeeklySummaryJob (Scheduled)
+
+  -----------------------------------------------------------------------
+  JOB GenerateWeeklySummaryJob [queue: default]
+
+  Disparado por
+
+  Tentativas
+
+  Backoff
+
+  Timeout
+
+  Etapas
+
+  Ao concluir
+
+  Ao falhar
+
+  Notas
+  -----------------------------------------------------------------------
+
++-----------------------------------------------------------------------+
+| <?php // app/Jobs/GenerateWeeklySummaryJob.php                        |
+|                                                                       |
+| class GenerateWeeklySummaryJob implements ShouldQueue                 |
+|                                                                       |
+| {                                                                     |
+|                                                                       |
+| use Dispatchable, InteractsWithQueue, Queueable;                      |
+|                                                                       |
+| public int $tries = 2;                                                |
+|                                                                       |
+| public array $backoff = [300];                                        |
+|                                                                       |
+| public int $timeout = 300;                                            |
+|                                                                       |
+| public function handle(WeeklySummaryAggregator $aggregator): void     |
+|                                                                       |
+| {                                                                     |
+|                                                                       |
+| $processed = 0;                                                       |
+|                                                                       |
+| $cutoff = now()->subDays(30);                                         |
+|                                                                       |
+| // Processa apenas usuários com sessões nos últimos 30 dias           |
+|                                                                       |
+| // chunk(100): carrega 100 usuários por vez na memória                |
+|                                                                       |
+| User::whereHas('studySessions', function ($q) use ($cutoff) {         |
+|                                                                       |
+| $q->where('started_at', '>=', $cutoff);                               |
+|                                                                       |
+| })->chunk(100, function ($users) use ($aggregator, &$processed) {     |
+|                                                                       |
+| foreach ($users as $user) {                                           |
+|                                                                       |
+| $aggregator->recalculateCurrentWeek($user->id);                       |
+|                                                                       |
+| Cache::tags(['analytics', "user:{$user->id}", 'weekly'])->flush();    |
+|                                                                       |
+| $processed++;                                                         |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| });                                                                   |
+|                                                                       |
+| Log::info('WeeklySummary generated', [                                |
+|                                                                       |
+| 'users_processed' => $processed,                                      |
+|                                                                       |
+| 'duration_ms' => $this->job?->getTimeout(),                           |
+|                                                                       |
+| ]);                                                                   |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| // routes/console.php — Agendamento                                   |
+|                                                                       |
+| Schedule::job(new GenerateWeeklySummaryJob())                         |
+|                                                                       |
+| ->weeklyOn(1, '03:00') // 1 = segunda-feira                           |
+|                                                                       |
+| ->name('weekly-summary')                                              |
+|                                                                       |
+| ->withoutOverlapping() // previne execuções simultâneas               |
+|                                                                       |
+| ->onOneServer(); // em cluster: apenas 1 servidor executa             |
++-----------------------------------------------------------------------+
+
+6. Eventos de Broadcast (WebSocket via Reverb)
+
+Broadcast events são classes PHP que implementam ShouldBroadcast e são transmitidas pelo Laravel Reverb para canais privados do usuário. São diferentes dos domain events: broadcast events carregam payload formatado para o frontend.
+
++-------------------------------------------------------------------------------------------------------------+
+| <?php // app/Events/Broadcast/MetricsUpdated.php                                                            |
+|                                                                                                             |
+| // Evento transmitido via WebSocket após recalculo concluído                                                |
+|                                                                                                             |
+| use Illuminate\Broadcasting\{InteractsWithSockets, PrivateChannel};                                         |
+|                                                                                                             |
+| use Illuminate\Contracts\Broadcasting\ShouldBroadcast;                                                      |
+|                                                                                                             |
+| class MetricsUpdated implements ShouldBroadcast                                                             |
+|                                                                                                             |
+| {                                                                                                           |
+|                                                                                                             |
+| use InteractsWithSockets;                                                                                   |
+|                                                                                                             |
+| public function __construct(                                                                                |
+|                                                                                                             |
+| private readonly string $userId,                                                                            |
+|                                                                                                             |
+| public readonly array $dashboard, // payload que vai ao frontend                                            |
+|                                                                                                             |
+| ) {}                                                                                                        |
+|                                                                                                             |
+| public function broadcastOn(): PrivateChannel                                                               |
+|                                                                                                             |
+| {                                                                                                           |
+|                                                                                                             |
+| // Canal privado por usuário: só o dono recebe                                                              |
+|                                                                                                             |
+| return new PrivateChannel("dashboard.{$this->userId}");                                                     |
+|                                                                                                             |
+| }                                                                                                           |
+|                                                                                                             |
+| public function broadcastAs(): string                                                                       |
+|                                                                                                             |
+| {                                                                                                           |
+|                                                                                                             |
+| // Nome do evento no frontend: echo.listen('.metrics.updated')                                              |
+|                                                                                                             |
+| // Ponto no início = sem prefixo App\\Events automático                                                     |
+|                                                                                                             |
+| return 'metrics.updated';                                                                                   |
+|                                                                                                             |
+| }                                                                                                           |
+|                                                                                                             |
+| public function broadcastWith(): array                                                                      |
+|                                                                                                             |
+| {                                                                                                           |
+|                                                                                                             |
+| // Payload enviado ao frontend                                                                              |
+|                                                                                                             |
+| return ['dashboard' => $this->dashboard];                                                                   |
+|                                                                                                             |
+| }                                                                                                           |
+|                                                                                                             |
+| // Opcional: só transmite se há conexões ativas no canal                                                    |
+|                                                                                                             |
+| // (evita broadcast no vazio quando usuário não está online)                                                |
+|                                                                                                             |
+| public function broadcastWhen(): bool                                                                       |
+|                                                                                                             |
+| {                                                                                                           |
+|                                                                                                             |
+| return true; // Simplificado: sempre transmite                                                              |
+|                                                                                                             |
+| // Produção: verificar se canal tem assinantes ativos                                                       |
+|                                                                                                             |
+| }                                                                                                           |
+|                                                                                                             |
+| }                                                                                                           |
+|                                                                                                             |
+| // ─────────────────────────────────────────────────────────────────────                                    |
+|                                                                                                             |
+| <?php // app/Events/Broadcast/MetricsRecalculating.php                                                      |
+|                                                                                                             |
+| // Spinner: informa frontend que recalculo está em andamento                                                |
+|                                                                                                             |
+| class MetricsRecalculating implements ShouldBroadcast                                                       |
+|                                                                                                             |
+| {                                                                                                           |
+|                                                                                                             |
+| use InteractsWithSockets;                                                                                   |
+|                                                                                                             |
+| public function __construct(private readonly string $userId) {}                                             |
+|                                                                                                             |
+| public function broadcastOn(): PrivateChannel { return new PrivateChannel("dashboard.{$this->userId}"); }   |
+|                                                                                                             |
+| public function broadcastAs(): string { return 'metrics.recalculating'; }                                   |
+|                                                                                                             |
+| public function broadcastWith(): array { return ['status' => 'recalculating']; }                            |
+|                                                                                                             |
+| }                                                                                                           |
+|                                                                                                             |
+| // ─────────────────────────────────────────────────────────────────────                                    |
+|                                                                                                             |
+| <?php // app/Events/Broadcast/SessionStarted.php                                                            |
+|                                                                                                             |
+| // Exibe badge de sessão ativa no header da UI                                                              |
+|                                                                                                             |
+| class SessionStarted implements ShouldBroadcast                                                             |
+|                                                                                                             |
+| {                                                                                                           |
+|                                                                                                             |
+| use InteractsWithSockets;                                                                                   |
+|                                                                                                             |
+| public function __construct(                                                                                |
+|                                                                                                             |
+| private readonly string $userId,                                                                            |
+|                                                                                                             |
+| private readonly StudySession $session,                                                                     |
+|                                                                                                             |
+| ) {}                                                                                                        |
+|                                                                                                             |
+| public function broadcastOn(): PrivateChannel { return new PrivateChannel("dashboard.{$this->userId}"); }   |
+|                                                                                                             |
+| public function broadcastAs(): string { return 'session.started'; }                                         |
+|                                                                                                             |
+| public function broadcastWith(): array {                                                                    |
+|                                                                                                             |
+| return ['session' => [                                                                                      |
+|                                                                                                             |
+| 'id' => $this->session->id,                                                                                 |
+|                                                                                                             |
+| 'technology' => ['name' => $this->session->technology->name, 'color' => $this->session->technology->color], |
+|                                                                                                             |
+| 'started_at' => $this->session->started_at->toIso8601String(),                                              |
+|                                                                                                             |
+| ]];                                                                                                         |
+|                                                                                                             |
+| }                                                                                                           |
+|                                                                                                             |
+| }                                                                                                           |
++-------------------------------------------------------------------------------------------------------------+
+
+6.1 Autorização de Canal Privado
+
++--------------------------------------------------------------------------------+
+| <?php // routes/channels.php                                                   |
+|                                                                                |
+| // Define quem pode escutar cada canal privado                                 |
+|                                                                                |
+| use Illuminate\Support\Facades\Broadcast;                                      |
+|                                                                                |
+| // Canal do dashboard: apenas o próprio usuário                                |
+|                                                                                |
+| Broadcast::channel('dashboard.{userId}', function ($user, $userId) {           |
+|                                                                                |
+| // Retorna true = autorizado | false = 403                                     |
+|                                                                                |
+| return (string) $user->id === (string) $userId;                                |
+|                                                                                |
+| });                                                                            |
+|                                                                                |
+| // Potencial expansão: canal de notificações globais (se necessário no futuro) |
+|                                                                                |
+| // Broadcast::channel('notifications', function ($user) {                      |
+|                                                                                |
+| // return $user !== null; // Qualquer usuário autenticado                      |
+|                                                                                |
+| // });                                                                         |
++--------------------------------------------------------------------------------+
+
+7. Fluxos Detalhados por Cenário
+
+7.1 Cenário: Criar Sessão Completa (POST /api/v1/study-sessions)
+
++---------------------------------------------------------------------------------------------------+
+| # TIMELINE (tempos aproximados em desenvolvimento local)                                          |
+|                                                                                                   |
+| t=0ms CLIENT → POST /api/v1/study-sessions { technology_id, started_at, ended_at, ... }           |
+|                                                                                                   |
+| t=1ms Nginx recebe e passa para php-fpm                                                           |
+|                                                                                                   |
+| t=2ms EnsureJsonResponse + auth:sanctum + throttle:api (middlewares)                              |
+|                                                                                                   |
+| t=3ms StoreStudySessionRequest::authorize() + rules() — validação                                 |
+|                                                                                                   |
+| t=4ms StudySessionController::store() — monta StudySessionDTO                                     |
+|                                                                                                   |
+| t=5ms StudySessionService::create(dto)                                                            |
+|                                                                                                   |
+| t=6ms DB: BEGIN TRANSACTION                                                                       |
+|                                                                                                   |
+| t=7ms DB: INSERT INTO study_sessions ... RETURNING * (PostgreSQL retorna com duration_min gerado) |
+|                                                                                                   |
+| t=8ms DB: COMMIT                                                                                  |
+|                                                                                                   |
+| t=9ms StudySessionCreated event fired                                                             |
+|                                                                                                   |
+| ┌── LISTENERS (síncronos, mesmo thread) ──────────────────────────┐                               |
+|                                                                                                   |
+| t=10ms │ [1] InvalidateSessionCache::handle()                                                     |
+|                                                                                                   |
+| │ → Cache::tags(['sessions','user:X'])->flush() → Redis DEL                                       |
+|                                                                                                   |
+| t=11ms │ [2] DispatchMetricsRecalculation::handle()                                               |
+|                                                                                                   |
+| │ → RecalculateMetricsJob::dispatch(userId)->delay(2s)                                            |
+|                                                                                                   |
+| │ → Redis RPUSH queue:metrics { job payload }                                                     |
+|                                                                                                   |
+| t=12ms │ [3] BroadcastSessionStarted::handle() (se ended_at IS NULL)                              |
+|                                                                                                   |
+| │ → broadcast(SessionStarted) → Reverb → WS .session.started                                      |
+|                                                                                                   |
+| t=13ms │ [4] BroadcastMetricsRecalculating::handle()                                              |
+|                                                                                                   |
+| │ → broadcast(MetricsRecalculating) → Reverb → WS .metrics.recalculating                          |
+|                                                                                                   |
+| └────────────────────────────────────────────────────────────────┘                                |
+|                                                                                                   |
+| t=14ms StudySessionResource::make($session) — formata resposta                                    |
+|                                                                                                   |
+| t=15ms HTTP 201 CREATED → client                                                                  |
+|                                                                                                   |
+| ┌── ASYNC (Redis Queue + Horizon Worker) ─────────────────────────┐                               |
+|                                                                                                   |
+| t=2015ms │ RecalculateMetricsJob::handle() (após 2s delay)                                        |
+|                                                                                                   |
+| t=2016ms │ DB::transaction {                                                                      |
+|                                                                                                   |
+| t=2020ms │ UPSERT analytics.user_metrics (1-2ms)                                                  |
+|                                                                                                   |
+| t=2022ms │ UPSERT analytics.technology_metrics (1-2ms)                                            |
+|                                                                                                   |
+| t=2024ms │ UPSERT analytics.daily_minutes (1-2ms)                                                 |
+|                                                                                                   |
+| │ }                                                                                               |
+|                                                                                                   |
+| t=2026ms │ Cache::tags(['analytics','user:X'])->flush()                                           |
+|                                                                                                   |
+| t=2027ms │ analyticsService->buildDashboardPayload(userId) (3-5ms)                                |
+|                                                                                                   |
+| t=2032ms │ Cache::tags(...)->put('dashboard:X', data, 300)                                        |
+|                                                                                                   |
+| t=2033ms │ event(MetricsRecalculated)                                                             |
+|                                                                                                   |
+| │                                                                                                 |
+|                                                                                                   |
+| │ LISTENERS de MetricsRecalculated:                                                               |
+|                                                                                                   |
+| t=2034ms │ [1] UpdateCacheWithFreshData::handle() (cache já populado, idempotente)                |
+|                                                                                                   |
+| t=2035ms │ [2] BroadcastMetricsUpdate::handle()                                                   |
+|                                                                                                   |
+| │ → broadcast(MetricsUpdated) → Reverb → WS .metrics.updated + dashboard data                     |
+|                                                                                                   |
+| └────────────────────────────────────────────────────────────────┘                                |
+|                                                                                                   |
+| t=2036ms FRONTEND recebe WS .metrics.updated                                                      |
+|                                                                                                   |
+| analyticsStore.updateFromWebSocket(dashboard)                                                     |
+|                                                                                                   |
+| uiStore.hideRecalculatingSpinner()                                                                |
+|                                                                                                   |
+| Charts re-renderizam com dados novos                                                              |
+|                                                                                                   |
+| # TOTAL: 15ms para HTTP response + ~2s para dashboard atualizar via WebSocket                     |
++---------------------------------------------------------------------------------------------------+
+
+7.2 Cenário: Job Falha na Primeira Tentativa
+
++------------------------------------------------------------------------------+
+| # RETRY COM BACKOFF EXPONENCIAL                                              |
+|                                                                              |
+| t=0s RecalculateMetricsJob tentativa 1 iniciada                              |
+|                                                                              |
+| → DB::transaction falha (ex: lock timeout no PostgreSQL)                     |
+|                                                                              |
+| → Throwable capturado pelo Horizon                                           |
+|                                                                              |
+| → Job marcado como 'released' (não 'failed' ainda)                           |
+|                                                                              |
+| → $backoff[0] = 30s: job fica bloqueado por 30 segundos                      |
+|                                                                              |
+| t=30s RecalculateMetricsJob tentativa 2                                      |
+|                                                                              |
+| → Sucesso ✓                                                                  |
+|                                                                              |
+| → Fluxo normal: UPSERT → cache flush → warm → MetricsRecalculated            |
+|                                                                              |
+| # SE tentativa 2 TAMBÉM falhar:                                              |
+|                                                                              |
+| t=90s RecalculateMetricsJob tentativa 3 (30s + 60s de backoff)               |
+|                                                                              |
+| → Falha novamente ✗                                                          |
+|                                                                              |
+| → $tries esgotados: job movido para failed_jobs table                        |
+|                                                                              |
+| → RecalculateMetricsJob::failed(Throwable) chamado                           |
+|                                                                              |
+| → Log::error com stack trace completo                                        |
+|                                                                              |
+| → broadcast(MetricsRecalculating) para remover spinner no frontend           |
+|                                                                              |
+| → Horizon Dashboard mostra job como FAILED (visível em /horizon)             |
+|                                                                              |
+| # IMPACTO NO USUÁRIO quando job falha completamente:                         |
+|                                                                              |
+| # → Dashboard mostra dados do último recalculo bem-sucedido (do cache/banco) |
+|                                                                              |
+| # → Spinner some (frontend não fica travado)                                 |
+|                                                                              |
+| # → Próxima ação do usuário (nova sessão) dispara novo job                   |
+|                                                                              |
+| # → Sistema se auto-recupera sem intervenção manual                          |
++------------------------------------------------------------------------------+
+
+7.3 Cenário: Dois Jobs do Mesmo Usuário Simultâneos (ShouldBeUnique)
+
++-------------------------------------------------------------------------------------+
+| # ShouldBeUnique previne processamento duplo                                        |
+|                                                                                     |
+| t=0s Usuário cria 3 sessões em rápida sequência (ex: corrigindo erros)              |
+|                                                                                     |
+| → 3x StudySessionCreated events disparados                                          |
+|                                                                                     |
+| → 3x DispatchMetricsRecalculation::handle() executa                                 |
+|                                                                                     |
+| → 3x RecalculateMetricsJob::dispatch($userId) chamado                               |
+|                                                                                     |
+| t=1s Job 1: Redis adquire lock 'unique:RecalculateMetricsJob:{userId}' (5s TTL)     |
+|                                                                                     |
+| Job 1: entra na fila e começa a processar                                           |
+|                                                                                     |
+| t=1s Job 2: tenta adquirir lock → LOCK EXISTS → job DESCARTADO (não re-enfileirado) |
+|                                                                                     |
+| t=1s Job 3: tenta adquirir lock → LOCK EXISTS → job DESCARTADO                      |
+|                                                                                     |
+| t=3s Job 1 conclui: recalcula dados das 3 sessões de uma vez                        |
+|                                                                                     |
+| → UPSERT calcula totais corretos incluindo as 3 sessões                             |
+|                                                                                     |
+| → Lock liberado                                                                     |
+|                                                                                     |
+| # RESULTADO: 1 recalculo acontece (não 3), com dados finais corretos                |
+|                                                                                     |
+| # SEM ShouldBeUnique: 3 recalculos simultâneos, race conditions nos UPSERTs         |
++-------------------------------------------------------------------------------------+
+
+8. Laravel Horizon — Configuração das Filas
+
+Laravel Horizon é o gerenciador de workers Redis. Configura quantos workers processam cada fila, prioridades e técnicas de auto-scaling.
+
++-----------------------------------------------------------------------+
+| <?php // config/horizon.php                                           |
+|                                                                       |
+| return [                                                              |
+|                                                                       |
+| 'use' => 'default',                                                   |
+|                                                                       |
+| 'prefix' => env('HORIZON_PREFIX', 'horizon:'),                        |
+|                                                                       |
+| 'middleware' => ['web'],                                              |
+|                                                                       |
+| 'waits' => ['redis:default' => 60],                                   |
+|                                                                       |
+| 'trim' => [                                                           |
+|                                                                       |
+| 'recent' => 60, // minutos para manter jobs recentes                  |
+|                                                                       |
+| 'pending' => 60,                                                      |
+|                                                                       |
+| 'completed' => 60,                                                    |
+|                                                                       |
+| 'recent_failed' => 10080, // 7 dias para jobs com falha               |
+|                                                                       |
+| 'failed' => 10080,                                                    |
+|                                                                       |
+| 'silenced' => 60,                                                     |
+|                                                                       |
+| ],                                                                    |
+|                                                                       |
+| 'environments' => [                                                   |
+|                                                                       |
+| 'production' => [                                                     |
+|                                                                       |
+| // Supervisor 'metrics': fila crítica, mais workers                   |
+|                                                                       |
+| 'supervisor-metrics' => [                                             |
+|                                                                       |
+| 'connection' => 'redis',                                              |
+|                                                                       |
+| 'queue' => ['metrics'],                                               |
+|                                                                       |
+| 'balance' => 'auto', // auto-scaling baseado em backlog               |
+|                                                                       |
+| 'minProcesses' => 2,                                                  |
+|                                                                       |
+| 'maxProcesses' => 8,                                                  |
+|                                                                       |
+| 'balanceCooldown' => 3, // segundos entre ajustes                     |
+|                                                                       |
+| 'maxTime' => 3600, // worker reinicia após 1h                         |
+|                                                                       |
+| 'maxJobs' => 1000, // ou após 1000 jobs                               |
+|                                                                       |
+| 'memory' => 256,                                                      |
+|                                                                       |
+| 'tries' => 3,                                                         |
+|                                                                       |
+| 'timeout' => 30,                                                      |
+|                                                                       |
+| ],                                                                    |
+|                                                                       |
+| // Supervisor 'default': filas secundárias                            |
+|                                                                       |
+| 'supervisor-default' => [                                             |
+|                                                                       |
+| 'connection' => 'redis',                                              |
+|                                                                       |
+| 'queue' => ['broadcasts', 'default', 'maintenance'],                  |
+|                                                                       |
+| 'balance' => 'simple',                                                |
+|                                                                       |
+| 'minProcesses' => 1,                                                  |
+|                                                                       |
+| 'maxProcesses' => 3,                                                  |
+|                                                                       |
+| 'maxTime' => 3600,                                                    |
+|                                                                       |
+| 'memory' => 128,                                                      |
+|                                                                       |
+| 'tries' => 2,                                                         |
+|                                                                       |
+| 'timeout' => 60,                                                      |
+|                                                                       |
+| ],                                                                    |
+|                                                                       |
+| ],                                                                    |
+|                                                                       |
+| 'local' => [                                                          |
+|                                                                       |
+| 'supervisor-all' => [                                                 |
+|                                                                       |
+| 'connection' => 'redis',                                              |
+|                                                                       |
+| 'queue' => ['metrics', 'broadcasts', 'default', 'maintenance'],       |
+|                                                                       |
+| 'balance' => 'simple',                                                |
+|                                                                       |
+| 'processes' => 2, // local: sem auto-scaling                          |
+|                                                                       |
+| 'maxTime' => 0, // local: sem restart                                 |
+|                                                                       |
+| 'tries' => 3,                                                         |
+|                                                                       |
+| 'timeout' => 30,                                                      |
+|                                                                       |
+| ],                                                                    |
+|                                                                       |
+| ],                                                                    |
+|                                                                       |
+| ],                                                                    |
+|                                                                       |
+| ];                                                                    |
++-----------------------------------------------------------------------+
+
+8.1 Filas e Prioridades
+
+  --------------------------------------------------------------------------------
+  Fila          Prioridade   Workers       Jobs                          TTL máx
+  ------------- ------------ ------------- ----------------------------- ---------
+  metrics       ALTA         2–8 (auto)    RecalculateMetricsJob         30s
+
+  broadcasts    MÉDIA        1–3           BroadcastDashboardUpdateJob   10s
+
+  default       NORMAL       1–3           GenerateWeeklySummaryJob      300s
+
+  maintenance   BAIXA        1             PruneFailedJobsJob, outros    120s
+  --------------------------------------------------------------------------------
+
+8.2 Monitoramento via Artisan
+
++-----------------------------------------------------------------------+
+| # Status de todas as filas                                            |
+|                                                                       |
+| php artisan horizon:status                                            |
+|                                                                       |
+| # Lista de jobs pendentes por fila                                    |
+|                                                                       |
+| php artisan horizon:list                                              |
+|                                                                       |
+| # Pausar processamento (deploy sem perder jobs)                       |
+|                                                                       |
+| php artisan horizon:pause                                             |
+|                                                                       |
+| php artisan horizon:continue                                          |
+|                                                                       |
+| # Graceful terminate: termina após job atual                          |
+|                                                                       |
+| php artisan horizon:terminate                                         |
+|                                                                       |
+| # Ver jobs com falha                                                  |
+|                                                                       |
+| php artisan queue:failed                                              |
+|                                                                       |
+| # Re-executar job específico que falhou (pelo ID)                     |
+|                                                                       |
+| php artisan queue:retry {id}                                          |
+|                                                                       |
+| # Re-executar TODOS os jobs com falha                                 |
+|                                                                       |
+| php artisan queue:retry all                                           |
+|                                                                       |
+| # Deletar jobs com falha mais antigos que 7 dias                      |
+|                                                                       |
+| php artisan queue:prune-failed --hours=168                            |
+|                                                                       |
+| # Dashboard visual (http://localhost/horizon)                         |
+|                                                                       |
+| # Protegido por HorizonServiceProvider::gate()                        |
++-----------------------------------------------------------------------+
+
+9. Frontend: Recebendo Eventos WebSocket
+
+9.1 composable/useWebSocket.ts
+
++-----------------------------------------------------------------------+
+| // src/composables/useWebSocket.ts                                    |
+|                                                                       |
+| import Echo from 'laravel-echo';                                      |
+|                                                                       |
+| import Pusher from 'pusher-js';                                       |
+|                                                                       |
+| import type { DashboardData } from '@/types/domain.types';            |
+|                                                                       |
+| // Pusher.js como driver do Reverb (protocolo compatível)             |
+|                                                                       |
+| window.Pusher = Pusher;                                               |
+|                                                                       |
+| export function useWebSocket() {                                      |
+|                                                                       |
+| const analyticsStore = useAnalyticsStore();                           |
+|                                                                       |
+| const sessionsStore = useSessionsStore();                             |
+|                                                                       |
+| const uiStore = useUiStore();                                         |
+|                                                                       |
+| let echo: Echo | null = null;                                         |
+|                                                                       |
+| const isConnected = ref(false);                                       |
+|                                                                       |
+| const connectionError = ref<string | null>(null);                     |
+|                                                                       |
+| function connect(userId: string): void {                              |
+|                                                                       |
+| echo = new Echo({                                                     |
+|                                                                       |
+| broadcaster: 'reverb',                                                |
+|                                                                       |
+| key: import.meta.env.VITE_REVERB_APP_KEY,                             |
+|                                                                       |
+| wsHost: import.meta.env.VITE_REVERB_HOST,                             |
+|                                                                       |
+| wsPort: import.meta.env.VITE_REVERB_PORT ?? 8080,                     |
+|                                                                       |
+| wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,                     |
+|                                                                       |
+| forceTLS: import.meta.env.PROD,                                       |
+|                                                                       |
+| enabledTransports: ['ws', 'wss'],                                     |
+|                                                                       |
+| authEndpoint: '/api/broadcasting/auth',                               |
+|                                                                       |
+| auth: {                                                               |
+|                                                                       |
+| headers: { Authorization: `Bearer ${useAuthStore().token}` },         |
+|                                                                       |
+| },                                                                    |
+|                                                                       |
+| });                                                                   |
+|                                                                       |
+| // Estado de conexão                                                  |
+|                                                                       |
+| echo.connector.pusher.connection.bind('connected', () => {            |
+|                                                                       |
+| isConnected.value = true;                                             |
+|                                                                       |
+| connectionError.value = null;                                         |
+|                                                                       |
+| });                                                                   |
+|                                                                       |
+| echo.connector.pusher.connection.bind('disconnected', () => {         |
+|                                                                       |
+| isConnected.value = false;                                            |
+|                                                                       |
+| });                                                                   |
+|                                                                       |
+| echo.connector.pusher.connection.bind('error', (err: Error) => {      |
+|                                                                       |
+| connectionError.value = err.message;                                  |
+|                                                                       |
+| });                                                                   |
+|                                                                       |
+| // Inscreve no canal privado do usuário                               |
+|                                                                       |
+| echo.private(`dashboard.${userId}`)                                   |
+|                                                                       |
+| // Dashboard atualizado: substitui estado do store                    |
+|                                                                       |
+| .listen('.metrics.updated', (e: { dashboard: DashboardData }) => {    |
+|                                                                       |
+| analyticsStore.updateFromWebSocket(e.dashboard);                      |
+|                                                                       |
+| uiStore.hideRecalculatingSpinner();                                   |
+|                                                                       |
+| })                                                                    |
+|                                                                       |
+| // Recalculo iniciado: mostra spinner no dashboard                    |
+|                                                                       |
+| .listen('.metrics.recalculating', () => {                             |
+|                                                                       |
+| uiStore.showRecalculatingSpinner();                                   |
+|                                                                       |
+| })                                                                    |
+|                                                                       |
+| // Sessão iniciada: badge de timer ativo no header                    |
+|                                                                       |
+| .listen('.session.started', (e: { session: ActiveSession }) => {      |
+|                                                                       |
+| sessionsStore.setActiveSession(e.session);                            |
+|                                                                       |
+| });                                                                   |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| function disconnect(): void {                                         |
+|                                                                       |
+| echo?.disconnect();                                                   |
+|                                                                       |
+| echo = null;                                                          |
+|                                                                       |
+| isConnected.value = false;                                            |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| return { connect, disconnect, isConnected, connectionError };         |
+|                                                                       |
+| }                                                                     |
++-----------------------------------------------------------------------+
+
+9.2 Integração no DashboardView
+
++--------------------------------------------------------------------------+
+| <!-- src/views/DashboardView.vue -->                                     |
+|                                                                          |
+| <script setup lang='ts'>                                                 |
+|                                                                          |
+| import { onMounted, onUnmounted } from 'vue';                            |
+|                                                                          |
+| import { useAnalyticsStore } from '@/stores/analytics.store';            |
+|                                                                          |
+| import { useAuthStore } from '@/stores/auth.store';                      |
+|                                                                          |
+| import { useWebSocket } from '@/composables/useWebSocket';               |
+|                                                                          |
+| const analyticsStore = useAnalyticsStore();                              |
+|                                                                          |
+| const authStore = useAuthStore();                                        |
+|                                                                          |
+| const { connect, disconnect, isConnected } = useWebSocket();             |
+|                                                                          |
+| onMounted(async () => {                                                  |
+|                                                                          |
+| // 1. Busca dados iniciais (cache-aside no frontend)                     |
+|                                                                          |
+| await analyticsStore.fetchDashboard();                                   |
+|                                                                          |
+| // 2. Conecta WebSocket após dados carregados                            |
+|                                                                          |
+| // (garante que UI está pronta antes de receber updates)                 |
+|                                                                          |
+| connect(authStore.user!.id);                                             |
+|                                                                          |
+| });                                                                      |
+|                                                                          |
+| onUnmounted(() => {                                                      |
+|                                                                          |
+| // Desconecta para não vazar listeners quando usuário navega             |
+|                                                                          |
+| disconnect();                                                            |
+|                                                                          |
+| });                                                                      |
+|                                                                          |
+| </script>                                                                |
+|                                                                          |
+| <template>                                                               |
+|                                                                          |
+| <div class='dashboard'>                                                  |
+|                                                                          |
+| <!-- Badge de conexão WebSocket -->                                      |
+|                                                                          |
+| <RealtimeBadge :connected='isConnected' />                               |
+|                                                                          |
+| <!-- KPIs: computed do store, atualiza automaticamente via WebSocket --> |
+|                                                                          |
+| <KpiCards :metrics='analyticsStore.userMetrics' />                       |
+|                                                                          |
+| <!-- Gráfico linha: 30 dias de minutos -->                               |
+|                                                                          |
+| <TimeSeriesWidget :data='analyticsStore.timeSeries30d' />                |
+|                                                                          |
+| <!-- Spinner aparece quando .metrics.recalculating chega -->             |
+|                                                                          |
+| <RecalculatingOverlay v-if='uiStore.isRecalculating' />                  |
+|                                                                          |
+| </div>                                                                   |
+|                                                                          |
+| </template>                                                              |
++--------------------------------------------------------------------------+
+
+10. Testando o Fluxo de Eventos e Jobs
+
+10.1 Fake de Events e Jobs em Testes de Feature
+
+Em testes, usar Event::fake() e Queue::fake() para isolar a lógica sem executar efeitos colaterais reais:
+
++-------------------------------------------------------------------------------------+
+| <?php // tests/Feature/StudySessions/StudySessionCrudTest.php                       |
+|                                                                                     |
+| use Illuminate\Support\Facades\{Event, Queue, Cache};                               |
+|                                                                                     |
+| use App\Events\StudySession\StudySessionCreated;                                    |
+|                                                                                     |
+| use App\Jobs\RecalculateMetricsJob;                                                 |
+|                                                                                     |
+| class StudySessionCrudTest extends TestCase                                         |
+|                                                                                     |
+| {                                                                                   |
+|                                                                                     |
+| use RefreshDatabase;                                                                |
+|                                                                                     |
+| public function test_creating_session_dispatches_event_and_job(): void              |
+|                                                                                     |
+| {                                                                                   |
+|                                                                                     |
+| Event::fake(); // Intercepta eventos, não executa listeners                         |
+|                                                                                     |
+| Queue::fake(); // Intercepta jobs, não executa                                      |
+|                                                                                     |
+| $user = User::factory()->create();                                                  |
+|                                                                                     |
+| $tech = Technology::factory()->for($user)->create();                                |
+|                                                                                     |
+| $response = $this->actingAs($user)->postJson('/api/v1/study-sessions', [            |
+|                                                                                     |
+| 'technology_id' => $tech->id,                                                       |
+|                                                                                     |
+| 'started_at' => now()->subHour()->toIso8601String(),                                |
+|                                                                                     |
+| 'ended_at' => now()->toIso8601String(),                                             |
+|                                                                                     |
+| ]);                                                                                 |
+|                                                                                     |
+| $response->assertStatus(201);                                                       |
+|                                                                                     |
+| // Verifica que evento foi disparado                                                |
+|                                                                                     |
+| Event::assertDispatched(StudySessionCreated::class, function ($event) use ($user) { |
+|                                                                                     |
+| return $event->session->user_id === $user->id;                                      |
+|                                                                                     |
+| });                                                                                 |
+|                                                                                     |
+| // Verifica que job foi enfileirado na fila correta                                 |
+|                                                                                     |
+| Queue::assertPushedOn('metrics', RecalculateMetricsJob::class);                     |
+|                                                                                     |
+| }                                                                                   |
+|                                                                                     |
+| public function test_session_cache_is_invalidated_on_create(): void                 |
+|                                                                                     |
+| {                                                                                   |
+|                                                                                     |
+| // Popula cache antes                                                               |
+|                                                                                     |
+| Cache::tags(['sessions', "user:{$user->id}"])                                       |
+|                                                                                     |
+| ->put("active-session:{$user->id}", 'some-data', 60);                               |
+|                                                                                     |
+| // Cria sessão (listeners executam sincronamente com Event::fake() desativado)      |
+|                                                                                     |
+| $this->actingAs($user)->postJson('/api/v1/study-sessions', [...]);                  |
+|                                                                                     |
+| // Verifica que cache foi invalidado                                                |
+|                                                                                     |
+| $this->assertNull(                                                                  |
+|                                                                                     |
+| Cache::tags(['sessions', "user:{$user->id}"])->get("active-session:{$user->id}")    |
+|                                                                                     |
+| );                                                                                  |
+|                                                                                     |
+| }                                                                                   |
+|                                                                                     |
+| }                                                                                   |
++-------------------------------------------------------------------------------------+
+
+10.2 Teste Unitário do Job
+
++---------------------------------------------------------------------------------------------+
+| <?php // tests/Unit/Jobs/RecalculateMetricsJobTest.php                                      |
+|                                                                                             |
+| class RecalculateMetricsJobTest extends TestCase                                            |
+|                                                                                             |
+| {                                                                                           |
+|                                                                                             |
+| public function test_job_runs_aggregators_in_transaction(): void                            |
+|                                                                                             |
+| {                                                                                           |
+|                                                                                             |
+| Event::fake([MetricsRecalculated::class]);                                                  |
+|                                                                                             |
+| // Mocks dos aggregators                                                                    |
+|                                                                                             |
+| $userAgg = Mockery::mock(UserMetricsAggregator::class);                                     |
+|                                                                                             |
+| $techAgg = Mockery::mock(TechMetricsAggregator::class);                                     |
+|                                                                                             |
+| $dailyAgg = Mockery::mock(DailyMinutesAggregator::class);                                   |
+|                                                                                             |
+| $userAgg->shouldReceive('recalculate')->once()->with('user-uuid');                          |
+|                                                                                             |
+| $techAgg->shouldReceive('recalculate')->once()->with('user-uuid');                          |
+|                                                                                             |
+| $dailyAgg->shouldReceive('recalculate')->once()->with('user-uuid');                         |
+|                                                                                             |
+| $job = new RecalculateMetricsJob('user-uuid');                                              |
+|                                                                                             |
+| $job->handle($userAgg, $techAgg, $dailyAgg, app(AnalyticsService::class));                  |
+|                                                                                             |
+| // Verifica que MetricsRecalculated foi disparado                                           |
+|                                                                                             |
+| Event::assertDispatched(MetricsRecalculated::class, function ($e) {                         |
+|                                                                                             |
+| return $e->userId === 'user-uuid';                                                          |
+|                                                                                             |
+| });                                                                                         |
+|                                                                                             |
+| }                                                                                           |
+|                                                                                             |
+| public function test_job_has_correct_uniqueness_key(): void                                 |
+|                                                                                             |
+| {                                                                                           |
+|                                                                                             |
+| $job = new RecalculateMetricsJob('specific-user-uuid');                                     |
+|                                                                                             |
+| $this->assertSame('specific-user-uuid', $job->uniqueId());                                  |
+|                                                                                             |
+| }                                                                                           |
+|                                                                                             |
+| public function test_failed_logs_error(): void                                              |
+|                                                                                             |
+| {                                                                                           |
+|                                                                                             |
+| Log::shouldReceive('error')->once()->with('RecalculateMetricsJob failed', \Mockery::any()); |
+|                                                                                             |
+| $job = new RecalculateMetricsJob('user-uuid');                                              |
+|                                                                                             |
+| $job->failed(new \RuntimeException('DB connection lost'));                                  |
+|                                                                                             |
+| }                                                                                           |
+|                                                                                             |
+| }                                                                                           |
++---------------------------------------------------------------------------------------------+
+
+11. Checklist de Implementação
+
+Eventos e Listeners
+
+-   [ ] EventServiceProvider com mapeamento explícito de todos os eventos
+
+-   [ ] 3 eventos de sessão: Created, Updated, Deleted
+
+-   [ ] 1 evento analytics: MetricsRecalculated
+
+-   [ ] 3 broadcast events: MetricsUpdated, MetricsRecalculating, SessionStarted
+
+-   [ ] Listeners de sessão: InvalidateSessionCache, DispatchMetricsRecalculation
+
+-   [ ] Listeners de analytics: UpdateCacheWithFreshData, BroadcastMetricsUpdate
+
+-   [ ] StudySessionDeleted usa value objects (não Eloquent model) no payload
+
+Jobs e Horizon
+
+-   [ ] RecalculateMetricsJob implementa ShouldBeUnique (uniqueId = userId)
+
+-   [ ] $tries=3, $backoff=[30,60,120], $timeout=30 configurados
+
+-   [ ] failed() method com Log::error e broadcast de remoção do spinner
+
+-   [ ] GenerateWeeklySummaryJob agendado via Schedule::job()->weeklyOn(1, '03:00')
+
+-   [ ] ->withoutOverlapping() e ->onOneServer() no agendamento
+
+-   [ ] config/horizon.php com supervisores para filas 'metrics' e 'default'
+
+-   [ ] Horizon Dashboard protegido por gate (apenas admin em produção)
+
+WebSocket e Frontend
+
+-   [ ] routes/channels.php com autorização do canal dashboard.{userId}
+
+-   [ ] Broadcast events com broadcastAs() usando ponto para evitar prefixo
+
+-   [ ] broadcastWith() retornando payload mínimo necessário
+
+-   [ ] useWebSocket composable com connect/disconnect e estado de conexão
+
+-   [ ] DashboardView chama connect() em onMounted e disconnect() em onUnmounted
+
+-   [ ] analyticsStore.updateFromWebSocket() atualiza sem request HTTP
+
+-   [ ] RealtimeBadge indica status da conexão WebSocket ao usuário
+
++----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ARMADILHA: LISTENER SINCRONO QUE FAZ I/O LENTO                                                                                                                                                                 |
++----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Problema: Listeners registrados em EventServiceProvider executam sincronamente no mesmo thread do request. Se um listener fizer I/O lento (query pesada, chamada HTTP externa), o response HTTP vai atrasar.   |
+|                                                                                                                                                                                                                |
+| Regra: Listeners NUNCA fazem queries pesadas. Eles apenas: (1) limpam cache com flush, (2) despacham jobs para a fila, (3) fazem broadcasts simples. Todo processamento pesado vai para o Job.                 |
+|                                                                                                                                                                                                                |
+| Solução alternativa: Implementar ShouldQueue no Listener: o listener em si vira um job assíncrono. Mas para este sistema, a abordagem atual (Listener síncrono leve + Job pesado) é mais explícita e testável. |
++----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+

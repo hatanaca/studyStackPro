@@ -87,7 +87,7 @@ function dismiss() {
 }
 .onboarding-banner__dismiss {
   flex-shrink: 0;
-  min-height: 2.75rem;
+  min-height: var(--touch-target-min);
 }
 .onboarding-banner__dismiss:focus-visible {
   outline: none;

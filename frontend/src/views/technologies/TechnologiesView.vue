@@ -7,10 +7,10 @@ import PageView from '@/components/layout/PageView.vue'
   <PageView
     :breadcrumb="[{ label: 'Dashboard', to: '/' }, { label: 'Tecnologias' }]"
     title="Tecnologias"
-    subtitle="Gerencie as tecnologias usadas para categorizar suas sessões de estudo."
+    subtitle="Suas sessões de estudo ficam organizadas por tecnologia. Clique em uma para ver e registrar sessões."
   >
     <template #hint>
-      Adicione uma tecnologia (ex.: JavaScript, React) para começar a registrar sessões. Cada uma pode ter cor e descrição.
+      Adicione uma tecnologia (ex.: JavaScript, React), acesse seus detalhes e registre sessões diretamente de lá.
     </template>
     <TechnologyList />
   </PageView>

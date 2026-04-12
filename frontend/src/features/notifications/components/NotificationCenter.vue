@@ -32,13 +32,14 @@ function typeClass(type: NotificationType): string {
     rounded
     severity="secondary"
     class="notification-center__trigger"
-    aria-label="Notificações"
+    :aria-label="`Notificações${unreadCount > 0 ? `, ${unreadCount} não lida${unreadCount > 1 ? 's' : ''}` : ''}`"
     @click="op?.toggle($event)"
   >
-    <span class="notification-center__icon">🔔</span>
+    <span class="notification-center__icon" aria-hidden="true">🔔</span>
     <span
       v-if="unreadCount > 0"
       class="notification-center__badge"
+      aria-hidden="true"
     >
       {{ unreadCount > 99 ? '99+' : unreadCount }}
     </span>
@@ -102,8 +103,8 @@ function typeClass(type: NotificationType): string {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--input-height-md);
-  height: var(--input-height-md);
+  width: var(--header-control-size);
+  height: var(--header-control-size);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -131,7 +132,7 @@ function typeClass(type: NotificationType): string {
   line-height: var(--leading-tight);
   color: var(--color-primary-contrast);
   background: var(--color-error);
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -151,11 +152,12 @@ function typeClass(type: NotificationType): string {
   border-bottom: 1px solid var(--color-border);
 }
 .notification-center__title {
-  font-size: var(--text-sm);
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
   color: var(--color-text);
   letter-spacing: var(--tracking-tight);
-  line-height: var(--leading-snug);
+  line-height: var(--leading-tight);
 }
 .notification-center__list {
   overflow-y: auto;
@@ -175,8 +177,8 @@ function typeClass(type: NotificationType): string {
 }
 .notification-center__item-icon {
   flex-shrink: 0;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: var(--icon-size-lg);
+  height: var(--icon-size-lg);
   display: flex;
   align-items: center;
   justify-content: center;

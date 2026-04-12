@@ -62,6 +62,7 @@
   --font-sans: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-display: 'Syne', var(--font-sans);
 
+  --text-2xs: 0.5rem;    /* 8px – chevrons / indicadores decorativos */
   --text-xs: 0.75rem;    /* 12px – captions, badges */
   --text-sm: 0.875rem;   /* 14px – body-sm */
   --text-base: 1rem;     /* 16px – body */
@@ -82,6 +83,7 @@
   --radius-md: 0.5rem;    /*  8px */
   --radius-lg: 0.75rem;   /* 12px */
   --radius-xl: 1rem;      /* 16px */
+  --radius-full: 9999px;  /* pill / circle */
 
   /* ── Shadows ── */
   --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.10), 0 1px 2px rgba(15, 23, 42, 0.06);
@@ -104,6 +106,13 @@
   --overlay-backdrop: rgba(0, 0, 0, 0.5);
   --overlay-shadow: 8px 0 32px rgba(0, 0, 0, 0.3);
   --header-height: 4rem;
+  /* Controles compactos na barra superior (busca, ícones) */
+  --header-control-size: 2.25rem;
+  --shell-topbar-bg: color-mix(in srgb, var(--color-bg-soft) 68%, var(--color-bg-card));
+  /* PrimeVue Card / painéis */
+  --card-chrome-radius: var(--radius-lg);
+  --card-chrome-border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
+  --card-chrome-shadow: var(--shadow-sm);
   --viewport-app-min-height: 100dvh;
   --sidebar-link-color: #0f172a;         /* link inativo: preto total — contraste máximo */
   --sidebar-link-color-hover: #000000;   /* link hover */
@@ -111,6 +120,12 @@
   /* ── Page layout ── */
   --page-max-width: 1280px;
   --page-max-width-narrow: 720px;
+  /* Conteúdo de detalhe (ex.: sessões por tecnologia) — entre narrow e full */
+  --page-max-width-detail: 50rem;
+  /* Largura mínima de tabela antes do scroll horizontal (~280px) */
+  --data-table-min-width: 17.5rem;
+  /* Alvo mínimo de toque (~44px, WCAG 2.5.5) */
+  --touch-target-min: 2.75rem;
   --page-header-gap: var(--spacing-xs);
   --page-header-margin-bottom: var(--spacing-lg);
   --page-section-gap: var(--spacing-lg);
@@ -118,6 +133,14 @@
   --page-content-padding-block: 0;
   --page-section-title-size: var(--text-base);
   --page-section-title-margin: 0 0 var(--spacing-sm);
+  /* Bloco de título + subtítulo (PageView) */
+  --surface-page-header-bg: color-mix(in srgb, var(--color-bg-card) 78%, var(--color-bg-soft));
+  --surface-page-header-shadow: var(--shadow-sm);
+  /* Login / registro */
+  --auth-card-max-width: 24rem;
+  --auth-card-min-height-mobile: 16.25rem;
+  /* Borda de estado vazio — leve acento primário */
+  --empty-state-border: 1px solid color-mix(in srgb, var(--color-border) 82%, var(--color-primary));
 
   /* ── Widget system ── */
   --widget-padding: var(--spacing-lg);
@@ -129,6 +152,8 @@
   --widget-chart-min-height: 220px;
   --widget-chart-min-height-sm: 180px;
   --widget-chart-min-height-tall: 260px;
+  /* Largura mínima do SVG do calendário de atividade (heatmap) antes do scroll horizontal */
+  --widget-heatmap-svg-min-width: 18.75rem;
   --widget-card-min-height: 100px;
   --widget-gap: var(--spacing-sm);
   --chart-axis-font-size: var(--text-sm);
@@ -166,6 +191,7 @@
   --tooltip-offset: var(--spacing-sm);
   --overlay-panel-max-width: clamp(16rem, 92vw, 23.75rem);
   --toast-max-width: clamp(16rem, 92vw, 23.75rem);
+  --modal-min-width: 22.5rem; /* 360px — diálogos em sm+ */
   --chart-line-stock-color: var(--color-primary);
 
   /* ── Icon sizes ── */
@@ -177,6 +203,27 @@
   --empty-state-icon-size: 2.25rem;
   --empty-state-min-height: 10rem;
   --empty-state-max-width: 28rem;
+  --empty-state-radius: var(--radius-lg);
+
+  /* ── Z-index scale (semantic) ── */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 500;
+  --z-modal: 1000;
+  --z-toast: 1100;
+  --z-tooltip: 1200;
+
+  /* ── Interactive states ── */
+  --state-disabled-opacity: 0.55;
+  --state-hover-lift: translateY(-1px);
+  --state-active-press: translateY(0);
+
+  /* ── On-soft contrast (text on *-soft backgrounds, AA compliant) ── */
+  --color-on-primary-soft: #1e40af;
+  --color-on-success-soft: #166534;
+  --color-on-warning-soft: #92400e;
+  --color-on-error-soft: #991b1b;
+  --color-on-info-soft: #075985;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -189,6 +236,10 @@
 
 /* ── Dark theme ── */
 [data-theme='dark'] {
+  --shell-topbar-bg: color-mix(in srgb, var(--color-bg-soft) 55%, var(--color-bg));
+  --card-chrome-border: 1px solid color-mix(in srgb, var(--color-border) 90%, transparent);
+  --surface-page-header-bg: color-mix(in srgb, var(--color-bg-card) 88%, var(--color-bg));
+  --empty-state-border: 1px solid color-mix(in srgb, var(--color-border) 75%, var(--color-primary));
   --color-text: #f1f5f9;
   --color-text-secondary: #cbd5e1;
   --color-text-muted: #94a3b8;
@@ -230,6 +281,13 @@
   --form-input-bg-disabled: color-mix(in srgb, var(--color-bg) 60%, transparent);
   --form-input-border:      rgba(148, 163, 184, 0.25);
   --form-input-placeholder: rgba(148, 163, 184, 0.55);
+
+  /* On-soft contrast (dark) */
+  --color-on-primary-soft: #93c5fd;
+  --color-on-success-soft: #86efac;
+  --color-on-warning-soft: #fcd34d;
+  --color-on-error-soft: #fca5a5;
+  --color-on-info-soft: #7dd3fc;
 }
 
 /* ── Stakent variant (dark + purple) ── */

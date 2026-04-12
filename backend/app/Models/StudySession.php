@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Model de sessão de estudo.
  *
  * Representa um período de estudo em uma tecnologia. started_at/ended_at definem o intervalo.
- * duration_min pode ser calculado via trigger no banco ou no app. mood e focus_score opcionais.
+ * duration_min e productivity_score são calculados pelo banco. mood e focus_score são opcionais.
  */
 class StudySession extends BaseModel
 {
@@ -34,6 +34,7 @@ class StudySession extends BaseModel
             'started_at' => 'datetime',
             'ended_at' => 'datetime',
             'duration_min' => 'integer',
+            'productivity_score' => 'integer',
             'mood' => 'integer',
             'focus_score' => 'integer',
         ];

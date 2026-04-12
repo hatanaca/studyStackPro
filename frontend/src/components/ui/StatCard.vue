@@ -57,7 +57,7 @@ withDefaults(
   border-color: color-mix(in srgb, var(--color-primary) 25%, var(--color-border));
 }
 .stat-card__icon {
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
   line-height: 1;
   opacity: 0.9;
 }

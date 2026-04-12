@@ -3,19 +3,43 @@
  * View principal do dashboard. KPIs, resumo do dia, sessão ativa, widgets (distribuição, séries, weekly, metas, lembretes).
  * Usa TanStack Query para dashboard. Lazy load de widgets pesados. Suporta tema stakent.
  */
-import { defineAsyncComponent, onMounted, watch, computed, inject, ref } from 'vue'
+import { defineAsyncComponent, h, onMounted, onBeforeUnmount, watch, computed, inject, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useApexChartTheme } from '@/composables/useApexChartTheme'
 import { useDashboardQuery } from '@/features/dashboard/composables/useDashboardQuery'
 import { useDashboard } from '@/features/dashboard/composables/useDashboard'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 import Skeleton from 'primevue/skeleton'
-import Message from 'primevue/message'
-import Button from 'primevue/button'
 import DashboardHeader from '@/features/dashboard/components/DashboardHeader.vue'
+import ErrorCard from '@/components/ui/ErrorCard.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import KpiCards from '@/features/dashboard/components/KpiCards.vue'
 import TodaySummaryCard from '@/features/dashboard/components/TodaySummaryCard.vue'
-import LogSessionWidget from '@/features/sessions/components/LogSessionWidget.vue'
 import OnboardingBanner from '@/components/onboarding/OnboardingBanner.vue'
+
+const LogSessionWidget = defineAsyncComponent({
+  loader: () => import('@/features/sessions/components/LogSessionWidget.vue'),
+  loadingComponent: {
+    name: 'LogSessionWidgetLoading',
+    setup() {
+      return () =>
+        h(
+          'section',
+          {
+            class: 'dashboard-log-session-loading',
+            role: 'status',
+            'aria-live': 'polite',
+            'aria-label': 'Carregando formulário de registro',
+          },
+          [
+            h(Skeleton, { width: '42%', height: '1rem', class: 'dashboard-log-session-loading__title' }),
+            h(Skeleton, { width: '100%', height: '11rem' }),
+          ],
+        )
+    },
+  },
+  delay: 120,
+})
 const StakentMetricCard = defineAsyncComponent(() => import('@/features/dashboard/components/StakentMetricCard.vue'))
 const StakentFeatureCard = defineAsyncComponent(() => import('@/features/dashboard/components/StakentFeatureCard.vue'))
 const StakentActiveCard = defineAsyncComponent(() => import('@/features/dashboard/components/StakentActiveCard.vue'))
@@ -36,6 +60,7 @@ const GoalsWidget = defineAsyncComponent(
   () => import('@/features/dashboard/components/GoalsWidget.vue')
 )
 
+const router = useRouter()
 const stakentStyle = inject<{ value: boolean }>('stakentStyle', { value: false })
 const { theme: chartTheme } = useApexChartTheme()
 const stakentMetricColors = computed(() => ({
@@ -77,6 +102,8 @@ watch(
   }
 )
 
+let _heavyWidgetTimer: ReturnType<typeof setTimeout> | null = null
+
 onMounted(async () => {
   try {
     await initDashboard()
@@ -86,32 +113,50 @@ onMounted(async () => {
 
   const loadHeavyWidgets = () => {
     showHeavyWidgets.value = true
+    _heavyWidgetTimer = null
   }
 
   const idleGlobal = globalThis as IdleCapableGlobal
   if (typeof idleGlobal.requestIdleCallback === 'function') {
     idleGlobal.requestIdleCallback(loadHeavyWidgets, { timeout: 1200 })
   } else {
-    setTimeout(loadHeavyWidgets, 500)
+    _heavyWidgetTimer = setTimeout(loadHeavyWidgets, 500)
+  }
+})
+
+onBeforeUnmount(() => {
+  if (_heavyWidgetTimer) {
+    clearTimeout(_heavyWidgetTimer)
+    _heavyWidgetTimer = null
   }
 })
 
 async function retry() {
-  await dashboardQuery.refetch()
-  await analyticsStore.fetchHeatmap()
-  await analyticsStore.fetchWeekly()
+  await Promise.all([
+    dashboardQuery.refetch(),
+    analyticsStore.fetchHeatmap(),
+    analyticsStore.fetchWeekly(),
+  ])
+}
+
+function goRegisterSession() {
+  router.push({ name: 'sessions' })
 }
 </script>
 
 <template>
   <div class="dashboard">
     <DashboardHeader v-if="!stakentStyle?.value" />
-    <template v-if="hasError">
-      <Message severity="error" :closable="false">
-        Não foi possível carregar o dashboard.
-      </Message>
-      <Button label="Tentar novamente" severity="secondary" variant="outlined" @click="retry" />
-    </template>
+    <div
+      v-if="hasError"
+      class="dashboard__error"
+    >
+      <ErrorCard
+        title="Dashboard indisponível"
+        message="Não foi possível carregar o dashboard. Verifique a conexão e tente de novo."
+        :on-retry="retry"
+      />
+    </div>
     <template v-else>
       <template v-if="stakentStyle?.value">
         <section class="stakent-dashboard">
@@ -197,10 +242,14 @@ async function retry() {
             v-else
             class="widgets__item widgets__item--3 widgets__item--full dashboard__empty"
           >
-            <Message severity="info" :closable="false" class="dashboard__empty-msg">
-              <strong>Nenhum dado ainda</strong><br>
-              Sua primeira sessão desbloqueia métricas e gráficos. Registre no card acima para ver totais, evolução e metas.
-            </Message>
+            <EmptyState
+              title="Nenhum dado ainda"
+              description="Sua primeira sessão desbloqueia métricas e gráficos. Registre uma sessão para ver totais, evolução e metas."
+              icon="📊"
+              action-label="Registrar sessão"
+              :hide-action="false"
+              @action="goRegisterSession"
+            />
           </div>
           <div class="widgets__item widgets__item--4">
             <GoalsWidget />
@@ -246,19 +295,21 @@ async function retry() {
   padding: var(--spacing-lg);
   margin-top: var(--spacing-xs);
 }
+.dashboard__error {
+  margin: var(--spacing-lg) 0;
+  max-width: 28rem;
+}
 .dashboard__empty {
   min-height: var(--widget-card-min-height);
 }
-.dashboard__empty-msg {
-  background: var(--color-bg-card);
-  border: 1px dashed var(--color-border);
+.dashboard__empty :deep(.empty-state) {
   border-radius: var(--widget-radius);
-  padding: var(--spacing-2xl);
+  min-height: min(var(--empty-state-min-height), 100%);
 }
 .widgets {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--widget-gap);
+  gap: var(--spacing-lg);
   align-items: start;
   grid-auto-rows: minmax(min-content, auto);
 }
@@ -285,7 +336,7 @@ async function retry() {
 @keyframes fadeUpIn {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(var(--spacing-md));
   }
   to {
     opacity: 1;
@@ -329,7 +380,6 @@ async function retry() {
 @media (min-width: 640px) {
   .widgets {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--widget-gap);
   }
   .widgets__item--0 { grid-column: 1; }
   .widgets__item--1 { grid-column: 2; }
@@ -347,11 +397,10 @@ async function retry() {
     min-height: var(--widget-chart-min-height-sm);
   }
 }
-/* Desktop: grid 12 colunas com register/reminders no topo */
+/* Desktop: grid 12 colunas */
 @media (min-width: 1024px) {
   .widgets {
     grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: var(--widget-gap);
     grid-auto-rows: minmax(var(--widget-card-min-height), auto);
   }
   .widgets__item--0 {
@@ -371,22 +420,32 @@ async function retry() {
     grid-row: 2;
   }
   .widgets__item--4 {
-    grid-column: 1 / 5;
+    grid-column: 1 / -1;
     grid-row: 3;
+    grid-row-start: 3;
+    grid-row-end: 4;
+    min-width: 0;
   }
   .widgets__item--5 {
-    grid-column: 5 / 13;
-    grid-row: 3;
+    grid-column: 1 / -1;
+    grid-row: 4;
+    grid-row-start: 4;
+    grid-row-end: 5;
     min-height: var(--widget-chart-min-height);
+    min-width: 0;
   }
   .widgets__item--6 {
-    grid-column: 5 / 13;
-    grid-row: 4;
+    grid-column: 1 / 13;
+    grid-row: 5;
+    grid-row-start: 5;
+    grid-row-end: 6;
     min-height: var(--widget-chart-min-height);
   }
   .widgets__item--7 {
     grid-column: 1 / 13;
-    grid-row: 5;
+    grid-row: 6;
+    grid-row-start: 6;
+    grid-row-end: 7;
     min-height: var(--widget-chart-min-height);
   }
 }
@@ -396,7 +455,7 @@ async function retry() {
   grid-template-columns: 1fr;
   gap: var(--widget-gap);
 }
-@media (min-width: 480px) {
+@media (min-width: 640px) {
   .kpi-skeleton {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
@@ -460,7 +519,7 @@ async function retry() {
 .stakent-dashboard__section-tag {
   font-size: var(--text-xs);
   padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   background: var(--color-bg-soft);
   color: var(--color-text-muted);
   font-weight: 500;
@@ -480,5 +539,23 @@ async function retry() {
 }
 .stakent-dashboard__active {
   min-width: 0;
+}
+</style>
+
+<style>
+/* Placeholder do LogSessionWidget (defineAsyncComponent); fora do scoped para o loadingComponent inline. */
+.dashboard-log-session-loading {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+  min-height: min(var(--widget-card-min-height, 12rem), 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+.dashboard-log-session-loading__title {
+  display: block;
 }
 </style>

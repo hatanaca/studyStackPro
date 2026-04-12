@@ -3,8 +3,7 @@ import { computed, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
 const LineChart = defineAsyncComponent(() => import('@/components/charts/LineChart.vue'))
 import Skeleton from 'primevue/skeleton'
-import Message from 'primevue/message'
-import Button from 'primevue/button'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import { formatMinutesToHoursLabel } from '@/utils/formatters'
 import { formatShortDate } from '@/utils/formatters'
 import { useAnalyticsStore } from '@/stores/analytics.store'
@@ -37,7 +36,7 @@ const totalInPeriod = computed(() => {
 const hasData = computed(() => (chartData.value?.values?.length ?? 0) > 0)
 
 function goToRegisterSession() {
-  router.push('/sessions')
+  router.push({ name: 'sessions' })
 }
 </script>
 
@@ -96,16 +95,16 @@ function goToRegisterSession() {
       tall
       aria-label="Gráfico de tempo estudado por dia no período selecionado"
     />
-    <Message
+    <EmptyState
       v-else
-      severity="info"
-      :closable="false"
-      class="time-series-empty"
-    >
-      <strong>Nenhum registro neste período</strong><br>
-      Registre sessões para ver sua evolução aqui. O gráfico mostra as horas estudadas por dia.
-      <Button label="Registrar sessão" size="small" class="time-series-empty__action" @click="goToRegisterSession" />
-    </Message>
+      class="time-series-widget__empty"
+      title="Nenhum registro neste período"
+      description="Registre sessões para ver sua evolução aqui. O gráfico mostra as horas estudadas por dia."
+      icon="📈"
+      action-label="Registrar sessão"
+      :hide-action="false"
+      @action="goToRegisterSession"
+    />
   </div>
 </template>
 
@@ -165,11 +164,14 @@ function goToRegisterSession() {
 .skeleton-line {
   width: 90%;
 }
-.time-series-empty {
+.time-series-widget__empty {
   margin-top: var(--spacing-xs);
+  flex: 1;
+  min-height: var(--widget-chart-min-height-sm);
 }
-.time-series-empty__action {
-  margin-top: var(--spacing-sm);
+.time-series-widget__empty :deep(.empty-state) {
+  min-height: 100%;
+  border-radius: var(--radius-sm);
 }
 @media (max-width: 640px) {
   .time-series-widget {

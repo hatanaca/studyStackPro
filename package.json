@@ -2,6 +2,7 @@
   "name": "studytrack-pro",
   "private": true,
   "scripts": {
+    "debug:ingest": "node scripts/debug-ingest-server.mjs",
     "prepare": "husky",
     "lint": "cd frontend && npm run lint",
     "lint:backend": "cd backend && php vendor/bin/pint --test 2>/dev/null || true",

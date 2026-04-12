@@ -16,19 +16,26 @@ export const userMetricsSchema = z.object({
   last_session_at: z.string().nullable().optional(),
 })
 
+/** Campos opcionais que a API pode enviar como `null` (Laravel) — não usar só `.optional()`, que rejeita null. */
+const optionalApiString = z
+  .union([z.string(), z.null()])
+  .optional()
+  .transform((v) => (v == null ? undefined : v))
+
 export const technologySchema = z.object({
   id: z.string(),
   name: z.string(),
   slug: z.string(),
   color: z.string(),
-  icon: z.string().optional(),
-  description: z.string().optional(),
-  is_active: z.boolean(),
+  icon: optionalApiString,
+  description: optionalApiString,
+  is_active: z.boolean().default(true),
   created_at: z.string().optional(),
+  updated_at: z.string().optional(),
 })
 
 export const technologyMetricSchema = z.object({
-  technology: technologySchema,
+  technology: technologySchema.nullable(),
   total_minutes: z.number(),
   total_hours: z.number().optional(),
   session_count: z.number(),
@@ -95,6 +102,7 @@ export function parseDashboardResponse(raw: unknown): DashboardDataParsed {
     .object({ success: z.boolean(), data: dashboardDataSchema })
     .safeParse(raw)
   if (!parsed.success) {
+    console.warn('[Dashboard] Zod parse failed:', parsed.error.flatten())
     throw new Error('Resposta inválida do dashboard')
   }
   if (!parsed.data.success || !parsed.data.data) {
@@ -122,10 +130,17 @@ export function parseSessionsListResponse(raw: unknown): {
 
 export function parseTechnologiesListResponse(raw: unknown): TechnologyParsed[] {
   const parsed = z
-    .object({ success: z.boolean(), data: z.array(technologySchema) })
+    .object({
+      success: z.boolean(),
+      data: z.union([z.array(technologySchema), z.null()]),
+    })
     .safeParse(raw)
-  if (!parsed.success || !parsed.data.success) {
+  if (!parsed.success) {
+    console.warn('[Technologies] Zod parse failed:', parsed.error.flatten())
     throw new Error('Resposta inválida da lista de tecnologias')
   }
-  return parsed.data.data
+  if (!parsed.data.success) {
+    throw new Error('Resposta inválida da lista de tecnologias')
+  }
+  return parsed.data.data ?? []
 }

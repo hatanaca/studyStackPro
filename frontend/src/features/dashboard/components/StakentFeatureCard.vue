@@ -24,10 +24,10 @@
         Ver Dashboard
       </router-link>
       <router-link
-        to="/sessions"
+        to="/technologies"
         class="stakent-feature-card__btn stakent-feature-card__btn--secondary"
       >
-        Registrar sessão
+        Ver tecnologias
       </router-link>
     </div>
   </article>
@@ -38,9 +38,9 @@
   position: relative;
   padding: var(--spacing-xl);
   border-radius: var(--radius-card, var(--radius-lg));
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.35), rgba(124, 58, 237, 0.2));
-  border: 1px solid rgba(139, 92, 246, 0.4);
-  box-shadow: var(--shadow-card), 0 0 60px rgba(139, 92, 246, 0.1);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 35%, transparent), color-mix(in srgb, var(--color-primary) 20%, transparent));
+  border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
+  box-shadow: var(--shadow-card, var(--shadow-md)), 0 0 60px color-mix(in srgb, var(--color-primary) 10%, transparent);
   overflow: hidden;
 }
 .stakent-feature-card__badge {
@@ -50,7 +50,7 @@
   font-size: var(--text-xs);
   font-weight: 700;
   padding: var(--spacing-2xs) var(--spacing-sm);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--color-primary);
   color: var(--color-primary-contrast);
   text-transform: uppercase;
@@ -62,7 +62,7 @@
 .stakent-feature-card__logo {
   font-size: var(--text-xs);
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
+  color: color-mix(in srgb, var(--color-primary-contrast) 90%, transparent);
   letter-spacing: var(--tracking-tight);
 }
 .stakent-feature-card__title {
@@ -88,7 +88,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-xs);
-  padding: 0.5rem 1rem;
+  padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
   font-weight: 600;
@@ -99,13 +99,17 @@
   opacity: 0.95;
   transform: translateY(-1px);
 }
+.stakent-feature-card__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
 .stakent-feature-card__btn--primary {
   background: var(--color-primary);
   color: var(--color-primary-contrast);
   border: 1px solid var(--color-primary);
 }
 .stakent-feature-card__btn--secondary {
-  background: rgba(30, 41, 59, 0.6);
+  background: color-mix(in srgb, var(--color-bg-soft) 60%, transparent);
   color: var(--color-text);
   border: 1px solid var(--color-border);
 }

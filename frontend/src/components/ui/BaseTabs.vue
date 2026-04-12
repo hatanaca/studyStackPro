@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, provide, watch } from 'vue'
+import { ref, computed, provide, watch, nextTick } from 'vue'
 
 export interface TabItem {
   id: string
@@ -38,6 +38,39 @@ function select(id: string) {
   emit('update:modelValue', id)
 }
 
+function getEnabledTabs() {
+  return props.tabs.filter(t => !t.disabled)
+}
+
+function onTabKeydown(e: KeyboardEvent, tabId: string) {
+  const enabled = getEnabledTabs()
+  const currentIdx = enabled.findIndex(t => t.id === tabId)
+  if (currentIdx < 0) return
+
+  let targetIdx = -1
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    e.preventDefault()
+    targetIdx = (currentIdx + 1) % enabled.length
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    e.preventDefault()
+    targetIdx = (currentIdx - 1 + enabled.length) % enabled.length
+  } else if (e.key === 'Home') {
+    e.preventDefault()
+    targetIdx = 0
+  } else if (e.key === 'End') {
+    e.preventDefault()
+    targetIdx = enabled.length - 1
+  }
+
+  if (targetIdx >= 0) {
+    select(enabled[targetIdx].id)
+    nextTick(() => {
+      const tabEl = document.getElementById(`tab-${enabled[targetIdx].id}`)
+      tabEl?.focus()
+    })
+  }
+}
+
 provide('tabs', {
   activeId,
   select,
@@ -55,15 +88,18 @@ provide('tabs', {
     >
       <button
         v-for="tab in tabs"
+        :id="`tab-${tab.id}`"
         :key="tab.id"
         type="button"
         class="base-tabs__tab"
         :class="{ 'base-tabs__tab--active': activeId === tab.id, 'base-tabs__tab--disabled': tab.disabled }"
         role="tab"
         :aria-selected="activeId === tab.id"
+        :aria-controls="`tabpanel-${tab.id}`"
         :aria-disabled="tab.disabled"
         :tabindex="tab.disabled ? -1 : (activeId === tab.id ? 0 : -1)"
         @click="select(tab.id)"
+        @keydown="onTabKeydown($event, tab.id)"
       >
         <slot
           v-if="$slots[`icon-${tab.id}`]"
@@ -73,8 +109,10 @@ provide('tabs', {
       </button>
     </div>
     <div
+      :id="`tabpanel-${activeIdValue}`"
       class="base-tabs__panels"
       role="tabpanel"
+      :aria-labelledby="`tab-${activeIdValue}`"
     >
       <slot
         :active-id="activeIdValue"
@@ -121,7 +159,7 @@ provide('tabs', {
   border-bottom-color: var(--color-primary);
 }
 .base-tabs__tab--disabled {
-  opacity: 0.5;
+  opacity: var(--state-disabled-opacity);
   cursor: not-allowed;
 }
 .base-tabs--pill .base-tabs__list {

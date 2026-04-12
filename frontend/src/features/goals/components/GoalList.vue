@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, defineAsyncComponent } from 'vue'
 import { useConfirm } from 'primevue/useconfirm'
 import GoalCard from './GoalCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import ErrorCard from '@/components/ui/ErrorCard.vue'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import Skeleton from 'primevue/skeleton'
-import GoalForm from './GoalForm.vue'
+
+const GoalForm = defineAsyncComponent({
+  loader: () => import('./GoalForm.vue'),
+  loadingComponent: Skeleton,
+  delay: 80,
+})
 import type { Goal } from '@/types/goals.types'
 import type { CreateGoalPayload } from '@/types/goals.types'
 import { useGoalsStore } from '@/stores/goals.store'
@@ -86,6 +92,12 @@ async function handleUpdate(payload: { id: string; target_value: number }) {
       <Skeleton class="goal-list__skeleton" height="6rem" />
       <Skeleton class="goal-list__skeleton" height="6rem" />
     </div>
+    <ErrorCard
+      v-else-if="goalsStore.error"
+      title="Erro ao carregar metas"
+      :message="goalsStore.error"
+      :on-retry="() => goalsStore.fetchGoals()"
+    />
     <template v-else>
       <div
         v-if="goalsStore.items.length"
@@ -146,19 +158,20 @@ async function handleUpdate(payload: { id: string; target_value: number }) {
 .goal-list__toolbar {
   margin-bottom: var(--page-section-gap);
   padding: var(--spacing-lg) var(--spacing-xl);
-  background: var(--color-bg-card);
+  background: var(--surface-page-header-bg);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--surface-page-header-shadow);
 }
 .goal-list__loading {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
   padding: var(--spacing-2xl);
-  background: color-mix(in srgb, var(--color-bg-soft) 50%, var(--color-bg-card));
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-bg-soft) 48%, var(--color-bg-card));
+  border: var(--empty-state-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 .goal-list__skeleton {
   border-radius: var(--radius-md);

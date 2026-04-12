@@ -54,10 +54,14 @@ export function useFocusTrap(container: Ref<HTMLElement | null>, active: Ref<boo
     }
   }
 
-  watch(active, (isActive) => {
-    if (isActive) activate()
-    else deactivate()
-  })
+  watch(
+    active,
+    (isActive) => {
+      if (isActive) activate()
+      else deactivate()
+    },
+    { flush: 'post' },
+  )
 
   onMounted(() => {
     if (active.value) activate()

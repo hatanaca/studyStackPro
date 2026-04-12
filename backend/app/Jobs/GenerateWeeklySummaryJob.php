@@ -20,6 +20,11 @@ class GenerateWeeklySummaryJob implements ShouldQueue
 
     public int $timeout = 120;
 
+    public function __construct()
+    {
+        $this->onQueue('scheduler');
+    }
+
     public function handle(): void
     {
         // Agrega daily_minutes em weekly_summaries por usuário (ISO week, Monday = start)

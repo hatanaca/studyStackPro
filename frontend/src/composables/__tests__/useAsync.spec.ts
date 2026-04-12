@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest'
 import { useAsync } from '../useAsync'
 
 describe('useAsync', () => {

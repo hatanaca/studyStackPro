@@ -241,6 +241,7 @@ function reset() {
 .appearance-section__text:focus-visible,
 .appearance-section__select:focus-visible {
   outline: none;
+  border-color: var(--color-primary);
   box-shadow: var(--shadow-focus);
 }
 .appearance-section__text {
@@ -252,9 +253,6 @@ function reset() {
   background: var(--color-bg-card);
   color: var(--color-text);
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
-}
-.appearance-section__text:focus {
-  border-color: var(--color-primary);
 }
 .appearance-section__font-row {
   display: flex;
@@ -273,14 +271,11 @@ function reset() {
   max-width: 20rem;
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
-.appearance-section__select:focus {
-  border-color: var(--color-primary);
-}
 .appearance-section__actions {
   margin-top: var(--spacing-sm);
 }
 .appearance-section__actions :deep(.p-button) {
-  min-height: 2.75rem;
+  min-height: var(--touch-target-min);
 }
 .appearance-section__actions :deep(.p-button:focus-visible) {
   outline: none;

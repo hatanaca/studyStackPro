@@ -22,10 +22,6 @@ const emit = defineEmits<{
 
 const type = ref<GoalType>(props.initialGoal?.type ?? props.defaultType)
 const targetValue = ref(String(props.initialGoal?.target_value ?? ''))
-const targetValueNum = computed({
-  get: () => (targetValue.value === '' ? null : Number(targetValue.value)),
-  set: (v) => { targetValue.value = v == null ? '' : String(v) },
-})
 const startDate = ref(props.initialGoal?.start_date ?? new Date().toISOString().slice(0, 10))
 const errors = ref<Record<string, string>>({})
 
@@ -199,8 +195,8 @@ function submit() {
 .goal-form__input::placeholder {
   color: var(--form-input-placeholder);
 }
-.goal-form__select:focus,
-.goal-form__input:focus {
+.goal-form__select:focus-visible,
+.goal-form__input:focus-visible {
   border-color: var(--form-input-border-focus);
   box-shadow: var(--form-input-shadow-focus);
 }

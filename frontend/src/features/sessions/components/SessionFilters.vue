@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
 import TechnologyPicker from '@/features/technologies/components/TechnologyPicker.vue'
 import { useTechnologiesStore } from '@/stores/technologies.store'
 import type { Technology } from '@/types/domain.types'
@@ -8,8 +9,9 @@ import type { SessionListFilters } from '@/types/api.types'
 const props = withDefaults(
   defineProps<{
     modelValue?: SessionListFilters
+    hideTechnology?: boolean
   }>(),
-  { modelValue: () => ({}) }
+  { modelValue: () => ({}), hideTechnology: false }
 )
 
 const emit = defineEmits<{
@@ -65,22 +67,36 @@ watch(
   { deep: true }
 )
 
+function buildFilters(): SessionListFilters {
+  return {
+    technology_id: technology.value?.id,
+    date_from: dateFrom.value || undefined,
+    date_to: dateTo.value || undefined,
+    min_duration: minDuration.value ? parseInt(minDuration.value, 10) : undefined,
+    mood: mood.value ? parseInt(mood.value, 10) : undefined,
+  }
+}
+
+function emitIfChanged(filters: SessionListFilters) {
+  if (!filtersEqual(filters, props.modelValue ?? {})) {
+    emit('update:modelValue', filters)
+    emit('change')
+  }
+}
+
+// Selects (technology, mood) → emit imediato
 watch(
-  () => [technology.value, dateFrom.value, dateTo.value, minDuration.value, mood.value],
-  () => {
-    const filters: SessionListFilters = {
-      technology_id: technology.value?.id,
-      date_from: dateFrom.value || undefined,
-      date_to: dateTo.value || undefined,
-      min_duration: minDuration.value ? parseInt(minDuration.value, 10) : undefined,
-      mood: mood.value ? parseInt(mood.value, 10) : undefined
-    }
-    if (!filtersEqual(filters, props.modelValue ?? {})) {
-      emit('update:modelValue', filters)
-      emit('change')
-    }
-  },
+  () => [technology.value, mood.value],
+  () => emitIfChanged(buildFilters()),
   { deep: true }
+)
+
+// Inputs de texto (date, duration) → debounce 300ms para não disparar query a cada tecla
+const emitDebounced = useDebounceFn(() => emitIfChanged(buildFilters()), 300)
+
+watch(
+  () => [dateFrom.value, dateTo.value, minDuration.value],
+  () => emitDebounced(),
 )
 
 function clear() {
@@ -95,7 +111,7 @@ function clear() {
 <template>
   <div class="session-filters">
     <div class="session-filters__row">
-      <div class="filter-group">
+      <div v-if="!hideTechnology" class="filter-group">
         <label for="filter-tech">Tecnologia</label>
         <TechnologyPicker
           id="filter-tech"
@@ -210,9 +226,9 @@ function clear() {
   color: var(--color-text);
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
-.filter-input:focus {
+.filter-input:focus-visible {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  box-shadow: var(--shadow-focus);
   outline: none;
 }
 .btn-clear {
@@ -233,6 +249,10 @@ function clear() {
   background: var(--color-primary-soft);
   color: var(--color-primary);
   border-color: var(--color-primary);
+}
+.btn-clear:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 @media (max-width: 640px) {
   .session-filters {

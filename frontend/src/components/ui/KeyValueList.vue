@@ -38,7 +38,7 @@ function getDisplayValue(value: KeyValueItem['value']): string {
     <template v-if="items?.length">
       <div
         v-for="(item, index) in visibleItems"
-        :key="index"
+        :key="`${item.label}:${index}`"
         class="key-value-list__row"
       >
         <dt class="key-value-list__term">

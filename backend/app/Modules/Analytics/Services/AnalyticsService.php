@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Cache;
 /**
  * Serviço de analytics e métricas.
  *
- * Agrega dados do repositório com cache por tags (analytics, user:{id}). Usa lock para
+ * Agrega dados do repositório com cache por tags (analytics, analytics:user:{id}). Usa lock para
  * evitar cache stampede no dashboard. TTLs: dashboard 5min, heatmap 1h, export sem cache.
  */
 class AnalyticsService
@@ -20,23 +20,21 @@ class AnalyticsService
 
     /**
      * Dados completos do dashboard. Cache com lock (evita stampede). TTL 5min.
+     *
+     * block(5, callback) aguarda até 5s pelo lock, executa o callback enquanto o detém
+     * e libera automaticamente — sem necessidade de forceRelease() manual.
      */
     public function getDashboardData(string $userId): array
     {
         $lockKey = 'dashboard:lock:'.$userId;
 
-        $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 10);
-        try {
-            return $lock->block(5, function () use ($userId) {
-                return Cache::tags(['analytics', "user:{$userId}"])->remember(
-                    "dashboard:{$userId}",
-                    now()->addMinutes(5),
-                    fn () => $this->buildDashboardData($userId)
-                );
-            });
-        } finally {
-            $lock->forceRelease();
-        }
+        return Cache::lock($lockKey, 10)->block(5, function () use ($userId) {
+            return Cache::tags(['analytics', "analytics:user:{$userId}"])->remember(
+                "dashboard:{$userId}",
+                now()->addMinutes(5),
+                fn () => $this->buildDashboardData($userId)
+            );
+        });
     }
 
     /**
@@ -44,7 +42,7 @@ class AnalyticsService
      */
     public function getUserMetrics(string $userId): array
     {
-        return Cache::tags(['analytics', "user:{$userId}"])->remember(
+        return Cache::tags(['analytics', "analytics:user:{$userId}"])->remember(
             "user-metrics:{$userId}",
             now()->addMinutes(5),
             fn () => $this->repository->getUserMetrics($userId)
@@ -56,7 +54,7 @@ class AnalyticsService
      */
     public function getTechStats(string $userId): array
     {
-        return Cache::tags(['analytics', "user:{$userId}"])->remember(
+        return Cache::tags(['analytics', "analytics:user:{$userId}"])->remember(
             "tech-stats:{$userId}",
             now()->addMinutes(5),
             fn () => $this->repository->getTechnologyMetrics($userId)
@@ -70,7 +68,7 @@ class AnalyticsService
     {
         $key = "time-series:{$userId}:{$days}";
 
-        return Cache::tags(['analytics', "user:{$userId}"])->remember(
+        return Cache::tags(['analytics', "analytics:user:{$userId}"])->remember(
             $key,
             now()->addMinutes(15),
             fn () => $this->repository->getTimeSeries($userId, $days)
@@ -79,7 +77,7 @@ class AnalyticsService
 
     public function getWeekly(string $userId): array
     {
-        return Cache::tags(['analytics', "user:{$userId}"])->remember(
+        return Cache::tags(['analytics', "analytics:user:{$userId}"])->remember(
             "weekly:{$userId}",
             now()->addMinutes(15),
             fn () => $this->repository->getWeeklySummaries($userId)
@@ -94,7 +92,7 @@ class AnalyticsService
         $year = $year ?? (int) now()->format('Y');
         $key = "heatmap:{$userId}:{$year}";
 
-        return Cache::tags(['analytics', "user:{$userId}"])->remember(
+        return Cache::tags(['analytics', "analytics:user:{$userId}"])->remember(
             $key,
             now()->addHour(),
             fn () => $this->repository->getHeatmapData($userId, $year)

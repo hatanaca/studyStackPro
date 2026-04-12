@@ -89,6 +89,11 @@ function formatMinutes(m: number): string {
 </template>
 
 <style scoped>
+.goals-widget {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
 .goals-widget__title-row {
   display: flex;
   align-items: center;

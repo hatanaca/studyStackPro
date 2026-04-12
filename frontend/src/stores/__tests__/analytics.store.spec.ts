@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAnalyticsStore } from '../analytics.store'
 import { analyticsApi } from '@/api/modules/analytics.api'

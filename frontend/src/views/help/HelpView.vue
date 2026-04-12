@@ -55,11 +55,12 @@ const faqItems = [
 <style scoped>
 .help-view__card {
   margin-top: 0;
-  border-radius: var(--radius-md);
-  overflow: hidden;
 }
 .help-view__card + .help-view__card {
   margin-top: var(--spacing-xl);
+}
+.help-view__card :deep(.p-card-content) {
+  padding-top: var(--spacing-md);
 }
 .help-view__answer,
 .help-view__text {
@@ -68,20 +69,17 @@ const faqItems = [
   line-height: var(--leading-normal);
   letter-spacing: var(--tracking-tight);
   margin: 0;
-  padding: 0 var(--spacing-sm);
+  max-width: 65ch;
+}
+.help-view__answer {
+  padding: 0 var(--spacing-xs) 0 0;
 }
 .help-view__text {
   color: var(--color-text-muted);
-  padding: 0;
 }
 .help-view__text--lead {
   color: var(--color-text);
   font-weight: 600;
   margin-bottom: var(--spacing-xs);
-}
-.help-view__card--contact :deep(.base-card__body) {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
 }
 </style>

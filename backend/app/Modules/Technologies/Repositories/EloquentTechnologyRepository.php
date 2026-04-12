@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 
 /**
  * Implementação Eloquent do repositório de tecnologias.
- * Usa cache com tags (technologies, user:{id}). Busca com ILIKE. Invalida cache em create/update.
+ * Usa cache com tags (technologies, technologies:user:{id}). Busca com ILIKE. Invalida cache em create/update.
  */
 class EloquentTechnologyRepository implements TechnologyRepositoryInterface
 {
@@ -24,7 +24,7 @@ class EloquentTechnologyRepository implements TechnologyRepositoryInterface
     {
         $cacheKey = "technologies:list:{$userId}:".($activeOnly ? 'active' : 'all');
 
-        return Cache::tags(['technologies', "user:{$userId}"])->remember(
+        return Cache::tags(['technologies', "technologies:user:{$userId}"])->remember(
             $cacheKey,
             now()->addMinutes(self::CACHE_TTL_MINUTES),
             function () use ($userId, $activeOnly) {
@@ -98,6 +98,6 @@ class EloquentTechnologyRepository implements TechnologyRepositoryInterface
     /** Limpa cache de tecnologias do usuário */
     public function invalidateCacheForUser(string $userId): void
     {
-        Cache::tags(['technologies', "user:{$userId}"])->flush();
+        Cache::tags(['technologies', "technologies:user:{$userId}"])->flush();
     }
 }

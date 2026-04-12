@@ -47,11 +47,14 @@ function isOpen(id: string) {
       :class="{ 'base-accordion__item--open': isOpen(item.id), 'base-accordion__item--disabled': item.disabled }"
     >
       <button
+        :id="`accordion-trigger-${item.id}`"
         type="button"
         class="base-accordion__trigger"
         :aria-expanded="isOpen(item.id)"
+        :aria-controls="`accordion-panel-${item.id}`"
         :aria-disabled="item.disabled"
         @click="toggle(item.id)"
+        @keydown.enter.space.prevent="toggle(item.id)"
       >
         <span class="base-accordion__title">{{ item.title }}</span>
         <span
@@ -62,9 +65,10 @@ function isOpen(id: string) {
       <Transition name="accordion">
         <div
           v-show="isOpen(item.id)"
+          :id="`accordion-panel-${item.id}`"
           class="base-accordion__panel"
           role="region"
-          :aria-labelledby="`accordion-${item.id}`"
+          :aria-labelledby="`accordion-trigger-${item.id}`"
         >
           <slot
             :name="item.id"
@@ -109,7 +113,7 @@ function isOpen(id: string) {
   color: var(--color-primary);
 }
 .base-accordion__item--disabled .base-accordion__trigger {
-  opacity: 0.6;
+  opacity: var(--state-disabled-opacity);
   cursor: not-allowed;
 }
 .base-accordion__chevron {

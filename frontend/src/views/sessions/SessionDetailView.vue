@@ -71,7 +71,11 @@ const pageSubtitle = computed(() => {
 })
 
 function goBack() {
-  router.push({ name: 'sessions' })
+  if (session.value?.technology?.id) {
+    router.push({ name: 'technology-detail', params: { id: session.value.technology.id } })
+  } else {
+    router.push({ name: 'technologies' })
+  }
 }
 </script>
 
@@ -79,7 +83,8 @@ function goBack() {
   <PageView
     :breadcrumb="[
       { label: 'Dashboard', to: '/' },
-      { label: 'Sessões', to: '/sessions' },
+      { label: 'Tecnologias', to: '/technologies' },
+      ...(session?.technology ? [{ label: session.technology.name, to: `/technologies/${session.technology.id}` }] : []),
       { label: 'Sessão de estudo' },
     ]"
     title="Sessão de estudo"
@@ -150,8 +155,8 @@ function goBack() {
           </div>
           <dl class="session-detail__meta key-value-list">
             <div
-              v-for="(item, index) in sessionMetaItems"
-              :key="index"
+              v-for="item in sessionMetaItems"
+              :key="item.label"
               class="key-value-list__row"
             >
               <dt class="key-value-list__term">{{ item.label }}</dt>
@@ -169,7 +174,7 @@ function goBack() {
   padding: var(--spacing-lg) 0;
 }
 .session-detail__skeleton {
-  min-height: 8rem;
+  min-height: calc(4 * var(--spacing-2xl));
   border-radius: var(--radius-md);
 }
 .session-detail__actions {
@@ -224,7 +229,7 @@ function goBack() {
   box-shadow: var(--shadow-md);
 }
 .session-detail__card-bar {
-  height: 4px;
+  height: var(--spacing-xs);
   background: var(--session-tech-color, var(--color-primary));
 }
 .session-detail__card-inner {

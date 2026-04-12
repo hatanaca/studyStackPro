@@ -11,6 +11,9 @@
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
         </testsuite>
+        <testsuite name="Integration">
+            <directory>tests/Integration</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>
@@ -37,6 +40,10 @@
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="BROADCAST_CONNECTION" value="log"/>
+        <env name="REDIS_HOST" value="127.0.0.1"/>
+        <env name="REDIS_PORT" value="6379"/>
+        <!-- Senha padrão do docker/redis (requirepass). CI sobrescreve com REDIS_PASSWORD vazio. -->
+        <env name="REDIS_PASSWORD" value="c812c3a3c4685cda4fc087d6d4edf667"/>
         <env name="REVERB_APP_ID" value="test"/>
         <env name="REVERB_APP_KEY" value="test-key"/>
         <env name="REVERB_APP_SECRET" value="test-secret"/>

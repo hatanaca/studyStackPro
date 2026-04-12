@@ -114,14 +114,18 @@ defineExpose({ close })
   cursor: pointer;
   outline: none;
 }
+.base-dropdown__trigger:focus-visible {
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-sm);
+}
 .base-dropdown__trigger--disabled {
-  opacity: 0.6;
+  opacity: var(--state-disabled-opacity);
   cursor: not-allowed;
   pointer-events: none;
 }
 .base-dropdown__panel {
   position: absolute;
-  z-index: 100;
+  z-index: var(--z-dropdown, 100);
   min-width: 10rem;
   margin-top: var(--spacing-xs);
   padding: var(--spacing-xs);
@@ -141,6 +145,6 @@ defineExpose({ close })
 .dropdown-enter-from,
 .dropdown-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
+  transform: translateY(calc(-1 * var(--spacing-xs)));
 }
 </style>

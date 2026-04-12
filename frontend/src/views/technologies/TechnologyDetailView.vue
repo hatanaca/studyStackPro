@@ -3,21 +3,24 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PageView from '@/components/layout/PageView.vue'
 import Skeleton from 'primevue/skeleton'
-import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ErrorCard from '@/components/ui/ErrorCard.vue'
 import TechnologyDetailMural from '@/features/technologies/components/TechnologyDetailMural.vue'
 import TechnologyDetailReminders from '@/features/technologies/components/TechnologyDetailReminders.vue'
-import { sessionsApi } from '@/api/modules/sessions.api'
+import SessionList from '@/features/sessions/components/SessionList.vue'
+import { useTechnologiesStore } from '@/stores/technologies.store'
+import { useTechnologiesQuery } from '@/features/technologies/composables/useTechnologiesQuery'
 import { technologiesApi } from '@/api/modules/technologies.api'
-import { formatHours } from '@/utils/formatters'
 import type { Technology } from '@/types/domain.types'
 
 const route = useRoute()
 const router = useRouter()
 
+const technologiesStore = useTechnologiesStore()
+// Garante que a store está populada (necessário para o formulário de edição de sessões)
+useTechnologiesQuery()
+
 const technology = ref<Technology | null>(null)
-const totalMinutes = ref(0)
 const loading = ref(true)
 const error = ref<string | null>(null)
 
@@ -25,6 +28,13 @@ const id = computed(() => route.params.id as string)
 
 async function loadTechnology() {
   if (!id.value) return
+  // Caminho rápido: tecnologia já está na store (usuário veio da lista)
+  const cached = technologiesStore.technologies.find((t) => t.id === id.value)
+  if (cached) {
+    technology.value = cached
+    return
+  }
+  // Caminho lento: busca na API (acesso direto / deep link)
   try {
     const { data } = await technologiesApi.getOne(id.value)
     if (data.success && data.data) {
@@ -37,28 +47,13 @@ async function loadTechnology() {
   }
 }
 
-async function loadTotalHours() {
-  if (!id.value) return
-  try {
-    const { data } = await sessionsApi.list({ technology_id: id.value, per_page: 50 })
-    if (data.success && Array.isArray(data.data)) {
-      totalMinutes.value = data.data.reduce((sum, s) => sum + (s.duration_min ?? 0), 0)
-    }
-  } catch {
-    totalMinutes.value = 0
-  }
-}
-
 async function fetchData() {
   if (!id.value) return
   loading.value = true
   error.value = null
   await loadTechnology()
-  if (technology.value) await loadTotalHours()
   loading.value = false
 }
-
-const totalHoursLabel = computed(() => formatHours(totalMinutes.value))
 
 const breadcrumbItems = computed(() => [
   { label: 'Dashboard', to: '/' },
@@ -82,20 +77,22 @@ function goBack() {
 <template>
   <PageView
     :breadcrumb="breadcrumbItems"
-    :title="technology?.name ?? 'Detalhes'"
+    :title="loading ? '' : (technology?.name ?? 'Detalhes')"
     :subtitle="technology?.description ?? undefined"
     narrow
   >
+    <!-- Cabeçalho da tecnologia: só bloqueia o título, não o conteúdo -->
     <div
       v-if="loading"
-      class="technology-detail__loading"
+      class="technology-detail__header-skeleton"
       role="status"
       aria-live="polite"
       aria-label="Carregando tecnologia"
     >
-      <Skeleton class="technology-detail__skeleton" height="10rem" />
+      <Skeleton width="12rem" height="1.5rem" class="technology-detail__skeleton" />
     </div>
-    <template v-else-if="error">
+
+    <template v-if="error">
       <ErrorCard
         :message="error"
         :on-retry="fetchData"
@@ -110,21 +107,19 @@ function goBack() {
         </BaseButton>
       </div>
     </template>
-    <template v-else-if="technology">
+
+    <!-- Conteúdo monta imediatamente usando o id da rota; não espera technology -->
+    <template v-else>
       <div
         class="technology-detail"
         :style="technology ? { '--tech-color': technology.color } : {}"
       >
-        <div class="technology-detail__total">
-          <BaseCard class="technology-detail__card" title="Total de horas">
-            <p class="technology-detail__total-value">
-              {{ totalHoursLabel }}
-            </p>
-          </BaseCard>
-        </div>
         <div class="technology-detail__sections">
-          <TechnologyDetailReminders :technology-id="technology.id" />
-          <TechnologyDetailMural :technology-id="technology.id" />
+          <TechnologyDetailReminders :technology-id="id" />
+          <TechnologyDetailMural :technology-id="id" />
+        </div>
+        <div class="technology-detail__sessions">
+          <SessionList :technology-id="id" />
         </div>
       </div>
     </template>
@@ -132,12 +127,11 @@ function goBack() {
 </template>
 
 <style scoped>
-.technology-detail__loading {
-  padding: var(--spacing-xl) 0;
+.technology-detail__header-skeleton {
+  margin-bottom: var(--spacing-lg);
 }
 .technology-detail__skeleton {
-  min-height: 10rem;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
 }
 .technology-detail__back {
   margin-top: var(--spacing-xl);
@@ -145,30 +139,13 @@ function goBack() {
 .technology-detail {
   max-width: 100%;
 }
-.technology-detail__total {
-  margin-bottom: var(--page-section-gap);
-}
-.technology-detail__card {
-  padding: var(--spacing-xl);
-}
-.technology-detail__card-title {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-text-muted);
-  margin: 0 0 var(--spacing-sm);
-  letter-spacing: var(--tracking-wide);
-}
-.technology-detail__total-value {
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  color: var(--tech-color, var(--color-primary));
-  margin: 0;
-  letter-spacing: var(--tracking-tight);
-  line-height: var(--leading-tight);
-}
 .technology-detail__sections {
   display: flex;
   flex-direction: column;
   gap: var(--page-section-gap);
+  margin-bottom: var(--page-section-gap);
+}
+.technology-detail__sessions {
+  margin-top: var(--page-section-gap);
 }
 </style>

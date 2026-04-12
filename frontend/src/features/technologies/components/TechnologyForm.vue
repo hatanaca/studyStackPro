@@ -152,7 +152,7 @@ defineExpose({ reset, setError: (msg: string) => { errors.value = { name: msg } 
   height: var(--form-input-height);
   border: 1px solid var(--form-input-border);
   border-radius: var(--form-input-radius);
-  padding: 2px;
+  padding: var(--spacing-2xs);
   cursor: pointer;
   background: var(--form-input-bg);
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
@@ -183,7 +183,7 @@ defineExpose({ reset, setError: (msg: string) => { errors.value = { name: msg } 
 .color-text::placeholder {
   color: var(--form-input-placeholder);
 }
-.color-text:focus {
+.color-text:focus-visible {
   border-color: var(--form-input-border-focus);
   box-shadow: var(--form-input-shadow-focus);
 }

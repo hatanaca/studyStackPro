@@ -1,21 +1,101 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import PageView from '@/components/layout/PageView.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import Callout from '@/components/ui/Callout.vue'
+import ErrorCard from '@/components/ui/ErrorCard.vue'
+import Skeleton from 'primevue/skeleton'
+import { sessionsApi } from '@/api/modules/sessions.api'
+import { parseSessionsListResponse } from '@/types/schemas/api.schemas'
+import { usePdfGenerator } from '@/composables/usePdfGenerator'
+import type { StudySession } from '@/types/domain.types'
 
 const dateRange = ref<{ start: string; end: string }>({ start: '', end: '' })
+/** Falha de rede / API ao buscar sessões */
+const fetchError = ref('')
+/** Período válido mas sem sessões (não é erro técnico) */
+const periodEmptyMessage = ref('')
+const warning = ref('')
+const isLoading = ref(false)
+const { generating, generateReport } = usePdfGenerator()
+
+const canGenerate = computed(
+  () => dateRange.value.start && dateRange.value.end && !generating.value && !isLoading.value,
+)
+
+const dateError = computed(() => {
+  if (dateRange.value.start && dateRange.value.end && dateRange.value.start > dateRange.value.end) {
+    return 'A data inicial deve ser anterior à data final.'
+  }
+  return ''
+})
+
+const PAGE_SIZE = 50
+
+async function fetchAllSessions(dateFrom: string, dateTo: string): Promise<StudySession[]> {
+  const allSessions: StudySession[] = []
+  let currentPage = 1
+  let lastPage = 1
+
+  do {
+    const res = await sessionsApi.list({
+      date_from: dateFrom,
+      date_to: dateTo,
+      per_page: PAGE_SIZE,
+      page: currentPage,
+    })
+    const parsed = parseSessionsListResponse(res.data)
+    allSessions.push(...(parsed.data as StudySession[]))
+
+    if (parsed.meta) {
+      lastPage = parsed.meta.last_page
+    }
+    currentPage++
+  } while (currentPage <= lastPage)
+
+  return allSessions
+}
+
+async function onGenerate() {
+  fetchError.value = ''
+  periodEmptyMessage.value = ''
+  warning.value = ''
+  if (dateError.value) {
+    return
+  }
+  isLoading.value = true
+  try {
+    const sessions = await fetchAllSessions(dateRange.value.start, dateRange.value.end)
+
+    if (sessions.length === 0) {
+      periodEmptyMessage.value =
+        'Nenhuma sessão encontrada no período selecionado. Escolha outras datas ou registre sessões antes.'
+      return
+    }
+
+    await generateReport({
+      title: 'Relatório de Atividades — StudyTrack Pro',
+      dateRange: dateRange.value,
+      sessions,
+    })
+  } catch {
+    fetchError.value =
+      'Não foi possível buscar as sessões. Verifique a conexão e tente de novo.'
+  } finally {
+    isLoading.value = false
+  }
+}
 </script>
 
 <template>
   <PageView
     :breadcrumb="[{ label: 'Dashboard', to: '/' }, { label: 'Relatórios' }]"
     title="Relatórios"
-    subtitle="Gere relatórios de estudo por período. Em breve: PDF e resumos por tecnologia."
+    subtitle="Gere relatórios de estudo por período em PDF."
     narrow
   >
     <template #hint>
-      Esta página é um placeholder. Em breve: download em PDF com resumo e gráficos por período.
+      Selecione um período para gerar um relatório em PDF com resumo e detalhamento de sessões.
     </template>
     <section class="reports-card">
       <h2 class="reports-card__title">Relatório de atividades</h2>
@@ -40,17 +120,50 @@ const dateRange = ref<{ start: string; end: string }>({ start: '', end: '' })
         </div>
         <BaseButton
           variant="primary"
-          disabled
+          :disabled="!canGenerate || !!dateError"
+          @click="onGenerate"
         >
-          Gerar relatório (em breve)
+          {{ isLoading ? 'Buscando…' : generating ? 'Gerando…' : 'Gerar relatório PDF' }}
         </BaseButton>
       </div>
-      <Callout
-        variant="info"
-        title="Em breve: download em PDF"
+      <div
+        v-if="isLoading"
+        class="reports-loading"
+        role="status"
+        aria-live="polite"
+        aria-label="Buscando sessões para o relatório"
       >
-        A geração de relatórios em PDF com resumo por período e gráficos está em desenvolvimento.
-        Por enquanto, use a página Exportar para baixar dados em CSV ou JSON.
+        <Skeleton height="3rem" class="reports-loading__skel" />
+        <Skeleton height="3rem" class="reports-loading__skel" />
+      </div>
+      <Callout
+        v-if="dateError"
+        variant="warning"
+        :title="dateError"
+      />
+      <ErrorCard
+        v-else-if="fetchError"
+        title="Erro ao montar o relatório"
+        :message="fetchError"
+        :on-retry="onGenerate"
+      />
+      <Callout
+        v-else-if="periodEmptyMessage"
+        variant="info"
+        :title="periodEmptyMessage"
+      />
+      <Callout
+        v-else-if="warning"
+        variant="info"
+        :title="warning"
+      />
+      <Callout
+        v-else-if="!isLoading"
+        variant="info"
+        title="Relatório em PDF"
+      >
+        O relatório inclui resumo geral (sessões, tempo, tecnologias) e uma tabela detalhada
+        de todas as sessões no período. Selecione as datas e clique em gerar.
       </Callout>
     </section>
   </PageView>
@@ -58,21 +171,23 @@ const dateRange = ref<{ start: string; end: string }>({ start: '', end: '' })
 
 <style scoped>
 .reports-card {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  background: var(--surface-page-header-bg);
+  border: var(--card-chrome-border);
+  border-radius: var(--card-chrome-radius);
   padding: var(--spacing-xl);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xl);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--card-chrome-shadow);
 }
 .reports-card__title {
   margin: 0;
+  font-family: var(--font-display);
   font-size: var(--text-lg);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-text);
-  line-height: var(--leading-snug);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
 }
 .reports-form {
   display: flex;
@@ -115,9 +230,18 @@ const dateRange = ref<{ start: string; end: string }>({ start: '', end: '' })
   box-sizing: border-box;
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
-.reports-input:focus {
+.reports-input:focus-visible {
   border-color: var(--form-input-border-focus);
   box-shadow: var(--form-input-shadow-focus);
+}
+.reports-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding-top: var(--spacing-sm);
+}
+.reports-loading__skel {
+  border-radius: var(--radius-md);
 }
 .reports-sep {
   font-size: var(--text-sm);

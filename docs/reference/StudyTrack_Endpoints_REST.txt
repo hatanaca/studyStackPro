@@ -1,0 +1,871 @@
++-----------------------------------------------------------------------+
+| STUDYTRACK PRO                                                        |
+|                                                                       |
+| Definição Completa de Endpoints REST                                  |
+|                                                                       |
+| API v1 · Laravel Sanctum · Rate Limiting · Cache Redis · WebSocket    |
+|                                                                       |
+| 31 endpoints · 5 grupos · Contratos de Request/Response completos     |
++-----------------------------------------------------------------------+
+
++-------------------------------------------------------------------------------------------+
+| CONVENÇÕES GLOBAIS DA API                                                                 |
++-------------------------------------------------------------------------------------------+
+| Base URL: https://api.studytrack.pro/api/v1 (dev: http://localhost/api/v1)                |
+|                                                                                           |
+| Content-Type: application/json em todas as requisições e respostas                        |
+|                                                                                           |
+| Autenticação: Bearer Token via Authorization header (Laravel Sanctum)                     |
+|                                                                                           |
+| Paginação: ?page=1&per_page=15 em todos os endpoints de lista                             |
+|                                                                                           |
+| Timestamps: ISO 8601 com timezone UTC (ex: 2025-03-15T14:30:00Z)                          |
+|                                                                                           |
+| UUIDs: Todos os IDs são UUID v4 (ex: 550e8400-e29b-41d4-a716-446655440000)                |
+|                                                                                           |
+| Versionamento: Via URL prefix /api/v1. Futura v2 convive em paralelo sem breaking changes |
++-------------------------------------------------------------------------------------------+
+
+Envelope de Resposta Padrão
+
+Todos os endpoints retornam um envelope JSON consistente, independente do tipo de operação:
+
++---------------------------------------------------------------------------+
+| // SUCCESS — Recurso único                                                |
+|                                                                           |
+| { "success": true, "data": { /* objeto */ }, "message": "..." }           |
+|                                                                           |
+| // SUCCESS — Lista paginada                                               |
+|                                                                           |
+| { "success": true, "data": [ /* array */ ],                               |
+|                                                                           |
+| "meta": { "current_page": 1, "last_page": 4, "per_page": 15,              |
+|                                                                           |
+| "total": 52, "from": 1, "to": 15 },                                       |
+|                                                                           |
+| "links": { "first": "...", "last": "...", "prev": null, "next": "..." } } |
+|                                                                           |
+| // ERROR — Qualquer falha                                                 |
+|                                                                           |
+| { "success": false, "error": {                                            |
+|                                                                           |
+| "code": "VALIDATION_ERROR",                                               |
+|                                                                           |
+| "message": "The given data was invalid.",                                 |
+|                                                                           |
+| "details": { "started_at": ["The started at field is required."] }        |
+|                                                                           |
+| }                                                                         |
+|                                                                           |
+| }                                                                         |
++---------------------------------------------------------------------------+
+
+Códigos de Erro Padronizados
+
+  --------------------------------------------------------------------------------------------------
+  HTTP       error.code           Causa                                 Handler
+  ---------- -------------------- ------------------------------------- ----------------------------
+  400        BAD_REQUEST          Body malformado ou tipo errado        Handler global
+
+  401        UNAUTHENTICATED      Token ausente, inválido ou expirado   Handler global
+
+  403        FORBIDDEN            Recurso não pertence ao usuário       AuthorizationException
+
+  404        NOT_FOUND            UUID não encontrado no banco          ModelNotFoundException
+
+  409        CONCURRENT_SESSION   Sessão já em andamento                ConcurrentSessionException
+
+  422        VALIDATION_ERROR     Campos inválidos (Form Request)       ValidationException
+
+  429        RATE_LIMITED         Limite de requisições excedido        ThrottleRequestsException
+
+  500        INTERNAL_ERROR       Erro não tratado                      Handler global + log
+  --------------------------------------------------------------------------------------------------
+
+Índice Geral de Endpoints
+
+Visão consolidada de todos os 31 endpoints agrupados por domínio:
+
+  ---------------------------------------------------------------------------------------------
+  Método   Endpoint                   Descrição                               Auth    Cache
+  -------- -------------------------- --------------------------------------- ------- ---------
+  POST     /api/v1/auth/register             Cadastrar novo usuário                  Não     —
+
+  POST     /api/v1/auth/login                Autenticar e obter token                Não     —
+
+  POST     /api/v1/auth/logout               Revogar token atual                     Sim     —
+
+  GET      /api/v1/auth/me                   Dados do usuário autenticado            Sim     5min
+
+  PUT      /api/v1/auth/me                   Atualizar perfil do usuário             Sim     —
+
+  POST     /api/v1/auth/change-password      Alterar senha                           Sim     —
+
+  DELETE   /api/v1/auth/tokens               Revogar todos os tokens                 Sim     —
+
+  GET      /api/v1/technologies              Listar tecnologias do usuário           Sim     1h
+
+  POST     /api/v1/technologies              Criar nova tecnologia                   Sim     —
+
+  GET      /api/v1/technologies/{id}         Detalhes de uma tecnologia              Sim     1h
+
+  PUT      /api/v1/technologies/{id}         Atualizar tecnologia                    Sim     —
+
+  DELETE   /api/v1/technologies/{id}         Desativar tecnologia (soft disable)     Sim     —
+
+  GET      /api/v1/technologies/search       Busca por nome (autocomplete)           Sim     5min
+
+  GET      /api/v1/study-sessions            Listar sessões (paginado + filtros)     Sim     —
+
+  POST     /api/v1/study-sessions            Registrar nova sessão de estudo         Sim     —
+
+  GET      /api/v1/study-sessions/{id}       Detalhes de uma sessão                  Sim     —
+
+  PUT      /api/v1/study-sessions/{id}       Atualizar sessão completa               Sim     —
+
+  PATCH    /api/v1/study-sessions/{id}       Atualização parcial da sessão           Sim     —
+
+  DELETE   /api/v1/study-sessions/{id}       Deletar sessão                          Sim     —
+
+  POST     /api/v1/study-sessions/start      Iniciar sessão (sem ended_at)           Sim     —
+
+  PATCH    /api/v1/study-sessions/{id}/end   Finalizar sessão em andamento           Sim     —
+
+  GET      /api/v1/study-sessions/active     Sessão ativa atual (se existir)         Sim     —
+
+  GET      /api/v1/analytics/dashboard       Dados completos do dashboard            Sim     5min
+
+  GET      /api/v1/analytics/user-metrics    KPIs do usuário (streak, totais)        Sim     5min
+
+  GET      /api/v1/analytics/tech-stats      Métricas por tecnologia                 Sim     5min
+
+  GET      /api/v1/analytics/time-series     Série temporal diária (gráfico linha)   Sim     15min
+
+  GET      /api/v1/analytics/weekly          Resumos semanais (gráfico barras)       Sim     15min
+
+  GET      /api/v1/analytics/heatmap         Dados de heatmap anual (GitHub style)   Sim     1h
+
+  POST     /api/v1/analytics/recalculate     Força recálculo manual (admin/dev)      Sim     —
+
+  GET      /broadcasting/auth         Autorizar canal privado WebSocket       Sim     —
+
+  GET      /api/health                Health check JSON (API)                 Não     —
+  GET      /health                    Mesmo HealthController (rotas web)    Não     —
+  GET      /up                        Health mínimo Laravel 11                Não     —
+  ---------------------------------------------------------------------------------------------
+
++-----------------------------------------------------------------------+
+| 🔐 Grupo 1: Autenticação                                              |
+|                                                                       |
+| 7 endpoints · Rate limit: login 3/min IP, register 5/min IP (AppServiceProvider) |
++-----------------------------------------------------------------------+
+
+Rate limit de auth: login 3 req/min por IP; register 5 req/min por IP. Demais endpoints de auth autenticados: em geral 60 req/min (grupo de leitura) ou 30 req/min (grupo de escrita), conforme routes/api.php.
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  POST
+
+  Autenticação: Público
+
+  Rate Limit: 5 req/min por IP (throttle:register)
+
+  Request Body: name (string, 255 max, required) · email (email, unique, required) · password (string, min:8, confirmed, required) · password_confirmation (required) · timezone (string, timezone válida, default UTC)
+
+  Response (2xx): 201 Created — { data: { id, name, email, timezone, created_at }, token: 'Bearer ...', token_type: 'Bearer' }
+
+  Erros Possíveis: 422 VALIDATION_ERROR (e-mail duplicado, senha fraca) · 429 RATE_LIMITED
+
+  Observações: Token já retornado no register para evitar segundo request de login. email_verified_at = null (verificação opcional no futuro).
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  POST
+
+  Autenticação: Público
+
+  Rate Limit: 3 req/min por IP (throttle:login)
+
+  Request Body: email (email, required) · password (string, required) · remember (boolean, default false — altera TTL do token)
+
+  Response (2xx): 200 OK — { data: { user: { id, name, email, timezone, avatar_url } }, token: '...', token_type: 'Bearer', expires_at: '...' }
+
+  Erros Possíveis: 401 UNAUTHENTICATED (credenciais inválidas) · 422 VALIDATION_ERROR · 429 RATE_LIMITED
+
+  Observações: remember=false: token sem expiração definida, revogado no logout. remember=true: token com expires_at = now + 30 dias. Credenciais inválidas retornam mensagem genérica (não revela se e-mail existe).
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  -------------------------------------------------------------------------------------------------------------------------------------
+  POST
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 60 req/min por user_id
+
+  Request Body: — (sem body, token vem no header Authorization)
+
+  Response (2xx): 200 OK — { success: true, message: 'Token revogado com sucesso.' }
+
+  Erros Possíveis: 401 UNAUTHENTICATED
+
+  Observações: Revoga apenas o token usado na requisição (não afeta outros dispositivos). Ver DELETE /auth/tokens para revogar todos.
+  -------------------------------------------------------------------------------------------------------------------------------------
+
+  ---------------------------------------------------------------------------------------------------------------------------------
+  GET
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 60 req/min
+
+  Cache: Redis 5min (key: user:{id}:profile)
+
+  Response (2xx): 200 OK — { data: { id, name, email, timezone, locale, avatar_url, email_verified_at, created_at, updated_at } }
+
+  Erros Possíveis: 401 UNAUTHENTICATED
+
+  Observações: Inclui avatar_url para exibição no header. Dados são cacheados — invalidados em PUT /api/v1/auth/me.
+  ---------------------------------------------------------------------------------------------------------------------------------
+
+  --------------------------------------------------------------------------------------------------------------------------------------------
+  PUT
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 60 req/min
+
+  Request Body: name (string, 255 max) · timezone (string, timezone válida) · locale (string, ex: pt_BR, en_US) · avatar_url (url, nullable)
+
+  Response (2xx): 200 OK — { data: { ...usuário atualizado } }
+
+  Erros Possíveis: 422 VALIDATION_ERROR · 401 UNAUTHENTICATED
+
+  Observações: Invalida cache do /api/v1/auth/me após update. Não altera e-mail ou senha — endpoints separados para isso.
+  --------------------------------------------------------------------------------------------------------------------------------------------
+
+  ----------------------------------------------------------------------------------------------------------------------------------
+  POST
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 5 req/min por user_id (operação sensível)
+
+  Request Body: current_password (required) · password (string, min:8, confirmed, required) · password_confirmation (required)
+
+  Response (2xx): 200 OK — { success: true, message: 'Senha alterada. Reconecte seus dispositivos.' }
+
+  Erros Possíveis: 422 VALIDATION_ERROR · 401 UNAUTHENTICATED (senha atual incorreta)
+
+  Observações: Após alterar senha, TODOS os tokens do usuário são revogados por segurança. Frontend deve redirecionar para /login.
+  ----------------------------------------------------------------------------------------------------------------------------------
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  DELETE
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 10 req/min
+
+  Request Body: — (sem body)
+
+  Response (2xx): 200 OK — { success: true, message: 'X tokens revogados.', data: { revoked_count: 3 } }
+
+  Erros Possíveis: 401 UNAUTHENTICATED
+
+  Observações: Útil para 'sair de todos os dispositivos'. Revoga o token atual também — frontend deve limpar localStorage e redirecionar para /login.
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
++--------------------------------------------------------------------------------+
+| ⚙️ Grupo 2: Tecnologias                                                        |
+|                                                                                |
+| 7 endpoints · Criação dinâmica pelo usuário · Cache 1h com invalidação por tag |
++--------------------------------------------------------------------------------+
+
+Tecnologias são criadas dinamicamente por cada usuário. O isolamento é garantido por user_id: um usuário nunca enxerga nem acessa tecnologias de outro. A busca por trigrama (pg_trgm) permite autocomplete eficiente mesmo com centenas de tecnologias.
+
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  GET
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 60 req/min
+
+  Cache: Redis 1h · Tag: [technologies, user:{id}] · Invalidado em POST/PUT/DELETE
+
+  Query Params: is_active (boolean, default true) · per_page (int, default 50, max 100) · sort (name|created_at, default name) · order (asc|desc)
+
+  Response (2xx): 200 OK — { data: [{ id, name, slug, color, icon, description, is_active, created_at, study_stats: { session_count, total_minutes } }], meta: { total } }
+
+  Erros Possíveis: 401 UNAUTHENTICATED
+
+  Observações: study_stats incluídos via eager loading de analytics.technology_metrics. Máximo 100 por request (tecnologias são listadas completas, sem paginação forçada).
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  POST
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 30 req/min (previne spam)
+
+  Request Body: name (string, 2-100 chars, required) · color (hex color ex: #3498DB, default #3498DB) · icon (string nullable, ex: devicon-vuejs-plain) · description (string nullable, max 500)
+
+  Response (2xx): 201 Created — { data: { id, name, slug, color, icon, description, is_active, created_at } }
+
+  Erros Possíveis: 422 VALIDATION_ERROR (nome duplicado para o usuário, cor inválida) · 401
+
+  Observações: slug gerado automaticamente pelo Service via Str::slug(name). UNIQUE (user_id, slug) garantido no banco — retorna 422 se nome similar já existir.
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  GET
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 60 req/min
+
+  Cache: Redis 1h · Key: tech:{id}:user:{userId}
+
+  Response (2xx): 200 OK — { data: { id, name, slug, color, icon, description, is_active, created_at, stats: { total_minutes, total_hours, session_count, avg_session_min, first_studied_at, last_studied_at, percentage_of_total } } }
+
+  Erros Possíveis: 403 FORBIDDEN (tecnologia de outro usuário) · 404 NOT_FOUND · 401
+
+  Observações: stats vem de analytics.technology_metrics (pré-calculado). Se recálculo ainda não rodou, stats retornam zerado.
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  PUT
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 30 req/min
+
+  Request Body: name (required) · color (required) · icon (nullable) · description (nullable) · is_active (boolean, required)
+
+  Response (2xx): 200 OK — { data: { ...tecnologia atualizada } }
+
+  Erros Possíveis: 422 VALIDATION_ERROR · 403 FORBIDDEN · 404 NOT_FOUND · 401
+
+  Observações: Invalidação de cache: Tag [technologies, user:{id}] removida do Redis. is_active=false oculta a tecnologia de novos formulários mas mantém histórico.
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  DELETE
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 30 req/min
+
+  Request Body: — (sem body)
+
+  Response (2xx): 200 OK — { success: true, message: 'Tecnologia desativada.', data: { sessions_affected: 12 } }
+
+  Erros Possíveis: 403 FORBIDDEN · 404 NOT_FOUND · 401
+
+  Observações: NÃO é hard delete. Define is_active=false para preservar histórico de sessões. sessions_affected informa quantas sessões futuras não poderão mais usar essa tecnologia. study_sessions com technology_id permanecem intactas.
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  GET
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 120 req/min (autocomplete: alta frequência)
+
+  Cache: Redis 5min · Key: tech:search:{userId}:{q}
+
+  Query Params: q (string, min:1, required) · limit (int, max 10, default 5)
+
+  Response (2xx): 200 OK — { data: [{ id, name, slug, color, icon }] }
+
+  Erros Possíveis: 422 VALIDATION_ERROR (q ausente) · 401
+
+  Observações: Usa índice GIN+pg_trgm para busca por substring eficiente (ILIKE '%q%' via pg_trgm). Retorna apenas tecnologias ativas (is_active=true). Ideal para o <TechnologyPicker> do formulário de sessão.
+  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  ---------------------------------------------------------------------------------------
+  GET
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 60 req/min
+
+  Query Params: page (int) · per_page (int, max 50) · date_from (date) · date_to (date)
+
+  Response (2xx): 200 OK — { data: [sessões], meta: { pagination } }
+
+  Erros Possíveis: 403 FORBIDDEN · 404 NOT_FOUND · 401
+  ---------------------------------------------------------------------------------------
+
++-----------------------------------------------------------------------+
+| 📚 Grupo 3: Sessões de Estudo                                         |
+|                                                                       |
+| 9 endpoints · Core do sistema · Dispara events e jobs de recálculo    |
++-----------------------------------------------------------------------+
+
+Este é o grupo mais crítico. Toda operação de escrita (POST, PUT, PATCH, DELETE) dispara o evento StudySession{Created|Updated|Deleted} que, por sua vez, despacha RecalculateMetricsJob na fila Redis. O job recalcula o schema analytics.* e ao final emite o evento MetricsRecalculated que atualiza o dashboard via WebSocket.
+
+  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  GET
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 60 req/min
+
+  Query Params: page · per_page (max 50) · technology_id (UUID) · date_from (date YYYY-MM-DD) · date_to (date) · min_duration (int, minutos) · max_duration (int) · mood (1-5) · status (active|completed|all, default completed) · sort (started_at|duration_min|created_at, default started_at) · order (asc|desc, default desc)
+
+  Response (2xx): 200 OK — { data: [{ id, user_id, technology: { id, name, color, icon }, started_at, ended_at, duration_min, duration_formatted, notes, mood, focus_score, created_at }], meta: { ...pagination } }
+
+  Erros Possíveis: 422 VALIDATION_ERROR (datas inválidas, technology_id de outro usuário) · 401
+
+  Observações: technology: objeto aninhado via eager loading (sem N+1). duration_formatted: '2h 30min' gerado pelo Accessor. Filtro technology_id valida ownership antes de filtrar.
+  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  POST
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 60 req/min
+
+  Request Body: technology_id (UUID, required) · started_at (ISO 8601, required) · ended_at (ISO 8601, required — use /start para sessão ativa) · notes (string nullable, max 2000) · mood (int 1-5, nullable) · focus_score (int 1-10, nullable)
+
+  Response (2xx): 201 Created — { data: { ...sessão completa com technology aninhada } }
+
+  Erros Possíveis: 422 VALIDATION_ERROR (ended_at <= started_at, duração < 1min, technology de outro usuário) · 409 CONCURRENT_SESSION (se já há sessão ativa e ended_at está ausente) · 403 FORBIDDEN (technology de outro usuário) · 401
+
+  Observações: Trigger PostgreSQL valida ended_at > started_at (dupla proteção: Form Request + banco). Após create: dispara StudySessionCreated → RecalculateMetricsJob na fila 'metrics'. duration_min calculado pelo banco (GENERATED STORED), nunca enviar no body.
+  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  GET
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 60 req/min
+
+  Response (2xx): 200 OK — { data: { id, technology: { id, name, color, icon, slug }, started_at, ended_at, duration_min, duration_formatted, notes, mood, focus_score, created_at, updated_at } }
+
+  Erros Possíveis: 403 FORBIDDEN · 404 NOT_FOUND · 401
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  PUT
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 30 req/min
+
+  Request Body: technology_id (UUID, required) · started_at (ISO 8601, required) · ended_at (ISO 8601, required) · notes (string nullable) · mood (int 1-5, nullable) · focus_score (int 1-10, nullable)
+
+  Response (2xx): 200 OK — { data: { ...sessão atualizada } }
+
+  Erros Possíveis: 422 VALIDATION_ERROR · 409 CONFLICT · 403 FORBIDDEN · 404 NOT_FOUND · 401
+
+  Observações: Dispara StudySessionUpdated → RecalculateMetricsJob(fullRecalc=true). Recalculo completo necessário pois started_at pode ter mudado de dia.
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  PATCH
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 60 req/min
+
+  Request Body: Apenas os campos a atualizar: notes (string nullable) · mood (int 1-5, nullable) · focus_score (int 1-10, nullable) · ended_at (ISO 8601, para fechar sessão aberta via PATCH)
+
+  Response (2xx): 200 OK — { data: { ...sessão parcialmente atualizada } }
+
+  Erros Possíveis: 422 VALIDATION_ERROR · 403 FORBIDDEN · 404 NOT_FOUND · 401
+
+  Observações: Ideal para editar apenas notas ou humor sem precisar reenviar dados de tempo. Se ended_at for enviado em sessão ativa: equivale ao /end mas via PATCH. Dispara evento se dados de tempo mudarem.
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  DELETE
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 30 req/min
+
+  Request Body: — (sem body)
+
+  Response (2xx): 200 OK — { success: true, message: 'Sessão deletada.' }
+
+  Erros Possíveis: 403 FORBIDDEN · 404 NOT_FOUND · 401
+
+  Observações: Hard delete (sem soft delete — sessões deletadas não devem aparecer em histórico). Dispara StudySessionDeleted → RecalculateMetricsJob + invalidação de cache. duration_min era STORED no banco, vai junto.
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  POST
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 30 req/min
+
+  Request Body: technology_id (UUID, required) · started_at (ISO 8601, default NOW() se ausente) · notes (string nullable — podem ser adicionadas depois)
+
+  Response (2xx): 201 Created — { data: { id, technology: {...}, started_at, ended_at: null, duration_min: null, status: 'active' } }
+
+  Erros Possíveis: 409 CONCURRENT_SESSION (já existe sessão ativa — retorna id da sessão ativa no error.details) · 403 · 422 · 401
+
+  Observações: Trigger PostgreSQL garante máximo 1 sessão ativa por usuário. O frontend usa o timer do SessionTimer.vue com elapsed time calculado a partir de started_at. Para finalizar: PATCH /{id}/end.
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  PATCH
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 30 req/min
+
+  Request Body: ended_at (ISO 8601, default NOW() se ausente) · notes (string nullable) · mood (int 1-5, nullable) · focus_score (int 1-10, nullable)
+
+  Response (2xx): 200 OK — { data: { id, started_at, ended_at, duration_min, duration_formatted, mood, focus_score } }
+
+  Erros Possíveis: 409 CONFLICT (sessão já finalizada — ended_at já existe) · 422 (ended_at < started_at) · 403 · 404 · 401
+
+  Observações: Define ended_at na sessão. duration_min calculado pelo banco automaticamente. Dispara evento completo de recálculo. ended_at deve ser > started_at (validado em Form Request e trigger).
+  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  GET
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 120 req/min (polled pelo timer)
+
+  Response (2xx): 200 OK — { data: { id, technology: {...}, started_at, ended_at: null, elapsed_seconds: 5400 } } OU { data: null } (sem sessão ativa)
+
+  Erros Possíveis: 401
+
+  Observações: elapsed_seconds calculado no backend (NOW() - started_at). Evita drift de relógio no frontend. Usado no onMounted do SessionTimer para sincronizar o timer após reload da página.
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
++-----------------------------------------------------------------------+
+| 📊 Grupo 4: Analytics & Dashboard                                     |
+|                                                                       |
+| 7 endpoints · Somente leitura · Cache agressivo no Redis              |
++-----------------------------------------------------------------------+
+
+Todos os endpoints de analytics são read-only. Leem exclusivamente do schema analytics.* (dados pré-calculados) e são fortemente cacheados. Um cache miss nunca dispara GROUP BY em tempo real — se o cache estiver vazio, retorna os dados do banco analytics.* diretamente (já agregados).
+
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  GET
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 60 req/min
+
+  Cache: Redis 5min · Tag: [analytics, user:{id}] · Invalidado após RecalculateMetricsJob
+
+  Response (2xx): 200 OK — { data: { user_metrics: { total_sessions, total_minutes, total_hours, avg_session_min, longest_session_min, current_streak_days, max_streak_days, avg_mood, last_session_at, recalculated_at }, technology_metrics: [{ technology: { id, name, color }, total_minutes, total_hours, session_count, percentage_total, last_studied_at }], time_series_30d: [{ date, total_minutes, session_count }], top_technologies: [top 5 por total_minutes], weekly_comparison: { current_week: {...}, previous_week: {...} } } }
+
+  Erros Possíveis: 401
+
+  Observações: Endpoint otimizado para o carregamento inicial do dashboard: retorna tudo de uma vez. Evita waterfall de requisições paralelas no frontend. Atualização em tempo real chega via WebSocket (canal dashboard.{userId}).
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  GET
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 60 req/min
+
+  Cache: Redis 5min · Tag: [analytics, user:{id}]
+
+  Response (2xx): 200 OK — { data: { total_sessions, total_minutes, total_hours, avg_session_min, longest_session_min, shortest_session_min, current_streak_days, max_streak_days, avg_mood, avg_focus_score, last_session_at, recalculated_at } }
+
+  Erros Possíveis: 401
+
+  Observações: Subconjunto do /dashboard. Usado no KpiCards.vue. total_hours é GENERATED STORED no banco — já vem calculado, sem divisão no PHP.
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  GET
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 60 req/min
+
+  Cache: Redis 5min · Tag: [analytics, user:{id}]
+
+  Query Params: sort (total_minutes|session_count|last_studied_at, default total_minutes) · order (asc|desc, default desc) · limit (int, max 20, default 10)
+
+  Response (2xx): 200 OK — { data: [{ technology: { id, name, slug, color, icon }, total_minutes, total_hours, session_count, avg_session_min, percentage_total, first_studied_at, last_studied_at }] }
+
+  Erros Possíveis: 401
+
+  Observações: percentage_total pré-calculado no banco (queries de UPSERT do job). Usado no PieChart.vue e na tabela de breakdown. Ordering feito no banco via índice (user_id, total_minutes DESC).
+  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  GET
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 60 req/min
+
+  Cache: Redis 15min · Tag: [analytics, user:{id}, timeseries]
+
+  Query Params: period (7d|30d|90d|365d|custom, default 30d) · date_from (date, obrigatório se period=custom) · date_to (date, obrigatório se period=custom) · granularity (day|week, default day)
+
+  Response (2xx): 200 OK — { data: [{ date: '2025-03-15', total_minutes, session_count, avg_mood }], meta: { period, date_from, date_to, total_days, days_with_study, days_without_study } }
+
+  Erros Possíveis: 422 VALIDATION_ERROR (date_from > date_to) · 401
+
+  Observações: generate_series garante que TODOS os dias do período apareçam — dias sem estudo retornam total_minutes: 0. Nunca retorna gaps no array. Usado no LineChart.vue.
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  GET
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 60 req/min
+
+  Cache: Redis 15min · Tag: [analytics, user:{id}]
+
+  Query Params: weeks (int, 1-52, default 12) — quantas semanas retroativas retornar
+
+  Response (2xx): 200 OK — { data: [{ week_start: '2025-03-10', week_number: 11, year: 2025, total_minutes, session_count, active_days }], meta: { weeks_requested, weeks_with_data } }
+
+  Erros Possíveis: 422 · 401
+
+  Observações: Semanas ordenadas do mais recente ao mais antigo. Semanas sem estudo podem aparecer com zeros se estiverem no intervalo. Usado no BarChart.vue de comparação semanal.
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  GET
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 30 req/min
+
+  Cache: Redis 1h · Tag: [analytics, user:{id}, heatmap]
+
+  Query Params: year (int, default ano atual)
+
+  Response (2xx): 200 OK — { data: { year: 2025, weeks: [{ week: 1, days: [{ date, total_minutes, intensity: 0-4 }] }] }, meta: { total_days_studied, max_daily_minutes, year } }
+
+  Erros Possíveis: 422 (ano < 2020 ou > atual+1) · 401
+
+  Observações: intensity: 0=sem estudo, 1=1-30min, 2=31-60min, 3=61-120min, 4=120min+. 53 semanas × 7 dias = 371 células máximas. Estruturado por semanas para facilitar renderização em grade no HeatmapChart.vue.
+  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  POST
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 2 req/min (operação custosa)
+
+  Request Body: — (sem body — recalcula para o usuário autenticado)
+
+  Response (2xx): 202 Accepted — { success: true, message: 'Recálculo agendado. Dashboard atualiza em alguns segundos.', data: { job_id: 'uuid-do-job' } }
+
+  Erros Possíveis: 429 RATE_LIMITED · 401
+
+  Observações: Despacha RecalculateMetricsJob na fila com prioridade 'high'. Não bloqueia a resposta (202 Accepted). Útil para desenvolvimento e para o botão 'Atualizar métricas' na UI. O resultado chega via WebSocket.
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
++-----------------------------------------------------------------------+
+| ⚡ Grupo 5: WebSocket & Sistema                                       |
+|                                                                       |
+| 2 endpoints · Autenticação de canal e health check                    |
++-----------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  POST
+
+  Autenticação: Bearer Token (Sanctum)
+
+  Rate Limit: 120 req/min
+
+  Request Body: socket_id (string, enviado pelo Laravel Echo) · channel_name (string, ex: private-dashboard.{userId})
+
+  Response (2xx): 200 OK — { auth: 'app-key:signature' } (formato Pusher/Reverb)
+
+  Erros Possíveis: 403 FORBIDDEN (userId do canal ≠ usuário autenticado) · 401
+
+  Observações: Endpoint gerenciado automaticamente pelo Laravel Broadcasting + Reverb. Definido em routes/channels.php. O frontend (Laravel Echo) chama automaticamente ao conectar no canal privado. A lógica de autorização verifica que $user->id === $userId do canal.
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  GET
+
+  Autenticação: Público
+
+  Rate Limit: 300 req/min (monitoramento externo)
+
+  Cache: — (nunca cacheado)
+
+  Response (2xx): 200 OK — { status: 'healthy', services: { database: 'ok', redis: 'ok', queue: 'ok', websocket: 'ok' }, version: '1.0.0', timestamp: '...' } OU 503 com services degradados
+
+  Erros Possíveis: 503 SERVICE_UNAVAILABLE (se qualquer serviço crítico falhar)
+
+  Observações: Verifica conectividade com PostgreSQL (SELECT 1), Redis (PING), e se há workers Horizon ativos. Usado por Docker healthcheck, uptime monitoring (BetterUptime, etc.) e pelo CI/CD antes de considerar o deploy bem-sucedido.
+  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Rate Limiting: Configuração Completa
+
+O rate limiting usa Redis como backend (driver padrão). Cada limite é aplicado por uma chave diferente para máxima granularidade:
+
+  -------------------------------------------------------------------------------------------------------------
+  Named Rate           Limite           Chave                  Endpoints cobertos
+  -------------------- ---------------- ---------------------- ------------------------------------------------
+  throttle:login       3 req/min        IP                     POST /api/v1/auth/login
+
+  throttle:register    5 req/min        IP                     POST /api/v1/auth/register
+
+  throttle:sensitive   5 req/min        user_id                POST /api/v1/auth/change-password
+
+  throttle:60,1        60 req/min       user_id                Leituras autenticadas (grupo api.php)
+
+  throttle:30,1        30 req/min       user_id                Escrita autenticada (grupo api.php)
+
+  throttle:search      120 req/min      user_id                GET .../technologies/search, .../study-sessions/active
+
+  throttle:recalculate 2 req/min        user_id                POST /api/v1/analytics/recalculate
+
+  throttle:export      30 req/min       user_id                GET /api/v1/analytics/export
+
+  throttle.sliding     (ver rota)       user_id/IP             Mutações study-sessions (Lua)
+
+  throttle:health      300 req/min      IP                     GET /api/health e GET /health (web)
+  -------------------------------------------------------------------------------------------------------------
+
++--------------------------------------------------------------------------+
+| // app/Providers/AppServiceProvider.php — RateLimiter::for('...')        |
+|                                                                          |
+| // Limitadores nomeados; uso em routes/api.php (middleware throttle:*)   |
+|                                                                          |
+| RateLimiter::for('api', function (Request $request) {                    |
+|                                                                          |
+| return Limit::perMinute(60)                                              |
+|                                                                          |
+| ->by($request->user()?->id ?: $request->ip())                            |
+|                                                                          |
+| ->response(fn() => response()->json([                                    |
+|                                                                          |
+| 'success' => false,                                                      |
+|                                                                          |
+| 'error' => ['code' => 'RATE_LIMITED', 'message' => 'Too many requests.', |
+|                                                                          |
+| 'retry_after' => RateLimiter::availableIn('api')]                        |
+|                                                                          |
+| ], 429));                                                                |
+|                                                                          |
+| });                                                                      |
+|                                                                          |
+| RateLimiter::for('auth', function (Request $request) {                   |
+|                                                                          |
+| return Limit::perMinute(5)->by($request->ip()); // brute-force           |
+|                                                                          |
+| });                                                                      |
++--------------------------------------------------------------------------+
+
+Estratégia de Cache por Endpoint
+
++--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| PRINCÍPIO DE INVALIDAÇÃO POR TAG                                                                                                                                                                                                                                         |
++--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Cache::tags(['analytics', 'user:uuid'])->flush()                                                                                                                                                                                                                         |
+|                                                                                                                                                                                                                                                                          |
+| Quando RecalculateMetricsJob finaliza, ele invalida TODAS as chaves cacheadas do usuário com a tag 'analytics' de uma vez. Isso garante que nenhum endpoint de analytics retorne dado desatualizado após um recálculo, sem precisar conhecer cada chave individualmente. |
+|                                                                                                                                                                                                                                                                          |
+| Cache::tags(['technologies', 'user:uuid'])->flush()                                                                                                                                                                                                                      |
+|                                                                                                                                                                                                                                                                          |
+| Ao criar, editar ou desativar uma tecnologia, o cache da listagem é invalidado. Como o usuário pode ter buscas cacheadas por diferentes parâmetros, a tag garante que TODAS sejam limpas.                                                                                |
++--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+  ---------------------------------------------------------------------------------------------------------
+  Endpoint                      TTL        Tags Redis                  Invalidado quando
+  ----------------------------- ---------- --------------------------- ------------------------------------
+  GET /api/v1/auth/me                  5 min      [profile, user:X]           PUT /api/v1/auth/me alterar perfil
+
+  GET /api/v1/technologies             1 hora     [technologies, user:X]      POST/PUT/DELETE /api/v1/technologies/*
+
+  GET /api/v1/technologies/{id}        1 hora     [technologies, user:X]      PUT/DELETE /api/v1/technologies/{id}
+
+  GET /api/v1/technologies/search      5 min      [technologies, user:X]      Qualquer alteração em technologies
+
+  GET /api/v1/analytics/dashboard      5 min      [analytics, user:X]         RecalculateMetricsJob concluído
+
+  GET /api/v1/analytics/user-metrics   5 min      [analytics, user:X]         RecalculateMetricsJob concluído
+
+  GET /api/v1/analytics/tech-stats     5 min      [analytics, user:X]         RecalculateMetricsJob concluído
+
+  GET /api/v1/analytics/time-series    15 min     [analytics, user:X, ts]     RecalculateMetricsJob concluído
+
+  GET /api/v1/analytics/weekly         15 min     [analytics, user:X]         RecalculateMetricsJob concluído
+
+  GET /api/v1/analytics/heatmap        1 hora     [analytics, user:X, heat]   RecalculateMetricsJob (semanal)
+  ---------------------------------------------------------------------------------------------------------
+
+Eventos WebSocket
+
+O sistema emite eventos WebSocket em canais privados por usuário. O frontend usa Laravel Echo + Pusher.js (configurado para Reverb) para escutar esses eventos e atualizar o dashboard sem polling.
+
+Canal Privado: dashboard.{userId}
+
+  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Evento                   Payload e Uso
+  ------------------------ ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  .metrics.updated         Emitido após RecalculateMetricsJob. Payload: { dashboard: { user_metrics, technology_metrics, time_series_30d } }. Analytics store recebe e atualiza reatividade. Gráficos re-renderizam sem reload.
+
+  .session.started         Emitido após POST /api/v1/study-sessions/start. Payload: { session: { id, technology, started_at } }. Exibe badge 'Em andamento' no header.
+
+  .session.ended           Emitido após PATCH /api/v1/study-sessions/{id}/end. Payload: { session: { id, duration_min, duration_formatted } }. Remove badge de sessão ativa.
+
+  .metrics.recalculating   Emitido imediatamente após evento de sessão (antes do job terminar). Payload: { status: 'recalculating' }. Frontend exibe spinner 'Atualizando métricas...' no dashboard.
+  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
++-----------------------------------------------------------------------+
+| // Frontend: useWebSocket.ts — escuta eventos do canal                |
+|                                                                       |
+| echo.private(`dashboard.${userId}`)                                   |
+|                                                                       |
+| .listen('.metrics.updated', (e) => {                                  |
+|                                                                       |
+| analyticsStore.updateFromWebSocket(e.dashboard);                      |
+|                                                                       |
+| uiStore.hideRecalculatingSpinner();                                   |
+|                                                                       |
+| })                                                                    |
+|                                                                       |
+| .listen('.metrics.recalculating', () => {                             |
+|                                                                       |
+| uiStore.showRecalculatingSpinner();                                   |
+|                                                                       |
+| })                                                                    |
+|                                                                       |
+| .listen('.session.started', (e) => {                                  |
+|                                                                       |
+| sessionsStore.setActiveSession(e.session);                            |
+|                                                                       |
+| })                                                                    |
+|                                                                       |
+| .listen('.session.ended', (e) => {                                    |
+|                                                                       |
+| sessionsStore.clearActiveSession();                                   |
+|                                                                       |
+| });                                                                   |
++-----------------------------------------------------------------------+
+
++--------------------------------------------------------------------------------------+
+| CHECKLIST DE IMPLEMENTAÇÃO DOS ENDPOINTS                                             |
++--------------------------------------------------------------------------------------+
+| Semana 3: Todos os endpoints de Auth + testes Feature/Auth/AuthTest.php              |
+|                                                                                      |
+| Semana 4: CRUD de Technologies + busca + cache com tags + testes                     |
+|                                                                                      |
+| Semana 5-6: CRUD de Sessions + /start + /end + trigger concurrency + events + jobs   |
+|                                                                                      |
+| Semana 7-8: Todos os endpoints de Analytics + cache agressivo + testes de integração |
+|                                                                                      |
+| Semana 9: WebSocket: broadcasting, canal privado, eventos frontend                   |
+|                                                                                      |
+| Semana 10: /health endpoint + rate limiting final + documentação Postman             |
++--------------------------------------------------------------------------------------+

@@ -5,6 +5,18 @@ import { useAuthStore } from '@/stores/auth.store'
 import Button from 'primevue/button'
 import OverlayPanel from 'primevue/overlaypanel'
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
+import { disconnectWebSocket } from '@/composables/useWebSocket'
+import {
+  prefetchDashboardView,
+  prefetchExportView,
+  prefetchGoalsView,
+  prefetchHelpView,
+  prefetchProfileView,
+  prefetchReportsView,
+  prefetchSessionsView,
+  prefetchSettingsView,
+  prefetchTechnologiesView,
+} from '@/router/prefetch'
 
 const authStore = useAuthStore()
 const route = useRoute()
@@ -14,24 +26,30 @@ function closeDropdown() {
   op.value?.hide()
 }
 
-async function handleLogout() {
+function handleLogout() {
   try {
-    const { useWebSocket } = await import('@/composables/useWebSocket')
-    useWebSocket().disconnect()
-  } catch { /* ws already disconnected or never loaded */ }
+    disconnectWebSocket()
+  } catch { /* ws already disconnected */ }
   authStore.logout()
 }
 
-const navLinks = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/sessions', label: 'Sessões' },
-  { to: '/technologies', label: 'Tecnologias' },
-  { to: '/goals', label: 'Metas' },
-  { to: '/export', label: 'Exportar' },
-  { to: '/reports', label: 'Relatórios' },
-  { to: '/help', label: 'Ajuda' },
-  { to: '/settings', label: 'Preferências' },
-  { to: '/profile', label: 'Perfil' },
+type NavLink = {
+  to: string | { name: string }
+  label: string
+  activePath: string
+  prefetch?: () => void
+}
+
+const navLinks: NavLink[] = [
+  { to: '/', label: 'Dashboard', activePath: '/', prefetch: prefetchDashboardView },
+  { to: { name: 'sessions' }, label: 'Sessões', activePath: '/sessions', prefetch: prefetchSessionsView },
+  { to: '/technologies', label: 'Tecnologias', activePath: '/technologies', prefetch: prefetchTechnologiesView },
+  { to: '/goals', label: 'Metas', activePath: '/goals', prefetch: prefetchGoalsView },
+  { to: '/export', label: 'Exportar', activePath: '/export', prefetch: prefetchExportView },
+  { to: '/reports', label: 'Relatórios', activePath: '/reports', prefetch: prefetchReportsView },
+  { to: '/help', label: 'Ajuda', activePath: '/help', prefetch: prefetchHelpView },
+  { to: '/settings', label: 'Configurações', activePath: '/settings', prefetch: prefetchSettingsView },
+  { to: '/profile', label: 'Perfil', activePath: '/profile', prefetch: prefetchProfileView },
 ]
 
 function isActive(path: string) {
@@ -65,10 +83,11 @@ function isActive(path: string) {
       >
         <RouterLink
           v-for="link in navLinks"
-          :key="link.to"
+          :key="link.label"
           :to="link.to"
           class="app-menu-dropdown__link"
-          :class="{ 'app-menu-dropdown__link--active': isActive(link.to) }"
+          :class="{ 'app-menu-dropdown__link--active': isActive(link.activePath) }"
+          @mouseenter="link.prefetch?.()"
           @click="closeDropdown"
         >
           {{ link.label }}
@@ -95,47 +114,50 @@ function isActive(path: string) {
 .app-menu-dropdown__trigger {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  gap: var(--spacing-sm);
+  min-height: var(--header-control-size);
+  padding: var(--spacing-xs) var(--spacing-md);
   background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
+  border: var(--card-chrome-border);
   border-radius: var(--radius-md);
   color: var(--color-text);
   font-size: var(--text-sm);
   font-weight: 500;
   cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease;
+  box-shadow: var(--card-chrome-shadow);
+  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .app-menu-dropdown__trigger:hover {
-  background: var(--color-bg);
-  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+  box-shadow: var(--shadow-sm);
 }
 .app-menu-dropdown__hamburger {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 4px;
+  gap: var(--spacing-xs);
 }
 .app-menu-dropdown__hamburger span {
   display: block;
-  width: 18px;
-  height: 2px;
+  width: var(--icon-size-md);
+  height: var(--spacing-2xs);
   background: currentColor;
-  border-radius: 1px;
+  border-radius: var(--radius-full);
 }
 .app-menu-dropdown__panel {
-  min-width: 12rem;
-  padding: 0.5rem 0;
+  min-width: clamp(11rem, 42vw, 14rem);
+  padding: var(--spacing-sm) 0;
 }
 .app-menu-dropdown__nav {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: var(--spacing-2xs);
 }
 .app-menu-dropdown__link {
   display: block;
-  padding: 0.5rem 1rem;
+  padding: var(--spacing-sm) var(--spacing-lg);
   color: var(--color-text);
   text-decoration: none;
   font-size: var(--text-sm);
@@ -146,6 +168,10 @@ function isActive(path: string) {
   background: var(--color-bg);
   color: var(--color-primary);
 }
+.app-menu-dropdown__link:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
 .app-menu-dropdown__link--active {
   background: var(--color-primary-soft);
   color: var(--color-primary);
@@ -155,22 +181,23 @@ function isActive(path: string) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1rem;
-  margin-top: 0.5rem;
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-top: var(--spacing-sm);
   border-top: 1px solid var(--color-border);
 }
 .app-menu-dropdown__theme-label {
   font-size: var(--text-sm);
+  font-weight: 600;
   color: var(--color-text-muted);
 }
 .app-menu-dropdown__footer {
-  padding: 0.5rem 1rem 0;
-  margin-top: 0.25rem;
+  padding: var(--spacing-sm) var(--spacing-lg) 0;
+  margin-top: var(--spacing-xs);
   border-top: 1px solid var(--color-border);
 }
 .app-menu-dropdown__logout {
   width: 100%;
-  padding: 0.5rem;
+  padding: var(--spacing-sm);
   background: transparent;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -183,5 +210,9 @@ function isActive(path: string) {
   background: var(--color-error-soft);
   border-color: var(--color-error);
   color: var(--color-error);
+}
+.app-menu-dropdown__logout:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 </style>

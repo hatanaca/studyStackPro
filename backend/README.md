@@ -48,7 +48,8 @@ database/
 └── seeders/
 
 routes/
-├── api.php                 # Rotas /api/v1/*
+├── api.php                 # /api/v1/* (negócio) e GET /api/health
+├── web.php                 # Raiz, GET /health (mesmo HealthController)
 └── channels.php            # Canal privado dashboard.{userId}
 ```
 
@@ -68,70 +69,83 @@ routes/
 
 ## API v1
 
+Todos os endpoints abaixo usam o prefixo **`/api/v1`** (exceto health da API, ver fim da seção).
+
 ### Autenticação
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| POST | `/auth/register` | Registro |
-| POST | `/auth/login` | Login |
-| POST | `/auth/logout` | Logout |
-| GET | `/auth/me` | Usuário atual |
-| PUT | `/auth/me` | Atualizar perfil |
-| POST | `/auth/change-password` | Trocar senha |
-| GET | `/auth/tokens` | Listar tokens |
-| DELETE | `/auth/tokens` | Revogar todos |
+| POST | `/api/v1/auth/register` | Registro |
+| POST | `/api/v1/auth/login` | Login |
+| POST | `/api/v1/auth/logout` | Logout |
+| GET | `/api/v1/auth/me` | Usuário atual |
+| PUT | `/api/v1/auth/me` | Atualizar perfil |
+| POST | `/api/v1/auth/change-password` | Trocar senha |
+| GET | `/api/v1/auth/tokens` | Listar tokens |
+| DELETE | `/api/v1/auth/tokens` | Revogar todos |
 
 ### Tecnologias
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| GET | `/technologies` | Listar |
-| GET | `/technologies/search?q=` | Buscar (autocomplete) |
-| GET | `/technologies/{id}` | Detalhar |
-| POST | `/technologies` | Criar |
-| PUT | `/technologies/{id}` | Atualizar |
-| DELETE | `/technologies/{id}` | Desativar |
+| GET | `/api/v1/technologies` | Listar |
+| GET | `/api/v1/technologies/search?q=` | Buscar (autocomplete) |
+| GET | `/api/v1/technologies/{id}` | Detalhar |
+| POST | `/api/v1/technologies` | Criar |
+| PUT | `/api/v1/technologies/{id}` | Atualizar |
+| DELETE | `/api/v1/technologies/{id}` | Desativar |
 
 ### Sessões
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| GET | `/study-sessions` | Listar (filtros, paginação) |
-| GET | `/study-sessions/active` | Sessão ativa |
-| GET | `/study-sessions/{id}` | Detalhar |
-| POST | `/study-sessions` | Criar (log manual) |
-| POST | `/study-sessions/start` | Iniciar sessão |
-| PATCH | `/study-sessions/{id}/end` | Encerrar sessão |
-| PUT/PATCH | `/study-sessions/{id}` | Atualizar |
-| DELETE | `/study-sessions/{id}` | Deletar |
+| GET | `/api/v1/study-sessions` | Listar (filtros, paginação) |
+| GET | `/api/v1/study-sessions/active` | Sessão ativa |
+| GET | `/api/v1/study-sessions/{id}` | Detalhar |
+| POST | `/api/v1/study-sessions` | Criar (log manual) |
+| POST | `/api/v1/study-sessions/start` | Iniciar sessão |
+| PATCH | `/api/v1/study-sessions/{id}/end` | Encerrar sessão |
+| PUT/PATCH | `/api/v1/study-sessions/{id}` | Atualizar |
+| DELETE | `/api/v1/study-sessions/{id}` | Deletar |
 
 ### Analytics
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| GET | `/analytics/dashboard` | Payload completo |
-| GET | `/analytics/user-metrics` | Métricas do usuário |
-| GET | `/analytics/tech-stats` | Por tecnologia |
-| GET | `/analytics/time-series?days=` | Séries temporais |
-| GET | `/analytics/weekly` | Comparação semanal |
-| GET | `/analytics/heatmap?year=` | Heatmap |
-| POST | `/analytics/recalculate` | Disparar recálculo |
-| GET | `/analytics/export?start=&end=` | Exportar JSON |
+| GET | `/api/v1/analytics/dashboard` | Payload completo |
+| GET | `/api/v1/analytics/user-metrics` | Métricas do usuário |
+| GET | `/api/v1/analytics/tech-stats` | Por tecnologia |
+| GET | `/api/v1/analytics/time-series?days=` | Séries temporais |
+| GET | `/api/v1/analytics/weekly` | Comparação semanal |
+| GET | `/api/v1/analytics/heatmap?year=` | Heatmap |
+| POST | `/api/v1/analytics/recalculate` | Disparar recálculo |
+| GET | `/api/v1/analytics/export?start=&end=` | Exportar JSON |
 
-### Health
+### Health e probes
+
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| GET | `/health` | Status (DB, Redis, queue, WebSocket) |
+| GET | `/api/health` | Health JSON da aplicação (DB, Redis, fila, WebSocket) — `routes/api.php` |
+| GET | `/health` | Mesmo controller via `routes/web.php` (útil na raiz da app) |
+| GET | `/up` | Health mínimo do Laravel 11 (`bootstrap/app.php`) |
 
 ---
 
 ## Rate limiting
 
-| Rota / Grupo | Limite |
-|--------------|--------|
-| login | 5/min |
-| register | 3/min |
-| search | 30/min |
-| sensitive (change-password) | 5/min |
-| recalculate | 10/min |
-| health | 60/min |
-| demais autenticadas | 60/min |
+Definido em `app/Providers/AppServiceProvider.php` e aplicado em `routes/api.php`.
+
+| Nome do limiter | Limite |
+|-----------------|--------|
+| `login` | 3/min por IP |
+| `register` | 5/min por IP |
+| `search` | 120/min por usuário (ou IP) |
+| `sensitive` (ex.: change-password) | 5/min por usuário (ou IP) |
+| `recalculate` | 2/min por usuário (ou IP) |
+| `export` | 30/min por usuário (ou IP) |
+| `health` | 300/min por IP |
+
+Grupos adicionais em `api.php`:
+
+- leituras autenticadas: `throttle:60,1` (60/min);
+- escrita genérica autenticada: `throttle:30,1` (30/min);
+- rotas de mutação de sessão: middleware `throttle.sliding` (janela deslizante via Redis Lua; limites por rota no próprio `api.php`).
 
 ---
 

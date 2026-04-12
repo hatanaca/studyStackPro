@@ -66,7 +66,10 @@ function clearFilters() {
 </script>
 
 <template>
-  <div class="filter-bar">
+  <div
+    class="filter-bar"
+    role="search"
+  >
     <div
       v-if="showSearch"
       class="filter-bar__search"
@@ -113,6 +116,11 @@ function clearFilters() {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--surface-page-header-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--surface-page-header-shadow);
 }
 .filter-bar__search {
   flex: 1;

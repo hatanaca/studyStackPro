@@ -29,7 +29,7 @@
 
 **Para quem:** desenvolvedores autodidatas, participantes de bootcamps e quem busca medir evolução técnica.
 
-**Por quê:** portfólio full-stack demonstrando arquitetura event-driven, cache distribuído, TypeScript, WebSocket em tempo real e boas práticas (DDD, testes, CI/CD).
+**Por quê:** portfólio full-stack demonstrando arquitetura event-driven, cache distribuído, TypeScript, WebSocket em tempo real e boas práticas (modularização, testes, CI/CD).
 
 ---
 
@@ -58,11 +58,11 @@
 | **UI** | PrimeVue, ApexCharts | Componentes prontos, gráficos profissionais |
 | **Backend** | Laravel 11, PHP 8.2 | API REST, filas, broadcasting, ecosystem maduro |
 | **Auth** | Laravel Sanctum | Tokens API stateless |
-| **Banco** | PostgreSQL 16 | ACID, JSON, schemas (public + analytics) |
-| **Cache/Filas** | Redis 7 | Cache com tags, filas, Reverb pub/sub |
+| **Banco** | PostgreSQL 16 | ACID, JSON, schemas (`public` + `analytics`); extensões incl. `pllua` onde aplicável |
+| **Cache/Filas** | Redis 7 | Cache com tags, filas, scripts Lua (dedup, sliding window, streak), Reverb |
 | **WebSocket** | Laravel Reverb | Canal privado por usuário |
 | **Jobs** | Laravel Horizon | Processamento de filas (recálculo de métricas) |
-| **Infra** | Docker, Nginx | Containerização e proxy reverso |
+| **Infra** | Docker, OpenResty (proxy) | Containerização, borda HTTP com Lua (ver `docs/technical/DOCUMENTACAO_TECNICA_LUA.md`) |
 
 ---
 
@@ -117,7 +117,7 @@ make dev
 # ou sem Make: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 # 4. No backend (primeiro uso): key, migrations e seed
-make shell-php   # ou: docker compose exec php-fpm bash
+make shell-php   # ou: docker compose exec php-fpm sh
 php artisan key:generate
 php artisan migrate:fresh --seed
 exit
@@ -128,7 +128,8 @@ cd frontend && npm install && npm run build && cd ..
 # 6. Acesse
 # - API + SPA: http://localhost
 # - Frontend dev (Vite): http://localhost:5173
-# - Health: http://localhost/api/health
+# - Health API: http://localhost/api/health
+# - Health Laravel: http://localhost/up
 # - Horizon: http://localhost/horizon
 # - pgAdmin (dev): http://localhost:5050  |  Mailpit: http://localhost:8025
 ```
@@ -137,7 +138,7 @@ cd frontend && npm install && npm run build && cd ..
 
 ### Setup sem Docker
 
-Consulte os READMEs em [backend/](backend/README.md) e [frontend/](frontend/README.md) para instalação manual (PHP, Node, PostgreSQL, Redis, Reverb).
+Consulte os READMEs em [backend/README.md](backend/README.md) e [frontend/README.md](frontend/README.md) para instalação manual (PHP, Node, PostgreSQL, Redis, Reverb).
 
 ---
 
@@ -147,32 +148,31 @@ Consulte os READMEs em [backend/](backend/README.md) e [frontend/](frontend/READ
 studyTrackPro/
 ├── backend/              # Laravel 11 API
 │   ├── app/
-│   │   ├── Events/       # Eventos (StudySession, Analytics)
-│   │   ├── Jobs/         # RecalculateMetricsJob, etc.
-│   │   ├── Listeners/    # Cache, broadcast, recálculo
+│   │   ├── Events/
+│   │   ├── Jobs/
+│   │   ├── Listeners/
 │   │   ├── Modules/      # Auth, StudySessions, Technologies, Analytics
-│   │   │   ├── */Services/
-│   │   │   ├── */Repositories/
-│   │   │   └── */DTOs/
 │   │   └── Http/
 │   ├── config/
-│   ├── database/migrations/
+│   ├── database/migrations/   # default, transactional/, analytics/
 │   └── routes/api.php
 ├── frontend/             # Vue 3 SPA
 │   └── src/
-│       ├── api/          # Cliente HTTP, endpoints, módulos
-│       ├── components/   # ui, layout, charts
+│       ├── api/
+│       ├── components/
 │       ├── composables/
-│       ├── features/     # dashboard, sessions, technologies, goals
-│       ├── stores/       # Pinia (auth, analytics, sessions, etc.)
+│       ├── features/
+│       ├── stores/
 │       ├── router/
 │       ├── types/
 │       └── views/
-├── docker/               # Nginx, PHP, Node, Postgres, Redis
-├── docs/                 # Documentação adicional
+├── docker/               # OpenResty, PHP, Node, Postgres, Redis
+├── redis-scripts/        # Lua: job_dedup, sliding_window, streak_update
+├── docs/                 # Documentação consolidada (índice: docs/README.md)
+├── .cursor/rules/        # Regras para assistentes no Cursor
 ├── Makefile
 ├── docker-compose.yml
-└── docker-compose.dev.yml  # Extras: pgAdmin, Mailpit
+└── docker-compose.dev.yml
 ```
 
 ---
@@ -197,17 +197,18 @@ studyTrackPro/
 
 | Documento | Descrição |
 |-----------|-----------|
-| [backend/README.md](backend/README.md) | API, estrutura, convenções, setup |
+| [docs/README.md](docs/README.md) | **Índice** de toda a documentação |
+| [backend/README.md](backend/README.md) | API, endpoints `/api/v1`, rate limits, convenções |
 | [frontend/README.md](frontend/README.md) | Stack, estrutura, scripts, design system |
-| [docker/README.md](docker/README.md) | Serviços Docker, Nginx, configuração |
-| [docs/README.md](docs/README.md) | Índice de toda a documentação |
-| [docs/DEPLOY_SECURITY_PASSO_A_PASSO.md](docs/DEPLOY_SECURITY_PASSO_A_PASSO.md) | Segurança em produção |
-| [docs/CHECKLIST-E-PROMPTS.md](docs/CHECKLIST-E-PROMPTS.md) | Checklist de entrega, prompts |
-| [docs/GOALS-FRONTEND-ONLY.md](docs/GOALS-FRONTEND-ONLY.md) | Metas (frontend-only) |
+| [docker/README.md](docker/README.md) | Serviços Docker, proxy, configuração |
+| [docs/technical/DOCUMENTACAO_TECNICA.md](docs/technical/DOCUMENTACAO_TECNICA.md) | Visão técnica completa |
+| [docs/technical/DOCUMENTACAO_TECNICA_LUA.md](docs/technical/DOCUMENTACAO_TECNICA_LUA.md) | Lua: Redis, OpenResty, PostgreSQL |
+| [docs/testing/ESTRATEGIA_TESTES.md](docs/testing/ESTRATEGIA_TESTES.md) | Estratégia de testes |
+| [docs/operations/DEPLOY_SECURITY_PASSO_A_PASSO.md](docs/operations/DEPLOY_SECURITY_PASSO_A_PASSO.md) | Segurança em produção |
 
 ### Coleção Postman
 
-`docs/StudyTrack_API_Collection.postman.json` — endpoints da API v1.
+[docs/api/StudyTrack_API_Collection.postman.json](docs/api/StudyTrack_API_Collection.postman.json)
 
 ---
 
@@ -217,7 +218,7 @@ studyTrackPro/
 - **Backend:** `backend/.env.example` → `backend/.env`
 - **Frontend:** `frontend/.env.example` → `frontend/.env`
 
-Em produção: `APP_DEBUG=false`, HTTPS, senhas fortes. Ver [docs/DEPLOY_SECURITY_PASSO_A_PASSO.md](docs/DEPLOY_SECURITY_PASSO_A_PASSO.md).
+Em produção: `APP_DEBUG=false`, HTTPS, senhas fortes. Ver [docs/operations/DEPLOY_SECURITY_PASSO_A_PASSO.md](docs/operations/DEPLOY_SECURITY_PASSO_A_PASSO.md).
 
 ---
 

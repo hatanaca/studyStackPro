@@ -10,6 +10,7 @@ return [
     'waits' => [
         'redis:default' => 60,
         'redis:metrics' => 60,
+        'redis:scheduler' => 120,
     ],
     'trim' => [
         'recent' => 60,
@@ -36,6 +37,15 @@ return [
             'tries' => 3,
             'timeout' => 90,
         ],
+        'supervisor-scheduler' => [
+            'connection' => 'redis',
+            'queue' => ['scheduler'],
+            'balance' => 'simple',
+            'maxProcesses' => 1,
+            'memory' => 128,
+            'tries' => 3,
+            'timeout' => 120,
+        ],
     ],
     'environments' => [
         'production' => [
@@ -45,6 +55,9 @@ return [
             'supervisor-metrics' => [
                 'maxProcesses' => 3,
             ],
+            'supervisor-scheduler' => [
+                'maxProcesses' => 1,
+            ],
         ],
         'local' => [
             'supervisor-default' => [
@@ -52,6 +65,9 @@ return [
             ],
             'supervisor-metrics' => [
                 'maxProcesses' => 2,
+            ],
+            'supervisor-scheduler' => [
+                'maxProcesses' => 1,
             ],
         ],
     ],

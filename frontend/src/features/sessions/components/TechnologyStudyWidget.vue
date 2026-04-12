@@ -1,20 +1,28 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import Card from 'primevue/card'
 import Skeleton from 'primevue/skeleton'
+import { prefetchTechnologyDetailView } from '@/router/prefetch'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import { formatHours } from '@/utils/formatters'
 import type { Technology } from '@/types/domain.types'
 
-const props = defineProps<{
-  technology: Pick<Technology, 'id' | 'name' | 'color'>
-}>()
+const props = withDefaults(
+  defineProps<{
+    technology: Pick<Technology, 'id' | 'name' | 'color'>
+    /** Atrasa o primeiro pedido (ms) para espalhar carga quando há muitos cartões na grelha. */
+    staggerMs?: number
+  }>(),
+  { staggerMs: 0 },
+)
 
 const totalMinutes = ref(0)
 const loading = ref(true)
 
 const totalHoursLabel = computed(() => formatHours(totalMinutes.value))
+
+let loadTimer: ReturnType<typeof setTimeout> | null = null
 
 async function loadTotal() {
   if (!props.technology.id) return
@@ -36,8 +44,31 @@ async function loadTotal() {
   }
 }
 
-onMounted(loadTotal)
-watch(() => props.technology.id, loadTotal)
+function scheduleLoadTotal() {
+  if (loadTimer) {
+    clearTimeout(loadTimer)
+    loadTimer = null
+  }
+  const delay = props.staggerMs
+  if (delay <= 0) {
+    void loadTotal()
+    return
+  }
+  loadTimer = setTimeout(() => {
+    loadTimer = null
+    void loadTotal()
+  }, delay)
+}
+
+onMounted(scheduleLoadTotal)
+watch(() => props.technology.id, scheduleLoadTotal)
+
+onBeforeUnmount(() => {
+  if (loadTimer) {
+    clearTimeout(loadTimer)
+    loadTimer = null
+  }
+})
 </script>
 
 <template>
@@ -54,10 +85,11 @@ watch(() => props.technology.id, loadTotal)
         </p>
         <p v-else class="technology-study-widget__total">{{ totalMinutes === 0 ? '0h' : totalHoursLabel }}</p>
         <RouterLink
-          :to="{ name: 'sessions-by-technology', params: { id: technology.id } }"
+          :to="{ name: 'technology-detail', params: { id: technology.id } }"
           class="technology-study-widget__link"
+          @mouseenter="prefetchTechnologyDetailView"
         >
-          Ver por dia
+          Ver sessões
         </RouterLink>
       </div>
     </template>
@@ -75,15 +107,16 @@ watch(() => props.technology.id, loadTotal)
   border-color: color-mix(in srgb, var(--tech-color, var(--color-primary)) 40%, var(--color-border));
 }
 .technology-study-widget__bar {
-  height: 3px;
+  height: var(--spacing-xs);
   background: var(--tech-color, var(--color-primary));
 }
 .technology-study-widget__content {
   padding: var(--widget-padding);
 }
 .technology-study-widget__name {
+  font-family: var(--font-display);
   font-size: var(--text-base);
-  font-weight: 600;
+  font-weight: 700;
   line-height: var(--leading-snug);
   letter-spacing: var(--tracking-tight);
   color: var(--color-text);

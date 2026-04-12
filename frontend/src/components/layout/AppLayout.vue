@@ -10,6 +10,9 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import ActiveSessionBanner from '@/features/sessions/components/ActiveSessionBanner.vue'
+import { clearMeasureCache } from '@/composables/useTextMeasure'
+import { invalidateChartThemeCache } from '@/composables/useApexChartTheme'
+import { connectWebSocket, disconnectWebSocket } from '@/composables/useWebSocket'
 
 const authStore = useAuthStore()
 const uiStore = useUiStore()
@@ -19,31 +22,53 @@ const mainWrapRef = ref<HTMLElement | null>(null)
 
 const showActiveBanner = computed(() => route.name !== 'session-focus')
 
-// Reset scroll ao trocar de rota (scroll isolado no main-wrap, não no window)
+// Reset scroll ao trocar de rota — desktop usa main-wrap, mobile usa window
 watch(
   () => route.path,
   () => {
-    mainWrapRef.value?.scrollTo({ top: 0, behavior: 'instant' })
-  }
+    if (mainWrapRef.value) {
+      const isMobile = window.innerWidth <= 768
+      if (isMobile) {
+        window.scrollTo({ top: 0, behavior: 'auto' })
+      }
+      mainWrapRef.value.scrollTo({ top: 0, behavior: 'auto' })
+    }
+  },
+  { flush: 'post' }
 )
 
-const wsModule = ref<{ connect: (id: string) => Promise<void>; disconnect: () => void } | null>(null)
+async function tryConnectWebSocket() {
+  if (!authStore.sessionValidated || !authStore.user?.id) return
+  try {
+    await connectWebSocket(authStore.user.id)
+  } catch {
+    // WebSocket connection failed silently; polling fallback handles this
+  }
+}
 
 onMounted(async () => {
   document.documentElement.setAttribute('data-theme', uiStore.theme)
   uiStore.applyCustomTheme()
 
-  try {
-    const { useWebSocket } = await import('@/composables/useWebSocket')
-    wsModule.value = useWebSocket()
-    if (authStore.user?.id) await wsModule.value.connect(authStore.user.id)
-  } catch {
-    // WebSocket connection failed silently; polling fallback handles this
-  }
+  await tryConnectWebSocket()
 })
 
+watch(
+  () => [authStore.sessionValidated, authStore.user?.id] as const,
+  () => {
+    void tryConnectWebSocket()
+  }
+)
+
+watch(
+  () => authStore.sessionValidated,
+  (ok) => {
+    if (!ok) disconnectWebSocket()
+  }
+)
+
 onUnmounted(() => {
-  wsModule.value?.disconnect()
+  disconnectWebSocket()
 })
 
 watch(
@@ -51,6 +76,8 @@ watch(
   (val) => {
     document.documentElement.setAttribute('data-theme', val)
     uiStore.applyCustomTheme()
+    invalidateChartThemeCache()
+    clearMeasureCache()
   }
 )
 </script>
@@ -142,7 +169,7 @@ watch(
 }
 .app-layout__main::before {
   content: '';
-  position: fixed;
+  position: absolute;
   inset: 0;
   background: var(--gradient-mesh);
   pointer-events: none;
@@ -163,7 +190,7 @@ watch(
   display: none;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
   .app-layout__main {
     padding: var(--spacing-lg) var(--spacing-xl);
   }
@@ -194,8 +221,8 @@ watch(
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.75rem;
-    height: 2.75rem;
+    width: var(--touch-target-min);
+    height: var(--touch-target-min);
     padding: 0;
     background: var(--color-bg-card);
     border: 1px solid var(--color-border);

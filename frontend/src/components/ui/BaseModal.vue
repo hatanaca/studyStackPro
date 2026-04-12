@@ -1,11 +1,43 @@
 <script setup lang="ts">
-defineProps<{
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { useFocusTrap } from '@/composables/useFocusTrap'
+
+const props = defineProps<{
   show: boolean
   title?: string
 }>()
-defineEmits<{
+
+const uid = Math.random().toString(36).slice(2, 8)
+const modalTitleId = `base-modal-title-${uid}`
+const emit = defineEmits<{
   close: []
 }>()
+
+const overlayRef = ref<HTMLElement | null>(null)
+const isActive = computed(() => props.show)
+
+useFocusTrap(overlayRef, isActive)
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') emit('close')
+}
+
+function lockScroll() {
+  document.body.style.overflow = 'hidden'
+}
+
+function unlockScroll() {
+  document.body.style.overflow = ''
+}
+
+watch(() => props.show, (val) => {
+  if (val) lockScroll()
+  else unlockScroll()
+})
+
+onBeforeUnmount(() => {
+  if (props.show) unlockScroll()
+})
 </script>
 
 <template>
@@ -13,15 +45,24 @@ defineEmits<{
     <Transition name="modal">
       <div
         v-if="show"
+        ref="overlayRef"
         class="base-modal-overlay"
+        role="dialog"
+        aria-modal="true"
+        :aria-labelledby="title ? modalTitleId : undefined"
+        :aria-label="title ? undefined : 'Diálogo'"
         @click.self="$emit('close')"
+        @keydown="onKeydown"
       >
         <div class="base-modal">
           <div
             v-if="title"
             class="base-modal__header"
           >
-            <h3 class="base-modal__title">
+            <h3
+              :id="modalTitleId"
+              class="base-modal__title"
+            >
               {{ title }}
             </h3>
             <button
@@ -52,7 +93,7 @@ defineEmits<{
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-modal, 1000);
   padding: var(--spacing-lg);
 }
 .base-modal {
@@ -68,7 +109,7 @@ defineEmits<{
 @media (min-width: 640px) {
   .base-modal {
     width: auto;
-    min-width: 360px;
+    min-width: var(--modal-min-width);
   }
 }
 @media (max-width: 640px) {

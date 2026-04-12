@@ -160,7 +160,7 @@ function goTo(p: number) {
   color: var(--color-primary);
 }
 .base-pagination__btn:disabled {
-  opacity: 0.5;
+  opacity: var(--state-disabled-opacity);
   cursor: not-allowed;
 }
 .base-pagination__btn--current {

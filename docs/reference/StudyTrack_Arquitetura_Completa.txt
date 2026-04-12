@@ -1,0 +1,1286 @@
++--------------------------------------------------------------------------------------------+
+| STUDYTRACK PRO                                                                             |
+|                                                                                            |
+| Plataforma de Análise Inteligente de Estudos                                               |
+|                                                                                            |
+| DOCUMENTO DE ARQUITETURA COMPLETA                                                          |
+|                                                                                            |
+| Full Stack: Vue 3 + TypeScript | Laravel | PostgreSQL | Redis | WebSocket | Docker | OpenResty (proxy) |
+|                                                                                            |
+| Versão 1.0 — 2025                                                                          |
++--------------------------------------------------------------------------------------------+
+
++---------------------------------------------------------------------------------------------------------------------------------------------------+
+| VISAO RAPIDA DO PROJETO                                                                                                                           |
++---------------------------------------------------------------------------------------------------------------------------------------------------+
+| Objetivo: Plataforma completa para registro, análise e visualização de sessões de estudo com processamento assíncrono e dashboards em tempo real. |
+|                                                                                                                                                   |
+| Prazo: 3 meses | Nível: Intermediário+ (acima da média júnior)                                                                                    |
+|                                                                                                                                                   |
+| Padrões: Event-Driven | CQRS parcial | Repository Pattern | Service Layer | DTO | API Versionada                                                  |
++---------------------------------------------------------------------------------------------------------------------------------------------------+
+
+1. Visão Geral da Arquitetura
+
+A arquitetura adota uma abordagem em camadas bem definidas, separando responsabilidades e garantindo que cada componente tenha uma única razão para mudar. O sistema é organizado em torno de dois fluxos principais: transacional (operações CRUD em tempo real) e analítico (cálculo e cache de métricas agregadas).
+
+1.1 Diagrama de Camadas (C4 Model — Nível Container)
+
++--------------------------------------------------------------------------------------------------------------------+
+| CAMADA DE APRESENTAÇÃO (Frontend)                                                                                  |
++--------------------------------------------------------------------------------------------------------------------+
+| Vue 3 + TypeScript + Pinia + Vue Router + ApexCharts + Laravel Echo (Reverb)                                        |
+|                                                                                                                    |
+| Responsável por: Interface do usuário, gerenciamento de estado local, conexão WebSocket, renderização de gráficos. |
++--------------------------------------------------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------------------------
+  CAMADA DE REDE (Proxy + Balanceamento)
+
+  OpenResty (imagem Docker nginx) — Reverse Proxy | SSL Termination | Static Files | WebSocket Upgrade
+  --------------------------------------------------------------------------------------------
+
++------------------------------------------------------------------------------------+
+| CAMADA DE APLICAÇÃO (Backend)                                                      |
++------------------------------------------------------------------------------------+
+| Laravel 11 API REST (Versionada /api/v1)                                           |
+|                                                                                    |
+| Modules: Auth | StudySessions | Technologies | Metrics | Analytics | Notifications |
+|                                                                                    |
+| Laravel Reverb (WebSocket Server)                                                  |
+|                                                                                    |
+| Broadcasting de eventos em tempo real para usuários autenticados                   |
+|                                                                                    |
+| Laravel Horizon + Queue Workers                                                    |
+|                                                                                    |
+| Processamento assíncrono de métricas, relatórios e notificações                    |
++------------------------------------------------------------------------------------+
+
++-----------------------------------------------------------------------------+
+| CAMADA DE DADOS                                                             |
++-----------------------------------------------------------------------------+
+| PostgreSQL 16 — Dados Transacionais + Dados Agregados (schemas separados)   |
+|                                                                             |
+| Redis 7 — Cache de métricas | Session store | Queue backend | Rate limiting |
++-----------------------------------------------------------------------------+
+
+1.2 Fluxo de Dados Principal
+
+  --------------------- ---------------------------------------------- ------------------------------
+  Etapa                 Descrição                                      Saída / Efeito
+
+  1. Requisição HTTP    Usuario cria sessão de estudo via Vue 3        POST /api/v1/study-sessions
+
+  2. Nginx              Proxy reverso, valida rate limit               429 se exceder limite
+
+  3. Middleware Stack   Auth JWT → Throttle → Validate                 401/422 em falha
+
+  4. Controller         Delega ao StudySessionService                  DTO de entrada validado
+
+  5. Service Layer      Regras de negócio, persiste via Repository     Dispara SessionCreated event
+
+  6. Event Listener     Despacha RecalculateMetricsJob para a fila     Job na fila Redis
+
+  7. Queue Worker       Agrega métricas, salva em tabela analytics.*   Invalida cache Redis
+
+  8. Broadcasting       Emite dashboard.updated via WebSocket          Event para canal privado
+
+  9. Vue 3 Frontend     Recebe evento, atualiza Pinia store            Gráficos redesenhados
+  --------------------- ---------------------------------------------- ------------------------------
+
+2. Estrutura de Diretórios
+
+2.1 Backend (Laravel)
+
+A estrutura segue uma organização modular dentro da convencão Laravel, agrupando por domínio de negócio em vez de por tipo de arquivo. Isso facilita a localização de código relacionado e a futura extração de módulos.
+
+  backend/
+
+  ├── app/
+
+  │ ├── Console/Commands/ # Artisan commands customizados
+
+  │ ├── Events/ # Domain events (SessionCreated, MetricsUpdated)
+
+  │ ├── Exceptions/ # Handler global + exceptions domínio
+
+  │ ├── Http/
+
+  │ │ ├── Controllers/V1/ # Controllers versionados
+
+  │ │ ├── Middleware/ # Auth, Throttle, JsonResponse
+
+  │ │ └── Requests/ # Form Requests (validação)
+
+  │ ├── Jobs/ # RecalculateMetrics, GenerateReport
+
+  │ ├── Listeners/ # Event listeners
+
+  │ ├── Models/ # Eloquent models
+
+  │ ├── Modules/ # Lógica de domínio por módulo
+
+  │ │ ├── Auth/
+
+  │ │ │ ├── DTOs/ # AuthData, TokenData
+
+  │ │ │ ├── Repositories/ # AuthRepository
+
+  │ │ │ └── Services/ # AuthService
+
+  │ │ ├── StudySessions/
+
+  │ │ │ ├── DTOs/
+
+  │ │ │ ├── Repositories/
+
+  │ │ │ └── Services/
+
+  │ │ ├── Technologies/
+
+  │ │ └── Analytics/
+
+  │ │ ├── Aggregators/ # Lógica de cálculo de métricas
+
+  │ │ ├── Repositories/
+
+  │ │ └── Services/
+
+  │ └── Traits/ # HasUuid, HasAuditLog
+
+  ├── database/
+
+  │ ├── migrations/
+
+  │ │ ├── transactional/ # Tabelas operacionais
+
+  │ │ └── analytics/ # Tabelas de dados agregados
+
+  │ └── seeders/
+
+  ├── routes/
+
+  │ ├── api.php # Agrupa v1, v2 futuramente
+
+  │ └── channels.php # Canais WebSocket
+
+  └── docker/
+
+  ├── nginx/nginx.conf
+
+  ├── php/Dockerfile + php.ini
+
+  └── redis/redis.conf
+
+2.2 Frontend (Vue 3)
+
+  frontend/src/
+
+  ├── api/ # Axios instances e endpoint wrappers
+
+  │ ├── client.ts # Axios base config + interceptors
+
+  │ └── modules/ # auth.api.ts, sessions.api.ts...
+
+  ├── composables/ # Lógica reutilizável
+
+  │ ├── useWebSocket.ts
+
+  │ ├── useMetrics.ts
+
+  │ └── useStudySessions.ts
+
+  ├── stores/ # Pinia stores
+
+  │ ├── auth.store.ts
+
+  │ ├── sessions.store.ts
+
+  │ └── analytics.store.ts
+
+  ├── types/ # TypeScript interfaces
+
+  │ ├── api.types.ts # Tipos de resposta da API
+
+  │ ├── domain.types.ts # StudySession, Technology, Metric
+
+  │ └── websocket.types.ts
+
+  ├── views/
+
+  │ ├── Dashboard/
+
+  │ ├── Sessions/
+
+  │ └── Technologies/
+
+  └── components/
+
+  ├── charts/ # Componentes de gráfico
+
+  ├── forms/ # Formulários reutilizáveis
+
+  └── ui/ # Design system interno
+
+3. Modelagem do Banco de Dados
+
+3.1 Estratégia: Dois Schemas PostgreSQL
+
+O sistema utiliza dois schemas distintos dentro do mesmo banco PostgreSQL. O schema
+
+public contém os dados transacionais (operações CRUD frequentes). O schema analytics contém dados pré-calculados para consultas rápidas no dashboard. Essa separação é um padrão CQRS simplificado: escrita vai para public, leitura do dashboard vai para analytics (via cache Redis).
+
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Por que dois schemas e não dois bancos?
+
+  Para um projeto de portfólio com um único servidor, a separação por schema oferece os benefícios de isolação lógica (consultas, permissões, evolução independente) sem a complexidade operacional de duas conexões de banco. Em produção de larga escala, o schema analytics poderia ser movido para um banco de leitura dedicado (read replica) sem mudanças na lógica da aplicação.
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+3.2 Schema Transacional (public)
+
+  -- Usuários
+
+  CREATE TABLE public.users (
+
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  name VARCHAR(255) NOT NULL,
+
+  email VARCHAR(255) UNIQUE NOT NULL,
+
+  password VARCHAR(255) NOT NULL,
+
+  timezone VARCHAR(50) DEFAULT 'UTC',
+
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+
+  );
+
+  -- Tecnologias (criadas dinamicamente pelo usuário)
+
+  CREATE TABLE public.technologies (
+
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+
+  name VARCHAR(100) NOT NULL,
+
+  slug VARCHAR(100) NOT NULL,
+
+  color CHAR(7) DEFAULT '#3498DB',
+
+  icon VARCHAR(50),
+
+  is_active BOOLEAN DEFAULT TRUE,
+
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+
+  UNIQUE (user_id, slug) -- slug único por usuário
+
+  );
+
+  -- Sessões de estudo
+
+  CREATE TABLE public.study_sessions (
+
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+
+  technology_id UUID REFERENCES public.technologies(id) ON DELETE SET NULL,
+
+  started_at TIMESTAMPTZ NOT NULL,
+
+  ended_at TIMESTAMPTZ,
+
+  duration_min INTEGER GENERATED ALWAYS AS (
+
+  EXTRACT(EPOCH FROM (ended_at - started_at)) / 60
+
+  ) STORED, -- coluna computada
+
+  notes TEXT,
+
+  mood SMALLINT CHECK (mood BETWEEN 1 AND 5),
+
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  CONSTRAINT chk_duration CHECK (ended_at > started_at)
+
+  );
+
+  -- Índices estratégicos para consultas frequentes
+
+  CREATE INDEX idx_sessions_user_date ON public.study_sessions(user_id, started_at DESC);
+
+  CREATE INDEX idx_sessions_tech ON public.study_sessions(technology_id);
+
+  CREATE INDEX idx_sessions_user_tech ON public.study_sessions(user_id, technology_id);
+
+3.3 Schema Analítico (analytics)
+
+  CREATE SCHEMA IF NOT EXISTS analytics;
+
+  -- Métricas por usuário (totais e médias)
+
+  CREATE TABLE analytics.user_metrics (
+
+  user_id UUID PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
+
+  total_sessions INTEGER DEFAULT 0,
+
+  total_minutes INTEGER DEFAULT 0,
+
+  avg_session_min NUMERIC(8,2) DEFAULT 0,
+
+  longest_session_min INTEGER DEFAULT 0,
+
+  current_streak_days INTEGER DEFAULT 0,
+
+  max_streak_days INTEGER DEFAULT 0,
+
+  last_session_at TIMESTAMPTZ,
+
+  recalculated_at TIMESTAMPTZ DEFAULT NOW()
+
+  );
+
+  -- Métricas por tecnologia por usuário
+
+  CREATE TABLE analytics.technology_metrics (
+
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+
+  technology_id UUID REFERENCES public.technologies(id) ON DELETE CASCADE,
+
+  total_minutes INTEGER DEFAULT 0,
+
+  session_count INTEGER DEFAULT 0,
+
+  last_studied_at TIMESTAMPTZ,
+
+  recalculated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  UNIQUE (user_id, technology_id)
+
+  );
+
+  -- Série temporal: minutos por dia por usuário
+
+  CREATE TABLE analytics.daily_minutes (
+
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+
+  study_date DATE NOT NULL,
+
+  total_min INTEGER DEFAULT 0,
+
+  UNIQUE (user_id, study_date)
+
+  );
+
+  CREATE INDEX idx_daily_user_date ON analytics.daily_minutes(user_id, study_date DESC);
+
+4. Arquitetura Backend Detalhada
+
+4.1 Padrões Implementados
+
+  ----------------------------- -----------------------------------------------------------------------------------------------------------------
+  Padrão                        Justificativa
+
+  Repository Pattern            Abstrair acesso ao Eloquent. Controllers nunca tocam em Model diretamente. Facilita testes unitários com mocks.
+
+  Service Layer                 Encapsular regras de negócio. Services orquestram Repositories e disparam Events.
+
+  DTO (Data Transfer Object)    Tipar dados entre camadas. Evitar arrays associátivos, garantir autocompletion e refactoring seguro.
+
+  Form Request                  Validação declarativa e reutilizável. Retorna 422 com estrutura de erros padronizada.
+
+  Event-Driven (simplificado)   StudySession criada/atualizada/deletada dispara eventos. Listeners despacham Jobs para recalcular métricas.
+
+  Resource (API Resource)       Transformar Eloquent models em JSON padronizado. Controle total sobre a shape da resposta.
+
+  Global Exception Handler      Um único ponto de captura de exceções. Retorna JSON estruturado com status codes corretos.
+  ----------------------------- -----------------------------------------------------------------------------------------------------------------
+
+4.2 Camada de Service e Repository
+
+  // Contrato (Interface)
+
+  interface StudySessionRepositoryInterface {
+
+  public function findByUser(string $userId, array $filters): LengthAwarePaginator;
+
+  public function findById(string $id): ?StudySession;
+
+  public function create(StudySessionDTO $dto): StudySession;
+
+  public function update(StudySession $session, StudySessionDTO $dto): StudySession;
+
+  public function delete(StudySession $session): void;
+
+  }
+
+  // Implementação Eloquent
+
+  class EloquentStudySessionRepository implements StudySessionRepositoryInterface {
+
+  public function findByUser(string $userId, array $filters): LengthAwarePaginator {
+
+  return StudySession::query()
+
+  ->where('user_id', $userId)
+
+  ->when($filters['technology_id'] ?? null, fn($q, $id) => $q->where('technology_id', $id))
+
+  ->when($filters['date_from'] ?? null, fn($q, $d) => $q->where('started_at', '>=', $d))
+
+  ->when($filters['date_to'] ?? null, fn($q, $d) => $q->where('started_at', '<=', $d))
+
+  ->with('technology')
+
+  ->orderBy('started_at', 'desc')
+
+  ->paginate($filters['per_page'] ?? 15);
+
+  }
+
+  }
+
+  // Service orquestra regras de negócio
+
+  class StudySessionService {
+
+  public function __construct(
+
+  private StudySessionRepositoryInterface $repository,
+
+  private TechnologyRepositoryInterface $techRepository,
+
+  ) {}
+
+  public function create(User $user, StudySessionDTO $dto): StudySession {
+
+  // Garante que a tecnologia pertence ao usuário
+
+  $tech = $this->techRepository->findForUser($dto->technologyId, $user->id);
+
+  throw_unless($tech, new AuthorizationException('Technology not owned by user'));
+
+  $session = $this->repository->create($dto);
+
+  // Dispara evento - listeners decidem o que fazer
+
+  event(new StudySessionCreated($session));
+
+  return $session;
+
+  }
+
+  }
+
+4.3 DTO Pattern
+
+  final class StudySessionDTO {
+
+  public function __construct(
+
+  public readonly string $userId,
+
+  public readonly string $technologyId,
+
+  public readonly Carbon $startedAt,
+
+  public readonly ?Carbon $endedAt,
+
+  public readonly ?string $notes,
+
+  public readonly ?int $mood,
+
+  ) {}
+
+  public static function fromRequest(StoreStudySessionRequest $request): self {
+
+  return new self(
+
+  userId: $request->user()->id,
+
+  technologyId: $request->technology_id,
+
+  startedAt: Carbon::parse($request->started_at),
+
+  endedAt: $request->ended_at ? Carbon::parse($request->ended_at) : null,
+
+  notes: $request->notes,
+
+  mood: $request->mood,
+
+  );
+
+  }
+
+  }
+
+4.4 Sistema de Eventos e Jobs
+
+  ----------------------- -----------------------------------------------------------
+  Evento                  Efeito
+
+  StudySessionCreated     Dispara RecalculateMetricsJob na fila 'metrics'
+
+  StudySessionUpdated     Dispara RecalculateMetricsJob com flag $fullRecalc = true
+
+  StudySessionDeleted     Dispara RecalculateMetricsJob + invalida cache
+
+  MetricsRecalculated     Dispara BroadcastDashboardUpdate (WebSocket)
+  ----------------------- -----------------------------------------------------------
+
+  class RecalculateMetricsJob implements ShouldQueue {
+
+  use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+  public int $tries = 3;
+
+  public int $backoff = 60; // segundos entre retentativas
+
+  public string $queue = 'metrics';
+
+  public function __construct(
+
+  public readonly string $userId,
+
+  public readonly bool $fullRecalc = false,
+
+  ) {}
+
+  public function handle(MetricsAggregator $aggregator): void {
+
+  DB::transaction(function() use ($aggregator) {
+
+  $aggregator->recalculateUserMetrics($this->userId);
+
+  $aggregator->recalculateTechnologyMetrics($this->userId);
+
+  $aggregator->recalculateDailyTimeSeries($this->userId);
+
+  });
+
+  // Invalida cache e dispara WebSocket
+
+  Cache::tags(['metrics', $this->userId])->flush();
+
+  event(new MetricsRecalculated($this->userId));
+
+  }
+
+  }
+
+5. API REST Versionada
+
+5.1 Estrutura de Rotas
+
+  // routes/api.php
+
+  Route::prefix('v1')->name('v1.')->group(function () {
+
+  // Auth (sem middleware)
+
+  Route::post('auth/register', [AuthController::class, 'register']);
+
+  Route::post('auth/login', [AuthController::class, 'login']);
+
+  // Rotas protegidas
+
+  Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
+
+  Route::post('auth/logout', [AuthController::class, 'logout']);
+
+  Route::get('auth/me', [AuthController::class, 'me']);
+
+  // Código real: rotas explícitas em routes/api.php (prefix api/v1), não apiResource puro.
+  // technologies: index/show/store/update/destroy + search; study-sessions: CRUD + start, PATCH {id}/end, active.
+
+  // Analytics (somente leitura)
+
+  Route::prefix('analytics')->name('analytics.')->group(function () {
+
+  Route::get('dashboard', [AnalyticsController::class, 'dashboard']);
+
+  Route::get('user-metrics', [AnalyticsController::class, 'userMetrics']);
+
+  Route::get('technology-stats', [AnalyticsController::class, 'technologyStats']);
+
+  Route::get('time-series', [AnalyticsController::class, 'timeSeries']);
+
+  });
+
+  });
+
+  });
+
+5.2 Contrato de Resposta Padronizado
+
+  // Todas as respostas seguem esta estrutura
+
+  {
+
+  "success": true,
+
+  "data": { ... }, // payload principal
+
+  "meta": { // para listas paginadas
+
+  "current_page": 1,
+
+  "last_page": 5,
+
+  "per_page": 15,
+
+  "total": 72
+
+  },
+
+  "message": "Resource created successfully"
+
+  }
+
+  // Em caso de erro
+
+  {
+
+  "success": false,
+
+  "error": {
+
+  "code": "VALIDATION_ERROR",
+
+  "message": "The given data was invalid.",
+
+  "details": {
+
+  "started_at": ["The started at field is required."],
+
+  "mood": ["The mood must be between 1 and 5."]
+
+  }
+
+  }
+
+  }
+
+5.3 Handler Global de Erros
+
+  // app/Exceptions/Handler.php
+
+  class Handler extends ExceptionHandler {
+
+  public function register(): void {
+
+  $this->renderable(function (Throwable $e, Request $request) {
+
+  if (!$request->expectsJson()) return null;
+
+  return match(true) {
+
+  $e instanceof ValidationException => $this->validationError($e),
+
+  $e instanceof AuthenticationException => response()->json(['success' => false,
+
+  'error' => ['code' => 'UNAUTHENTICATED', 'message' => 'Token inválido ou ausente.']], 401),
+
+  $e instanceof AuthorizationException => response()->json(['success' => false,
+
+  'error' => ['code' => 'FORBIDDEN', 'message' => 'Acesso negado.']], 403),
+
+  $e instanceof ModelNotFoundException => response()->json(['success' => false,
+
+  'error' => ['code' => 'NOT_FOUND', 'message' => 'Recurso não encontrado.']], 404),
+
+  $e instanceof ThrottleRequestsException => response()->json(['success' => false,
+
+  'error' => ['code' => 'RATE_LIMITED', 'message' => 'Muitas requisições.']], 429),
+
+  default => $this->serverError($e),
+
+  };
+
+  });
+
+  }
+
+  }
+
+5.4 Rate Limiting Configurado
+
+  // app/Providers/AppServiceProvider.php (+ atribuição throttle:* em routes/api.php)
+
+  RateLimiter::for('api', function (Request $request) {
+
+  return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+
+  });
+
+  RateLimiter::for('auth', function (Request $request) {
+
+  return Limit::perMinute(5)->by($request->ip()); // Brute-force protection
+
+  });
+
+6. Estratégia de Cache com Redis
+
+6.1 Camadas de Cache
+
+  --------------------------- ------------------------------------------------------------------------------
+  Dado em Cache               Estratégia
+
+  Dashboard completo          Tag: [metrics, {userId}] | TTL: 5min | Invalidado após RecalculateMetricsJob
+
+  Métricas de usuário         Tag: [metrics, {userId}] | TTL: 10min
+
+  Lista de tecnologias        Tag: [technologies, {userId}] | TTL: 1h | Invalidado em CRUD de tecnologia
+
+  Série temporal (gráfico)    Tag: [metrics, {userId}, timeseries] | TTL: 15min
+
+  Sessões de usuário (auth)   Store Sanctum | TTL: configurável (default 7d)
+  --------------------------- ------------------------------------------------------------------------------
+
+  class AnalyticsService {
+
+  public function getDashboardData(string $userId): array {
+
+  $cacheKey = "dashboard:{$userId}";
+
+  return Cache::tags(['metrics', $userId])->remember(
+
+  $cacheKey,
+
+  now()->addMinutes(5),
+
+  fn() => $this->buildDashboardData($userId)
+
+  );
+
+  }
+
+  private function buildDashboardData(string $userId): array {
+
+  // Consulta direto nas tabelas analytics.* (já pré-calculadas)
+
+  return [
+
+  'user_metrics' => $this->userMetricsRepo->findByUser($userId),
+
+  'technology_metrics' => $this->techMetricsRepo->findByUser($userId),
+
+  'time_series_30d' => $this->dailyRepo->getLast30Days($userId),
+
+  'top_technologies' => $this->techMetricsRepo->getTop5($userId),
+
+  ];
+
+  }
+
+  }
+
+6.2 Configuração Redis Multi-Database
+
+  # config/database.php - Redis databases separados por responsabilidade
+
+  'redis' => [
+
+  'cache' => ['database' => 1], // Cache de dados
+
+  'queue' => ['database' => 2], // Filas de jobs
+
+  'session' => ['database' => 3], // Sessões
+
+  'horizon' => ['database' => 4], // Laravel Horizon metrics
+
+  ],
+
+7. WebSocket com Laravel Reverb
+
+7.1 Fluxo de Broadcasting
+
+O sistema usa Laravel Reverb (WebSocket server nativo do Laravel) com Broadcasting. Cada usuário se conecta a um canal privado autenticado. Quando métricas são recalculadas, o job dispara um evento de broadcast que é enviado somente para o canal do usuário correspondente.
+
+  // Canal privado por usuário
+
+  // routes/channels.php
+
+  Broadcast::channel('dashboard.{userId}', function (User $user, string $userId) {
+
+  return $user->id === $userId; // Autorização: apenas o próprio usuário
+
+  });
+
+  // Evento broadcastável
+
+  class MetricsUpdated implements ShouldBroadcast {
+
+  use Dispatchable, InteractsWithSockets, SerializesModels;
+
+  public function __construct(
+
+  private readonly string $userId,
+
+  private readonly array $dashboardData,
+
+  ) {}
+
+  public function broadcastOn(): array {
+
+  return [new PrivateChannel("dashboard.{$this->userId}")];
+
+  }
+
+  public function broadcastAs(): string {
+
+  return 'metrics.updated'; // Nome do evento no frontend
+
+  }
+
+  public function broadcastWith(): array {
+
+  return ['dashboard' => $this->dashboardData];
+
+  }
+
+  }
+
+7.2 Frontend: Composable useWebSocket
+
+  // composables/useWebSocket.ts
+
+  import Echo from 'laravel-echo';
+
+  import Pusher from 'pusher-js';
+
+  export function useWebSocket() {
+
+  const analyticsStore = useAnalyticsStore();
+
+  const authStore = useAuthStore();
+
+  let echo: Echo | null = null;
+
+  const connect = () => {
+
+  echo = new Echo({
+
+  broadcaster: 'reverb',
+
+  key: import.meta.env.VITE_REVERB_APP_KEY,
+
+  wsHost: import.meta.env.VITE_REVERB_HOST,
+
+  wsPort: import.meta.env.VITE_REVERB_PORT,
+
+  enabledTransports: ['ws', 'wss'],
+
+  auth: { headers: { Authorization: `Bearer ${authStore.token}` } }
+
+  });
+
+  echo.private(`dashboard.${authStore.user.id}`)
+
+  .listen('.metrics.updated', (event: MetricsUpdatedEvent) => {
+
+  analyticsStore.updateFromWebSocket(event.dashboard);
+
+  });
+
+  };
+
+  const disconnect = () => echo?.disconnect();
+
+  return { connect, disconnect };
+
+  }
+
+8. Arquitetura Frontend (Vue 3 + TypeScript)
+
+8.1 Gerenciamento de Estado com Pinia
+
+  // stores/analytics.store.ts
+
+  export const useAnalyticsStore = defineStore('analytics', () => {
+
+  // State
+
+  const dashboard = ref<DashboardData | null>(null);
+
+  const isLoading = ref(false);
+
+  const lastUpdated = ref<Date | null>(null);
+
+  const wsConnected = ref(false);
+
+  // Getters
+
+  const totalHours = computed(() =>
+
+  Math.round((dashboard.value?.user_metrics.total_minutes ?? 0) / 60)
+
+  );
+
+  const topTechnology = computed(() =>
+
+  dashboard.value?.technology_metrics.sort(
+
+  (a, b) => b.total_minutes - a.total_minutes
+
+  )[0] ?? null
+
+  );
+
+  // Actions
+
+  async function fetchDashboard() {
+
+  isLoading.value = true;
+
+  try {
+
+  const response = await analyticsApi.getDashboard();
+
+  dashboard.value = response.data;
+
+  lastUpdated.value = new Date();
+
+  } finally {
+
+  isLoading.value = false;
+
+  }
+
+  }
+
+  // Atualização via WebSocket (sem nova requisição HTTP)
+
+  function updateFromWebSocket(data: DashboardData) {
+
+  dashboard.value = data;
+
+  lastUpdated.value = new Date();
+
+  }
+
+  return { dashboard, isLoading, lastUpdated, wsConnected, totalHours, topTechnology, fetchDashboard, updateFromWebSocket };
+
+  });
+
+8.2 Interceptors Axios com Refresh Token
+
+  // api/client.ts
+
+  const apiClient = axios.create({
+
+  baseURL: `${import.meta.env.VITE_API_URL}/api/v1`,
+
+  headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+
+  });
+
+  // Injeta token em todas as requisições
+
+  apiClient.interceptors.request.use((config) => {
+
+  const token = useAuthStore().token;
+
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  return config;
+
+  });
+
+  // Tratamento global de erros HTTP
+
+  apiClient.interceptors.response.use(
+
+  (response) => response,
+
+  async (error: AxiosError<ApiErrorResponse>) => {
+
+  if (error.response?.status === 401) {
+
+  useAuthStore().logout();
+
+  router.push('/login');
+
+  }
+
+  if (error.response?.status === 429) {
+
+  // Feedback visual de rate limit
+
+  useNotificationStore().error('Muitas requisições. Aguarde um momento.');
+
+  }
+
+  return Promise.reject(error);
+
+  }
+
+  );
+
+8.3 Tipos TypeScript Centralizados
+
+  // types/domain.types.ts
+
+  export interface StudySession {
+
+  id: string;
+
+  technologyId: string;
+
+  technology: Technology;
+
+  startedAt: string; // ISO 8601
+
+  endedAt: string | null;
+
+  durationMin: number | null;
+
+  notes: string | null;
+
+  mood: 1 | 2 | 3 | 4 | 5 | null;
+
+  createdAt: string;
+
+  }
+
+  export interface DashboardData {
+
+  userMetrics: UserMetrics;
+
+  technologyMetrics: TechnologyMetric[];
+
+  timeSeries30d: DailyMinute[];
+
+  topTechnologies: TechnologyMetric[];
+
+  }
+
+  // Tipo genérico para respostas da API
+
+  export interface ApiResponse<T> {
+
+  success: boolean;
+
+  data: T;
+
+  message?: string;
+
+  meta?: PaginationMeta;
+
+  }
+
+9. Infraestrutura Docker
+
+9.1 docker-compose.yml
+
+  version: '3.9'
+
+  services:
+
+  nginx:
+
+  image: nginx:1.25-alpine
+
+  ports: ['80:80', '443:443']
+
+  volumes:
+
+  - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+
+  - ./frontend/dist:/var/www/html/public/frontend # Static build
+
+  depends_on: [php-fpm]
+
+  php-fpm:
+
+  build: ./docker/php
+
+  volumes:
+
+  - ./backend:/var/www/html
+
+  environment:
+
+  APP_ENV: production
+
+  depends_on: [postgres, redis]
+
+  # WebSocket Server (Laravel Reverb)
+
+  reverb:
+
+  build: ./docker/php
+
+  command: php artisan reverb:start --host=0.0.0.0 --port=8080
+
+  volumes: [./backend:/var/www/html]
+
+  depends_on: [redis]
+
+  # Queue Worker com Horizon
+
+  horizon:
+
+  build: ./docker/php
+
+  command: php artisan horizon
+
+  volumes: [./backend:/var/www/html]
+
+  depends_on: [postgres, redis]
+
+  restart: unless-stopped
+
+  postgres:
+
+  image: postgres:16-alpine
+
+  environment:
+
+  POSTGRES_DB: studytrack
+
+  POSTGRES_USER: studytrack
+
+  POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+  volumes: [postgres_data:/var/lib/postgresql/data]
+
+  redis:
+
+  image: redis:7-alpine
+
+  command: redis-server /usr/local/etc/redis/redis.conf
+
+  volumes:
+
+  - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf
+
+  - redis_data:/data
+
+  volumes:
+
+  postgres_data:
+
+  redis_data:
+
+9.2 Nginx: Proxy Reverso + WebSocket Upgrade
+
+  # docker/nginx/nginx.conf
+
+  server {
+
+  listen 80;
+
+  server_name localhost;
+
+  root /var/www/html/public;
+
+  # API Laravel
+
+  location /api/ {
+
+  try_files $uri $uri/ /index.php?$query_string;
+
+  fastcgi_pass php-fpm:9000;
+
+  include fastcgi_params;
+
+  fastcgi_param SCRIPT_FILENAME $document_root/index.php;
+
+  }
+
+  # WebSocket (Laravel Reverb) - UPGRADE obrigatório
+
+  location /app/ {
+
+  proxy_pass http://reverb:8080;
+
+  proxy_http_version 1.1;
+
+  proxy_set_header Upgrade $http_upgrade;
+
+  proxy_set_header Connection 'upgrade';
+
+  proxy_set_header Host $host;
+
+  proxy_cache_bypass $http_upgrade;
+
+  }
+
+  # SPA Vue (HTML5 History Mode)
+
+  location / {
+
+  root /var/www/html/public/frontend;
+
+  try_files $uri $uri/ /index.html;
+
+  }
+
+  }
+
+10. Cronograma de 3 Meses
+
+  ------------- ----------------------------------- ----------------------------------------------------------
+  Semana        Entrega                             Critério de Conclusão
+
+  Semana 1-2    Docker + PostgreSQL + Migrations    Ambiente funcional com schemas public e analytics
+
+  Semana 3-4    Auth Laravel + JWT + Middleware     Login/Registro com Sanctum + cobertura de testes
+
+  Semana 5-6    CRUD Tecnologias + Sessões          API completa com Repository + Service + DTO
+
+  Semana 7-8    Jobs + Events + Redis Queue         Recalculo assíncrono de métricas funcionando
+
+  Semana 9      WebSocket com Reverb                Broadcasting de dashboard ao vivo
+
+  Semana 10     Frontend Vue 3 + Pinia + Axios      Telas de listagem e formulários
+
+  Semana 11     Dashboard + Gráficos + WebSocket    Dashboard completo com ApexCharts atualizado em tempo real
+
+  Semana 12     Polimento + Deploy + Documentação   README detalhado, collection Postman, deploy no servidor
+  ------------- ----------------------------------- ----------------------------------------------------------
+
+11. Diferenciais Técnicos para o Portfólio
+
+Estes são os pontos que elevarão este projeto acima de um CRUD comum. São escolhas arquiteturais que demonstram maturidade de engenharia:
+
+1.  Coluna computada no PostgreSQL (duration_min): demonstra conhecimento de banco de dados além do ORM, gerando valores automáticos com consistência garantida pelo banco.
+
+2.  DTO + Repository + Interface: demonstra inversão de dependência e testabilidade. Services são unit testados com mocks dos repositories.
+
+3.  Schema analytics separado: padrão CQRS simplificado. Leitura e escrita em caminhos distintos, sem acoplar as duas preocupações.
+
+4.  Cache com tags: invalidação granular por usuário sem impactar cache de outros usuários.
+
+5.  Jobs com retry e backoff: resiliência a falhas transitórias. Em produção, nenhum job é perdido silenciosamente.
+
+6.  WebSocket em canal privado: autenticação por canal garante que dados de um usuário não vazam para outro.
+
+7.  TypeScript com tipos centralizados: contratos explicitados. Qualquer mudança na API quebra o build do frontend - safety net sem custo.
+
+8.  Handler global de erros JSON: API sempre retorna o mesmo formato, independente de onde a exceção é lançada.
+
++--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| RECOMENDAÇÃO FINAL                                                                                                                                                                                     |
++--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Priorize implementar e documentar bem cada padrão. Um projeto com 5 endpoints bem arquitetados vale mais para um recrutador sênior do que 20 endpoints sem consistência.                               |
+|                                                                                                                                                                                                        |
+| Inclua no README: diagrama de arquitetura, decisões técnicas justificadas, como rodar localmente com Docker, e collection do Postman. Esse contexto é o que transforma um repositório em um portfólio. |
++--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+

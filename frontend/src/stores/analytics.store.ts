@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, shallowRef, computed } from 'vue'
 import type { DashboardData, UserMetrics, TechnologyMetric, DailyMinute } from '@/types/domain.types'
 import { analyticsApi } from '@/api/modules/analytics.api'
 
@@ -38,28 +38,27 @@ const PERIOD_TO_DAYS: Record<TimeSeriesPeriod, number> = {
 }
 
 export const useAnalyticsStore = defineStore('analytics', () => {
-  const dashboard = ref<DashboardData | null>(null)
+  const dashboard = shallowRef<DashboardData | null>(null)
   const isLoading = ref(false)
   const isRecalculating = ref(false)
   const lastFetchAt = ref<Date | null>(null)
 
-  const heatmapData = ref<HeatmapDay[]>([])
+  const heatmapData = shallowRef<HeatmapDay[]>([])
   const heatmapLoading = ref(false)
   const heatmapYear = ref<number>(new Date().getFullYear())
 
-  const weeklyData = ref<WeeklySummary[]>([])
+  const weeklyData = shallowRef<WeeklySummary[]>([])
   const weeklyLoading = ref(false)
 
-  const timeSeriesData = ref<Record<TimeSeriesPeriod, DailyMinute[]>>({
+  const timeSeriesData = shallowRef<Record<TimeSeriesPeriod, DailyMinute[]>>({
     '7d': [],
     '30d': [],
     '90d': [],
   })
   const timeSeriesLoading = ref(false)
-  /** 90d cobre histórico recente (ex.: dados importados de planilha sem estudo nos últimos 30 dias). */
-  const selectedPeriod = ref<TimeSeriesPeriod>('90d')
+  const selectedPeriod = ref<TimeSeriesPeriod>('30d')
 
-  const techStatsData = ref<TechnologyMetric[]>([])
+  const techStatsData = shallowRef<TechnologyMetric[]>([])
   const techStatsLoading = ref(false)
 
   // --- Pending optimistic sessions (never overwritten by API) ---

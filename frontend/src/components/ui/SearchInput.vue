@@ -7,10 +7,21 @@ const props = withDefaults(
   defineProps<{
     modelValue?: string
     placeholder?: string
+    /** Rótulo acessível; se omitido, usa o placeholder. */
+    ariaLabel?: string
     debounceMs?: number
     minLength?: number
+    fluid?: boolean
+    size?: 'small' | 'large'
   }>(),
-  { modelValue: '', placeholder: 'Buscar...', debounceMs: 300, minLength: 0 }
+  {
+    modelValue: '',
+    placeholder: 'Buscar...',
+    debounceMs: 300,
+    minLength: 0,
+    fluid: true,
+    size: undefined,
+  }
 )
 
 const emit = defineEmits<{
@@ -39,6 +50,9 @@ watch(local, (v) => {
     v-model="local"
     type="search"
     :placeholder="placeholder"
+    :aria-label="ariaLabel ?? placeholder"
+    :fluid="fluid"
+    :size="size"
     class="search-input"
     autocomplete="off"
   />

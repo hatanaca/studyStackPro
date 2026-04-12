@@ -10,16 +10,16 @@ dev:
 	docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 stop:
-	docker compose down
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 
 build:
 	docker compose build
 
 shell-php:
-	docker compose exec php-fpm bash
+	docker compose exec php-fpm sh
 
 shell-vue:
-	docker compose exec node bash
+	docker compose exec node sh
 
 test-db-setup:
 	docker compose exec postgres psql -U studytrack -d postgres -c "CREATE DATABASE studytrack_test OWNER studytrack;" 2>/dev/null || true
@@ -42,7 +42,7 @@ fresh:
 	docker compose exec php-fpm php artisan migrate:fresh --seed
 
 horizon:
-	docker compose exec php-fpm php artisan horizon
+	docker compose exec horizon php artisan horizon:status
 
 pint:
 	docker compose exec php-fpm ./vendor/bin/pint

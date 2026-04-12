@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type { ApexOptions } from 'apexcharts'
 import VueApexCharts from 'vue3-apexcharts'
 import { useApexChartTheme } from '@/composables/useApexChartTheme'
+import { useMediaQuery } from '@/composables/useMediaQuery'
 
 const props = withDefaults(
   defineProps<{
@@ -29,6 +30,7 @@ const props = withDefaults(
 )
 
 const { baseOptions, palette, theme } = useApexChartTheme()
+const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
 
 const chartSeries = computed(() => props.series.length ? props.series : [])
 
@@ -53,11 +55,11 @@ const chartOptions = computed<ApexOptions>(() => {
         export: { csv: { headerCategory: 'Categoria', headerValue: 'Valor' }, svg: {}, png: {} },
       },
       animations: {
-        enabled: true,
+        enabled: !prefersReducedMotion.value,
         easing: 'easeinout',
         speed: 800,
-        animateGradually: { enabled: true, delay: 120 },
-        dynamicAnimation: { enabled: true, speed: 350 },
+        animateGradually: { enabled: !prefersReducedMotion.value, delay: 120 },
+        dynamicAnimation: { enabled: !prefersReducedMotion.value, speed: 350 },
       },
       dropShadow: { enabled: false },
     },

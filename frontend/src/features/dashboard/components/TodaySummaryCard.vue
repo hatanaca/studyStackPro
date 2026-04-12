@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 
 const analyticsStore = useAnalyticsStore()
@@ -58,22 +59,26 @@ const hasActivity = computed(() => analyticsStore.todayMinutes > 0)
         <div class="today-summary__tech-chips">
           <span
             v-for="tm in analyticsStore.todayTechnologies"
-            :key="tm.technology.id"
+            :key="tm.technology?.id ?? tm.total_minutes"
             class="today-summary__chip"
-            :style="{ '--chip-color': tm.technology.color || 'var(--color-primary)' }"
+            :style="{ '--chip-color': tm.technology?.color || 'var(--color-primary)' }"
           >
-            {{ tm.technology.name }}
+            {{ tm.technology?.name ?? 'Sem nome' }}
           </span>
         </div>
       </div>
     </div>
 
-    <p
+    <div
       v-else
-      class="today-summary__empty"
+      class="today-summary__empty-wrap"
     >
-      Nenhuma sessão hoje. Registre um estudo acima para acompanhar seu progresso!
-    </p>
+      <EmptyState
+        icon="☕"
+        title="Nenhuma sessão hoje"
+        description="Registre um estudo no bloco acima para acompanhar seu progresso neste resumo."
+      />
+    </div>
   </section>
 </template>
 
@@ -159,20 +164,22 @@ const hasActivity = computed(() => analyticsStore.todayMinutes > 0)
 .today-summary__chip {
   display: inline-block;
   padding: var(--spacing-2xs) var(--spacing-sm);
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: 500;
   background: color-mix(in srgb, var(--chip-color) 18%, transparent);
   color: var(--chip-color);
   border: 1px solid color-mix(in srgb, var(--chip-color) 35%, transparent);
 }
-.today-summary__empty {
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-  margin: 0;
-  line-height: var(--leading-normal);
+.today-summary__empty-wrap {
+  width: 100%;
 }
-@media (max-width: 479px) {
+.today-summary__empty-wrap :deep(.empty-state) {
+  min-height: 0;
+  padding: var(--spacing-lg) var(--spacing-md);
+  background: color-mix(in srgb, var(--color-bg-card) 65%, transparent);
+}
+@media (max-width: 639px) {
   .today-summary {
     padding: var(--widget-padding-sm);
   }

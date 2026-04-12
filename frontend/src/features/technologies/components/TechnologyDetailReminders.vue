@@ -125,17 +125,14 @@ watch(() => props.technologyId, loadFromStorage)
           rows="2"
           @keydown.ctrl.enter.prevent="saveEdit(r)"
         />
-        <p
+        <button
           v-else
+          type="button"
           class="tech-reminders__text"
-          tabindex="0"
-          role="button"
           @click="startEdit(r)"
-          @keydown.enter.prevent="startEdit(r)"
-          @keydown.space.prevent="startEdit(r)"
         >
           {{ r.text }}
-        </p>
+        </button>
         <div class="tech-reminders__actions">
           <template v-if="editingId === r.id">
             <Button label="Salvar" size="small" @click="saveEdit(r)" />
@@ -198,13 +195,9 @@ watch(() => props.technologyId, loadFromStorage)
   color: var(--color-text);
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
-.tech-reminders__field:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-focus);
-}
 .tech-reminders__field:focus-visible {
   outline: none;
+  border-color: var(--color-primary);
   box-shadow: var(--shadow-focus);
 }
 .tech-reminders__list {
@@ -226,13 +219,14 @@ watch(() => props.technologyId, loadFromStorage)
   border: 1px solid var(--color-border);
 }
 .tech-reminders__text {
+  all: unset;
   flex: 1;
   min-width: 0;
-  margin: 0;
   font-size: var(--text-sm);
   color: var(--color-text);
   cursor: pointer;
   line-height: var(--leading-snug);
+  text-align: left;
 }
 .tech-reminders__text:focus-visible {
   outline: none;
@@ -251,13 +245,9 @@ watch(() => props.technologyId, loadFromStorage)
   color: var(--color-text);
   transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
-.tech-reminders__textarea:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-focus);
-}
 .tech-reminders__textarea:focus-visible {
   outline: none;
+  border-color: var(--color-primary);
   box-shadow: var(--shadow-focus);
 }
 .tech-reminders__actions {

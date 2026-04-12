@@ -24,9 +24,9 @@ export function useSessionDelete() {
   }
 
   async function confirmDelete() {
-    const session = deletingSession.value
-    if (!session || deleteLoading.value) return
+    if (!deletingSession.value || deleteLoading.value) return
     deleteLoading.value = true
+    const session = deletingSession.value
     try {
       await sessionsApi.delete(session.id)
       toast.success('Sessão excluída!')

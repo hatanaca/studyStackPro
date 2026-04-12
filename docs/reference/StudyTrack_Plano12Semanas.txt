@@ -1,0 +1,565 @@
++-----------------------------------------------------------------------------------+
+| STUDYTRACK PRO                                                                    |
+|                                                                                   |
+| Plano de Implementação — 12 Semanas                                               |
+|                                                                                   |
+| Nível Intermediário · 4 Fases · Entregas Semanais · Critérios de Aceite Objetivos |
+|                                                                                   |
+| 12 semanas · ~20h/semana · Total estimado: 240 horas                              |
++-----------------------------------------------------------------------------------+
+
++-----------------------------------------------------------------------------------------------------------------------------------------------+
+| PREMISSAS DO PLANO                                                                                                                            |
++-----------------------------------------------------------------------------------------------------------------------------------------------+
+| Ritmo: ~20 horas/semana (3h dias úteis + 5h por dia de fim de semana). Ajuste conforme sua disponibilidade — o plano é modular.               |
+|                                                                                                                                               |
+| Progressão: Cada semana entrega algo funcionando e testável. Nunca avance para a próxima semana sem que a entrega atual esteja operacional.   |
+|                                                                                                                                               |
+| Commits diários: Conventional Commits desde o dia 1. O histórico de git é parte do portfólio tanto quanto o código.                           |
+|                                                                                                                                               |
+| Testes: Feature tests para cada endpoint (backend), testes unitários para Services e Aggregators. Frontend: testes de composables com Vitest. |
+|                                                                                                                                               |
+| Buffer: Semanas 11-12 são intencionalmente leves — reserva para débitos técnicos, polimento e imprevistos. Não use antes do tempo.            |
++-----------------------------------------------------------------------------------------------------------------------------------------------+
+
++----------------------------------------------------------+----------------------------------------------------+----------------------------------------------+---------------------------------------------+
+| FASE 1                                                   | FASE 2                                             | FASE 3                                       | FASE 4                                      |
+|                                                          |                                                    |                                              |                                             |
+| Infraestrutura                                           | Funcionalidades Core                               | Dashboard & Realtime                         | Qualidade & Portfólio                       |
+|                                                          |                                                    |                                              |                                             |
+| S1–S2                                                    | S3–S6                                              | S7–S9                                        | S10–S12                                     |
+|                                                          |                                                    |                                              |                                             |
+| Docker, Laravel base, Vue base, PostgreSQL, Redis, Nginx | Auth, Technologies, Sessions CRUD, Jobs, Analytics | WebSocket, Charts, KPIs, Heatmap, Tempo real | Testes, CI/CD, README, Deploy, Refinamentos |
++----------------------------------------------------------+----------------------------------------------------+----------------------------------------------+---------------------------------------------+
+
++-----------------------------------------------------------------------------------------------+
+| FASE 1 — Infraestrutura e Ambiente                                                            |
+|                                                                                               |
+| Semanas 1–2 · Docker, Monorepo, Laravel 11 base, Vue 3 base, PostgreSQL schemas, Redis config |
++-----------------------------------------------------------------------------------------------+
+
+  --------- ---------------------------------------------------------------------------------------------------------------------------------
+  S1        Setup do Monorepo e Docker [Fase 1 — Infraestrutura]
+
+  ▸         Criar repositório Git com estrutura monorepo
+
+  ↳         git init studytrack-pro && mkdir backend frontend docker
+
+  ▸         Instalar Laravel 11 no backend/
+
+  ↳         composer create-project laravel/laravel backend --prefer-dist
+
+  ▸         Criar Vue 3 + TypeScript no frontend/
+
+  ↳         npm create vue@latest frontend (selecionar: TS, Router, Pinia, Vitest)
+
+  ▸         Escrever docker-compose.yml com todos os serviços
+
+  ↳         serviços: nginx, php-fpm, reverb, horizon, scheduler, postgres, redis
+
+  ▸         Configurar Dockerfiles: PHP 8.3-FPM, Node 20, Nginx
+
+  ▸         Criar Makefile na raiz (make dev, make stop, make shell-php, make shell-vue)
+
+  ▸         Configurar .env.example com todas as variáveis necessárias
+
+  ▸         Testar: make dev → todos os serviços sobem sem erros
+
+            Critério de aceite: http://localhost retorna resposta (200 ou 404)
+
+  ✓         Entrega: make dev funcional — todos os 7 containers sobem sem erro — Commit: 'chore(docker): initial monorepo and docker setup'
+  --------- ---------------------------------------------------------------------------------------------------------------------------------
+
+  --------- -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+  S2        Database, Redis e Configurações Base [Fase 1 — Infraestrutura]
+
+  ▸         Criar todas as migrations do schema public.* (users, technologies, study_sessions)
+
+  ↳         php artisan make:migration create_study_sessions_table
+
+  ▸         Criar migrations do schema analytics.* (user_metrics, technology_metrics, daily_minutes, weekly_summaries)
+
+  ↳         DB::statement('CREATE SCHEMA IF NOT EXISTS analytics')
+
+  ▸         Criar Triggers PostgreSQL: concurrent_sessions, validate_ended_at, update_duration_min
+
+  ▸         Configurar Redis multi-database em config/database.php (DB 0–4)
+
+  ▸         Configurar Laravel Sanctum, Rate Limiter, Queue (Redis), Broadcasting (Reverb)
+
+  ▸         Configurar EventServiceProvider (listeners registrados — sem implementação ainda)
+
+  ▸         Criar BaseModel.php com UUID, serializeDate()
+
+  ▸         Criar Handler.php com JSON error responses padronizadas
+
+  ▸         Criar EnsureJsonResponse middleware e HasApiResponse trait
+
+  ▸         Executar seeders: UserSeeder (dev@studytrack.local), TechnologySeeder
+
+  ▸         Configurar vite.config.ts (alias @/, proxy /api → nginx)
+
+  ▸         Criar src/api/client.ts (Axios com interceptors de 401/429)
+
+            Critério de aceite: php artisan migrate roda sem erros; Redis responde ao PING
+
+  ✓         Entrega: Banco migrado, Redis configurado, base Laravel e Vue com estrutura de pastas completa — Commit: 'chore(db): all migrations, triggers, and base config'
+  --------- -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
++--------------------------------------------------------------------------------------------------------+
+| FASE 2 — Funcionalidades Core                                                                          |
+|                                                                                                        |
+| Semanas 3–8 · Auth, CRUD de Tecnologias e Sessões, Jobs de recálculo, Aggregators, Analytics endpoints |
++--------------------------------------------------------------------------------------------------------+
+
+  --------- ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+  S3        Módulo de Autenticação Completo [Fase 2 — Core]
+
+  ▸         Criar RepositoryServiceProvider e interfaces de repositório
+
+  ↳         AuthRepositoryInterface, bind no AppServiceProvider
+
+  ▸         Implementar AuthController (register, login, logout, me, change-password, tokens)
+
+  ▸         Implementar StoreRegisterRequest, LoginRequest, ChangePasswordRequest (Form Requests)
+
+  ▸         Implementar AuthService (toda lógica de negócio, sem lógica no Controller)
+
+  ▸         Implementar UserResource (formatação da resposta)
+
+  ▸         Configurar routes/api.php com prefix v1 e middleware groups
+
+  ▸         Escrever tests/Feature/Auth/AuthTest.php (register, login, logout, me, senha errada)
+
+            Frontend
+
+  ▸         Criar src/types/api.types.ts e domain.types.ts (interfaces TypeScript)
+
+  ▸         Criar auth.store.ts (Pinia: token, user, isAuthenticated, login, logout)
+
+  ▸         Criar router/guards.ts (beforeEach: redireciona não-autenticados)
+
+  ▸         Criar LoginView.vue + LoginForm.vue com validação de campos
+
+  ▸         Criar RegisterView.vue + RegisterForm.vue
+
+  ▸         Testar fluxo completo: register → login → dashboard → logout
+
+            Critério: login funciona end-to-end, token armazenado, rotas protegidas
+
+  ✓         Entrega: Auth completo (frontend + backend) com testes passando e fluxo validado manualmente — Commit: 'feat(auth): complete authentication module with tests'
+  --------- ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  --------- --------------------------------------------------------------------------------------------------------------------------------------------------------
+  S4        CRUD de Tecnologias e API Layer [Fase 2 — Core]
+
+  ▸         Implementar TechnologyController (index, store, show, update, destroy, search)
+
+  ▸         Implementar TechnologyRepositoryInterface + EloquentTechnologyRepository
+
+  ▸         Implementar TechnologyService (criar, atualizar, desativar, busca por trigrama)
+
+  ▸         Configurar índice GIN+pg_trgm em technologies.name para busca eficiente
+
+  ▸         Implementar cache com tags: Cache::tags(['technologies', 'user:'.$id])->remember()
+
+  ▸         Implementar HasCacheInvalidation trait + invalidar em POST/PUT/DELETE
+
+  ▸         Escrever tests/Feature/Technologies/TechnologyCrudTest.php
+
+            Frontend
+
+  ▸         Criar technologies.api.ts e technologies.store.ts (Pinia com isFresh + searchLocal)
+
+  ▸         Criar TechnologyCard.vue, TechnologyForm.vue, TechnologyList.vue
+
+  ▸         Criar TechnologyPicker.vue (autocomplete: searchLocal primeiro, API se necessário)
+
+  ▸         Criar TechnologiesView.vue com listagem e formulário inline
+
+  ▸         Testar: criar, editar, desativar tecnologia; verificar cache invalidado no Redis
+
+            Critério: GET /api/v1/technologies serve do cache após primeira chamada; busca funciona
+
+  ✓         Entrega: CRUD de tecnologias com cache funcional, autocomplete e testes passando — Commit: 'feat(technologies): CRUD with cache tags and autocomplete'
+  --------- --------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  --------- --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  S5        Sessões de Estudo — Parte 1 (CRUD Base) [Fase 2 — Core]
+
+  ▸         Implementar StudySessionController (index, store, show, update, destroy)
+
+  ▸         Implementar StudySessionRepositoryInterface + EloquentStudySessionRepository
+
+  ↳         filtros: technology_id, date_from, date_to, min_duration, mood, status
+
+  ↳         eager loading de technology em todas as queries (sem N+1)
+
+  ▸         Implementar StoreStudySessionRequest com todas as validações
+
+  ▸         Implementar StudySessionResource (duration_formatted via Accessor)
+
+  ▸         Implementar StudySessionDTO (imutável, readonly properties)
+
+  ▸         Implementar StudySessionService::create() — dispara StudySessionCreated
+
+  ▸         Implementar eventos: StudySessionCreated, StudySessionUpdated, StudySessionDeleted
+
+  ▸         Implementar listener InvalidateSessionCache
+
+  ▸         Escrever Feature tests para CRUD completo (index com filtros, store, show, update, delete)
+
+            Frontend
+
+  ▸         Criar sessions.api.ts e sessions.store.ts
+
+  ▸         Criar SessionCard.vue, SessionList.vue, SessionFilters.vue, SessionForm.vue
+
+  ▸         Criar SessionsView.vue com listagem paginada e filtros
+
+            Critério: CRUD funcional; event log mostra StudySessionCreated sendo disparado
+
+  ✓         Entrega: CRUD de sessões funcional com eventos disparando e testes cobrindo todos os endpoints — Commit: 'feat(sessions): base CRUD with events and resource formatting'
+  --------- --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  --------- -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  S6        Sessões — Parte 2 (Timer, Jobs e Analytics) [Fase 2 — Core]
+
+  ▸         Implementar POST /api/v1/study-sessions/start e PATCH /api/v1/study-sessions/{id}/end
+
+  ▸         Implementar GET /api/v1/study-sessions/active (elapsed_seconds calculado no backend)
+
+  ▸         Implementar trigger PostgreSQL de concorrência (máx 1 sessão ativa por usuário)
+
+  ▸         Implementar Aggregators: UserMetricsAggregator, TechMetricsAggregator, DailyMinutesAggregator
+
+  ↳         cada um faz UPSERT no schema analytics.* com dados calculados do schema public.*
+
+  ▸         Implementar RecalculateMetricsJob (ShouldBeUnique, tries, backoff, failed())
+
+  ▸         Implementar listener DispatchMetricsRecalculation
+
+  ▸         Configurar Horizon (config/horizon.php, supervisores por fila)
+
+  ▸         Testar job manualmente: criar sessão → checar analytics.* populado
+
+            Frontend
+
+  ▸         Implementar useSessionTimer.ts com elapsed_seconds inicial do backend
+
+  ▸         Criar SessionTimer.vue (HH:MM:SS ao vivo)
+
+  ▸         Criar ActiveSessionBanner.vue (condicional na View principal)
+
+  ▸         Implementar fluxo start → timer ao vivo → end
+
+            Critério: criar sessão → job roda → analytics.user_metrics populado no banco
+
+  ✓         Entrega: Timer funcional, RecalculateMetricsJob populando analytics.* no banco corretamente — Commit: 'feat(sessions): timer, start/end endpoints, and metrics aggregation'
+  --------- -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
++-----------------------------------------------------------------------------------------------+
+| FASE 3 — Dashboard e Realtime                                                                 |
+|                                                                                               |
+| Semanas 7–10 · Endpoints analytics, Cache completo, WebSocket Reverb, ApexCharts, KPIs, Heatmap |
++-----------------------------------------------------------------------------------------------+
+
+  --------- ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  S7        Endpoints de Analytics e Cache Completo [Fase 3 — Dashboard]
+
+  ▸         Implementar AnalyticsController (dashboard, user-metrics, tech-stats, time-series, weekly, heatmap, recalculate)
+
+  ▸         Implementar AnalyticsRepository (leituras do schema analytics.*)
+
+  ▸         Implementar AnalyticsService com Cache::tags(['analytics', 'user:X'])->remember()
+
+  ▸         Implementar GenerateWeeklySummaryJob + WeeklySummaryAggregator
+
+  ↳         Schedule::job()->weeklyOn(1, '03:00')->withoutOverlapping()->onOneServer()
+
+  ▸         Implementar GET /api/health (e opcionalmente GET /health em web.php) — PostgreSQL, Redis, fila, Reverb
+
+  ▸         Configurar Cache Warming no RecalculateMetricsJob
+
+  ▸         Escrever testes para GET /api/v1/analytics/dashboard (cache HIT vs MISS)
+
+            Validar no Redis: TTLs corretos, tags funcionando, flush por tag
+
+  ↳         redis-cli SELECT 1; KEYS 'laravel_cache:*'; TTL 'laravel_cache:dashboard:uuid'
+
+  ▸         Implementar POST /api/v1/analytics/recalculate (202 Accepted, job na fila)
+
+            Critério: GET /api/v1/analytics/dashboard em <5ms no segundo request (cache HIT)
+
+  ✓         Entrega: Todos os 7 endpoints de analytics funcionando com cache por tags e TTLs corretos — Commit: 'feat(analytics): all endpoints with Redis cache tags and warming'
+  --------- ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  --------- ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  S8        WebSocket com Reverb — Integração Completa [Fase 3 — Dashboard]
+
+  ▸         Configurar Laravel Reverb no Docker (serviço reverb, porta 8080)
+
+  ▸         Implementar MetricsUpdated, MetricsRecalculating, SessionStarted broadcast events
+
+  ↳         broadcastAs() com ponto: '.metrics.updated' (sem prefixo automático)
+
+  ↳         broadcastWith() retornando payload mínimo necessário
+
+  ▸         Implementar listeners: BroadcastMetricsUpdate, BroadcastMetricsRecalculating, BroadcastSessionStarted
+
+  ▸         Atualizar RecalculateMetricsJob: event(MetricsRecalculated) dispara listeners de broadcast
+
+  ▸         Configurar routes/channels.php (autorização do canal dashboard.{userId})
+
+            Frontend
+
+  ▸         Instalar e configurar laravel-echo e pusher-js
+
+  ▸         Criar useWebSocket.ts composable (connect, disconnect, isConnected, event handlers)
+
+  ▸         Criar RealtimeBadge.vue (verde/vermelho baseado em isConnected)
+
+  ▸         Testar ciclo completo: criar sessão → spinner aparece → ~2s → dashboard atualiza
+
+            Critério: sem F5, dashboard reflete nova sessão após ~2 segundos via WebSocket
+
+  ✓         Entrega: WebSocket end-to-end: criar sessão → dashboard atualiza automaticamente sem refresh — Commit: 'feat(websocket): realtime dashboard updates via Reverb broadcasting'
+  --------- ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  --------- --------------------------------------------------------------------------------------------------------------------------------------------------------------
+  S9        Dashboard Completo com ApexCharts [Fase 3 — Dashboard]
+
+  ▸         Criar analytics.store.ts completo (computed granulares, updateFromWebSocket)
+
+  ▸         Criar useDashboard.ts composable (init, polling fallback, visibilitychange)
+
+  ▸         Criar DashboardView.vue (pura — zero lógica, delega para composable)
+
+  ▸         Implementar KpiCards.vue + KpiCard.vue com skeleton loaders
+
+  ▸         Criar LineChart.vue (ApexCharts wrapper com watch para atualização suave)
+
+  ▸         Implementar TimeSeriesWidget.vue (toggle 7d/30d/90d, fetch lazy para 90d)
+
+  ▸         Criar PieChart.vue wrapper
+
+  ▸         Implementar TechDistributionWidget.vue (top 6 + 'Outros', click navega para sessions)
+
+  ▸         Criar BarChart.vue wrapper
+
+  ▸         Implementar WeeklyComparisonWidget.vue
+
+  ▸         Implementar HeatmapWidget.vue (SVG manual 53×7, tooltip, seletor de ano)
+
+  ▸         Testar: atualização via WebSocket reflete nos gráficos (séries reativas / ApexCharts)
+
+            Critério: dashboard com 5 widgets funcionais, animações suaves ao receber WS
+
+  ✓         Entrega: Dashboard completo com 5 widgets, ApexCharts animado e atualização em tempo real — Commit: 'feat(dashboard): complete dashboard with realtime charts'
+  --------- --------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  --------- --------------------------------------------------------------------------------------------------------------------------------------------------------------
+  S10       Polimento UX e Tratamento de Erros [Fase 3 — Dashboard]
+
+  ▸         Implementar ErrorCard.vue com botão 'Tentar novamente' para falhas de fetch
+
+  ▸         Implementar Toast notifications (useToast composable + BaseToast.vue)
+
+  ↳         sucesso em operações (criar sessão), erro de API, reconexão WebSocket
+
+  ▸         Implementar GlobalErrorHandler no Axios (interceptor: 401 → logout, 429 → toast)
+
+  ▸         Criar AppLayout.vue responsivo (sidebar colapsável, header com sessão ativa)
+
+  ▸         Implementar CSS responsivo: breakpoints 1024px (tablet) e 640px (mobile)
+
+  ▸         Corrigir skeleton loaders em todos os widgets
+
+  ▸         Implementar formulário de sessão com validação client-side (antes de enviar)
+
+  ▸         Testar UX: navegação sem reload, feedback visual em todas as ações
+
+  ▸         Revisar todos os endpoints com Postman/Insomnia: testar casos de erro (422, 401, 429)
+
+            Critério: nenhuma ação do usuário fica sem feedback visual; app responsivo em mobile
+
+  ✓         Entrega: App com UX polida: skeletons, toasts, erros tratados, layout responsivo — Commit: 'feat(ux): error handling, toasts, responsive layout, and polish'
+  --------- --------------------------------------------------------------------------------------------------------------------------------------------------------------
+
++-----------------------------------------------------------------------------------------+
+| FASE 4 — Qualidade e Portfólio                                                          |
+|                                                                                         |
+| Semanas 11–13 · Testes, CI/CD GitHub Actions, README profissional, Deploy, Documentação |
++-----------------------------------------------------------------------------------------+
+
+  --------- -----------------------------------------------------------------------------------------------------------------------------------------------------
+  S11       Cobertura de Testes e CI/CD [Fase 4 — Portfólio]
+
+            Backend — Feature Tests
+
+  ▸         Escrever Feature tests para todos os grupos de endpoints (Auth, Technologies, Sessions, Analytics)
+
+  ↳         use Event::fake() e Queue::fake() em testes de criação de sessão
+
+  ↳         testar cache invalidation: criar sessão → checar cache removido
+
+            Backend — Unit Tests
+
+  ▸         Escrever Unit tests para UserMetricsAggregator (streak, totais, médias)
+
+  ▸         Escrever Unit tests para RecalculateMetricsJob (mocks dos aggregators)
+
+            Frontend — Vitest
+
+  ▸         Testar analytics.store.ts: fetchDashboard, updateFromWebSocket, isFresh
+
+  ▸         Testar useSessionTimer.ts: elapsed_seconds, formatação HH:MM:SS
+
+            CI/CD GitHub Actions
+
+  ▸         Criar .github/workflows/backend-ci.yml (PHPUnit + Pint + Larastan level 5)
+
+  ▸         Criar .github/workflows/frontend-ci.yml (Vitest + ESLint + tsc --noEmit)
+
+  ▸         Configurar secrets do GitHub: SENTRY_DSN, DOCKERHUB_TOKEN (se usar)
+
+            Critério: CI verde no push para main; cobertura de testes >70% nas camadas críticas
+
+  ✓         Entrega: Pipeline CI verde com PHPUnit, Vitest, Linting e Type Check passando — Commit: 'test(all): comprehensive test coverage and CI/CD pipeline'
+  --------- -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  --------- ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  S12       README, Documentação e Apresentação Final [Fase 4 — Portfólio]
+
+  ▸         Escrever README.md profissional (estrutura detalhada abaixo)
+
+  ↳         Hero: título, badges de CI, link de demo
+
+  ↳         Arquitetura: diagrama texto + decisões de design
+
+  ↳         Stack: tabela com cada tecnologia e por que foi escolhida
+
+  ↳         Features: lista completa com screenshots (GIF se possível)
+
+  ↳         Setup local: make dev com pré-requisitos claros
+
+  ↳         API docs: link para Postman collection exportada
+
+  ▸         Exportar Postman Collection com todos os 31 endpoints documentados
+
+  ▸         Criar seed de dados realistas para demo: DemoDataSeeder com 6 meses de sessões
+
+  ▸         Revisar TODOS os endpoints: verificar que responses seguem o envelope padrão
+
+  ▸         Adicionar comentários PHPDoc nas classes principais (Controller, Service, Job)
+
+  ▸         Fazer deploy em VPS (Railway, Fly.io, ou DigitalOcean App Platform)
+
+  ▸         Testar deploy: make dev em produção, verificar SSL, WebSocket via wss://
+
+  ▸         Gravar GIF do dashboard em funcionamento para o README
+
+            Critério: clone + make dev → app funcional em menos de 10 minutos
+
+  ✓         Entrega: README profissional, deploy funcional, Postman collection pública, demo acessível — Commit: 'docs: comprehensive README, demo data, and production deploy'
+  --------- ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Checklist de Aceite Final
+
+Critérios objetivos para considerar o projeto pronto para portfólio:
+
+Funcionalidade
+
+-   [ ] Registro e login funcionam com token Sanctum
+
+-   [ ] Tecnologias: criar, editar, desativar, buscar por autocomplete
+
+-   [ ] Sessões: CRUD completo com filtros; timer ao vivo
+
+-   [ ] Sessão ativa: máximo 1 por usuário (trigger PostgreSQL)
+
+-   [ ] Métricas recalculadas após cada sessão (RecalculateMetricsJob)
+
+-   [ ] Dashboard atualiza sem F5 após criar sessão (~2 segundos via WebSocket)
+
+-   [ ] Heatmap anual exibe atividade de estudo (seletor de ano)
+
+-   [ ] GET /api/health retorna status de todos os serviços (e GET /up para probe mínimo do Laravel)
+
+Qualidade Técnica
+
+-   [ ] CI GitHub Actions verde (backend + frontend)
+
+-   [ ] Nenhum N+1 query (logs, `DB::listen` temporário, ou Telescope opcional em dev)
+
+-   [ ] GET /api/v1/analytics/dashboard responde em <5ms no segundo request (Redis HIT)
+
+-   [ ] Rate limiting ativo: POST /api/v1/auth/login limitado a 3/min por IP (throttle:login)
+
+-   [ ] WebSocket reconecta automaticamente após queda
+
+-   [ ] Todos os erros retornam o envelope padrão {success:false, error:{code, message}}
+
+-   [ ] Tipos TypeScript sem erros (tsc --noEmit passa)
+
+Portfólio
+
+-   [ ] README com arquitetura explicada e decisões técnicas justificadas
+
+-   [ ] GIF ou vídeo do dashboard em funcionamento
+
+-   [ ] Postman collection com todos os 31 endpoints
+
+-   [ ] DemoDataSeeder gera 6 meses de dados realistas
+
+-   [ ] Deploy acessível publicamente com URL
+
+-   [ ] git log conta a história do desenvolvimento (commits semânticos diários)
+
+-   [ ] Sem credenciais no repositório (verificar .gitignore e .env.example)
+
++---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| SOBRE O RITMO E AJUSTES                                                                                                                                                                                                         |
++---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Se você atrasar: nunca pule a implementação do core (Fases 1 e 2). Se precisar cortar algo, corte da Fase 4 (CI/CD pode ser simplificado, README pode ser mais curto). O código funcionando pesa mais que documentação.         |
+|                                                                                                                                                                                                                                 |
+| Se você adiantar: use o tempo extra para adicionar testes e documentar decisões arquiteturais no README. Recrutadores técnicos leem código e commits, não apenas o README.                                                      |
+|                                                                                                                                                                                                                                 |
+| Bloqueios técnicos: Reserve sexta-feira como dia de debug. Se uma feature está travada há mais de 2 dias, implemente uma versão mais simples e adicione um TODO com o que você tentou. Progresso visível > perfeição invisível. |
+|                                                                                                                                                                                                                                 |
+| Commits diários: mesmo que seja um 'chore: fix typo in README' ou 'wip: debugging WebSocket reconnection'. O histórico mostra consistência de trabalho, que é o que diferencia um portfólio de um projeto abandonado.           |
++---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+Rotina de Verificação Diária (5 minutos)
+
++------------------------------------------------------------------------+
+| # Antes de começar a sessão de desenvolvimento:                        |
+|                                                                        |
+| make dev # Subir containers                                            |
+|                                                                        |
+| docker ps # Verificar que todos estão healthy                          |
+|                                                                        |
+| # Após implementar um endpoint:                                        |
+|                                                                        |
+| php artisan test tests/Feature/ # Rodar feature tests                  |
+|                                                                        |
+| php artisan pint --test # Verificar code style (sem fixar)             |
+|                                                                        |
+| # Verificar cache funcionando:                                         |
+|                                                                        |
+| docker exec -it studytrack_redis redis-cli -n 1 KEYS 'laravel_cache:*' |
+|                                                                        |
+| # Verificar jobs processando:                                          |
+|                                                                        |
+| docker exec -it studytrack_horizon php artisan horizon:status          |
+|                                                                        |
+| # Antes do commit:                                                     |
+|                                                                        |
+| php artisan test # Todos os testes passando                            |
+|                                                                        |
+| npm run type-check # TypeScript sem erros                              |
+|                                                                        |
+| npm run lint # ESLint sem warnings                                     |
+|                                                                        |
+| git log --oneline -5 # Revisar commits recentes                        |
++------------------------------------------------------------------------+

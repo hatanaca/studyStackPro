@@ -3,7 +3,7 @@
 
 services:
   pgadmin:
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:8
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@studytrack.dev
       PGADMIN_DEFAULT_PASSWORD: admin
@@ -11,10 +11,14 @@ services:
       - "5050:80"
     depends_on:
       - postgres
+    networks:
+      - app
     restart: unless-stopped
 
   mailpit:
-    image: axllent/mailpit:latest
+    image: axllent/mailpit:v1
     ports:
       - "8025:8025"
+    networks:
+      - app
     restart: unless-stopped

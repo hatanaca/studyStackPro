@@ -1,0 +1,531 @@
++-----------------------------------------------------------------------------------------------+
+| STUDYTRACK PRO                                                                                |
+|                                                                                               |
+| Checklist de Nível Profissional                                                               |
+|                                                                                               |
+| 10 áreas · +120 itens · Critérios objetivos · Verificadores de terminal · Autoavaliação final |
+|                                                                                               |
+| CRÍTICO · ALTO · MÉDIO · BAIXO — cada item com nível de prioridade para portfólio             |
++-----------------------------------------------------------------------------------------------+
+
++-----------------------------------------------------------+----------------------------------------------------------+-----------------------------------------+---------------------------------------+
+| CRÍTICO                                                   | ALTO                                                     | MÉDIO                                   | BAIXO                                 |
+|                                                           |                                                          |                                         |                                       |
+| Bug de segurança ou quebra funcional. Bloqueia aprovação. | Decisão arquitetural visível. Impacta avaliação técnica. | Boas práticas esperadas em nível pleno. | Polimento e diferencial de portfólio. |
++-----------------------------------------------------------+----------------------------------------------------------+-----------------------------------------+---------------------------------------+
+
+1. Infraestrutura e Docker
+
+  ------------------- --------- ------------------------------------------------------------------------------------------------------------------------------------
+  Docker e Ambiente             
+
+  ☐                   CRÍTICO   docker-compose.yml define todos os 7 serviços: nginx, php-fpm, reverb, horizon, scheduler, postgres, redis — sem serviços faltando
+
+  ☐                   CRÍTICO   Nenhuma credencial hardcoded — tudo via variáveis de ambiente (.env) — verificar com git grep 'password' src/
+
+  ☐                   CRÍTICO   .env.example existe e contém TODAS as variáveis necessárias com valores de exemplo
+
+  ☐                   CRÍTICO   .gitignore inclui .env, storage/logs, vendor, node_modules
+
+  ☐                   ALTO      Health checks nos serviços do docker-compose (postgres, redis) — --health-cmd pg_isready
+
+  ☐                   ALTO      Makefile com comandos: make dev, make stop, make shell-php, make shell-vue, make test
+
+  ☐                   ALTO      Volumes persistentes para postgres e redis (dados sobrevivem ao docker compose down)
+
+  ☐                   ALTO      Nginx configurado com gzip, cache de assets estáticos, proxy para php-fpm e reverb
+
+  ☐                   MÉDIO     Dockerfiles com multi-stage build (build stage separado do runtime)
+
+  ☐                   MÉDIO     Redis configurado com maxmemory e allkeys-lru policy no redis.conf
+
+  ☐                   MÉDIO     PHP-FPM configurado com pool adequado (pm.max_children ajustado)
+
+  ☐                   BAIXO     Variável APP_ENV diferente entre .env.example (local) e .env.production (prod)
+  ------------------- --------- ------------------------------------------------------------------------------------------------------------------------------------
+
+  ----------------------------- --------- -------------------------------------------------------------------------------------------------------------------
+  Banco de Dados (PostgreSQL)             
+
+  ☐                             CRÍTICO   Schema public.* e analytics.* criados em migrations separadas e ordenadas
+
+  ☐                             CRÍTICO   Trigger prevent_concurrent_sessions: máx 1 sessão ativa por usuário — verificar: INSERT de 2ª sessão ativa → erro
+
+  ☐                             CRÍTICO   Trigger validate_session_times: ended_at > started_at sempre — dupla proteção além do Form Request
+
+  ☐                             CRÍTICO   Coluna duration_min é GENERATED ALWAYS AS (PostgreSQL) — nunca inserida pela app
+
+  ☐                             ALTO      Índices em todas as colunas usadas em WHERE e ORDER BY: user_id, technology_id, started_at, ended_at
+
+  ☐                             ALTO      Índice GIN + pg_trgm em technologies.name para busca por similaridade — CREATE EXTENSION pg_trgm
+
+  ☐                             ALTO      UUIDs v4 como chave primária em todas as tabelas (nunca auto-increment)
+
+  ☐                             ALTO      Timestamps ISO 8601 UTC em todas as colunas de data
+
+  ☐                             ALTO      Seeders realistas: DemoDataSeeder com 6 meses de sessões para demonstração
+
+  ☐                             MÉDIO     analytics.user_metrics tem índice UNIQUE em user_id (um registro por usuário)
+
+  ☐                             MÉDIO     Migrations rodam sem erro em banco limpo: php artisan migrate:fresh --seed
+
+  ☐                             BAIXO     Comentários nas migrations explicando decisões não-óbvias (ex: por que GENERATED STORED)
+  ----------------------------- --------- -------------------------------------------------------------------------------------------------------------------
+
+2. Backend Laravel — Arquitetura
+
+  ------------------------- --------- ------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Estrutura e Organização             
+
+  ☐                         CRÍTICO   Toda a lógica de negócio está nos Services, nunca nos Controllers — Controller: recebe request, chama service, retorna resource
+
+  ☐                         CRÍTICO   Repositórios implementam interfaces (não usar Eloquent diretamente no Service) — EloquentStudySessionRepository implements StudySessionRepositoryInterface
+
+  ☐                         CRÍTICO   Injeção de dependência via type hints nos construtores (não new Class() dentro de métodos)
+
+  ☐                         ALTO      DTOs imutáveis com readonly properties para transporte de dados validados entre camadas
+
+  ☐                         ALTO      API versionada: prefix /api/v1 em todas as rotas, grupos nomeados
+
+  ☐                         ALTO      Namespace de módulos: app/Modules/{Auth,StudySessions,Technologies,Analytics}/
+
+  ☐                         ALTO      HasApiResponse trait centraliza formatação de respostas de sucesso e erro
+
+  ☐                         ALTO      Exceções de domínio customizadas (ConcurrentSessionException, etc.) com código semântico
+
+  ☐                         MÉDIO     BaseModel.php com UUID, serializeDate() e $guarded vazio (usar $fillable)
+
+  ☐                         MÉDIO     AppServiceProvider registra binds interface → implementação concreta
+
+  ☐                         MÉDIO     Nenhuma query N+1: usar eager loading with('technology') em listagens de sessões
+
+  ☐                         BAIXO     PHPDoc nas classes públicas: @param, @return, @throws documentados
+  ------------------------- --------- ------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  --------------------------- --------- -----------------------------------------------------------------------------------------------------------
+  API e Tratamento de Erros             
+
+  ☐                           CRÍTICO   Handler.php renderiza todos os erros como JSON com envelope {success:false, error:{code,message,details}}
+
+  ☐                           CRÍTICO   Respostas 401 NUNCA revelam se o email existe ou não (mensagem genérica) — prevenção de user enumeration
+
+  ☐                           CRÍTICO   Respostas 403 em tentativa de acesso cross-user (não 404 — info leak)
+
+  ☐                           CRÍTICO   Form Requests validam propriedade do technology_id (pertence ao usuário autenticado)
+
+  ☐                           ALTO      EnsureJsonResponse middleware garante Content-Type: application/json em todos os erros
+
+  ☐                           ALTO      Rate limiting: login 3/min IP, register 5/min IP; leituras 60/min; escrita geral 30/min; ver AppServiceProvider + api.php + throttle.sliding em sessões
+
+  ☐                           ALTO      Todos os endpoints retornam o mesmo envelope de sucesso {success:true, data:{...}}
+
+  ☐                           ALTO      Paginação consistente: ?page=1&per_page=15 com meta:{total,per_page,current_page,last_page}
+
+  ☐                           ALTO      Resposta 202 Accepted para POST /api/v1/analytics/recalculate (operação assíncrona)
+
+  ☐                           MÉDIO     Códigos de erro semânticos em SNAKE_UPPER: VALIDATION_ERROR, CONCURRENT_SESSION, NOT_FOUND
+
+  ☐                           MÉDIO     Logs estruturados: contexto userId e requestId em todos os erros de domínio
+
+  ☐                           BAIXO     GET /api/health (e opcionalmente GET /health web) valida PostgreSQL, Redis, fila e Reverb
+  --------------------------- --------- -----------------------------------------------------------------------------------------------------------
+
+  ------------- --------- -----------------------------------------------------------------------------------------------
+  Cache Redis             
+
+  ☐             CRÍTICO   Cache NUNCA aplicado no Controller — apenas no Service via Cache::tags()->remember()
+
+  ☐             CRÍTICO   Cache Tags usados em TODOS os puts: sem tags, flush é impossível sem conhecer todas as chaves
+
+  ☐             CRÍTICO   RecalculateMetricsJob invalida via tag flush APÓS o UPSERT, nunca antes
+
+  ☐             ALTO      Redis multi-database: DB1 cache, DB2 sessions, DB3 queue, DB4 horizon
+
+  ☐             ALTO      TTLs por temperatura: analytics 5min, timeseries 15min, tecnologias 1h, heatmap 1h
+
+  ☐             ALTO      Cache Warming: job popula Redis após invalidar, evitando cache miss no próximo request
+
+  ☐             ALTO      HasCacheInvalidation trait centraliza invalidateAnalyticsCache(), invalidateTechCache() etc.
+
+  ☐             MÉDIO     Cache::lock() previne cache stampede em GET /api/v1/analytics/dashboard com múltiplos workers
+
+  ☐             MÉDIO     Rate limiting usa Redis como backend (ThrottleRequests usa driver Redis, não memória)
+
+  ☐             BAIXO     Verificação via redis-cli: TTLs corretos, tags funcionando, HIT no segundo request
+  ------------- --------- -----------------------------------------------------------------------------------------------
+
+3. Eventos, Jobs e WebSocket
+
+  --------------------------- --------- -------------------------------------------------------------------------------------------------------
+  Event-Driven Architecture             
+
+  ☐                           CRÍTICO   Controllers NUNCA disparam jobs diretamente — apenas via event() após o Service persistir
+
+  ☐                           CRÍTICO   Listeners são burros: apenas limpam cache, despacham jobs ou emitem broadcast — sem lógica de negócio
+
+  ☐                           CRÍTICO   StudySessionDeleted carrega value objects, não Eloquent model (modelo já deletado ao disparar)
+
+  ☐                           ALTO      EventServiceProvider com lista explícita de listeners (sem autodiscovery — performance)
+
+  ☐                           ALTO      Ordem dos listeners importa: InvalidateSessionCache ANTES de DispatchMetricsRecalculation
+
+  ☐                           ALTO      RecalculateMetricsJob implementa ShouldBeUnique com uniqueId() = userId
+
+  ☐                           ALTO      $tries=3, $backoff=[30,60,120], $timeout=30 configurados em todos os jobs críticos
+
+  ☐                           ALTO      failed() method em todos os jobs: Log::error com contexto completo (userId, attempt, trace)
+
+  ☐                           MÉDIO     ->delay(now()->addSeconds(2)) no dispatch do job: agrupa múltiplos eventos rápidos
+
+  ☐                           MÉDIO     Horizon configurado com supervisores por fila: fila 'metrics' com 2-8 workers auto-scale
+
+  ☐                           MÉDIO     GenerateWeeklySummaryJob agendado: ->weeklyOn(1, '03:00')->withoutOverlapping()->onOneServer()
+
+  ☐                           BAIXO     Horizon Dashboard protegido por gate: apenas admin acessa /horizon em produção
+  --------------------------- --------- -------------------------------------------------------------------------------------------------------
+
+  ---------------------------- --------- ------------------------------------------------------------------------------------------------
+  WebSocket (Laravel Reverb)             
+
+  ☐                            CRÍTICO   Canal privado dashboard.{userId}: usuário só recebe seus próprios eventos
+
+  ☐                            CRÍTICO   routes/channels.php autoriza canal: (string)$user->id === (string)$userId
+
+  ☐                            ALTO      broadcastAs() com ponto no início: '.metrics.updated' (sem prefixo App\\Events automático)
+
+  ☐                            ALTO      broadcastWith() retorna payload mínimo — não serializar o model Eloquent inteiro
+
+  ☐                            ALTO      Sequência correta: .metrics.recalculating (spinner) → job roda → .metrics.updated (dados)
+
+  ☐                            ALTO      elapsed_seconds calculado no backend (NOW() - started_at) e enviado no evento .session.started
+
+  ☐                            MÉDIO     Frontend desconecta WebSocket no onUnmounted (evita memory leak entre navegações)
+
+  ☐                            MÉDIO     RealtimeBadge mostra status da conexão: verde (conectado), vermelho (desconectado)
+
+  ☐                            MÉDIO     Polling de fallback (2 minutos) quando WebSocket está desconectado
+
+  ☐                            BAIXO     Reconexão automática gerenciada pelo Pusher/Echo (sem implementação manual)
+  ---------------------------- --------- ------------------------------------------------------------------------------------------------
+
+4. Frontend Vue 3 + TypeScript
+
+  ------------------------------ --------- ------------------------------------------------------------------------------------------------------------------------
+  Arquitetura e Estado (Pinia)             
+
+  ☐                              CRÍTICO   Widgets NUNCA fazem fetch próprio — apenas leem store via computed properties — antipadrão: widget com onMounted→fetch
+
+  ☐                              CRÍTICO   Pinia stores são a única fonte da verdade — sem props drilling de dados de API
+
+  ☐                              CRÍTICO   updateFromWebSocket() substitui estado do store sem nenhum request HTTP adicional
+
+  ☐                              ALTO      isFresh computed com lastFetchAt + TTL de 5min: evita refetch desnecessário
+
+  ☐                              ALTO      fetchDashboard(force=true) disponível para refresh manual pelo usuário
+
+  ☐                              ALTO      Computed granulares: userMetrics, techMetrics, timeSeries — widgets consomem o mínimo necessário
+
+  ☐                              ALTO      Stores exportam apenas o necessário (readonly via computed, não refs mutáveis)
+
+  ☐                              MÉDIO     useDashboard() composable encapsula init, WebSocket, polling e visibilitychange
+
+  ☐                              MÉDIO     document.visibilitychange: refetch quando usuário retorna à aba com dados stale
+
+  ☐                              MÉDIO     technologies.store com searchLocal() para autocomplete sem chamada à API
+
+  ☐                              BAIXO     Nenhum localStorage/sessionStorage para dados de domínio (apenas token de auth)
+  ------------------------------ --------- ------------------------------------------------------------------------------------------------------------------------
+
+  -------------------- --------- --------------------------------------------------------------------------------------------
+  TypeScript e Tipos             
+
+  ☐                    CRÍTICO   tsc --noEmit passa sem erros em CI (zero any implícito) — npm run type-check no pipeline
+
+  ☐                    CRÍTICO   Interfaces para todos os contratos de API: ApiResponse<T>, DashboardData, UserMetrics etc.
+
+  ☐                    CRÍTICO   Props de componentes tipados com defineProps<Interface>() — sem any
+
+  ☐                    ALTO      Tipos de emits declarados: defineEmits<{(e:'event-name', payload: Type): void}>()
+
+  ☐                    ALTO      src/types/domain.types.ts e api.types.ts separados (domínio ≠ transporte)
+
+  ☐                    ALTO      Generics em funções utilitárias (formatDuration, formatDate etc.)
+
+  ☐                    MÉDIO     tsconfig.json com strict:true, noImplicitAny:true, strictNullChecks:true
+
+  ☐                    MÉDIO     Enums ou union types para valores constantes (mood: 1|2|3|4|5, period: '7d'|'30d'|'90d')
+
+  ☐                    BAIXO     Nenhum @ts-ignore no código de produção
+  -------------------- --------- --------------------------------------------------------------------------------------------
+
+  ------------------ --------- --------------------------------------------------------------------------------------------------
+  Componentes e UX             
+
+  ☐                  CRÍTICO   Skeleton loaders em TODOS os widgets — nenhum estado de loading com spinner centralizado
+
+  ☐                  CRÍTICO   Nenhuma ação do usuário sem feedback visual (loading state ou toast de confirmação)
+
+  ☐                  ALTO      ApexCharts: séries/options reativas (props) — animação suave ao atualizar dados
+
+  ☐                  ALTO      onUnmounted limpa listeners/timers dos wrappers de gráfico (evita memory leak)
+
+  ☐                  ALTO      TechDistributionWidget agrupa top 6 + 'Outros' (pizza com 15 fatias é ilegível)
+
+  ☐                  ALTO      HeatmapWidget: SVG manual 53×7, células com cores de intensidade, tooltip ao hover
+
+  ☐                  ALTO      Layout responsivo: 4 colunas KPI (desktop) → 2 (tablet) → 1 (mobile)
+
+  ☐                  MÉDIO     ActiveSessionBanner condicional: aparece apenas com sessão ativa, com timer HH:MM:SS
+
+  ☐                  MÉDIO     ErrorCard.vue com botão 'Tentar novamente' para falhas de fetch
+
+  ☐                  MÉDIO     Toast notifications para sucesso/erro em operações CRUD
+
+  ☐                  MÉDIO     Click na pizza de distribuição navega para /sessions?technology_id=X
+
+  ☐                  BAIXO     BaseCard.vue reutilizável com slots para title e actions
+  ------------------ --------- --------------------------------------------------------------------------------------------------
+
+5. Segurança
+
+  ---------------------------- --------- --------------------------------------------------------------------------------------------
+  Autenticação e Autorização             
+
+  ☐                            CRÍTICO   Todos os endpoints de recursos exigem auth:sanctum — sem rota pública com dados de usuário
+
+  ☐                            CRÍTICO   Cada recurso verifica user_id === $request->user()->id (sem confiar apenas no UUID da URL)
+
+  ☐                            CRÍTICO   POST /api/v1/auth/change-password revoga TODOS os tokens do usuário (não apenas o atual)
+
+  ☐                            CRÍTICO   Tokens Sanctum com escopo mínimo — sem abilities desnecessários
+
+  ☐                            ALTO      Rate limiting brute-force em POST /api/v1/auth/login: 3 tentativas/min por IP (throttle:login)
+
+  ☐                            ALTO      Mensagem de erro de login genérica: 'Credenciais inválidas' (não 'Email não encontrado')
+
+  ☐                            ALTO      Autorização de canal WebSocket: routes/channels.php valida userId === $user->id
+
+  ☐                            MÉDIO     CORS configurado para aceitar apenas origem do frontend (não '*' em produção)
+
+  ☐                            MÉDIO     Headers de segurança no Nginx: X-Content-Type-Options, X-Frame-Options, Referrer-Policy
+
+  ☐                            BAIXO     APP_DEBUG=false em produção (verificar no .env.production)
+  ---------------------------- --------- --------------------------------------------------------------------------------------------
+
+6. Testes
+
+  ----------------------- --------- ----------------------------------------------------------------------------------------------------------
+  Cobertura e Qualidade             
+
+  ☐                       CRÍTICO   Feature tests rodando contra PostgreSQL real (não SQLite) — phpunit.xml: DB_CONNECTION=pgsql
+
+  ☐                       CRÍTICO   Testes de autorização cross-user: userB não acessa recursos do userA (retorna 403)
+
+  ☐                       CRÍTICO   Teste de sessão concorrente: 2ª sessão ativa retorna 409 CONCURRENT_SESSION
+
+  ☐                       ALTO      php artisan test passa completamente sem nenhum teste pulado ou falhando
+
+  ☐                       ALTO      Event::fake() + Queue::fake() em testes de criação de sessão (isola efeitos colaterais)
+
+  ☐                       ALTO      Unit tests para UserMetricsAggregator: streak zero, N dias, gap, personal best preservado
+
+  ☐                       ALTO      Unit tests para RecalculateMetricsJob: 3 aggregators chamados, evento disparado, failed() loga
+
+  ☐                       ALTO      Vitest para analytics.store: fetchDashboard, isFresh, updateFromWebSocket, computed streak
+
+  ☐                       ALTO      Vitest para useSessionTimer: init com elapsed do server, incremento, cleanup no unmount
+
+  ☐                       MÉDIO     Teste de cache: criar sessão → verificar cache analytics removido — Cache::tags(...)->get() retorna null
+
+  ☐                       MÉDIO     Teste que dashboard é servido do cache (zero queries no segundo request)
+
+  ☐                       BAIXO     Cobertura mínima de 70% nas camadas app/Modules/ e app/Jobs/
+  ----------------------- --------- ----------------------------------------------------------------------------------------------------------
+
+7. CI/CD e Qualidade de Código
+
+  -------------------------- --------- ------------------------------------------------------------------------------------------
+  GitHub Actions e Linting             
+
+  ☐                          CRÍTICO   Pipeline CI backend: PHPUnit + Pint + Larastan level 5 no push para main/develop
+
+  ☐                          CRÍTICO   Pipeline CI frontend: Vitest + ESLint + tsc --noEmit + npm run build
+
+  ☐                          CRÍTICO   Ambos os pipelines ficam VERDES antes de considerar o projeto pronto
+
+  ☐                          ALTO      Laravel Pint configurado com preset PSR-12 (./vendor/bin/pint --test no CI)
+
+  ☐                          ALTO      ESLint configurado com @typescript-eslint, vue3-recommended, sem warnings ignorados
+
+  ☐                          ALTO      npm run build no CI: garante que não há erros que só aparecem no bundle de produção
+
+  ☐                          MÉDIO     Git hooks (husky): pre-commit roda Pint + ESLint; commit-msg valida Conventional Commits
+
+  ☐                          MÉDIO     Conventional Commits desde o primeiro commit: feat(), fix(), chore(), docs(), test()
+
+  ☐                          MÉDIO     git log --oneline mostra progressão clara do desenvolvimento (commits diários)
+
+  ☐                          BAIXO     Badge de CI no README (shields.io com link para GitHub Actions)
+  -------------------------- --------- ------------------------------------------------------------------------------------------
+
+8. Qualidade de Portfólio
+
+  ----------------------- --------- -------------------------------------------------------------------------------------------------
+  README e Documentação             
+
+  ☐                       CRÍTICO   README.md com título, badges de CI e link de demo funcionando logo no topo
+
+  ☐                       CRÍTICO   Seção 'Sobre o projeto': o que o sistema faz, para quem e por quê foi construído
+
+  ☐                       CRÍTICO   Seção 'Setup local': make dev funcional em menos de 10 minutos com pré-requisitos claros
+
+  ☐                       ALTO      Seção 'Arquitetura': diagrama de componentes + decisões técnicas justificadas
+
+  ☐                       ALTO      Seção 'Stack': tabela com cada tecnologia e MOTIVAÇÃO para a escolha (não só o nome)
+
+  ☐                       ALTO      GIF ou vídeo curto do dashboard em funcionamento (dashboard updating em tempo real)
+
+  ☐                       ALTO      Postman Collection exportada com todos os 31 endpoints documentados e disponível no repo
+
+  ☐                       MÉDIO     DemoDataSeeder gera 6 meses de dados realistas (usuário demo@studytrack.local)
+
+  ☐                       MÉDIO     Seção 'Decisões de design': por que schemas separados, por que event-driven, por que cache tags
+
+  ☐                       MÉDIO     CHANGELOG.md ou releases no GitHub para mostrar evolução do projeto
+
+  ☐                       BAIXO     Documentação de cada módulo com comentários PHPDoc nas interfaces e classes públicas
+  ----------------------- --------- -------------------------------------------------------------------------------------------------
+
+  ----------------------- --------- -------------------------------------------------------------------------------------------
+  Deploy e Demonstração             
+
+  ☐                       CRÍTICO   Deploy acessível publicamente com URL (Railway, Fly.io, DigitalOcean App Platform ou VPS)
+
+  ☐                       CRÍTICO   HTTPS configurado (SSL obrigatório — sem deploy HTTP-only)
+
+  ☐                       CRÍTICO   WebSocket funcionando via wss:// em produção (não apenas ws:// local)
+
+  ☐                       ALTO      APP_ENV=production, APP_DEBUG=false, APP_KEY único em produção
+
+  ☐                       ALTO      Dados de demo pré-carregados: recrutador consegue explorar sem criar conta
+
+  ☐                       ALTO      Response time do dashboard < 200ms em produção (verificar com Network DevTools)
+
+  ☐                       MÉDIO     Logs de produção funcionando: erros aparecem em storage/logs ou serviço de log externo
+
+  ☐                       MÉDIO     Horizon Dashboard acessível (protegido por autenticação admin)
+
+  ☐                       BAIXO     Monitoramento básico: GET /api/health retorna 200 em produção (quando dependências OK)
+  ----------------------- --------- -------------------------------------------------------------------------------------------
+
+9. Autoavaliação Técnica
+
+Execute esses comandos de verificação para confirmar objetivamente que cada camada está funcionando como esperado:
+
+  ---------------- ------------------------------------------------------ ----------------------------------------------------------------------
+  Área             Nível esperado                                         Como verificar
+
+  Banco de dados   Triggers funcionam; analytics.* populado após sessão   INSERT 2ª sessão ativa → error; SELECT * FROM analytics.user_metrics
+
+  Cache Redis      HIT no 2º request; tags invalidam tudo                 redis-cli SELECT 1; KEYS '*'; TTL 'laravel_cache:dashboard:uuid'
+
+  Event pipeline   Evento disparado; job enfileirado na fila certa        php artisan test --filter=StudySessionCrudTest
+
+  WebSocket        Criar sessão → dashboard atualiza sem F5               Abrir dashboard; criar sessão em outra aba; verificar animação
+
+  Segurança        userB não acessa sessão de userA                       php artisan test --filter=AuthTest; testar 403 manual
+
+  CI/CD            Ambas as pipelines verdes                              git push → verificar Actions tab no GitHub
+
+  TypeScript       Zero erros de tipo                                     npm run type-check (deve sair com código 0)
+
+  Performance      Cache HIT < 5ms                                        curl -w '%{time_total}' /api/v1/analytics/dashboard (2x)
+  ---------------- ------------------------------------------------------ ----------------------------------------------------------------------
+
++------------------------------------------------------------------------+
+| # Comandos de verificação rápida — rodar antes de considerar pronto    |
+|                                                                        |
+| # 1. Banco: migrations sem erro em banco limpo                         |
+|                                                                        |
+| php artisan migrate:fresh --seed                                       |
+|                                                                        |
+| # 2. Testes: todos passando                                            |
+|                                                                        |
+| php artisan test                                                       |
+|                                                                        |
+| npm run test:coverage                                                  |
+|                                                                        |
+| # 3. Tipos: zero erros TypeScript                                      |
+|                                                                        |
+| npm run type-check                                                     |
+|                                                                        |
+| # 4. Linting                                                           |
+|                                                                        |
+| vendor/bin/pint --test && npm run lint                                 |
+|                                                                        |
+| # 5. Build de produção: sem erros                                      |
+|                                                                        |
+| npm run build                                                          |
+|                                                                        |
+| # 6. Redis: verificar cache funcionando                                |
+|                                                                        |
+| docker exec -it studytrack_redis redis-cli -n 1 KEYS 'laravel_cache:*' |
+|                                                                        |
+| # 7. Horizon: workers ativos                                           |
+|                                                                        |
+| php artisan horizon:status                                             |
+|                                                                        |
+| # 8. Segurança: nenhuma credencial no repo                             |
+|                                                                        |
+| git grep -r 'password' --include='*.php' src/                          |
+|                                                                        |
+| git grep -r 'secret' --include='*.php' src/                            |
++------------------------------------------------------------------------+
+
+10. Diferenciais de Nível Sênior
+
+Estes itens não são obrigatórios para o projeto funcionar, mas são o que separa um portfólio que impressiona de um que é apenas 'funcional':
+
+  -------------------------------------------------------------------------------------------------- --------- ------------------------------------------------------------------------------------------------------------------------------------------
+  O que Poucos Fazem e Recrutadores Notam                                                                      
+
+  ☐                                                                                                  BAIXO     Justificativa escrita para cada decisão arquitetural relevante no README — 'Por que schemas separados? Por que não recalcular síncrono?'
+
+  ☐                                                                                                  BAIXO     Testes de casos negativos superam testes de casos positivos (2:1 ratio mínimo)
+
+  ☐                                                                                                  BAIXO     Commits semânticos contam a história: dá para entender o desenvolvimento só pelo git log
+
+  ☐                                                                                                  BAIXO     Nenhum TODO ou FIXME no código principal (mover para GitHub Issues)
+
+  ☐                                                                                                  BAIXO     Tratamento explícito de race conditions (ShouldBeUnique, Cache::lock, trigger PostgreSQL)
+
+  ☐                                                                                                  BAIXO     Frontend não tem nenhum console.log ou console.error no código de produção
+
+  ☐                                                                                                  BAIXO     Memory leaks prevenidos explicitamente: onUnmounted limpa timers, WebSocket e event listeners
+
+  ☐                                                                                                  BAIXO     Skeleton loaders com animação shimmer (não spinner global — UX profissional)
+
+  ☐                                                                                                  BAIXO     Resposta de erro 401 não revela se o email existe (prevenção de user enumeration documentada no README)
+
+  ☐                                                                                                  BAIXO     GET /api/health verifica banco, Redis e WebSocket — não apenas retorna 200
+
+  ☐                                                                                                  BAIXO     DemoDataSeeder cria dados com distribuição realista (nem todos os dias, variação de duração)
+
+  ☐                                                                                                  BAIXO     Cada componente tem responsabilidade única e nome que descreve exatamente o que faz
+
+  Esses itens mostram que você pensa como um engenheiro, não como alguém que implementa requisitos             
+  -------------------------------------------------------------------------------------------------- --------- ------------------------------------------------------------------------------------------------------------------------------------------
+
++-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| RESUMO: O QUE TORNA ESTE PROJETO PORTFÓLIO DE NÍVEL SÊNIOR                                                                                                                                |
++-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| 1. Decisões justificadas, não apenas implementadas: Recrutadores técnicos perguntam 'por que você fez assim?'. Cada escolha arquitetural tem uma razão documentada.                       |
+|                                                                                                                                                                                           |
+| 2. Falhas tratadas como casos de uso, não exceções: O sistema se comporta corretamente quando o job falha, quando o WebSocket cai, quando dois usuários criam sessões simultaneamente.    |
+|                                                                                                                                                                                           |
+| 3. O código conta a história do desenvolvedor: git log mostra progressão consistente. Commits semânticos diários. CI verde desde a primeira semana.                                       |
+|                                                                                                                                                                                           |
+| 4. Testabilidade como métrica de design: Se algo é difícil de testar, é porque o design está acoplado demais. Interfaces, DTOs e Listeners burros existem para isso.                      |
+|                                                                                                                                                                                           |
+| 5. Nenhum detalhe descuidado na superfície: SSL em produção, nenhuma credencial no repo, README com GIF funcionando, deploy acessível. O que o recrutador vê primeiro deve ser impecável. |
++-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
