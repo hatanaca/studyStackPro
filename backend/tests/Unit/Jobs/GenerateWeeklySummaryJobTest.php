@@ -9,17 +9,16 @@ use Tests\TestCase;
 
 class GenerateWeeklySummaryJobTest extends TestCase
 {
-
     public function test_job_is_on_scheduler_queue(): void
     {
-        $job = new GenerateWeeklySummaryJob();
+        $job = new GenerateWeeklySummaryJob;
 
         $this->assertSame('scheduler', $job->queue);
     }
 
     public function test_job_has_retry_configuration(): void
     {
-        $job = new GenerateWeeklySummaryJob();
+        $job = new GenerateWeeklySummaryJob;
 
         $this->assertSame(3, $job->tries);
         $this->assertSame(120, $job->timeout);
@@ -35,7 +34,7 @@ class GenerateWeeklySummaryJobTest extends TestCase
                     && str_contains($sql, 'ON CONFLICT (user_id, week_start) DO UPDATE');
             });
 
-        $job = new GenerateWeeklySummaryJob();
+        $job = new GenerateWeeklySummaryJob;
         $job->handle();
     }
 
@@ -48,7 +47,7 @@ class GenerateWeeklySummaryJobTest extends TestCase
                     && isset($context['error']);
             });
 
-        $job = new GenerateWeeklySummaryJob();
+        $job = new GenerateWeeklySummaryJob;
         $job->failed(new \RuntimeException('DB connection lost'));
     }
 }

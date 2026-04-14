@@ -12,7 +12,7 @@ class TechnologyNotFoundException extends ApiException
         parent::__construct(
             message: $id ? "Tecnologia {$id} não encontrada." : 'Tecnologia não encontrada.',
             statusCode: Response::HTTP_NOT_FOUND,
-            code: 'TECHNOLOGY_NOT_FOUND',
+            errorCode: 'TECHNOLOGY_NOT_FOUND',
         );
     }
 }

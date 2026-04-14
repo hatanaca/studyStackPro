@@ -10,6 +10,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * Representa um período de estudo em uma tecnologia. started_at/ended_at definem o intervalo.
  * duration_min e productivity_score são calculados pelo banco. mood e focus_score são opcionais.
+ *
+ * @property int|null $duration_min
+ * @property int|null $productivity_score
+ * @property \Illuminate\Support\Carbon|null $started_at
+ * @property \Illuminate\Support\Carbon|null $ended_at
  */
 class StudySession extends BaseModel
 {

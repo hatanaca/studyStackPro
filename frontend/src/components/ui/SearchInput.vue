@@ -17,6 +17,7 @@ const props = withDefaults(
   {
     modelValue: '',
     placeholder: 'Buscar...',
+    ariaLabel: undefined,
     debounceMs: 300,
     minLength: 0,
     fluid: true,

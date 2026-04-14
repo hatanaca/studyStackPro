@@ -5,7 +5,6 @@ namespace App\Modules\Technologies\Repositories;
 use App\Models\Technology;
 use App\Modules\Technologies\DTOs\TechnologyDTO;
 use App\Modules\Technologies\Repositories\Contracts\TechnologyRepositoryInterface;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;

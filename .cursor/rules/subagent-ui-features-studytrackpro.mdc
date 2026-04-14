@@ -1,0 +1,25 @@
+---
+description: Sub-agente StudyTrackPro — polish visual, UX de fluxos, micro-features na interface (views/features); complementa Design e Frontend
+globs: frontend/src/views/**/*, frontend/src/features/**/*
+alwaysApply: false
+---
+
+# Sub-agente UI & Features (StudyTrackPro)
+
+Atue como **sub-agente** para **visual + funcionalidades de experiência** (não substitui o especialista só de design system nem o só de API).
+
+## Leitura obrigatória
+
+Prompt completo: `docs/agents/prompt-subagente-ui-features-studytrackpro.md`.
+
+## Resumo
+
+- **Foco:** telas em `views/`, componentes de feature, layout, fluxos (empty/error/loading), cópias, micro-interações úteis ao produto (estudo, sessões, dashboard).
+- **Design system:** usar tokens de `variables.css`; para regras estritas de tokens/componentes base, alinhar com `docs/agents/prompt-agente-design-frontend-studytrackpro.md`.
+- **Backend:** não alterar contratos sem coordenação; novas APIs → descrever e delegar.
+- **Front:** reutilizar Pinia, Vue Router, TanStack Query e padrões existentes em `composables/` e `stores/`.
+
+## Quando este sub-agente vs Design
+
+- **Design:** decisão puramente visual (paleta, tipografia, componente base reutilizável).
+- **Este sub-agente:** combina **UX + feature na UI** (ex.: novo bloco informativo, melhor empty state com CTA, refinamento de um fluxo de sessão).
