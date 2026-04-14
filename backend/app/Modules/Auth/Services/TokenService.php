@@ -2,6 +2,7 @@
 
 namespace App\Modules\Auth\Services;
 
+use Illuminate\Redis\RedisManager;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
@@ -41,7 +42,11 @@ class TokenService
 
         // Blacklist all tokens in Redis via pipeline (single round-trip)
         try {
-            Redis::pipeline(function ($pipe) use ($tokenList) {
+            /** @var RedisManager $redis */
+            $redis = app('redis');
+            /** @var \Illuminate\Redis\Connections\PhpRedisConnection $connection */
+            $connection = $redis->connection();
+            $connection->pipeline(function ($pipe) use ($tokenList) {
                 foreach ($tokenList as $token) {
                     $ttl = $this->resolveTtl($token);
                     $pipe->setex("token_blacklist:{$token->token}", $ttl, '1');

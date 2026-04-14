@@ -24,6 +24,6 @@ abstract class BaseModel extends Model
     /** Serializa datas em ISO8601 para JSON */
     protected function serializeDate(\DateTimeInterface $date): string
     {
-        return $date->toIso8601String();
+        return \Carbon\Carbon::instance($date)->toIso8601String();
     }
 }

@@ -14,6 +14,15 @@
 
 ---
 
+## Didático (estudo)
+
+| Documento | Descrição |
+|-----------|-----------|
+| [didatico/README.md](didatico/README.md) | Índice do material de estudo |
+| [didatico/GUIA_SEGURANCA_PERFORMANCE_CORRECAO.md](didatico/GUIA_SEGURANCA_PERFORMANCE_CORRECAO.md) | Segurança, performance e correção no contexto do repositório |
+
+---
+
 ## Testes
 
 | Documento | Descrição |
@@ -45,7 +54,7 @@ O que o **GitHub Actions** corre de facto (PHPUnit, Pint, PHPStan; Vitest, ESLin
 
 ## Prompts para agentes (Cursor / IA)
 
-Arquivos em [agents/](agents/) — contexto para especialização por área (backend, frontend, design, fullstack, integração, melhorias).
+Arquivos em [agents/](agents/) — contexto para especialização por área (backend, frontend, design, sub-agente UI & features, fullstack, integração, melhorias). Índice operacional: [operations/AGENTS.md](operations/AGENTS.md).
 
 ---
 

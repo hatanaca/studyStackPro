@@ -14,7 +14,7 @@ class ConcurrentSessionException extends ApiException
         parent::__construct(
             message: $message,
             statusCode: Response::HTTP_CONFLICT,
-            code: self::CODE,
+            errorCode: self::CODE,
         );
     }
 }

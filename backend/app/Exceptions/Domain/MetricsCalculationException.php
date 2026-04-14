@@ -12,7 +12,7 @@ class MetricsCalculationException extends ApiException
         parent::__construct(
             message: $message,
             statusCode: Response::HTTP_INTERNAL_SERVER_ERROR,
-            code: 'METRICS_CALCULATION_ERROR',
+            errorCode: 'METRICS_CALCULATION_ERROR',
         );
     }
 }

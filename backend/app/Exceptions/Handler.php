@@ -49,9 +49,9 @@ class Handler extends ExceptionHandler
                 ], 409),
                 $e instanceof \App\Exceptions\ApiException => response()->json([
                     'success' => false,
-                    'error' => ['code' => $e->code, 'message' => $e->getMessage()],
+                    'error' => ['code' => $e->errorCode, 'message' => $e->getMessage()],
                 ], $e->statusCode),
-                $e instanceof QueryException && str_contains($e->getMessage() ?? '', 'sessão ativa') => response()->json([
+                $e instanceof QueryException && str_contains($e->getMessage(), 'sessão ativa') => response()->json([
                     'success' => false,
                     'error' => ['code' => \App\Exceptions\Domain\ConcurrentSessionException::CODE, 'message' => 'O usuário já possui uma sessão ativa.'],
                 ], 409),
@@ -94,6 +94,6 @@ class Handler extends ExceptionHandler
             ], 401);
         }
 
-        return redirect()->guest($exception->redirectTo() ?? route('login'));
+        return redirect()->guest($exception->redirectTo($request) ?? route('login'));
     }
 }

@@ -30,9 +30,10 @@ const BODY_FONT = `${BODY_FONT_SIZE}px ${FONT}`
 const SMALL_FONT = `${SMALL_FONT_SIZE}px ${FONT}`
 
 function formatDuration(min: number | null): string {
-  if (!min) return '-'
+  if (min == null) return '-'
   const h = Math.floor(min / 60)
   const m = min % 60
+  if (min === 0) return '0min'
   return h > 0 ? `${h}h ${m}min` : `${m}min`
 }
 

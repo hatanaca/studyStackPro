@@ -50,6 +50,26 @@ Com isso, a regra **Design Frontend StudyTrackPro** pode ser aplicada e o Compos
 
 ---
 
+## Sub-agente UI & Features StudyTrackPro (visual + experiência de produto)
+
+**Quando usar:** polish de telas e fluxos, estados vazios/erro/loading, micro-interações com impacto no produto, pequenas melhorias de funcionalidade **na interface** (sem mudar contratos de API sozinho). Complementa o agente **Design** (tokens e componentes base) e o agente **Frontend** (lógica, stores, integração).
+
+**Como ativar no Composer:**
+
+1. Inclua no contexto ficheiros de `frontend/src/views/` ou `frontend/src/features/`, ou
+2. Abra um ficheiro nessas pastas antes de abrir o Composer.
+
+**Regra:** `.cursor/rules/subagent-ui-features-studytrackpro.mdc`  
+**Prompt completo:** `docs/agents/prompt-subagente-ui-features-studytrackpro.md`
+
+**Escopo do sub-agente:**
+
+- Cruzamento **UX + feature**: empty states com CTAs, mensagens, skeletons, fluxos de sessão/dashboard mais claros.
+- Respeitar design system (`variables.css`); decisões só visuais profundas → agente Design.
+- Não implementar endpoints novos sem alinhar; pode descrever necessidade de API para o agente backend/fullstack.
+
+---
+
 ## Agente Especialista Backend StudyTrackPro (Laravel 11 + PHP 8.2)
 
 **Quando usar:** melhorias de API, performance, segurança, modelagem, migrations, filas (Horizon), eventos, listeners, jobs, WebSocket (Reverb), debug de bugs no backend e implementação de funcionalidades com qualidade de produção.

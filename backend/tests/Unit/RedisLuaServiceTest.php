@@ -16,7 +16,7 @@ class RedisLuaServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new RedisLuaService();
+        $this->service = new RedisLuaService;
     }
 
     public function test_scripts_returns_three_lua_scripts(): void
