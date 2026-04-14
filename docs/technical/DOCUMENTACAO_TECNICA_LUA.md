@@ -46,9 +46,9 @@ Depois das alteracoes, o fluxo ficou assim:
 3. O backend Laravel usa scripts Lua no Redis para operacoes que se beneficiam de atomicidade e baixa latencia.
 4. O PostgreSQL executa PL/Lua para derivar `productivity_score` diretamente na camada de banco.
 5. O sistema preserva estrategia de **fail-open** na maior parte dos pontos Lua operacionais:
-   - se Redis Lua falha, a aplicacao tenta seguir com comportamento seguro;
-   - se o edge nao consegue consultar Redis, o request nao e derrubado por engano;
-   - se a trigger PL/Lua falha internamente, cai para valor seguro em vez de quebrar toda escrita.
+  - se Redis Lua falha, a aplicacao tenta seguir com comportamento seguro;
+  - se o edge nao consegue consultar Redis, o request nao e derrubado por engano;
+  - se a trigger PL/Lua falha internamente, cai para valor seguro em vez de quebrar toda escrita.
 
 Essa abordagem reduz risco de indisponibilidade acidental durante integracoes com componentes dinamicos.
 

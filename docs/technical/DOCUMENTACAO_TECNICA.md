@@ -799,15 +799,17 @@ Isso melhora a previsibilidade do contrato de resposta da API e ajuda o frontend
 
 Limitadores nomeados definidos em `AppServiceProvider` (`RateLimiter::for`):
 
-| Nome | Comportamento (referencia) |
-|------|----------------------------|
-| `login` | 3 req/min por IP |
-| `register` | 5 req/min por IP |
-| `sensitive` | 5 req/min por usuario autenticado (ou IP) |
-| `search` | 120 req/min por usuario (ou IP) |
-| `recalculate` | 2 req/min por usuario (ou IP) |
-| `export` | 30 req/min por usuario (ou IP) |
-| `health` | 300 req/min por IP |
+
+| Nome          | Comportamento (referencia)                |
+| ------------- | ----------------------------------------- |
+| `login`       | 3 req/min por IP                          |
+| `register`    | 5 req/min por IP                          |
+| `sensitive`   | 5 req/min por usuario autenticado (ou IP) |
+| `search`      | 120 req/min por usuario (ou IP)           |
+| `recalculate` | 2 req/min por usuario (ou IP)             |
+| `export`      | 30 req/min por usuario (ou IP)            |
+| `health`      | 300 req/min por IP                        |
+
 
 Rotas autenticadas de leitura usam `throttle:60,1` (60 req/min). O grupo de escrita generico em `api.php` usa `throttle:30,1` (30 req/min) onde aplicavel.
 
