@@ -23,7 +23,11 @@ export const useSessionsStore = defineStore('sessions', () => {
     return [h, m, sec].map((n) => n.toString().padStart(2, '0')).join(':')
   })
 
-  async function fetchSessions(params?: { page?: number; per_page?: number; technology_id?: string }) {
+  async function fetchSessions(params?: {
+    page?: number
+    per_page?: number
+    technology_id?: string
+  }) {
     isLoading.value = true
     try {
       const { data } = await sessionsApi.list(params)

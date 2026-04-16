@@ -12,7 +12,8 @@ function handleExport() {
 <template>
   <Fieldset legend="Dados">
     <p class="data-section__desc">
-      Na página Exportar você baixa sessões e métricas por período (dados do servidor). Metas e preferências continuam armazenadas no navegador.
+      Na página Exportar você baixa sessões e métricas por período (dados do servidor). Metas e
+      preferências continuam armazenadas no navegador.
     </p>
     <div class="data-section">
       <Button
@@ -22,7 +23,8 @@ function handleExport() {
         @click="handleExport"
       />
       <p class="data-section__hint">
-        O download em CSV ou JSON usa os dados sincronizados com o servidor, não um backup completo do app.
+        O download em CSV ou JSON usa os dados sincronizados com o servidor, não um backup completo
+        do app.
       </p>
     </div>
   </Fieldset>

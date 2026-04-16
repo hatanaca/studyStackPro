@@ -13,10 +13,14 @@ const unreadCount = computed(() => notificationsStore.unreadCount)
 
 function typeIcon(type: NotificationType): string {
   switch (type) {
-    case 'success': return '✓'
-    case 'warning': return '!'
-    case 'error': return '✕'
-    default: return 'i'
+    case 'success':
+      return '✓'
+    case 'warning':
+      return '!'
+    case 'error':
+      return '✕'
+    default:
+      return 'i'
   }
 }
 
@@ -36,11 +40,7 @@ function typeClass(type: NotificationType): string {
     @click="op?.toggle($event)"
   >
     <span class="notification-center__icon" aria-hidden="true">🔔</span>
-    <span
-      v-if="unreadCount > 0"
-      class="notification-center__badge"
-      aria-hidden="true"
-    >
+    <span v-if="unreadCount > 0" class="notification-center__badge" aria-hidden="true">
       {{ unreadCount > 99 ? '99+' : unreadCount }}
     </span>
   </Button>
@@ -68,10 +68,7 @@ function typeClass(type: NotificationType): string {
             <span class="notification-center__item-icon">{{ typeIcon(n.type) }}</span>
             <div class="notification-center__item-body">
               <strong class="notification-center__item-title">{{ n.title }}</strong>
-              <p
-                v-if="n.message"
-                class="notification-center__item-message"
-              >
+              <p v-if="n.message" class="notification-center__item-message">
                 {{ n.message }}
               </p>
             </div>
@@ -86,12 +83,7 @@ function typeClass(type: NotificationType): string {
             />
           </div>
         </template>
-        <p
-          v-else
-          class="notification-center__empty"
-        >
-          Nenhuma notificação.
-        </p>
+        <p v-else class="notification-center__empty">Nenhuma notificação.</p>
       </div>
     </div>
   </OverlayPanel>
@@ -110,7 +102,9 @@ function typeClass(type: NotificationType): string {
   border-radius: var(--radius-md);
   cursor: pointer;
   font-size: var(--text-lg);
-  transition: border-color var(--duration-fast) ease, background var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    background var(--duration-fast) ease;
 }
 .notification-center__trigger:hover {
   border-color: var(--color-primary);
@@ -187,10 +181,22 @@ function typeClass(type: NotificationType): string {
   font-weight: 700;
   line-height: var(--leading-tight);
 }
-.notification-center__item--info .notification-center__item-icon { background: var(--color-info-soft); color: var(--color-info); }
-.notification-center__item--success .notification-center__item-icon { background: var(--color-success-soft); color: var(--color-success); }
-.notification-center__item--warning .notification-center__item-icon { background: var(--color-warning-soft); color: var(--color-warning); }
-.notification-center__item--error .notification-center__item-icon { background: var(--color-error-soft); color: var(--color-error); }
+.notification-center__item--info .notification-center__item-icon {
+  background: var(--color-info-soft);
+  color: var(--color-info);
+}
+.notification-center__item--success .notification-center__item-icon {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+.notification-center__item--warning .notification-center__item-icon {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+.notification-center__item--error .notification-center__item-icon {
+  background: var(--color-error-soft);
+  color: var(--color-error);
+}
 .notification-center__item-body {
   flex: 1;
   min-width: 0;

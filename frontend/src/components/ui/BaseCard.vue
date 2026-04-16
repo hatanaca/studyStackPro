@@ -6,20 +6,11 @@ defineProps<{
 
 <template>
   <div class="base-card">
-    <div
-      v-if="title || $slots.actions"
-      class="base-card__header"
-    >
-      <h3
-        v-if="title"
-        class="base-card__title"
-      >
+    <div v-if="title || $slots.actions" class="base-card__header">
+      <h3 v-if="title" class="base-card__title">
         {{ title }}
       </h3>
-      <div
-        v-if="$slots.actions"
-        class="base-card__actions"
-      >
+      <div v-if="$slots.actions" class="base-card__actions">
         <slot name="actions" />
       </div>
     </div>
@@ -36,7 +27,8 @@ defineProps<{
   box-shadow: var(--card-chrome-shadow);
   border: var(--card-chrome-border);
   overflow: visible;
-  transition: box-shadow var(--duration-normal) var(--ease-in-out),
+  transition:
+    box-shadow var(--duration-normal) var(--ease-in-out),
     border-color var(--duration-fast) ease;
 }
 .base-card:hover {

@@ -11,18 +11,12 @@ withDefaults(
 </script>
 
 <template>
-  <section
-    class="form-section"
-    :class="{ 'form-section--grouped': grouped }"
-  >
+  <section class="form-section" :class="{ 'form-section--grouped': grouped }">
     <header class="form-section__header">
       <h3 class="form-section__title">
         {{ title }}
       </h3>
-      <p
-        v-if="description || $slots.description"
-        class="form-section__desc"
-      >
+      <p v-if="description || $slots.description" class="form-section__desc">
         <slot name="description">
           {{ description }}
         </slot>

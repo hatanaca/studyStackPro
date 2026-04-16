@@ -7,7 +7,10 @@ import Button from 'primevue/button'
 import Skeleton from 'primevue/skeleton'
 import { useConfirm } from 'primevue/useconfirm'
 import { useTechnologiesStore } from '@/stores/technologies.store'
-import { useTechnologiesQuery, useInvalidateTechnologies } from '@/features/technologies/composables/useTechnologiesQuery'
+import {
+  useTechnologiesQuery,
+  useInvalidateTechnologies,
+} from '@/features/technologies/composables/useTechnologiesQuery'
 import type { Technology } from '@/types/domain.types'
 
 const TechnologyForm = defineAsyncComponent(() => import('./TechnologyForm.vue'))
@@ -32,11 +35,7 @@ function openEdit(tech: Technology) {
   showForm.value = true
 }
 
-async function handleSubmit(payload: {
-  name: string
-  color: string
-  description?: string
-}) {
+async function handleSubmit(payload: { name: string; color: string; description?: string }) {
   if (editingTech.value) {
     await store.updateTechnology(editingTech.value.id, payload)
   } else {
@@ -71,11 +70,7 @@ function handleDelete(tech: Technology) {
   <div class="technology-list">
     <div class="technology-list__header">
       <h2>Tecnologias</h2>
-      <Button
-        v-if="!showForm"
-        label="Nova tecnologia"
-        @click="openCreate"
-      />
+      <Button v-if="!showForm" label="Nova tecnologia" @click="openCreate" />
     </div>
 
     <TechnologyForm
@@ -102,10 +97,7 @@ function handleDelete(tech: Technology) {
       message="Não foi possível carregar a lista de tecnologias."
       :on-retry="() => technologiesQuery.refetch()"
     />
-    <div
-      v-else-if="store.technologies.length"
-      class="technology-list__grid"
-    >
+    <div v-else-if="store.technologies.length" class="technology-list__grid">
       <TechnologyCard
         v-for="t in store.technologies"
         :key="t.id"

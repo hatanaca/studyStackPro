@@ -42,31 +42,22 @@ const userInitials = computed(() => {
 <template>
   <header class="app-topbar">
     <div class="app-topbar__left">
-      <router-link
-        to="/"
-        class="app-topbar__brand"
-      >
+      <router-link to="/" class="app-topbar__brand">
         <span class="app-topbar__logo">StudyTrack Pro</span>
       </router-link>
       <span class="app-topbar__pagetitle">{{ pageTitle }}</span>
     </div>
 
     <div class="app-topbar__center">
-      <div
-        v-if="authStore.user"
-        class="app-topbar__profile"
-      >
+      <div v-if="authStore.user" class="app-topbar__profile">
         <div class="app-topbar__avatar-wrap">
           <img
             v-if="authStore.user.avatar_url"
             :src="authStore.user.avatar_url"
             alt=""
             class="app-topbar__avatar"
-          >
-          <span
-            v-else
-            class="app-topbar__avatar app-topbar__avatar--fallback"
-          >
+          />
+          <span v-else class="app-topbar__avatar app-topbar__avatar--fallback">
             {{ userInitials }}
           </span>
         </div>
@@ -74,19 +65,13 @@ const userInitials = computed(() => {
           <span class="app-topbar__name">{{ authStore.user.name }}</span>
           <span class="app-topbar__badge">PRO</span>
         </div>
-        <span
-          class="app-topbar__chevron"
-          aria-hidden="true"
-        >▼</span>
+        <span class="app-topbar__chevron" aria-hidden="true">▼</span>
       </div>
     </div>
 
     <div class="app-topbar__right">
       <div class="app-topbar__search">
-        <span
-          class="app-topbar__search-icon"
-          aria-hidden="true"
-        >
+        <span class="app-topbar__search-icon" aria-hidden="true">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="app-topbar__search-svg"
@@ -96,11 +81,10 @@ const userInitials = computed(() => {
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-          ><circle
-            cx="11"
-            cy="11"
-            r="8"
-          /><path d="m21 21-4.35-4.35" /></svg>
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>
         </span>
         <input
           v-model="searchQuery"
@@ -108,14 +92,10 @@ const userInitials = computed(() => {
           class="app-topbar__search-input"
           placeholder="Buscar..."
           aria-label="Buscar"
-        >
+        />
       </div>
       <NotificationCenter />
-      <router-link
-        to="/settings"
-        class="app-topbar__icon-btn"
-        aria-label="Configurações"
-      >
+      <router-link to="/settings" class="app-topbar__icon-btn" aria-label="Configurações">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="app-topbar__action-svg"
@@ -125,11 +105,12 @@ const userInitials = computed(() => {
           stroke-width="2"
           stroke-linecap="round"
           stroke-linejoin="round"
-        ><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.73l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle
-          cx="12"
-          cy="12"
-          r="3"
-        /></svg>
+        >
+          <path
+            d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.73l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+          />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
       </router-link>
       <ThemeToggle />
     </div>
@@ -261,7 +242,9 @@ const userInitials = computed(() => {
   border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
   background: color-mix(in srgb, var(--color-bg-card) 94%, var(--color-bg-soft));
   box-shadow: inset 0 1px 2px color-mix(in srgb, var(--color-text) 5%, transparent);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .app-topbar__search-icon {
   flex-shrink: 0;
@@ -312,19 +295,31 @@ const userInitials = computed(() => {
   height: var(--header-control-size);
   border-radius: var(--radius-md);
   color: var(--color-text-muted);
-  transition: color var(--duration-fast) ease, background var(--duration-fast) ease;
+  transition:
+    color var(--duration-fast) ease,
+    background var(--duration-fast) ease;
 }
 .app-topbar__icon-btn:hover {
   color: var(--color-primary);
   background: var(--color-primary-soft);
 }
 @media (max-width: 1024px) {
-  .app-topbar__pagetitle { display: none; }
-  .app-topbar__search { display: none; }
-  .app-topbar__name { max-width: 6rem; }
+  .app-topbar__pagetitle {
+    display: none;
+  }
+  .app-topbar__search {
+    display: none;
+  }
+  .app-topbar__name {
+    max-width: 6rem;
+  }
 }
 @media (max-width: 640px) {
-  .app-topbar__center { display: none; }
-  .app-topbar { padding: 0 var(--spacing-lg); }
+  .app-topbar__center {
+    display: none;
+  }
+  .app-topbar {
+    padding: 0 var(--spacing-lg);
+  }
 }
 </style>

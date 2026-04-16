@@ -20,7 +20,9 @@ const STALE_MS = 60 * 1000 // 1 min
  * Retorna sessions, meta, isPending, error e refetch.
  */
 export function useSessionsListQuery(params: MaybeRefOrGetter<SessionsListParams | undefined>) {
-  const queryKey = computed(() => queryKeys.sessions.list(toValue(params) as Record<string, unknown> | undefined))
+  const queryKey = computed(() =>
+    queryKeys.sessions.list(toValue(params) as Record<string, unknown> | undefined)
+  )
   const enabled = useQuerySessionEnabled()
   const query = useQuery({
     queryKey,

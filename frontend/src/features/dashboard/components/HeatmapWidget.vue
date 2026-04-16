@@ -19,9 +19,7 @@ const weeks = computed(() => {
   const days: { date: string; minutes: number }[] = []
   const start = new Date(selectedYear.value, 0, 1)
   const end = new Date(selectedYear.value, 11, 31)
-  const dataMap = new Map(
-    (props.data ?? []).map((d) => [d.date, d.total_minutes])
-  )
+  const dataMap = new Map((props.data ?? []).map((d) => [d.date, d.total_minutes]))
 
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const dateStr = d.toISOString().slice(0, 10)
@@ -64,38 +62,21 @@ const years = computed(() => {
 <template>
   <div class="heatmap-widget">
     <div class="header">
-      <h3 class="title">
-        Atividade (calendário)
-      </h3>
+      <h3 class="title">Atividade (calendário)</h3>
       <select
         v-model="selectedYear"
         class="year-select"
         aria-label="Selecionar ano para visualizar o calendário de atividade"
       >
-        <option
-          v-for="y in years"
-          :key="y"
-          :value="y"
-        >
+        <option v-for="y in years" :key="y" :value="y">
           {{ y }}
         </option>
       </select>
     </div>
-    <div
-      v-if="loading"
-      class="heatmap-skeleton"
-    >
-      <Skeleton
-        v-for="i in 10"
-        :key="i"
-        height="0.75rem"
-        class="skeleton-row"
-      />
+    <div v-if="loading" class="heatmap-skeleton">
+      <Skeleton v-for="i in 10" :key="i" height="0.75rem" class="skeleton-row" />
     </div>
-    <div
-      v-else
-      class="heatmap"
-    >
+    <div v-else class="heatmap">
       <svg
         viewBox="0 0 730 110"
         preserveAspectRatio="xMidYMid meet"
@@ -103,11 +84,7 @@ const years = computed(() => {
         role="img"
         :aria-label="`Calendário de atividade de estudo em ${selectedYear}. Cada célula representa um dia; intensidade da cor indica minutos estudados.`"
       >
-        <g
-          v-for="(week, wi) in weeks"
-          :key="wi"
-          :transform="`translate(${wi * 14}, 0)`"
-        >
+        <g v-for="(week, wi) in weeks" :key="wi" :transform="`translate(${wi * 14}, 0)`">
           <rect
             v-for="(day, di) in week"
             :key="`${wi}-${di}`"
@@ -119,9 +96,7 @@ const years = computed(() => {
             :data-date="day.date"
             :data-minutes="day.minutes"
           >
-            <title v-if="day.date">
-              {{ day.date }}: {{ day.minutes }} min
-            </title>
+            <title v-if="day.date">{{ day.date }}: {{ day.minutes }} min</title>
           </rect>
         </g>
       </svg>
@@ -160,7 +135,9 @@ const years = computed(() => {
   border: 1px solid var(--color-border);
   background: var(--color-bg-card);
   color: var(--color-text);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .year-select:focus-visible {
   outline: none;

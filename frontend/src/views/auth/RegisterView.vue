@@ -19,10 +19,18 @@ async function onSubmit(payload: {
   registerFormRef.value?.clearErrors()
   loading.value = true
   try {
-    await authStore.register(payload.name, payload.email, payload.password, payload.password_confirmation)
+    await authStore.register(
+      payload.name,
+      payload.email,
+      payload.password,
+      payload.password_confirmation
+    )
     router.push('/')
   } catch (e: unknown) {
-    const err = e as { response?: { data?: { error?: { message?: string }; message?: string }; status?: number }; message?: string }
+    const err = e as {
+      response?: { data?: { error?: { message?: string }; message?: string }; status?: number }
+      message?: string
+    }
     const msg =
       err?.response?.data?.error?.message ??
       err?.response?.data?.message ??
@@ -37,19 +45,9 @@ async function onSubmit(payload: {
 <template>
   <AuthLayout>
     <h1>StudyTrack Pro</h1>
-    <p class="subtitle">
-      Criar conta
-    </p>
-    <RegisterForm
-      ref="registerFormRef"
-      :loading="loading"
-      @submit="onSubmit"
-    />
-    <p class="footer">
-      Já tem conta? <router-link to="/login">
-        Entrar
-      </router-link>
-    </p>
+    <p class="subtitle">Criar conta</p>
+    <RegisterForm ref="registerFormRef" :loading="loading" @submit="onSubmit" />
+    <p class="footer">Já tem conta? <router-link to="/login"> Entrar </router-link></p>
   </AuthLayout>
 </template>
 

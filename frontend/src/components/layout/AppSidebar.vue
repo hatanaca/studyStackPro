@@ -58,20 +58,29 @@ const sidebarSummary = computed(() => {
   const m = analyticsStore.userMetrics
   if (!m) return []
   return [
-    { label: 'Total de horas', value: formatHours(m.total_hours ?? 0), color: 'var(--color-primary)' },
+    {
+      label: 'Total de horas',
+      value: formatHours(m.total_hours ?? 0),
+      color: 'var(--color-primary)',
+    },
     { label: 'Sessões', value: String(m.total_sessions ?? 0), color: 'var(--color-success)' },
     { label: 'Streak', value: `${m.current_streak_days ?? 0} dias`, color: 'var(--color-warning)' },
   ]
 })
 
-watch(() => route.path, () => {
-  uiStore.closeMobileSidebar()
-})
+watch(
+  () => route.path,
+  () => {
+    uiStore.closeMobileSidebar()
+  }
+)
 
 function handleLogout() {
   try {
     disconnectWebSocket()
-  } catch { /* ws already disconnected */ }
+  } catch {
+    /* ws already disconnected */
+  }
   uiStore.closeMobileSidebar()
   authStore.logout()
 }
@@ -89,16 +98,17 @@ function handleLogout() {
   </Teleport>
   <aside
     class="app-sidebar"
-    :class="[attrs.class, {
-      'app-sidebar--open': uiStore.mobileSidebarOpen,
-      'app-sidebar--collapsed': uiStore.sidebarCollapsed
-    }]"
+    :class="[
+      attrs.class,
+      {
+        'app-sidebar--open': uiStore.mobileSidebarOpen,
+        'app-sidebar--collapsed': uiStore.sidebarCollapsed,
+      },
+    ]"
   >
     <div class="app-sidebar__top">
       <div class="app-sidebar__brand">
-        <h1 class="app-sidebar__logo">
-          StudyTrack Pro
-        </h1>
+        <h1 class="app-sidebar__logo">StudyTrack Pro</h1>
       </div>
       <button
         type="button"
@@ -132,22 +142,15 @@ function handleLogout() {
         ✕
       </button>
     </div>
-    <div
-      v-if="authStore.user && !stakentStyle?.value"
-      class="app-sidebar__profile"
-    >
+    <div v-if="authStore.user && !stakentStyle?.value" class="app-sidebar__profile">
       <div class="app-sidebar__avatar-wrap">
         <img
           v-if="authStore.user.avatar_url"
           :src="authStore.user.avatar_url"
           alt="Foto de perfil"
           class="app-sidebar__avatar"
-        >
-        <span
-          v-else
-          class="app-sidebar__avatar app-sidebar__avatar--fallback"
-          aria-hidden="true"
-        >
+        />
+        <span v-else class="app-sidebar__avatar app-sidebar__avatar--fallback" aria-hidden="true">
           {{ userInitials }}
         </span>
       </div>
@@ -160,10 +163,7 @@ function handleLogout() {
         </p>
       </div>
     </div>
-    <div
-      v-if="stakentStyle?.value"
-      class="app-sidebar__pills"
-    >
+    <div v-if="stakentStyle?.value" class="app-sidebar__pills">
       <RouterLink
         to="/"
         class="app-sidebar__pill"
@@ -190,10 +190,7 @@ function handleLogout() {
         aria-label="Ir para Dashboard"
         @mouseenter="prefetchDashboardView"
       >
-        <span
-          class="app-sidebar__icon"
-          aria-hidden="true"
-        >
+        <span class="app-sidebar__icon" aria-hidden="true">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -204,31 +201,12 @@ function handleLogout() {
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-          ><rect
-            width="7"
-            height="9"
-            x="3"
-            y="3"
-            rx="1"
-          /><rect
-            width="7"
-            height="5"
-            x="14"
-            y="3"
-            rx="1"
-          /><rect
-            width="7"
-            height="9"
-            x="14"
-            y="12"
-            rx="1"
-          /><rect
-            width="7"
-            height="5"
-            x="3"
-            y="16"
-            rx="1"
-          /></svg>
+          >
+            <rect width="7" height="9" x="3" y="3" rx="1" />
+            <rect width="7" height="5" x="14" y="3" rx="1" />
+            <rect width="7" height="9" x="14" y="12" rx="1" />
+            <rect width="7" height="5" x="3" y="16" rx="1" />
+          </svg>
         </span>
         <span class="app-sidebar__link-text">Dashboard</span>
       </RouterLink>
@@ -240,10 +218,7 @@ function handleLogout() {
         aria-label="Ir para Sessões"
         @mouseenter="prefetchSessionsView"
       >
-        <span
-          class="app-sidebar__icon"
-          aria-hidden="true"
-        >
+        <span class="app-sidebar__icon" aria-hidden="true">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -254,7 +229,12 @@ function handleLogout() {
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-          ><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /><path d="M8 7h8" /><path d="M8 11h8" /></svg>
+          >
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            <path d="M8 7h8" />
+            <path d="M8 11h8" />
+          </svg>
         </span>
         <span class="app-sidebar__link-text">Sessões</span>
       </RouterLink>
@@ -266,10 +246,7 @@ function handleLogout() {
         aria-label="Ir para Tecnologias"
         @mouseenter="prefetchTechnologiesView"
       >
-        <span
-          class="app-sidebar__icon"
-          aria-hidden="true"
-        >
+        <span class="app-sidebar__icon" aria-hidden="true">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -280,7 +257,16 @@ function handleLogout() {
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-          ><path d="M12 2v4" /><path d="m4.93 4.93 2.83 2.83" /><path d="M2 12h4" /><path d="m4.93 19.07 2.83-2.83" /><path d="M12 18v4" /><path d="m17.24 17.24 2.83-2.83" /><path d="M18 12h4" /><path d="m17.24 6.76 2.83 2.83" /></svg>
+          >
+            <path d="M12 2v4" />
+            <path d="m4.93 4.93 2.83 2.83" />
+            <path d="M2 12h4" />
+            <path d="m4.93 19.07 2.83-2.83" />
+            <path d="M12 18v4" />
+            <path d="m17.24 17.24 2.83-2.83" />
+            <path d="M18 12h4" />
+            <path d="m17.24 6.76 2.83 2.83" />
+          </svg>
         </span>
         <span class="app-sidebar__link-text">Tecnologias</span>
       </RouterLink>
@@ -292,10 +278,7 @@ function handleLogout() {
         aria-label="Ir para Metas"
         @mouseenter="prefetchGoalsView"
       >
-        <span
-          class="app-sidebar__icon"
-          aria-hidden="true"
-        >
+        <span class="app-sidebar__icon" aria-hidden="true">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -306,11 +289,10 @@ function handleLogout() {
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-          ><circle
-            cx="12"
-            cy="12"
-            r="10"
-          /><path d="M12 6v6l4 2" /></svg>
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 6v6l4 2" />
+          </svg>
         </span>
         <span class="app-sidebar__link-text">Metas</span>
       </RouterLink>
@@ -322,10 +304,7 @@ function handleLogout() {
         aria-label="Ir para Exportar"
         @mouseenter="prefetchExportView"
       >
-        <span
-          class="app-sidebar__icon"
-          aria-hidden="true"
-        >
+        <span class="app-sidebar__icon" aria-hidden="true">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -336,12 +315,11 @@ function handleLogout() {
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-          ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line
-            x1="12"
-            y1="15"
-            x2="12"
-            y2="3"
-          /></svg>
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
         </span>
         <span class="app-sidebar__link-text">Exportar</span>
       </RouterLink>
@@ -353,10 +331,7 @@ function handleLogout() {
         aria-label="Ir para Relatórios"
         @mouseenter="prefetchReportsView"
       >
-        <span
-          class="app-sidebar__icon"
-          aria-hidden="true"
-        >
+        <span class="app-sidebar__icon" aria-hidden="true">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -367,17 +342,13 @@ function handleLogout() {
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-          ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line
-            x1="16"
-            y1="13"
-            x2="8"
-            y2="13"
-          /><line
-            x1="16"
-            y1="17"
-            x2="8"
-            y2="17"
-          /><polyline points="10 9 9 9 8 9" /></svg>
+          >
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+          </svg>
         </span>
         <span class="app-sidebar__link-text">Relatórios</span>
       </RouterLink>
@@ -389,10 +360,7 @@ function handleLogout() {
         aria-label="Ir para Ajuda"
         @mouseenter="prefetch.help"
       >
-        <span
-          class="app-sidebar__icon"
-          aria-hidden="true"
-        >
+        <span class="app-sidebar__icon" aria-hidden="true">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -403,11 +371,11 @@ function handleLogout() {
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-          ><circle
-            cx="12"
-            cy="12"
-            r="10"
-          /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg>
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <path d="M12 17h.01" />
+          </svg>
         </span>
         <span class="app-sidebar__link-text">Ajuda</span>
       </RouterLink>
@@ -419,10 +387,7 @@ function handleLogout() {
         aria-label="Ir para Configurações"
         @mouseenter="prefetch.settings"
       >
-        <span
-          class="app-sidebar__icon"
-          aria-hidden="true"
-        >
+        <span class="app-sidebar__icon" aria-hidden="true">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -433,11 +398,12 @@ function handleLogout() {
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-          ><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.73l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle
-            cx="12"
-            cy="12"
-            r="3"
-          /></svg>
+          >
+            <path
+              d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.73l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+            />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
         </span>
         <span class="app-sidebar__link-text">Configurações</span>
       </RouterLink>
@@ -449,10 +415,7 @@ function handleLogout() {
         aria-label="Ir para Perfil"
         @mouseenter="prefetch.profile"
       >
-        <span
-          class="app-sidebar__icon"
-          aria-hidden="true"
-        >
+        <span class="app-sidebar__icon" aria-hidden="true">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -463,26 +426,18 @@ function handleLogout() {
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-          ><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle
-            cx="12"
-            cy="7"
-            r="4"
-          /></svg>
+          >
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
         </span>
         <span class="app-sidebar__link-text">Perfil</span>
       </RouterLink>
     </nav>
     <template v-if="stakentStyle?.value">
       <div class="app-sidebar__summary">
-        <div
-          v-for="s in sidebarSummary"
-          :key="s.label"
-          class="app-sidebar__summary-row"
-        >
-          <span
-            class="app-sidebar__summary-dot"
-            :style="{ background: s.color }"
-          />
+        <div v-for="s in sidebarSummary" :key="s.label" class="app-sidebar__summary-row">
+          <span class="app-sidebar__summary-dot" :style="{ background: s.color }" />
           <span class="app-sidebar__summary-label">{{ s.label }}</span>
           <span class="app-sidebar__summary-value">{{ s.value }}</span>
         </div>
@@ -490,9 +445,7 @@ function handleLogout() {
       <div class="app-sidebar__cta">
         <span class="app-sidebar__cta-icon">⚡</span>
         <strong class="app-sidebar__cta-title">Ativar Super</strong>
-        <p class="app-sidebar__cta-desc">
-          Desbloqueie todos os recursos no StudyTrack Pro
-        </p>
+        <p class="app-sidebar__cta-desc">Desbloqueie todos os recursos no StudyTrack Pro</p>
       </div>
     </template>
     <div class="app-sidebar__footer">
@@ -518,7 +471,9 @@ function handleLogout() {
             stroke-linejoin="round"
           >
             <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+            <path
+              d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
+            />
           </svg>
           <svg
             v-else
@@ -539,11 +494,7 @@ function handleLogout() {
           {{ uiStore.isDarkMode ? 'Tema claro' : 'Tema escuro' }}
         </span>
       </button>
-      <button
-        type="button"
-        class="app-sidebar__logout"
-        @click="handleLogout"
-      >
+      <button type="button" class="app-sidebar__logout" @click="handleLogout">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="16"
@@ -556,12 +507,11 @@ function handleLogout() {
           stroke-linejoin="round"
           aria-hidden="true"
           class="app-sidebar__logout-icon"
-        ><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line
-          x1="21"
-          y1="12"
-          x2="9"
-          y2="12"
-        /></svg>
+        >
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
         <span class="app-sidebar__link-text">Sair</span>
       </button>
     </div>
@@ -655,7 +605,10 @@ function handleLogout() {
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
 }
 .app-sidebar__toggle:hover {
   background: var(--color-primary-soft);
@@ -704,7 +657,10 @@ function handleLogout() {
   color: var(--color-text-muted);
   background: var(--color-bg-soft);
   border: 1px solid transparent;
-  transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
 }
 .app-sidebar__pill:hover {
   color: var(--color-text);
@@ -836,7 +792,9 @@ function handleLogout() {
   flex-direction: column;
   overflow: hidden;
   white-space: nowrap;
-  transition: width var(--duration-slow) var(--ease-out-expo), opacity var(--duration-normal) ease;
+  transition:
+    width var(--duration-slow) var(--ease-out-expo),
+    opacity var(--duration-normal) ease;
 }
 .app-sidebar--collapsed .app-sidebar__profile-meta {
   width: 0;
@@ -900,7 +858,8 @@ function handleLogout() {
   white-space: nowrap;
   font-size: var(--text-sm);
   font-weight: 500;
-  transition: color var(--duration-fast) ease,
+  transition:
+    color var(--duration-fast) ease,
     background var(--duration-fast) ease,
     transform var(--duration-fast) ease;
   overflow: hidden;
@@ -978,7 +937,10 @@ function handleLogout() {
   cursor: pointer;
   white-space: nowrap;
   font-size: var(--text-xs);
-  transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
   overflow: hidden;
   min-width: 0;
 }

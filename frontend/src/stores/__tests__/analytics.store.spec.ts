@@ -25,8 +25,8 @@ describe('analytics.store', () => {
         user_metrics: { total_sessions: 10, total_minutes: 120 },
         technology_metrics: [],
         time_series_30d: [],
-        top_technologies: []
-      }
+        top_technologies: [],
+      },
     }
     vi.mocked(analyticsApi.getDashboard).mockResolvedValue({ data: mockData } as never)
 
@@ -44,8 +44,8 @@ describe('analytics.store', () => {
         user_metrics: {},
         technology_metrics: [],
         time_series_30d: [],
-        top_technologies: []
-      }
+        top_technologies: [],
+      },
     }
     vi.mocked(analyticsApi.getDashboard).mockResolvedValue({ data: mockData } as never)
 
@@ -62,7 +62,7 @@ describe('analytics.store', () => {
       user_metrics: { total_sessions: 5 },
       technology_metrics: [],
       time_series_30d: [],
-      top_technologies: []
+      top_technologies: [],
     }
 
     store.updateFromWebSocket(newData as never)

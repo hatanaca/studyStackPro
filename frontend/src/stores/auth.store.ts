@@ -46,11 +46,20 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem(USER_KEY, JSON.stringify(u))
       sessionValidated.value = true
     } else {
-      throw new Error((data as unknown as { error?: { message?: string } }).error?.message ?? 'Credenciais inválidas.')
+      throw new Error(
+        (data as unknown as { error?: { message?: string } }).error?.message ??
+          'Credenciais inválidas.'
+      )
     }
   }
 
-  async function register(name: string, email: string, password: string, passwordConfirmation: string, timezone = 'UTC') {
+  async function register(
+    name: string,
+    email: string,
+    password: string,
+    passwordConfirmation: string,
+    timezone = 'UTC'
+  ) {
     const { data } = await authApi.register({
       name,
       email,
@@ -66,7 +75,10 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem(USER_KEY, JSON.stringify(u))
       sessionValidated.value = true
     } else {
-      throw new Error((data as unknown as { error?: { message?: string } }).error?.message ?? 'Falha no cadastro. Verifique os dados.')
+      throw new Error(
+        (data as unknown as { error?: { message?: string } }).error?.message ??
+          'Falha no cadastro. Verifique os dados.'
+      )
     }
   }
 
@@ -107,7 +119,11 @@ export const useAuthStore = defineStore('auth', () => {
     sessionValidated.value = false
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
-    try { useSessionsStore().$reset() } catch { /* store não inicializada */ }
+    try {
+      useSessionsStore().$reset()
+    } catch {
+      /* store não inicializada */
+    }
     if (onlineHandler) {
       window.removeEventListener('online', onlineHandler)
       onlineHandler = null
@@ -120,7 +136,9 @@ export const useAuthStore = defineStore('auth', () => {
     if (onlineHandler) return
     onlineHandler = () => {
       if (token.value && !sessionValidated.value) {
-        fetchMe().catch(() => { /* retry silencioso */ })
+        fetchMe().catch(() => {
+          /* retry silencioso */
+        })
       }
       window.removeEventListener('online', onlineHandler!)
       onlineHandler = null

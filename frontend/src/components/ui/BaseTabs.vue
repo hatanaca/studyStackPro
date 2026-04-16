@@ -27,24 +27,30 @@ const emit = defineEmits<{
 }>()
 
 const activeId = ref(props.modelValue || (props.tabs[0]?.id ?? ''))
-watch(() => props.modelValue, (v) => { if (v !== undefined && v !== '') activeId.value = v }, { immediate: true })
-const activeTab = computed(() => props.tabs.find(t => t.id === activeId.value))
+watch(
+  () => props.modelValue,
+  (v) => {
+    if (v !== undefined && v !== '') activeId.value = v
+  },
+  { immediate: true }
+)
+const activeTab = computed(() => props.tabs.find((t) => t.id === activeId.value))
 const activeIdValue = computed(() => activeId.value)
 
 function select(id: string) {
-  const tab = props.tabs.find(t => t.id === id)
+  const tab = props.tabs.find((t) => t.id === id)
   if (tab?.disabled) return
   activeId.value = id
   emit('update:modelValue', id)
 }
 
 function getEnabledTabs() {
-  return props.tabs.filter(t => !t.disabled)
+  return props.tabs.filter((t) => !t.disabled)
 }
 
 function onTabKeydown(e: KeyboardEvent, tabId: string) {
   const enabled = getEnabledTabs()
-  const currentIdx = enabled.findIndex(t => t.id === tabId)
+  const currentIdx = enabled.findIndex((t) => t.id === tabId)
   if (currentIdx < 0) return
 
   let targetIdx = -1
@@ -92,19 +98,19 @@ provide('tabs', {
         :key="tab.id"
         type="button"
         class="base-tabs__tab"
-        :class="{ 'base-tabs__tab--active': activeId === tab.id, 'base-tabs__tab--disabled': tab.disabled }"
+        :class="{
+          'base-tabs__tab--active': activeId === tab.id,
+          'base-tabs__tab--disabled': tab.disabled,
+        }"
         role="tab"
         :aria-selected="activeId === tab.id"
         :aria-controls="`tabpanel-${tab.id}`"
         :aria-disabled="tab.disabled"
-        :tabindex="tab.disabled ? -1 : (activeId === tab.id ? 0 : -1)"
+        :tabindex="tab.disabled ? -1 : activeId === tab.id ? 0 : -1"
         @click="select(tab.id)"
         @keydown="onTabKeydown($event, tab.id)"
       >
-        <slot
-          v-if="$slots[`icon-${tab.id}`]"
-          :name="`icon-${tab.id}`"
-        />
+        <slot v-if="$slots[`icon-${tab.id}`]" :name="`icon-${tab.id}`" />
         <span class="base-tabs__label">{{ tab.label }}</span>
       </button>
     </div>
@@ -114,10 +120,7 @@ provide('tabs', {
       role="tabpanel"
       :aria-labelledby="`tab-${activeIdValue}`"
     >
-      <slot
-        :active-id="activeIdValue"
-        :active-tab="activeTab"
-      />
+      <slot :active-id="activeIdValue" :active-tab="activeTab" />
     </div>
   </div>
 </template>
@@ -132,9 +135,15 @@ provide('tabs', {
   margin-bottom: 0;
   border-bottom: 1px solid var(--color-border);
 }
-.base-tabs--align-start { justify-content: flex-start; }
-.base-tabs--align-center { justify-content: center; }
-.base-tabs--align-end { justify-content: flex-end; }
+.base-tabs--align-start {
+  justify-content: flex-start;
+}
+.base-tabs--align-center {
+  justify-content: center;
+}
+.base-tabs--align-end {
+  justify-content: flex-end;
+}
 
 .base-tabs__tab {
   display: inline-flex;
@@ -149,7 +158,10 @@ provide('tabs', {
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   cursor: pointer;
-  transition: color var(--duration-fast) ease, border-color var(--duration-fast) ease, background var(--duration-fast) ease;
+  transition:
+    color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    background var(--duration-fast) ease;
 }
 .base-tabs__tab:hover:not(.base-tabs__tab--disabled) {
   color: var(--color-text);

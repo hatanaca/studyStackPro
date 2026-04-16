@@ -8,8 +8,8 @@ export const useGoalsStore = defineStore('goals', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  const activeGoals = computed(() => items.value.filter(g => g.status === 'active'))
-  const completedGoals = computed(() => items.value.filter(g => g.status === 'completed'))
+  const activeGoals = computed(() => items.value.filter((g) => g.status === 'active'))
+  const completedGoals = computed(() => items.value.filter((g) => g.status === 'completed'))
 
   async function fetchGoals() {
     loading.value = true
@@ -36,11 +36,14 @@ export const useGoalsStore = defineStore('goals', () => {
     }
   }
 
-  async function updateGoal(id: string, payload: { target_value?: number; status?: Goal['status']; end_date?: string | null }) {
+  async function updateGoal(
+    id: string,
+    payload: { target_value?: number; status?: Goal['status']; end_date?: string | null }
+  ) {
     error.value = null
     try {
       const { data } = await goalsApi.update(id, payload)
-      const index = items.value.findIndex(g => g.id === id)
+      const index = items.value.findIndex((g) => g.id === id)
       if (index !== -1) items.value[index] = data
       return data
     } catch (e) {
@@ -53,7 +56,7 @@ export const useGoalsStore = defineStore('goals', () => {
     error.value = null
     try {
       await goalsApi.delete(id)
-      items.value = items.value.filter(g => g.id !== id)
+      items.value = items.value.filter((g) => g.id !== id)
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Erro ao excluir meta'
       throw e
@@ -68,7 +71,7 @@ export const useGoalsStore = defineStore('goals', () => {
 
   /** Retorna a primeira meta ativa do tipo minutos por semana (para o widget do dashboard). */
   function getActiveWeeklyMinutesGoal(): Goal | null {
-    return items.value.find(g => g.status === 'active' && g.type === 'minutes_per_week') ?? null
+    return items.value.find((g) => g.status === 'active' && g.type === 'minutes_per_week') ?? null
   }
 
   return {

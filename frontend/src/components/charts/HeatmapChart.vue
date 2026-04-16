@@ -7,19 +7,12 @@ defineProps<{
 
 <template>
   <div class="heatmap-chart">
-    <h3
-      v-if="title"
-      class="chart-title"
-    >
+    <h3 v-if="title" class="chart-title">
       {{ title }}
     </h3>
     <div class="chart-placeholder">
-      <template v-if="data?.length">
-        Calendário de atividade (estilo GitHub)
-      </template>
-      <template v-else>
-        Sem dados
-      </template>
+      <template v-if="data?.length"> Calendário de atividade (estilo GitHub) </template>
+      <template v-else> Sem dados </template>
     </div>
   </div>
 </template>

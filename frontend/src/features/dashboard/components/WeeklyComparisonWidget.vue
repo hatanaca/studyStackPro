@@ -29,24 +29,13 @@ const chartData = computed(() => {
     ...(hasValidScores ? { scores } : {}),
   }
 })
-
 </script>
 
 <template>
   <div class="weekly-widget">
-    <h3 class="title">
-      Comparação semanal
-    </h3>
-    <div
-      v-if="analyticsStore.weeklyLoading"
-      class="chart-skeleton"
-    >
-      <Skeleton
-        v-for="i in 6"
-        :key="i"
-        height="1.5rem"
-        class="skeleton-bar"
-      />
+    <h3 class="title">Comparação semanal</h3>
+    <div v-if="analyticsStore.weeklyLoading" class="chart-skeleton">
+      <Skeleton v-for="i in 6" :key="i" height="1.5rem" class="skeleton-bar" />
     </div>
     <EmptyState
       v-else-if="!chartData || !chartData.values?.length"
@@ -55,10 +44,7 @@ const chartData = computed(() => {
       icon="📊"
       :hide-action="true"
     />
-    <BarChart
-      v-else
-      :data="chartData"
-    />
+    <BarChart v-else :data="chartData" />
   </div>
 </template>
 

@@ -18,7 +18,7 @@ describe('useSort', () => {
     const { setSort, sort } = useSort<{ id: string; name: string; score: number }>()
     setSort('name')
     const result = sort(items)
-    expect(result.map(r => r.name)).toEqual(['Alice', 'Bob', 'Charlie'])
+    expect(result.map((r) => r.name)).toEqual(['Alice', 'Bob', 'Charlie'])
   })
 
   it('ordena por key descendente ao setSort duas vezes', () => {
@@ -28,11 +28,14 @@ describe('useSort', () => {
     setSort('name')
     expect(sortOrder.value).toBe('desc')
     const result = sort(items)
-    expect(result.map(r => r.name)).toEqual(['Charlie', 'Bob', 'Alice'])
+    expect(result.map((r) => r.name)).toEqual(['Charlie', 'Bob', 'Alice'])
   })
 
   it('reset restaura estado inicial', () => {
-    const { setSort, reset, sortKey, sortOrder } = useSort<{ id: string }>({ initialKey: 'id', initialOrder: 'asc' })
+    const { setSort, reset, sortKey, sortOrder } = useSort<{ id: string }>({
+      initialKey: 'id',
+      initialOrder: 'asc',
+    })
     setSort('id')
     reset()
     expect(sortKey.value).toBe('id')

@@ -25,9 +25,12 @@ class AuthTest extends TestCase
                 'message' => 'Registrado com sucesso.',
             ])
             ->assertJsonStructure([
-                'data' => ['id', 'name', 'email', 'timezone', 'locale', 'created_at', 'updated_at'],
-            ])
-            ->assertHeader('Authorization');
+                'data' => [
+                    'user' => ['id', 'name', 'email', 'timezone', 'locale', 'created_at', 'updated_at'],
+                    'token',
+                    'token_type',
+                ],
+            ]);
 
         $this->assertDatabaseHas('users', ['email' => 'john@example.com']);
     }

@@ -6,7 +6,11 @@ import { useAnalyticsStore } from '@/stores/analytics.store'
  * Calcula o valor atual de uma meta com base no período e tipo,
  * usando dados do analytics store (séries temporais, heatmap, etc.).
  */
-export function useGoalProgress(goal: { type: Goal['type']; start_date: string; end_date: string | null }) {
+export function useGoalProgress(goal: {
+  type: Goal['type']
+  start_date: string
+  end_date: string | null
+}) {
   const analyticsStore = useAnalyticsStore()
 
   const currentValue = computed(() => {

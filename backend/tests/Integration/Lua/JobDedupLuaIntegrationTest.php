@@ -3,6 +3,7 @@
 namespace Tests\Integration\Lua;
 
 use Illuminate\Support\Facades\Redis;
+use Tests\Concerns\InteractsWithRealRedis;
 use Tests\TestCase;
 
 /**
@@ -10,17 +11,13 @@ use Tests\TestCase;
  */
 class JobDedupLuaIntegrationTest extends TestCase
 {
+    use InteractsWithRealRedis;
+
     private string $script;
 
     protected function setUp(): void
     {
         parent::setUp();
-
-        try {
-            Redis::ping();
-        } catch (\Throwable $e) {
-            $this->markTestSkipped('Redis não disponível: '.$e->getMessage());
-        }
 
         $path = base_path('../redis-scripts/job_dedup.lua');
         $content = file_get_contents($path);
@@ -29,12 +26,18 @@ class JobDedupLuaIntegrationTest extends TestCase
         }
         $this->script = $content;
 
-        Redis::flushdb();
+        $this->skipUnlessRedisIntegrationProbe(function () {
+            Redis::flushdb();
+            Redis::eval($this->script, 1, 'dedup:test:probe', 5);
+        });
     }
 
     protected function tearDown(): void
     {
-        Redis::flushdb();
+        try {
+            Redis::flushdb();
+        } catch (\Throwable) {
+        }
         parent::tearDown();
     }
 

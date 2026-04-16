@@ -22,11 +22,7 @@ const inputId = computed(() => props.id ?? props.name ?? undefined)
 
 <template>
   <div class="base-input">
-    <label
-      v-if="label"
-      class="base-input__label"
-      :for="inputId"
-    >{{ label }}</label>
+    <label v-if="label" class="base-input__label" :for="inputId">{{ label }}</label>
     <input
       :id="inputId"
       :type="type ?? 'text'"
@@ -38,11 +34,8 @@ const inputId = computed(() => props.id ?? props.name ?? undefined)
       :class="{ 'base-input__field--error': error }"
       class="base-input__field"
       @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-    >
-    <p
-      v-if="error"
-      class="base-input__error"
-    >
+    />
+    <p v-if="error" class="base-input__error">
       {{ error }}
     </p>
   </div>
@@ -71,7 +64,8 @@ const inputId = computed(() => props.id ?? props.name ?? undefined)
   color: var(--form-input-text);
   background: var(--form-input-bg);
   outline: none;
-  transition: border-color var(--duration-fast) ease,
+  transition:
+    border-color var(--duration-fast) ease,
     box-shadow var(--duration-fast) ease,
     background var(--duration-fast) ease;
   box-sizing: border-box;

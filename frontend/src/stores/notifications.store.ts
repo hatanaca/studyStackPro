@@ -31,19 +31,21 @@ export const useNotificationsStore = defineStore('notifications', () => {
   }
 
   function markRead(id: string) {
-    const item = items.value.find(n => n.id === id)
+    const item = items.value.find((n) => n.id === id)
     if (item) item.read = true
   }
 
   function markAllRead() {
-    items.value.forEach(n => { n.read = true })
+    items.value.forEach((n) => {
+      n.read = true
+    })
   }
 
   function remove(id: string) {
-    items.value = items.value.filter(n => n.id !== id)
+    items.value = items.value.filter((n) => n.id !== id)
   }
 
-  const unreadCount = computed(() => items.value.filter(n => !n.read).length)
+  const unreadCount = computed(() => items.value.filter((n) => !n.read).length)
 
   return {
     items,

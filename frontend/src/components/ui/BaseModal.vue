@@ -30,10 +30,13 @@ function unlockScroll() {
   document.body.style.overflow = ''
 }
 
-watch(() => props.show, (val) => {
-  if (val) lockScroll()
-  else unlockScroll()
-})
+watch(
+  () => props.show,
+  (val) => {
+    if (val) lockScroll()
+    else unlockScroll()
+  }
+)
 
 onBeforeUnmount(() => {
   if (props.show) unlockScroll()
@@ -55,14 +58,8 @@ onBeforeUnmount(() => {
         @keydown="onKeydown"
       >
         <div class="base-modal">
-          <div
-            v-if="title"
-            class="base-modal__header"
-          >
-            <h3
-              :id="modalTitleId"
-              class="base-modal__title"
-            >
+          <div v-if="title" class="base-modal__header">
+            <h3 :id="modalTitleId" class="base-modal__title">
               {{ title }}
             </h3>
             <button
@@ -151,7 +148,8 @@ onBeforeUnmount(() => {
   cursor: pointer;
   color: var(--color-text-muted);
   line-height: 1;
-  transition: color var(--duration-fast) ease,
+  transition:
+    color var(--duration-fast) ease,
     border-color var(--duration-fast) ease,
     background var(--duration-fast) ease;
 }

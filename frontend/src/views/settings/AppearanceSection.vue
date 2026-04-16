@@ -40,7 +40,15 @@ function save() {
 
 function reset() {
   uiStore.resetCustomTheme()
-  form.value = { primary: '', bg: '', bgCard: '', text: '', textMuted: '', border: '', fontSans: '' }
+  form.value = {
+    primary: '',
+    bg: '',
+    bgCard: '',
+    text: '',
+    textMuted: '',
+    border: '',
+    fontSans: '',
+  }
 }
 </script>
 
@@ -53,9 +61,7 @@ function reset() {
       Altere o tema (claro/escuro) pelo menu principal. Abaixo, customize cores e fonte.
     </p>
     <div class="appearance-section__editor">
-      <h3 class="appearance-section__subtitle">
-        Cores
-      </h3>
+      <h3 class="appearance-section__subtitle">Cores</h3>
       <div class="appearance-section__grid">
         <label class="appearance-section__field">
           <span>Primária</span>
@@ -64,14 +70,14 @@ function reset() {
             type="color"
             class="appearance-section__color"
             @input="setColor('primary', ($event.target as HTMLInputElement).value)"
-          >
+          />
           <input
             v-model="form.primary"
             type="text"
             class="appearance-section__text"
             placeholder="#3b82f6"
             @blur="save"
-          >
+          />
         </label>
         <label class="appearance-section__field">
           <span>Fundo</span>
@@ -80,14 +86,14 @@ function reset() {
             type="color"
             class="appearance-section__color"
             @input="setColor('bg', ($event.target as HTMLInputElement).value)"
-          >
+          />
           <input
             v-model="form.bg"
             type="text"
             class="appearance-section__text"
             placeholder="#f8fafc"
             @blur="save"
-          >
+          />
         </label>
         <label class="appearance-section__field">
           <span>Fundo card</span>
@@ -96,14 +102,14 @@ function reset() {
             type="color"
             class="appearance-section__color"
             @input="setColor('bgCard', ($event.target as HTMLInputElement).value)"
-          >
+          />
           <input
             v-model="form.bgCard"
             type="text"
             class="appearance-section__text"
             placeholder="#ffffff"
             @blur="save"
-          >
+          />
         </label>
         <label class="appearance-section__field">
           <span>Texto</span>
@@ -112,14 +118,14 @@ function reset() {
             type="color"
             class="appearance-section__color"
             @input="setColor('text', ($event.target as HTMLInputElement).value)"
-          >
+          />
           <input
             v-model="form.text"
             type="text"
             class="appearance-section__text"
             placeholder="#0f172a"
             @blur="save"
-          >
+          />
         </label>
         <label class="appearance-section__field">
           <span>Texto secundário</span>
@@ -128,14 +134,14 @@ function reset() {
             type="color"
             class="appearance-section__color"
             @input="setColor('textMuted', ($event.target as HTMLInputElement).value)"
-          >
+          />
           <input
             v-model="form.textMuted"
             type="text"
             class="appearance-section__text"
             placeholder="#64748b"
             @blur="save"
-          >
+          />
         </label>
         <label class="appearance-section__field">
           <span>Borda</span>
@@ -144,30 +150,20 @@ function reset() {
             type="color"
             class="appearance-section__color"
             @input="setColor('border', ($event.target as HTMLInputElement).value)"
-          >
+          />
           <input
             v-model="form.border"
             type="text"
             class="appearance-section__text"
             placeholder="#e2e8f0"
             @blur="save"
-          >
+          />
         </label>
       </div>
-      <h3 class="appearance-section__subtitle">
-        Fonte
-      </h3>
+      <h3 class="appearance-section__subtitle">Fonte</h3>
       <div class="appearance-section__font-row">
-        <select
-          v-model="form.fontSans"
-          class="appearance-section__select"
-          @change="save"
-        >
-          <option
-            v-for="opt in FONT_OPTIONS"
-            :key="opt.value || 'default'"
-            :value="opt.value"
-          >
+        <select v-model="form.fontSans" class="appearance-section__select" @change="save">
+          <option v-for="opt in FONT_OPTIONS" :key="opt.value || 'default'" :value="opt.value">
             {{ opt.label }}
           </option>
         </select>
@@ -252,7 +248,9 @@ function reset() {
   font-family: monospace;
   background: var(--color-bg-card);
   color: var(--color-text);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .appearance-section__font-row {
   display: flex;
@@ -269,7 +267,9 @@ function reset() {
   min-width: clamp(10rem, 46vw, 16rem);
   width: 100%;
   max-width: 20rem;
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .appearance-section__actions {
   margin-top: var(--spacing-sm);

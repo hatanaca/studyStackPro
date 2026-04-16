@@ -4,7 +4,7 @@ import {
   formatDate,
   formatShortDate,
   formatDateTime,
-  truncate
+  truncate,
 } from '../formatters'
 
 describe('formatters', () => {

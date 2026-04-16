@@ -14,15 +14,27 @@ export interface TokenInfo {
 /** Módulo de chamadas à API de autenticação */
 export const authApi = {
   login: (email: string, password: string) =>
-    apiClient.post<ApiResponse<{ user: User; token: string }>>(ENDPOINTS.auth.login, { email, password }),
-  register: (data: { name: string; email: string; password: string; password_confirmation: string; timezone?: string }) =>
-    apiClient.post<ApiResponse<{ user: User; token: string }>>(ENDPOINTS.auth.register, data),
+    apiClient.post<ApiResponse<{ user: User; token: string }>>(ENDPOINTS.auth.login, {
+      email,
+      password,
+    }),
+  register: (data: {
+    name: string
+    email: string
+    password: string
+    password_confirmation: string
+    timezone?: string
+  }) => apiClient.post<ApiResponse<{ user: User; token: string }>>(ENDPOINTS.auth.register, data),
   logout: () => apiClient.post(ENDPOINTS.auth.logout),
   me: () => apiClient.get<ApiResponse<User>>(ENDPOINTS.auth.me),
   updateProfile: (data: { name?: string; timezone?: string }) =>
     apiClient.put<ApiResponse<User>>(ENDPOINTS.auth.updateProfile, data),
-  changePassword: (data: { current_password: string; password: string; password_confirmation: string }) =>
-    apiClient.post<ApiResponse<void>>(ENDPOINTS.auth.changePassword, data),
+  changePassword: (data: {
+    current_password: string
+    password: string
+    password_confirmation: string
+  }) => apiClient.post<ApiResponse<void>>(ENDPOINTS.auth.changePassword, data),
   getTokens: () => apiClient.get<ApiResponse<TokenInfo[]>>(ENDPOINTS.auth.tokens),
-  revokeAllTokens: () => apiClient.delete<ApiResponse<{ revoked_count: number }>>(ENDPOINTS.auth.revokeTokens),
+  revokeAllTokens: () =>
+    apiClient.delete<ApiResponse<{ revoked_count: number }>>(ENDPOINTS.auth.revokeTokens),
 }

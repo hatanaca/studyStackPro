@@ -39,8 +39,8 @@ export const apiClient = axios.create({
   withCredentials: false,
   headers: {
     'Content-Type': 'application/json',
-    Accept: 'application/json'
-  }
+    Accept: 'application/json',
+  },
 })
 
 /** Erro síncrono quando há token mas a sessão ainda não foi validada (evita 401 em cascata). */
@@ -48,7 +48,9 @@ export const SESSION_NOT_READY = 'SESSION_NOT_READY'
 
 function joinAxiosUrl(baseURL: string, url: string): string {
   const b = String(baseURL ?? '').replace(/\/+$/, '')
-  const u = String(url ?? '').replace(/^\/+/, '').split('?')[0]
+  const u = String(url ?? '')
+    .replace(/^\/+/, '')
+    .split('?')[0]
   if (!u) return b
   if (!b) return `/${u}`
   return `${b}/${u}`
@@ -59,7 +61,10 @@ function joinAxiosUrl(baseURL: string, url: string): string {
  */
 function isAllowedBeforeSessionReady(config: InternalAxiosRequestConfig): boolean {
   const method = String(config.method ?? 'get').toLowerCase()
-  const path = joinAxiosUrl(String(config.baseURL ?? ''), String(config.url ?? '')).replace(/\/+/g, '/')
+  const path = joinAxiosUrl(String(config.baseURL ?? ''), String(config.url ?? '')).replace(
+    /\/+/g,
+    '/'
+  )
   if (method === 'get' && /\/auth\/me$/i.test(path)) return true
   if (/\/auth\/logout/i.test(path)) return true
   return false
@@ -99,7 +104,11 @@ let handlingUnauthorized = false
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error && typeof error === 'object' && (error as { __sessionNotReady?: boolean }).__sessionNotReady) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      (error as { __sessionNotReady?: boolean }).__sessionNotReady
+    ) {
       return Promise.reject(error)
     }
 
@@ -127,7 +136,8 @@ apiClient.interceptors.response.use(
         }, 300)
       }
     } else if (status === 429) {
-      const message = getApiErrorMessage(error) || 'Muitas requisições. Aguarde um momento e tente novamente.'
+      const message =
+        getApiErrorMessage(error) || 'Muitas requisições. Aguarde um momento e tente novamente.'
       if (toastFn) {
         toastFn(message, 'error')
       } else {

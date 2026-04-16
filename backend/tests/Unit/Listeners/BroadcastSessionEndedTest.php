@@ -27,6 +27,7 @@ class BroadcastSessionEndedTest extends TestCase
         $session = Mockery::mock(StudySession::class)->makePartial();
         $session->user_id = (string) Str::uuid();
         $session->ended_at = Carbon::now();
+        $session->shouldReceive('loadMissing')->with('technology')->andReturnSelf();
 
         $listener = new BroadcastSessionEnded;
         $listener->handle(new StudySessionUpdated($session, ['ended_at']));

@@ -20,10 +20,7 @@ withDefaults(
       <div class="loading-overlay__backdrop" />
       <div class="loading-overlay__content">
         <span class="loading-overlay__spinner" />
-        <span
-          v-if="message"
-          class="loading-overlay__message"
-        >{{ message }}</span>
+        <span v-if="message" class="loading-overlay__message">{{ message }}</span>
       </div>
     </div>
   </Transition>
@@ -61,7 +58,9 @@ withDefaults(
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 .loading-overlay__message {
   font-size: var(--text-sm);

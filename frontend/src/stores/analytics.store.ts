@@ -1,6 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, shallowRef, computed } from 'vue'
-import type { DashboardData, UserMetrics, TechnologyMetric, DailyMinute } from '@/types/domain.types'
+import type {
+  DashboardData,
+  UserMetrics,
+  TechnologyMetric,
+  DailyMinute,
+} from '@/types/domain.types'
 import { analyticsApi } from '@/api/modules/analytics.api'
 
 /** Períodos disponíveis para gráficos de séries temporais */
@@ -68,9 +73,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   /** TTL para considerar dados "frescos" (5min) */
   const TTL_MS = 5 * 60 * 1000
   const isFresh = computed(
-    () =>
-      lastFetchAt.value !== null &&
-      Date.now() - lastFetchAt.value.getTime() < TTL_MS
+    () => lastFetchAt.value !== null && Date.now() - lastFetchAt.value.getTime() < TTL_MS
   )
 
   const todayStr = computed(() => {
@@ -81,9 +84,9 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   // --- Helper: merge DailyMinute[] with pending sessions ---
   function mergeDailyWithPending(raw: DailyMinute[]): DailyMinute[] {
     if (!pendingSessions.value.length) return raw
-    const merged = raw.map(d => ({ ...d }))
+    const merged = raw.map((d) => ({ ...d }))
     for (const ps of pendingSessions.value) {
-      const entry = merged.find(d => d.date === ps.date)
+      const entry = merged.find((d) => d.date === ps.date)
       if (entry) {
         entry.total_minutes += ps.minutes
         entry.session_count = (entry.session_count ?? 0) + 1
@@ -113,17 +116,23 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   const technologyMetrics = computed(() => {
     const base = dashboard.value?.technology_metrics ?? []
     if (!pendingSessions.value.length) return base
-    const merged = base.map(tm => ({ ...tm }))
+    const merged = base.map((tm) => ({ ...tm }))
     for (const ps of pendingSessions.value) {
       if (!ps.technology) continue
-      const existing = merged.find(tm => tm.technology?.id === ps.technology!.id)
+      const existing = merged.find((tm) => tm.technology?.id === ps.technology!.id)
       if (existing) {
         existing.total_minutes += ps.minutes
         existing.session_count += 1
         existing.last_studied_at = new Date().toISOString()
       } else {
         merged.push({
-          technology: { id: ps.technology.id, name: ps.technology.name, color: ps.technology.color, slug: '', is_active: true },
+          technology: {
+            id: ps.technology.id,
+            name: ps.technology.name,
+            color: ps.technology.color,
+            slug: '',
+            is_active: true,
+          },
           total_minutes: ps.minutes,
           session_count: 1,
           last_studied_at: new Date().toISOString(),
@@ -144,7 +153,11 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     const pendingCount = pendingSessions.value.length
     return data.map((w, i) =>
       i === 0
-        ? { ...w, total_minutes: w.total_minutes + pendingMins, session_count: w.session_count + pendingCount }
+        ? {
+            ...w,
+            total_minutes: w.total_minutes + pendingMins,
+            session_count: w.session_count + pendingCount,
+          }
         : w
     )
   })
@@ -152,9 +165,9 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   const heatmap = computed(() => {
     const data = heatmapData.value
     if (!pendingSessions.value.length) return data
-    const merged = data.map(d => ({ ...d }))
+    const merged = data.map((d) => ({ ...d }))
     for (const ps of pendingSessions.value) {
-      const entry = merged.find(d => d.date === ps.date)
+      const entry = merged.find((d) => d.date === ps.date)
       if (entry) {
         entry.total_minutes += ps.minutes
       } else {
@@ -168,40 +181,47 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   const topTechnologies = computed(() => dashboard.value?.top_technologies ?? [])
 
   const todayMinutes = computed(() => {
-    const entry = (dashboard.value?.time_series_30d ?? []).find(d => d.date === todayStr.value)
+    const entry = (dashboard.value?.time_series_30d ?? []).find((d) => d.date === todayStr.value)
     const apiMinutes = entry?.total_minutes ?? 0
     const pendingMinutes = pendingSessions.value
-      .filter(s => s.date === todayStr.value)
+      .filter((s) => s.date === todayStr.value)
       .reduce((sum, s) => sum + s.minutes, 0)
     return apiMinutes + pendingMinutes
   })
 
   const todaySessions = computed(() => {
-    const entry = (dashboard.value?.time_series_30d ?? []).find(d => d.date === todayStr.value)
+    const entry = (dashboard.value?.time_series_30d ?? []).find((d) => d.date === todayStr.value)
     const apiSessions = entry?.session_count ?? 0
-    const pendingCount = pendingSessions.value.filter(s => s.date === todayStr.value).length
+    const pendingCount = pendingSessions.value.filter((s) => s.date === todayStr.value).length
     return apiSessions + pendingCount
   })
 
   const todayTechnologies = computed(() => {
     const today = todayStr.value
-    const apiTechs = (dashboard.value?.technology_metrics ?? []).filter(tm =>
+    const apiTechs = (dashboard.value?.technology_metrics ?? []).filter((tm) =>
       tm.last_studied_at?.startsWith(today)
     )
 
-    const seenIds = new Set(apiTechs.map(tm => tm.technology?.id))
+    const seenIds = new Set(apiTechs.map((tm) => tm.technology?.id))
     const extras: TechnologyMetric[] = []
 
     for (const ps of pendingSessions.value) {
       if (ps.date !== today || !ps.technology || seenIds.has(ps.technology.id)) continue
       seenIds.add(ps.technology.id)
       const pendingMins = pendingSessions.value
-        .filter(s => s.technology?.id === ps.technology!.id)
+        .filter((s) => s.technology?.id === ps.technology!.id)
         .reduce((sum, s) => sum + s.minutes, 0)
       extras.push({
-        technology: { id: ps.technology.id, name: ps.technology.name, color: ps.technology.color, slug: '', is_active: true },
+        technology: {
+          id: ps.technology.id,
+          name: ps.technology.name,
+          color: ps.technology.color,
+          slug: '',
+          is_active: true,
+        },
         total_minutes: pendingMins,
-        session_count: pendingSessions.value.filter(s => s.technology?.id === ps.technology!.id).length,
+        session_count: pendingSessions.value.filter((s) => s.technology?.id === ps.technology!.id)
+          .length,
         last_studied_at: new Date().toISOString(),
       })
     }
@@ -347,7 +367,9 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     isFresh,
     userMetrics,
     technologyMetrics,
-    timeSeries30d: computed(() => mergeDailyWithPending(timeSeriesData.value['30d'] ?? dashboard.value?.time_series_30d ?? [])),
+    timeSeries30d: computed(() =>
+      mergeDailyWithPending(timeSeriesData.value['30d'] ?? dashboard.value?.time_series_30d ?? [])
+    ),
     timeSeries,
     weeklyComparison,
     heatmap,

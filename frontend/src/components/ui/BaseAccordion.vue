@@ -21,7 +21,7 @@ const props = withDefaults(
 const openIds = ref<Set<string>>(new Set(props.defaultOpen))
 
 function toggle(id: string) {
-  const item = props.items.find(i => i.id === id)
+  const item = props.items.find((i) => i.id === id)
   if (item?.disabled) return
   if (props.multiple) {
     const next = new Set(openIds.value)
@@ -44,7 +44,10 @@ function isOpen(id: string) {
       v-for="item in items"
       :key="item.id"
       class="base-accordion__item"
-      :class="{ 'base-accordion__item--open': isOpen(item.id), 'base-accordion__item--disabled': item.disabled }"
+      :class="{
+        'base-accordion__item--open': isOpen(item.id),
+        'base-accordion__item--disabled': item.disabled,
+      }"
     >
       <button
         :id="`accordion-trigger-${item.id}`"
@@ -57,10 +60,7 @@ function isOpen(id: string) {
         @keydown.enter.space.prevent="toggle(item.id)"
       >
         <span class="base-accordion__title">{{ item.title }}</span>
-        <span
-          class="base-accordion__chevron"
-          aria-hidden="true"
-        >▼</span>
+        <span class="base-accordion__chevron" aria-hidden="true">▼</span>
       </button>
       <Transition name="accordion">
         <div
@@ -70,10 +70,7 @@ function isOpen(id: string) {
           role="region"
           :aria-labelledby="`accordion-trigger-${item.id}`"
         >
-          <slot
-            :name="item.id"
-            :item="item"
-          />
+          <slot :name="item.id" :item="item" />
         </div>
       </Transition>
     </div>
@@ -106,9 +103,11 @@ function isOpen(id: string) {
   border: none;
   cursor: pointer;
   text-align: left;
-  transition: background var(--duration-fast) ease, color var(--duration-fast) ease;
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease;
 }
-.base-accordion__trigger:hover:not([aria-disabled="true"]) {
+.base-accordion__trigger:hover:not([aria-disabled='true']) {
   background: var(--color-bg-soft);
   color: var(--color-primary);
 }
@@ -136,7 +135,9 @@ function isOpen(id: string) {
 
 .accordion-enter-active,
 .accordion-leave-active {
-  transition: opacity var(--duration-normal) var(--ease-in-out), transform var(--duration-normal) var(--ease-out-expo);
+  transition:
+    opacity var(--duration-normal) var(--ease-in-out),
+    transform var(--duration-normal) var(--ease-out-expo);
 }
 .accordion-enter-from,
 .accordion-leave-to {

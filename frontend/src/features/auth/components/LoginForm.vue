@@ -42,16 +42,17 @@ function onSubmit() {
 }
 
 defineExpose({
-  setError: (msg: string) => { errors.value = { password: msg } },
-  clearErrors: () => { errors.value = {} }
+  setError: (msg: string) => {
+    errors.value = { password: msg }
+  },
+  clearErrors: () => {
+    errors.value = {}
+  },
 })
 </script>
 
 <template>
-  <form
-    class="login-form"
-    @submit.prevent="onSubmit"
-  >
+  <form class="login-form" @submit.prevent="onSubmit">
     <BaseInput
       id="login-email"
       v-model="email"

@@ -6,7 +6,6 @@ use App\Models\User;
 use App\Modules\Auth\DTOs\LoginDTO;
 use App\Modules\Auth\DTOs\RegisterDTO;
 use App\Modules\Auth\Repositories\Contracts\AuthRepositoryInterface;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
@@ -14,7 +13,8 @@ use Illuminate\Support\Facades\Hash;
  * Serviço de autenticação.
  *
  * Centraliza lógica de registro, login, troca de senha. Usa AuthRepository para persistência
- * e Sanctum para tokens. No login, remove tokens anteriores (sessão única por vez).
+ * e Sanctum para tokens. Login valida credenciais sem sessão web (API stateless), para o
+ * guard Sanctum não autenticar requisições seguintes só pela sessão.
  */
 class AuthService
 {
@@ -31,88 +31,33 @@ class AuthService
      */
     public function register(RegisterDTO $dto): User
     {
-        $startedAt = microtime(true);
-
-        // #region agent log
-        @file_put_contents(
-            base_path('../debug-ba100a.log'),
-            json_encode([
-                'sessionId' => 'ba100a',
-                'runId' => 'project-smoke',
-                'hypothesisId' => 'H7',
-                'location' => 'backend/app/Modules/Auth/Services/AuthService.php',
-                'message' => 'register_start',
-                'data' => ['hasTimezone' => $dto->timezone !== null],
-                'timestamp' => (int) round(microtime(true) * 1000),
-            ], JSON_UNESCAPED_SLASHES).PHP_EOL,
-            FILE_APPEND
-        );
-        // #endregion
-
-        $hashStartedAt = microtime(true);
         $passwordHash = Hash::make($dto->password);
 
-        // #region agent log
-        @file_put_contents(
-            base_path('../debug-ba100a.log'),
-            json_encode([
-                'sessionId' => 'ba100a',
-                'runId' => 'project-smoke',
-                'hypothesisId' => 'H7',
-                'location' => 'backend/app/Modules/Auth/Services/AuthService.php',
-                'message' => 'register_hash_complete',
-                'data' => ['duration_ms' => round((microtime(true) - $hashStartedAt) * 1000, 2)],
-                'timestamp' => (int) round(microtime(true) * 1000),
-            ], JSON_UNESCAPED_SLASHES).PHP_EOL,
-            FILE_APPEND
-        );
-        // #endregion
-
-        $createStartedAt = microtime(true);
-        $user = $this->authRepository->create([
+        return $this->authRepository->create([
             'name' => $dto->name,
             'email' => $dto->email,
             'password' => $passwordHash,
             'timezone' => $dto->timezone,
         ]);
-
-        // #region agent log
-        @file_put_contents(
-            base_path('../debug-ba100a.log'),
-            json_encode([
-                'sessionId' => 'ba100a',
-                'runId' => 'project-smoke',
-                'hypothesisId' => 'H7',
-                'location' => 'backend/app/Modules/Auth/Services/AuthService.php',
-                'message' => 'register_create_complete',
-                'data' => [
-                    'duration_ms' => round((microtime(true) - $createStartedAt) * 1000, 2),
-                    'total_duration_ms' => round((microtime(true) - $startedAt) * 1000, 2),
-                ],
-                'timestamp' => (int) round(microtime(true) * 1000),
-            ], JSON_UNESCAPED_SLASHES).PHP_EOL,
-            FILE_APPEND
-        );
-        // #endregion
-
-        return $user;
     }
 
     /**
-     * Autentica via Laravel Auth e retorna user + token. Remove tokens antigos.
+     * Valida email/senha e retorna user + token. Revoga tokens anteriores. Não usa Auth::attempt
+     * (evita sessão web; o Guard do Sanctum consulta o guard "web" antes do Bearer).
      *
      * @return array{user: User, token: string}|null null se credenciais inválidas
      */
     public function login(LoginDTO $dto): ?array
     {
-        if (! Auth::attempt(['email' => $dto->email, 'password' => $dto->password])) {
+        $user = $this->authRepository->findByEmail($dto->email);
+        if ($user === null || ! Hash::check($dto->password, $user->getAuthPassword())) {
             return null;
         }
-        $user = Auth::user();
+
         $this->tokenService->revokeMany($user->tokens()->get());
         $token = $user->createToken('api-token')->plainTextToken;
 
-        return ['user' => $user, 'token' => $token];
+        return ['user' => $user->fresh(), 'token' => $token];
     }
 
     /**
@@ -134,15 +79,13 @@ class AuthService
      */
     public function changePassword(User $user, string $currentPassword, string $newPassword): bool
     {
-        if (! Hash::check($currentPassword, $user->password)) {
+        if (! Hash::check($currentPassword, $user->getAuthPassword())) {
             return false;
         }
 
-        $updated = $this->authRepository->updatePassword($user, Hash::make($newPassword));
-        if ($updated) {
-            $this->tokenService->revokeMany($user->tokens()->get());
-        }
+        // Revogar antes de persistir a nova senha: o save() pode afetar relação/cache de tokens em memória.
+        $this->tokenService->revokeMany($user->tokens()->get());
 
-        return $updated;
+        return $this->authRepository->updatePassword($user, Hash::make($newPassword));
     }
 }

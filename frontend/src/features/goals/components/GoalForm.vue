@@ -26,7 +26,7 @@ const startDate = ref(props.initialGoal?.start_date ?? new Date().toISOString().
 const errors = ref<Record<string, string>>({})
 
 const typeOptions = computed(() =>
-  (Object.keys(GOAL_TYPE_LABELS) as GoalType[]).map(key => ({
+  (Object.keys(GOAL_TYPE_LABELS) as GoalType[]).map((key) => ({
     value: key,
     label: GOAL_TYPE_LABELS[key],
   }))
@@ -59,26 +59,14 @@ function submit() {
 </script>
 
 <template>
-  <form
-    class="goal-form"
-    @submit.prevent="submit"
-  >
+  <form class="goal-form" @submit.prevent="submit">
     <fieldset class="goal-form__fieldset">
       <legend class="goal-form__legend">Tipo e valor</legend>
       <p class="goal-form__desc">Escolha o tipo de meta e o valor alvo.</p>
       <div class="goal-form__field">
         <label class="goal-form__label" for="goal-type">Tipo</label>
-        <select
-          id="goal-type"
-          v-model="type"
-          class="goal-form__select"
-          aria-label="Tipo de meta"
-        >
-          <option
-            v-for="opt in typeOptions"
-            :key="opt.value"
-            :value="opt.value"
-          >
+        <select id="goal-type" v-model="type" class="goal-form__select" aria-label="Tipo de meta">
+          <option v-for="opt in typeOptions" :key="opt.value" :value="opt.value">
             {{ opt.label }}
           </option>
         </select>
@@ -94,7 +82,7 @@ function submit() {
           placeholder="Ex: 300"
           class="goal-form__input"
           :class="{ 'goal-form__input--error': errors.target_value }"
-        >
+        />
         <span v-if="errors.target_value" class="goal-form__error">{{ errors.target_value }}</span>
       </div>
     </fieldset>
@@ -110,25 +98,15 @@ function submit() {
           type="date"
           class="goal-form__input"
           :class="{ 'goal-form__input--error': errors.start_date }"
-        >
+        />
         <span v-if="errors.start_date" class="goal-form__error">{{ errors.start_date }}</span>
       </div>
     </fieldset>
 
     <div class="goal-form__actions">
-      <BaseButton
-        type="button"
-        variant="secondary"
-        @click="emit('cancel')"
-      >
-        Cancelar
-      </BaseButton>
-      <BaseButton
-        type="submit"
-        variant="primary"
-        :disabled="loading"
-      >
-        {{ loading ? 'Salvando...' : (initialGoal ? 'Salvar alterações' : 'Criar meta') }}
+      <BaseButton type="button" variant="secondary" @click="emit('cancel')"> Cancelar </BaseButton>
+      <BaseButton type="submit" variant="primary" :disabled="loading">
+        {{ loading ? 'Salvando...' : initialGoal ? 'Salvar alterações' : 'Criar meta' }}
       </BaseButton>
     </div>
   </form>
@@ -184,7 +162,8 @@ function submit() {
   border-radius: var(--form-input-radius);
   outline: none;
   box-sizing: border-box;
-  transition: border-color var(--duration-fast) ease,
+  transition:
+    border-color var(--duration-fast) ease,
     box-shadow var(--duration-fast) ease,
     background var(--duration-fast) ease;
 }

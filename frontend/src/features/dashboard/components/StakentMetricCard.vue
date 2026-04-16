@@ -13,7 +13,14 @@ const props = withDefaults(
     color?: string
     to?: string
   }>(),
-  { change: undefined, changeLabel: undefined, tag: '', chartData: () => [], color: undefined, to: undefined }
+  {
+    change: undefined,
+    changeLabel: undefined,
+    tag: '',
+    chartData: () => [],
+    color: undefined,
+    to: undefined,
+  }
 )
 
 const hasPositiveChange = computed(() => (props.change ?? 0) > 0)
@@ -29,12 +36,7 @@ const changeText = computed(() => {
   <article class="stakent-metric-card">
     <div class="stakent-metric-card__tag-row">
       <span class="stakent-metric-card__tag">{{ tag || 'Métrica' }}</span>
-      <RouterLink
-        v-if="to"
-        :to="to"
-        class="stakent-metric-card__more"
-        aria-label="Ver mais"
-      >
+      <RouterLink v-if="to" :to="to" class="stakent-metric-card__more" aria-label="Ver mais">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="16"
@@ -43,7 +45,10 @@ const changeText = computed(() => {
           fill="none"
           stroke="currentColor"
           stroke-width="2"
-        ><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+        >
+          <path d="M5 12h14" />
+          <path d="M12 5v14" />
+        </svg>
       </RouterLink>
     </div>
     <div class="stakent-metric-card__content">
@@ -60,17 +65,17 @@ const changeText = computed(() => {
       <p class="stakent-metric-card__label">
         {{ label }}
       </p>
-      <div
-        v-if="chartData && chartData.length"
-        class="stakent-metric-card__chart"
-      >
-        <svg
-          viewBox="0 0 100 24"
-          preserveAspectRatio="none"
-          class="stakent-metric-card__sparkline"
-        >
+      <div v-if="chartData && chartData.length" class="stakent-metric-card__chart">
+        <svg viewBox="0 0 100 24" preserveAspectRatio="none" class="stakent-metric-card__sparkline">
           <polyline
-            :points="chartData.map((v, i) => `${(chartData.length > 1 ? i / (chartData.length - 1) : 0) * 100},${22 - ((Math.max(...chartData) ? v / Math.max(...chartData) : 0) * 20)}`).join(' ')"
+            :points="
+              chartData
+                .map(
+                  (v, i) =>
+                    `${(chartData.length > 1 ? i / (chartData.length - 1) : 0) * 100},${22 - (Math.max(...chartData) ? v / Math.max(...chartData) : 0) * 20}`
+                )
+                .join(' ')
+            "
             fill="none"
             :stroke="color ?? 'var(--color-primary)'"
             stroke-width="1.5"
@@ -92,7 +97,9 @@ const changeText = computed(() => {
   position: relative;
   overflow: hidden;
   box-shadow: var(--shadow-card, var(--shadow-sm));
-  transition: box-shadow var(--duration-normal) ease, border-color var(--duration-fast) ease;
+  transition:
+    box-shadow var(--duration-normal) ease,
+    border-color var(--duration-fast) ease;
 }
 [data-theme='dark'] .app-layout.stakent-style .stakent-metric-card {
   box-shadow: var(--shadow-card), var(--shadow-glow);

@@ -37,7 +37,9 @@ const debouncedSearch = useDebounceFn((...args: unknown[]) => {
 
 watch(
   () => props.modelValue,
-  (v) => { local.value = v }
+  (v) => {
+    local.value = v
+  }
 )
 
 watch(local, (v) => {

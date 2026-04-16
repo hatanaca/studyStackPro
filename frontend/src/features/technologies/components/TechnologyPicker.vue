@@ -139,9 +139,8 @@ function onKeydown(e: KeyboardEvent) {
   }
   if (e.key === 'ArrowUp') {
     e.preventDefault()
-    highlightIndex.value = highlightIndex.value <= 0
-      ? results.value.length - 1
-      : highlightIndex.value - 1
+    highlightIndex.value =
+      highlightIndex.value <= 0 ? results.value.length - 1 : highlightIndex.value - 1
     return
   }
   if (e.key === 'Enter') {
@@ -176,7 +175,7 @@ function onKeydown(e: KeyboardEvent) {
         @focus="onFocus"
         @blur="onBlur"
         @keydown="onKeydown"
-      >
+      />
       <button
         v-if="modelValue"
         type="button"
@@ -216,26 +215,12 @@ function onKeydown(e: KeyboardEvent) {
           :class="{ 'technology-picker__option--highlight': i === highlightIndex }"
           @mousedown.prevent="select(tech)"
         >
-          <span
-            class="technology-picker__color-dot"
-            :style="{ background: tech.color }"
-          />
+          <span class="technology-picker__color-dot" :style="{ background: tech.color }" />
           {{ tech.name }}
         </button>
-        <p
-          v-if="loading"
-          class="technology-picker__loading"
-        >
-          Atualizando resultados…
-        </p>
+        <p v-if="loading" class="technology-picker__loading">Atualizando resultados…</p>
       </template>
-      <p
-        v-else
-        class="technology-picker__empty"
-        role="status"
-      >
-        Nenhuma tecnologia encontrada.
-      </p>
+      <p v-else class="technology-picker__empty" role="status">Nenhuma tecnologia encontrada.</p>
     </div>
   </div>
 </template>
@@ -257,7 +242,9 @@ function onKeydown(e: KeyboardEvent) {
   box-sizing: border-box;
   background: var(--color-bg-card);
   color: var(--color-text);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .technology-picker__input:focus-visible {
   outline: none;

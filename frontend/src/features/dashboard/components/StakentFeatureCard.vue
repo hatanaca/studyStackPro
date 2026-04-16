@@ -1,25 +1,18 @@
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <article class="stakent-feature-card">
-    <div class="stakent-feature-card__badge">
-      Novo
-    </div>
+    <div class="stakent-feature-card__badge">Novo</div>
     <div class="stakent-feature-card__brand">
       <span class="stakent-feature-card__logo">StudyTrack Pro</span>
     </div>
-    <h3 class="stakent-feature-card__title">
-      Resumo de Estudos
-    </h3>
+    <h3 class="stakent-feature-card__title">Resumo de Estudos</h3>
     <p class="stakent-feature-card__desc">
-      Um resumo completo que ajuda você a acompanhar investimento em conhecimento, métricas por tecnologia e progresso semanal.
+      Um resumo completo que ajuda você a acompanhar investimento em conhecimento, métricas por
+      tecnologia e progresso semanal.
     </p>
     <div class="stakent-feature-card__actions">
-      <router-link
-        to="/"
-        class="stakent-feature-card__btn stakent-feature-card__btn--primary"
-      >
+      <router-link to="/" class="stakent-feature-card__btn stakent-feature-card__btn--primary">
         <span class="stakent-feature-card__btn-icon">📊</span>
         Ver Dashboard
       </router-link>
@@ -38,9 +31,15 @@
   position: relative;
   padding: var(--spacing-xl);
   border-radius: var(--radius-card, var(--radius-lg));
-  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 35%, transparent), color-mix(in srgb, var(--color-primary) 20%, transparent));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-primary) 35%, transparent),
+    color-mix(in srgb, var(--color-primary) 20%, transparent)
+  );
   border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
-  box-shadow: var(--shadow-card, var(--shadow-md)), 0 0 60px color-mix(in srgb, var(--color-primary) 10%, transparent);
+  box-shadow:
+    var(--shadow-card, var(--shadow-md)),
+    0 0 60px color-mix(in srgb, var(--color-primary) 10%, transparent);
   overflow: hidden;
 }
 .stakent-feature-card__badge {
@@ -93,7 +92,9 @@
   font-size: var(--text-sm);
   font-weight: 600;
   text-decoration: none;
-  transition: opacity var(--duration-fast) ease, transform var(--duration-fast) ease;
+  transition:
+    opacity var(--duration-fast) ease,
+    transform var(--duration-fast) ease;
 }
 .stakent-feature-card__btn:hover {
   opacity: 0.95;

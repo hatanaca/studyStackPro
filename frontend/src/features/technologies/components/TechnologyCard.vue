@@ -19,23 +19,14 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <BaseCard
-    class="technology-card"
-    :style="{ '--tech-color': technology.color }"
-  >
+  <BaseCard class="technology-card" :style="{ '--tech-color': technology.color }">
     <template #default>
-      <div
-        class="technology-card__content"
-        @mouseenter="prefetchTechnologyDetailView"
-      >
+      <div class="technology-card__content" @mouseenter="prefetchTechnologyDetailView">
         <div class="technology-card__main">
           <span class="technology-card__name">{{ technology.name }}</span>
           <span class="technology-card__slug">{{ technology.slug }}</span>
         </div>
-        <p
-          v-if="technology.description"
-          class="technology-card__desc"
-        >
+        <p v-if="technology.description" class="technology-card__desc">
           {{ technology.description }}
         </p>
         <div class="technology-card__actions">
@@ -73,7 +64,11 @@ const emit = defineEmits<{
 
 <style scoped>
 .technology-card {
-  border-color: color-mix(in srgb, var(--tech-color, var(--color-primary)) 22%, var(--color-border));
+  border-color: color-mix(
+    in srgb,
+    var(--tech-color, var(--color-primary)) 22%,
+    var(--color-border)
+  );
 }
 .technology-card__content {
   padding: var(--widget-padding);

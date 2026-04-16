@@ -16,7 +16,9 @@ async function endSession() {
   <section class="session-focus" aria-label="Modo foco da sessão ativa">
     <div v-if="activeSession" class="session-focus__card">
       <p class="session-focus__label">Sessão em andamento</p>
-      <h1 class="session-focus__timer" aria-live="off" aria-atomic="true" role="timer">{{ formattedTime }}</h1>
+      <h1 class="session-focus__timer" aria-live="off" aria-atomic="true" role="timer">
+        {{ formattedTime }}
+      </h1>
       <p v-if="activeSession.technology" class="session-focus__tech">
         {{ activeSession.technology.name }}
       </p>
@@ -41,10 +43,7 @@ async function endSession() {
         </button>
       </div>
     </div>
-    <div
-      v-else
-      class="session-focus__empty"
-    >
+    <div v-else class="session-focus__empty">
       <EmptyState
         icon="🎯"
         title="Nenhuma sessão ativa"
@@ -128,7 +127,11 @@ async function endSession() {
   background: var(--color-bg-soft);
   color: var(--color-text);
   cursor: pointer;
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    background var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .session-focus__btn:hover:not(:disabled) {
   background: var(--color-border);

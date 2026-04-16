@@ -54,20 +54,8 @@ onBeforeUnmount(() => {
     :title="copied ? copiedLabel : label"
     @click="copy"
   >
-    <span
-      v-if="copied"
-      class="copy-button__icon"
-      aria-hidden="true"
-    >
-      ✓
-    </span>
-    <span
-      v-else
-      class="copy-button__icon copy-button__icon--copy"
-      aria-hidden="true"
-    >
-      📋
-    </span>
+    <span v-if="copied" class="copy-button__icon" aria-hidden="true"> ✓ </span>
+    <span v-else class="copy-button__icon copy-button__icon--copy" aria-hidden="true"> 📋 </span>
     <span class="copy-button__text">
       {{ copied ? copiedLabel : label }}
     </span>
@@ -87,7 +75,8 @@ onBeforeUnmount(() => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: color var(--duration-fast) ease,
+  transition:
+    color var(--duration-fast) ease,
     background var(--duration-fast) ease,
     border-color var(--duration-fast) ease;
 }

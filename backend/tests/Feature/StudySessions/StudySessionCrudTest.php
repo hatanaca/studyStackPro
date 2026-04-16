@@ -124,7 +124,7 @@ class StudySessionCrudTest extends TestCase
             'user_id' => $otherUser->id,
             'name' => 'Outro',
             'slug' => 'outro',
-            'color' => '#000',
+            'color' => '#000000',
             'is_active' => true,
         ]);
 
@@ -161,7 +161,7 @@ class StudySessionCrudTest extends TestCase
             'user_id' => $otherUser->id,
             'name' => 'Outro',
             'slug' => 'outro',
-            'color' => '#000',
+            'color' => '#000000',
             'is_active' => true,
         ]);
         $session = StudySession::factory()->create([

@@ -19,7 +19,9 @@ const currentWeekMinutes = computed(() => {
 const progressPercent = computed(() =>
   Math.min(100, Math.round((currentWeekMinutes.value / weeklyGoalMinutes.value) * 100))
 )
-const remainingMinutes = computed(() => Math.max(0, weeklyGoalMinutes.value - currentWeekMinutes.value))
+const remainingMinutes = computed(() =>
+  Math.max(0, weeklyGoalMinutes.value - currentWeekMinutes.value)
+)
 const goalReached = computed(() => currentWeekMinutes.value >= weeklyGoalMinutes.value)
 const hasCustomGoal = computed(() => !!weeklyGoal.value)
 
@@ -57,7 +59,8 @@ function formatMinutes(m: number): string {
           Esta semana você estudou
           <strong>{{ formatMinutes(currentWeekMinutes) }}</strong>
           de uma meta de
-          <strong>{{ formatMinutes(weeklyGoalMinutes) }}</strong>.
+          <strong>{{ formatMinutes(weeklyGoalMinutes) }}</strong
+          >.
         </p>
         <ProgressBar
           :value="progressPercent"
@@ -65,24 +68,13 @@ function formatMinutes(m: number): string {
           :severity="goalReached ? 'success' : 'primary'"
           class="goals-widget__progress"
         />
-      <p
-        v-if="!goalReached && remainingMinutes > 0"
-        class="goals-widget__remaining"
-      >
-        Faltam {{ formatMinutes(remainingMinutes) }} para bater a meta.
-      </p>
-      <p
-        v-else-if="goalReached"
-        class="goals-widget__success"
-      >
-        Meta da semana atingida.
-      </p>
-      <p
-        v-if="!hasCustomGoal"
-        class="goals-widget__hint"
-      >
-        Crie uma meta em Metas para personalizar seu objetivo.
-      </p>
+        <p v-if="!goalReached && remainingMinutes > 0" class="goals-widget__remaining">
+          Faltam {{ formatMinutes(remainingMinutes) }} para bater a meta.
+        </p>
+        <p v-else-if="goalReached" class="goals-widget__success">Meta da semana atingida.</p>
+        <p v-if="!hasCustomGoal" class="goals-widget__hint">
+          Crie uma meta em Metas para personalizar seu objetivo.
+        </p>
       </div>
     </template>
   </Card>
@@ -101,7 +93,9 @@ function formatMinutes(m: number): string {
   gap: var(--spacing-sm);
   width: 100%;
 }
-.goals-widget__link { text-decoration: none; }
+.goals-widget__link {
+  text-decoration: none;
+}
 .goals-widget__content {
   display: flex;
   flex-direction: column;

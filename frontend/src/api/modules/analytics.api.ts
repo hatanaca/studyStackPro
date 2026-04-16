@@ -6,7 +6,8 @@ import type { DashboardData, TechnologyMetric } from '@/types/domain.types'
 /** Módulo de chamadas à API de analytics (dashboard, heatmap, export, etc.) */
 export const analyticsApi = {
   getDashboard: () => apiClient.get<ApiResponse<DashboardData>>(ENDPOINTS.analytics.dashboard),
-  getUserMetrics: () => apiClient.get<ApiResponse<Record<string, unknown>>>(ENDPOINTS.analytics.userMetrics),
+  getUserMetrics: () =>
+    apiClient.get<ApiResponse<Record<string, unknown>>>(ENDPOINTS.analytics.userMetrics),
   getTechStats: () => apiClient.get<ApiResponse<TechnologyMetric[]>>(ENDPOINTS.analytics.techStats),
   getTimeSeries: (days = 30) =>
     apiClient.get<ApiResponse<{ date: string; total_minutes: number }[]>>(
@@ -26,9 +27,7 @@ export const analyticsApi = {
           study_score?: number | null
         }[]
       >
-    >(
-      ENDPOINTS.analytics.weekly
-    ),
+    >(ENDPOINTS.analytics.weekly),
   getHeatmap: (year?: number) =>
     apiClient.get<ApiResponse<{ date: string; total_minutes: number }[]>>(
       ENDPOINTS.analytics.heatmap,

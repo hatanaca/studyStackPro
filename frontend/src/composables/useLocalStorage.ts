@@ -6,5 +6,7 @@ import { useStorage } from '@vueuse/core'
  * @param defaultValue Valor inicial quando não há dado salvo
  */
 export function useLocalStorage<T>(key: string, defaultValue: T) {
-  return useStorage(key, defaultValue, localStorage, { serializer: { read: JSON.parse, write: JSON.stringify } })
+  return useStorage(key, defaultValue, localStorage, {
+    serializer: { read: JSON.parse, write: JSON.stringify },
+  })
 }

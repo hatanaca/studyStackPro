@@ -10,11 +10,7 @@ const DEFAULT_DURATION = 4000
 export function useToast() {
   const toast = usePrimeToast()
 
-  function add(
-    message: string,
-    type: 'success' | 'error' | 'info',
-    duration = DEFAULT_DURATION
-  ) {
+  function add(message: string, type: 'success' | 'error' | 'info', duration = DEFAULT_DURATION) {
     toast.add({
       severity: type === 'error' ? 'error' : type === 'success' ? 'success' : 'info',
       detail: message,

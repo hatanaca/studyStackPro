@@ -10,9 +10,7 @@ import type { SessionListFilters } from '@/types/api.types'
 const PER_PAGE = 30
 
 export function useSessionsInfiniteQuery(filters: MaybeRefOrGetter<SessionListFilters>) {
-  const queryKey = computed(() =>
-    queryKeys.sessions.list({ ...toValue(filters), _infinite: true }),
-  )
+  const queryKey = computed(() => queryKeys.sessions.list({ ...toValue(filters), _infinite: true }))
   const enabled = useQuerySessionEnabled()
 
   const query = useInfiniteQuery({
@@ -47,7 +45,7 @@ export function useSessionsInfiniteQuery(filters: MaybeRefOrGetter<SessionListFi
       }
       allSessions.value = pages.flatMap((p) => p.data as StudySession[])
     },
-    { immediate: true },
+    { immediate: true }
   )
 
   const totalCount = computed(() => {

@@ -104,7 +104,7 @@ class StudySessionServiceTest extends TestCase
             'user_id' => $otherUser->id,
             'name' => 'Outro',
             'slug' => 'outro',
-            'color' => '#000',
+            'color' => '#000000',
             'is_active' => true,
         ]);
         $session = StudySession::factory()->create([
@@ -112,8 +112,7 @@ class StudySessionServiceTest extends TestCase
             'technology_id' => $otherTech->id,
         ]);
 
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
-        $this->expectExceptionCode(403);
+        $this->expectException(\Illuminate\Auth\Access\AuthorizationException::class);
 
         $this->service->findForUser($session->id, $this->user->id);
     }

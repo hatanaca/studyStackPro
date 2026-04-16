@@ -122,10 +122,7 @@ function formatMinutes(m: number) {
 </script>
 
 <template>
-  <PageView
-    :breadcrumb="breadcrumbItems"
-    class="technology-sessions-view"
-  >
+  <PageView :breadcrumb="breadcrumbItems" class="technology-sessions-view">
     <div
       v-if="loading"
       class="technology-sessions-view__loading"
@@ -136,14 +133,8 @@ function formatMinutes(m: number) {
       <Skeleton class="technology-sessions-view__skeleton" height="6rem" />
       <Skeleton class="technology-sessions-view__skeleton" height="8rem" />
     </div>
-    <div
-      v-else-if="error"
-      class="technology-sessions-view__error-wrap"
-    >
-      <ErrorCard
-        :message="error"
-        :on-retry="retry"
-      />
+    <div v-else-if="error" class="technology-sessions-view__error-wrap">
+      <ErrorCard :message="error" :on-retry="retry" />
       <Button
         class="technology-sessions-view__back-btn"
         label="Voltar para tecnologias"
@@ -154,16 +145,10 @@ function formatMinutes(m: number) {
     </div>
     <template v-else-if="technology">
       <header class="technology-sessions-view__header">
-        <button
-          type="button"
-          class="technology-sessions-view__back"
-          @click="goBack"
-        >
+        <button type="button" class="technology-sessions-view__back" @click="goBack">
           ← Voltar
         </button>
-        <h1 class="technology-sessions-view__title">
-          Sessões por dia — {{ technology.name }}
-        </h1>
+        <h1 class="technology-sessions-view__title">Sessões por dia — {{ technology.name }}</h1>
       </header>
 
       <ErrorCard
@@ -172,14 +157,8 @@ function formatMinutes(m: number) {
         :message="sessionsError"
         :on-retry="retrySessionsOnly"
       />
-      <Card
-        v-else
-        class="technology-sessions-view__card"
-      >
-        <div
-          v-if="tableRows.length"
-          class="technology-sessions-view__table-wrap scroll-pretty"
-        >
+      <Card v-else class="technology-sessions-view__card">
+        <div v-if="tableRows.length" class="technology-sessions-view__table-wrap scroll-pretty">
           <table class="technology-sessions-view__table">
             <thead>
               <tr>
@@ -188,10 +167,7 @@ function formatMinutes(m: number) {
               </tr>
             </thead>
             <tbody>
-              <tr
-                v-for="row in tableRows"
-                :key="row.date"
-              >
+              <tr v-for="row in tableRows" :key="row.date">
                 <td>{{ formatDate(row.date) }}</td>
                 <td>{{ formatMinutes(row.totalMinutes) }}</td>
               </tr>

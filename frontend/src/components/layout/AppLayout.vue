@@ -83,10 +83,7 @@ watch(
 </script>
 
 <template>
-  <div
-    class="app-layout"
-    :class="{ 'app-layout--sidebar-collapsed': uiStore.sidebarCollapsed }"
-  >
+  <div class="app-layout" :class="{ 'app-layout--sidebar-collapsed': uiStore.sidebarCollapsed }">
     <AppSidebar class="app-layout__sidebar" />
     <div ref="mainWrapRef" class="app-layout__main-wrap">
       <main class="app-layout__main">
@@ -109,22 +106,9 @@ watch(
               stroke-linejoin="round"
               aria-hidden="true"
             >
-              <line
-                x1="4"
-                y1="6"
-                x2="20"
-                y2="6"
-              /><line
-                x1="4"
-                y1="12"
-                x2="20"
-                y2="12"
-              /><line
-                x1="4"
-                y1="18"
-                x2="20"
-                y2="18"
-              />
+              <line x1="4" y1="6" x2="20" y2="6" />
+              <line x1="4" y1="12" x2="20" y2="12" />
+              <line x1="4" y1="18" x2="20" y2="18" />
             </svg>
           </button>
           <span class="app-layout__mobile-title">StudyTrack Pro</span>
@@ -229,7 +213,10 @@ watch(
     border-radius: var(--radius-md);
     color: var(--color-text-muted);
     cursor: pointer;
-    transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+    transition:
+      background var(--duration-fast) ease,
+      color var(--duration-fast) ease,
+      border-color var(--duration-fast) ease;
   }
   .app-layout__nav-trigger:hover {
     background: var(--color-primary-soft);

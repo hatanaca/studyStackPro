@@ -3,7 +3,16 @@
  * View principal do dashboard. KPIs, resumo do dia, sessão ativa, widgets (distribuição, séries, weekly, metas, lembretes).
  * Usa TanStack Query para dashboard. Lazy load de widgets pesados. Suporta tema stakent.
  */
-import { defineAsyncComponent, h, onMounted, onBeforeUnmount, watch, computed, inject, ref } from 'vue'
+import {
+  defineAsyncComponent,
+  h,
+  onMounted,
+  onBeforeUnmount,
+  watch,
+  computed,
+  inject,
+  ref,
+} from 'vue'
 import { useRouter } from 'vue-router'
 import { useApexChartTheme } from '@/composables/useApexChartTheme'
 import { useDashboardQuery } from '@/features/dashboard/composables/useDashboardQuery'
@@ -32,17 +41,27 @@ const LogSessionWidget = defineAsyncComponent({
             'aria-label': 'Carregando formulário de registro',
           },
           [
-            h(Skeleton, { width: '42%', height: '1rem', class: 'dashboard-log-session-loading__title' }),
+            h(Skeleton, {
+              width: '42%',
+              height: '1rem',
+              class: 'dashboard-log-session-loading__title',
+            }),
             h(Skeleton, { width: '100%', height: '11rem' }),
-          ],
+          ]
         )
     },
   },
   delay: 120,
 })
-const StakentMetricCard = defineAsyncComponent(() => import('@/features/dashboard/components/StakentMetricCard.vue'))
-const StakentFeatureCard = defineAsyncComponent(() => import('@/features/dashboard/components/StakentFeatureCard.vue'))
-const StakentActiveCard = defineAsyncComponent(() => import('@/features/dashboard/components/StakentActiveCard.vue'))
+const StakentMetricCard = defineAsyncComponent(
+  () => import('@/features/dashboard/components/StakentMetricCard.vue')
+)
+const StakentFeatureCard = defineAsyncComponent(
+  () => import('@/features/dashboard/components/StakentFeatureCard.vue')
+)
+const StakentActiveCard = defineAsyncComponent(
+  () => import('@/features/dashboard/components/StakentActiveCard.vue')
+)
 
 const TechDistributionWidget = defineAsyncComponent(
   () => import('@/features/dashboard/components/TechDistributionWidget.vue')
@@ -89,7 +108,7 @@ function formatHours(h: number): string {
 const stakentSparkline = computed(() => {
   const data = analyticsStore.timeSeriesData['30d'] ?? []
   if (!data.length) return []
-  return data.slice(-14).map(d => d.total_minutes / 60)
+  return data.slice(-14).map((d) => d.total_minutes / 60)
 })
 
 // Lazy fetch para 90d quando usuário selecionar
@@ -147,10 +166,7 @@ function goRegisterSession() {
 <template>
   <div class="dashboard">
     <DashboardHeader v-if="!stakentStyle?.value" />
-    <div
-      v-if="hasError"
-      class="dashboard__error"
-    >
+    <div v-if="hasError" class="dashboard__error">
       <ErrorCard
         title="Dashboard indisponível"
         message="Não foi possível carregar o dashboard. Verifique a conexão e tente de novo."
@@ -163,7 +179,9 @@ function goRegisterSession() {
           <div class="stakent-dashboard__top">
             <div class="stakent-dashboard__recommended">
               <header class="stakent-dashboard__section-head">
-                <span class="stakent-dashboard__section-title">Recomendado para as próximas 24h</span>
+                <span class="stakent-dashboard__section-title"
+                  >Recomendado para as próximas 24h</span
+                >
                 <span class="stakent-dashboard__section-tag">3 métricas</span>
               </header>
               <div class="stakent-dashboard__cards">
@@ -207,11 +225,7 @@ function goRegisterSession() {
             aria-label="Carregando dashboard"
           >
             <section class="kpi-skeleton">
-              <div
-                v-for="i in 3"
-                :key="i"
-                class="kpi-card-skeleton"
-              >
+              <div v-for="i in 3" :key="i" class="kpi-card-skeleton">
                 <Skeleton width="60%" height="0.875rem" />
                 <Skeleton width="80%" height="1.5rem" class="skeleton-spacer" />
               </div>
@@ -238,10 +252,7 @@ function goRegisterSession() {
               <KpiCards :metrics="analyticsStore.userMetrics" />
             </div>
           </template>
-          <div
-            v-else
-            class="widgets__item widgets__item--3 widgets__item--full dashboard__empty"
-          >
+          <div v-else class="widgets__item widgets__item--3 widgets__item--full dashboard__empty">
             <EmptyState
               title="Nenhum dado ainda"
               description="Sua primeira sessão desbloqueia métricas e gráficos. Registre uma sessão para ver totais, evolução e metas."
@@ -324,14 +335,30 @@ function goRegisterSession() {
   .widgets--animate .widgets__item {
     animation: fadeUpIn var(--duration-slow) var(--ease-out-expo) backwards;
   }
-  .widgets--animate .widgets__item--0 { animation-delay: 0.05s; }
-  .widgets--animate .widgets__item--1 { animation-delay: 0.08s; }
-  .widgets--animate .widgets__item--2 { animation-delay: 0.11s; }
-  .widgets--animate .widgets__item--3 { animation-delay: 0.14s; }
-  .widgets--animate .widgets__item--4 { animation-delay: 0.17s; }
-  .widgets--animate .widgets__item--5 { animation-delay: 0.2s; }
-  .widgets--animate .widgets__item--6 { animation-delay: 0.23s; }
-  .widgets--animate .widgets__item--7 { animation-delay: 0.26s; }
+  .widgets--animate .widgets__item--0 {
+    animation-delay: 0.05s;
+  }
+  .widgets--animate .widgets__item--1 {
+    animation-delay: 0.08s;
+  }
+  .widgets--animate .widgets__item--2 {
+    animation-delay: 0.11s;
+  }
+  .widgets--animate .widgets__item--3 {
+    animation-delay: 0.14s;
+  }
+  .widgets--animate .widgets__item--4 {
+    animation-delay: 0.17s;
+  }
+  .widgets--animate .widgets__item--5 {
+    animation-delay: 0.2s;
+  }
+  .widgets--animate .widgets__item--6 {
+    animation-delay: 0.23s;
+  }
+  .widgets--animate .widgets__item--7 {
+    animation-delay: 0.26s;
+  }
 }
 @keyframes fadeUpIn {
   from {
@@ -381,11 +408,21 @@ function goRegisterSession() {
   .widgets {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .widgets__item--0 { grid-column: 1; }
-  .widgets__item--1 { grid-column: 2; }
-  .widgets__item--2 { grid-column: 1; }
-  .widgets__item--3 { grid-column: 2; }
-  .widgets__item--4 { grid-column: 1 / -1; }
+  .widgets__item--0 {
+    grid-column: 1;
+  }
+  .widgets__item--1 {
+    grid-column: 2;
+  }
+  .widgets__item--2 {
+    grid-column: 1;
+  }
+  .widgets__item--3 {
+    grid-column: 2;
+  }
+  .widgets__item--4 {
+    grid-column: 1 / -1;
+  }
   .widgets__item--5,
   .widgets__item--6,
   .widgets__item--7 {

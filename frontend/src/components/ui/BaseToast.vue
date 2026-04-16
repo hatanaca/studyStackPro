@@ -7,22 +7,9 @@ const { toasts, dismiss } = useToast()
 <template>
   <div class="toast-container">
     <TransitionGroup name="toast">
-      <div
-        v-for="t in toasts"
-        :key="t.id"
-        class="toast"
-        :class="[`toast--${t.type}`]"
-        role="alert"
-      >
+      <div v-for="t in toasts" :key="t.id" class="toast" :class="[`toast--${t.type}`]" role="alert">
         <span class="message">{{ t.message }}</span>
-        <button
-          type="button"
-          class="close"
-          aria-label="Fechar"
-          @click="dismiss()"
-        >
-          ×
-        </button>
+        <button type="button" class="close" aria-label="Fechar" @click="dismiss()">×</button>
       </div>
     </TransitionGroup>
   </div>
@@ -89,7 +76,8 @@ const { toasts, dismiss } = useToast()
   align-items: center;
   justify-content: center;
   padding: 0;
-  transition: color var(--duration-fast) ease,
+  transition:
+    color var(--duration-fast) ease,
     background var(--duration-fast) ease;
 }
 .close:focus-visible {
@@ -102,7 +90,8 @@ const { toasts, dismiss } = useToast()
 }
 .toast-enter-active,
 .toast-leave-active {
-  transition: opacity var(--duration-normal) var(--ease-in-out),
+  transition:
+    opacity var(--duration-normal) var(--ease-in-out),
     transform var(--duration-normal) var(--ease-in-out);
 }
 .toast-enter-from,

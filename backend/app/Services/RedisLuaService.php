@@ -4,6 +4,8 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
+use Predis\Client as PredisClient;
+use Redis as PhpRedis;
 use RuntimeException;
 use Throwable;
 
@@ -37,7 +39,6 @@ class RedisLuaService
     public function callScript(string $name, array $keys = [], array $args = []): mixed
     {
         $sha = Cache::get($this->cacheKey($name));
-        $parameters = [...$keys, ...$args];
 
         if (! is_string($sha) || $sha === '') {
             $this->loadScripts();
@@ -45,7 +46,7 @@ class RedisLuaService
         }
 
         try {
-            return Redis::connection()->client()->evalsha($sha, $parameters, count($keys));
+            return $this->evalSha($sha, $keys, $args);
         } catch (Throwable $exception) {
             if (! $this->isNoScriptException($exception)) {
                 throw $exception;
@@ -58,8 +59,30 @@ class RedisLuaService
                 throw new RuntimeException("SHA do script Lua [{$name}] não disponível após recarregamento.");
             }
 
-            return Redis::connection()->client()->evalsha($retrySha, $parameters, count($keys));
+            return $this->evalSha($retrySha, $keys, $args);
         }
+    }
+
+    /**
+     * PhpRedis: evalsha(sha, args[], num_keys). Predis: evalsha(sha, numkeys, key..., arg...).
+     * Não usar {@see \Illuminate\Redis\Connections\PhpRedisConnection::evalsha} do Laravel — o primeiro
+     * parâmetro lá é o corpo do script (SCRIPT LOAD), não o SHA.
+     */
+    private function evalSha(string $sha, array $keys, array $args): mixed
+    {
+        $client = Redis::connection()->client();
+        $merged = array_merge($keys, $args);
+        $numKeys = count($keys);
+
+        if ($client instanceof PhpRedis) {
+            return $client->evalsha($sha, $merged, $numKeys);
+        }
+
+        if ($client instanceof PredisClient) {
+            return $client->evalsha($sha, $numKeys, ...$merged);
+        }
+
+        return $client->evalsha($sha, $merged, $numKeys);
     }
 
     private function cacheKey(string $name): string

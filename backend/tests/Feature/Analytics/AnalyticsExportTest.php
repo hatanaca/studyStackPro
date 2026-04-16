@@ -57,7 +57,7 @@ class AnalyticsExportTest extends TestCase
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/v1/analytics/export?start=2024-01-01&end=2025-06-01');
 
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['end']);
+        $response->assertStatus(422);
+        $this->assertArrayHasKey('end', $response->json('error.details') ?? []);
     }
 }

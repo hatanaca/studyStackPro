@@ -56,7 +56,7 @@ export const goalsApi = {
 
   async update(id: string, payload: UpdateGoalPayload): Promise<{ data: Goal }> {
     const list = getStoredGoals()
-    const index = list.findIndex(g => g.id === id)
+    const index = list.findIndex((g) => g.id === id)
     if (index === -1) throw new Error('Meta não encontrada')
     const updated = { ...list[index], ...payload, updated_at: new Date().toISOString() }
     list[index] = updated
@@ -65,7 +65,7 @@ export const goalsApi = {
   },
 
   async delete(id: string): Promise<{ success: boolean }> {
-    const list = getStoredGoals().filter(g => g.id !== id)
+    const list = getStoredGoals().filter((g) => g.id !== id)
     setStoredGoals(list)
     return { success: true }
   },

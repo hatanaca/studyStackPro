@@ -108,12 +108,13 @@ async function onSubmit(e: Event) {
       notes: notes.value.trim() || undefined,
     })
     toast.success('Sessão registrada com sucesso!')
-    const tech = technologiesStore.technologies.find(t => t.id === technologyId.value)
+    const tech = technologiesStore.technologies.find((t) => t.id === technologyId.value)
     const savedTechId = technologyId.value
     const savedDate = date.value
     const savedDuration = durationMinutes.value
-    technologyId.value = props.defaultTechnologyId
-      ?? (technologiesStore.technologies.length ? technologiesStore.technologies[0].id : '')
+    technologyId.value =
+      props.defaultTechnologyId ??
+      (technologiesStore.technologies.length ? technologiesStore.technologies[0].id : '')
     date.value = today.value
     durationMinutes.value = 30
     notes.value = ''
@@ -158,19 +159,10 @@ function onCancel() {
     :hide-action="false"
     @action="router.push('/technologies')"
   />
-  <form
-    v-else
-    class="log-session-form"
-    @submit="onSubmit"
-  >
+  <form v-else class="log-session-form" @submit="onSubmit">
     <div class="log-session-form__field">
-      <label
-        for="log-tech"
-        class="log-session-form__label"
-      >
-        Tecnologia
-      </label>
-        <select
+      <label for="log-tech" class="log-session-form__label"> Tecnologia </label>
+      <select
         id="log-tech"
         v-model="technologyId"
         class="log-session-form__select"
@@ -178,36 +170,19 @@ function onCancel() {
         aria-label="Selecionar tecnologia da sessão"
         @change="errors.technology_id = undefined"
       >
-        <option
-          value=""
-          disabled
-        >
-          Selecione...
-        </option>
-        <option
-          v-for="t in technologiesStore.technologies"
-          :key="t.id"
-          :value="t.id"
-        >
+        <option value="" disabled>Selecione...</option>
+        <option v-for="t in technologiesStore.technologies" :key="t.id" :value="t.id">
           {{ t.name }}
         </option>
       </select>
-      <p
-        v-if="errors.technology_id"
-        class="log-session-form__error"
-      >
+      <p v-if="errors.technology_id" class="log-session-form__error">
         {{ errors.technology_id }}
       </p>
     </div>
 
     <div class="log-session-form__row">
       <div class="log-session-form__field">
-        <label
-          for="log-date"
-          class="log-session-form__label"
-        >
-          Data
-        </label>
+        <label for="log-date" class="log-session-form__label"> Data </label>
         <input
           id="log-date"
           v-model="date"
@@ -216,11 +191,8 @@ function onCancel() {
           :class="{ 'log-session-form__input--error': errors.date }"
           max="2099-12-31"
           @input="errors.date = undefined"
-        >
-        <p
-          v-if="errors.date"
-          class="log-session-form__error"
-        >
+        />
+        <p v-if="errors.date" class="log-session-form__error">
           {{ errors.date }}
         </p>
       </div>
@@ -228,12 +200,7 @@ function onCancel() {
 
     <div class="log-session-form__row log-session-form__row--duration-notes">
       <div class="log-session-form__field">
-        <label
-          for="log-duration"
-          class="log-session-form__label"
-        >
-          Duração (min)
-        </label>
+        <label for="log-duration" class="log-session-form__label"> Duração (min) </label>
         <input
           id="log-duration"
           v-model.number="durationMinutes"
@@ -245,21 +212,13 @@ function onCancel() {
           :class="{ 'log-session-form__input--error': errors.duration }"
           placeholder="ex: 10, 45, 120"
           @input="errors.duration = undefined"
-        >
-        <p
-          v-if="errors.duration"
-          class="log-session-form__error"
-        >
+        />
+        <p v-if="errors.duration" class="log-session-form__error">
           {{ errors.duration }}
         </p>
       </div>
       <div class="log-session-form__field">
-        <label
-          for="log-notes"
-          class="log-session-form__label"
-        >
-          Lembretes (opcional)
-        </label>
+        <label for="log-notes" class="log-session-form__label"> Lembretes (opcional) </label>
         <textarea
           id="log-notes"
           v-model="notes"
@@ -324,7 +283,8 @@ function onCancel() {
   background: var(--form-input-bg);
   color: var(--form-input-text);
   outline: none;
-  transition: border-color var(--duration-fast) ease,
+  transition:
+    border-color var(--duration-fast) ease,
     box-shadow var(--duration-fast) ease,
     background var(--duration-fast) ease;
 }

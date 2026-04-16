@@ -5,8 +5,13 @@
 
 /* ---- Pulse (loading, destaque) ---- */
 @keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 .animate-pulse-soft {
   animation: pulse-soft 2s var(--ease-in-out, ease) infinite;
@@ -14,8 +19,12 @@
 
 /* ---- Shine (skeleton, shimmer) ---- */
 @keyframes shine {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 .animate-shine {
   background: linear-gradient(
@@ -30,18 +39,31 @@
 
 /* ---- Bounce (micro feedback) ---- */
 @keyframes bounce-in {
-  0% { transform: scale(0.95); opacity: 0; }
-  70% { transform: scale(1.02); }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 .animate-bounce-in {
-  animation: bounce-in var(--duration-slow, 0.4s) var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+  animation: bounce-in var(--duration-slow, 0.4s)
+    var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
 }
 
 /* ---- Fade in (entrada genérica) ---- */
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 .animate-fade-in {
   animation: fade-in var(--duration-normal, 0.25s) var(--ease-in-out, ease) forwards;
@@ -59,7 +81,8 @@
   }
 }
 .animate-fade-in-up {
-  animation: fade-in-up var(--duration-slow, 0.4s) var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+  animation: fade-in-up var(--duration-slow, 0.4s)
+    var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
 }
 
 /* ---- Slide in from left ---- */
@@ -104,26 +127,45 @@
   }
 }
 .animate-scale-in {
-  animation: scale-in var(--duration-normal, 0.25s) var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+  animation: scale-in var(--duration-normal, 0.25s)
+    var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
 }
 
 /* ---- Spin (loading) ---- */
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 .animate-spin {
   animation: spin 0.8s linear infinite;
 }
 
 /* ---- Stagger delays (use com animate-fade-in-up em filhos) ---- */
-.stagger-1 { animation-delay: 0.05s; }
-.stagger-2 { animation-delay: 0.1s; }
-.stagger-3 { animation-delay: 0.15s; }
-.stagger-4 { animation-delay: 0.2s; }
-.stagger-5 { animation-delay: 0.25s; }
-.stagger-6 { animation-delay: 0.3s; }
-.stagger-7 { animation-delay: 0.35s; }
-.stagger-8 { animation-delay: 0.4s; }
+.stagger-1 {
+  animation-delay: 0.05s;
+}
+.stagger-2 {
+  animation-delay: 0.1s;
+}
+.stagger-3 {
+  animation-delay: 0.15s;
+}
+.stagger-4 {
+  animation-delay: 0.2s;
+}
+.stagger-5 {
+  animation-delay: 0.25s;
+}
+.stagger-6 {
+  animation-delay: 0.3s;
+}
+.stagger-7 {
+  animation-delay: 0.35s;
+}
+.stagger-8 {
+  animation-delay: 0.4s;
+}
 
 /* ---- Reduced motion: desabilitar animações ---- */
 @media (prefers-reduced-motion: reduce) {

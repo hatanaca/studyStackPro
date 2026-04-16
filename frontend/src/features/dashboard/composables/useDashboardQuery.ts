@@ -20,7 +20,7 @@ const CACHE_TIME_MS = 15 * 60 * 1000 // 15 min — navegação típica reutiliza
 export function useDashboardQuery(options?: { enabled?: boolean }) {
   const analyticsStore = useAnalyticsStore()
   const enabled = useQuerySessionEnabled(
-    options?.enabled !== undefined ? () => options.enabled! : undefined,
+    options?.enabled !== undefined ? () => options.enabled! : undefined
   )
 
   const query = useQuery({

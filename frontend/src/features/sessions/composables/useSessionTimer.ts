@@ -58,7 +58,7 @@ export function useSessionTimer() {
       } else if (!session && prevSession) {
         stopTicking()
       }
-    },
+    }
   )
 
   onMounted(() => {
@@ -71,6 +71,6 @@ export function useSessionTimer() {
     elapsedSeconds: computed(() => store.elapsedSeconds),
     formattedTime: computed(() => store.formattedTimer),
     fetchActive,
-    refresh: fetchActive
+    refresh: fetchActive,
   }
 }

@@ -59,7 +59,7 @@ function onSubmit() {
   emit('submit', {
     name: name.value.trim(),
     color: normalizeHexColor(color.value),
-    description: description.value.trim() || undefined
+    description: description.value.trim() || undefined,
   })
 }
 
@@ -68,14 +68,16 @@ function onCancel() {
   emit('cancel')
 }
 
-defineExpose({ reset, setError: (msg: string) => { errors.value = { name: msg } } })
+defineExpose({
+  reset,
+  setError: (msg: string) => {
+    errors.value = { name: msg }
+  },
+})
 </script>
 
 <template>
-  <form
-    class="technology-form"
-    @submit.prevent="onSubmit"
-  >
+  <form class="technology-form" @submit.prevent="onSubmit">
     <BaseInput
       id="tech-name"
       v-model="name"
@@ -91,14 +93,8 @@ defineExpose({ reset, setError: (msg: string) => { errors.value = { name: msg } 
           type="color"
           class="color-picker"
           @input="onColorPickerInput"
-        >
-        <input
-          v-model="color"
-          type="text"
-          class="color-text"
-          maxlength="7"
-          placeholder="#3b82f6"
-        >
+        />
+        <input v-model="color" type="text" class="color-text" maxlength="7" placeholder="#3b82f6" />
       </div>
     </div>
     <BaseInput
@@ -108,19 +104,10 @@ defineExpose({ reset, setError: (msg: string) => { errors.value = { name: msg } 
       placeholder="Descrição (opcional)"
     />
     <div class="actions">
-      <BaseButton
-        type="submit"
-        variant="primary"
-      >
+      <BaseButton type="submit" variant="primary">
         {{ modelValue ? 'Salvar' : 'Criar' }}
       </BaseButton>
-      <BaseButton
-        type="button"
-        variant="secondary"
-        @click="onCancel"
-      >
-        Cancelar
-      </BaseButton>
+      <BaseButton type="button" variant="secondary" @click="onCancel"> Cancelar </BaseButton>
     </div>
   </form>
 </template>
@@ -155,7 +142,9 @@ defineExpose({ reset, setError: (msg: string) => { errors.value = { name: msg } 
   padding: var(--spacing-2xs);
   cursor: pointer;
   background: var(--form-input-bg);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .color-picker:hover {
   border-color: var(--form-input-border-focus);
@@ -175,7 +164,8 @@ defineExpose({ reset, setError: (msg: string) => { errors.value = { name: msg } 
   background: var(--form-input-bg);
   color: var(--form-input-text);
   outline: none;
-  transition: border-color var(--duration-fast) ease,
+  transition:
+    border-color var(--duration-fast) ease,
     box-shadow var(--duration-fast) ease,
     background var(--duration-fast) ease;
   box-sizing: border-box;

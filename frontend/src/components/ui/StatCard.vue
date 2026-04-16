@@ -20,21 +20,13 @@ withDefaults(
     class="stat-card"
     :class="[`stat-card--${variant}`, trend ? `stat-card--trend-${trend}` : '']"
   >
-    <div
-      v-if="icon"
-      class="stat-card__icon"
-      aria-hidden="true"
-    >
+    <div v-if="icon" class="stat-card__icon" aria-hidden="true">
       {{ icon }}
     </div>
     <div class="stat-card__content">
       <span class="stat-card__label">{{ label }}</span>
       <span class="stat-card__value">{{ value }}</span>
-      <span
-        v-if="trend && trendLabel"
-        class="stat-card__trend"
-        :aria-label="trendLabel"
-      >
+      <span v-if="trend && trendLabel" class="stat-card__trend" :aria-label="trendLabel">
         {{ trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→' }} {{ trendLabel }}
       </span>
     </div>
@@ -50,7 +42,9 @@ withDefaults(
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  transition: box-shadow var(--duration-fast) ease, border-color var(--duration-fast) ease;
+  transition:
+    box-shadow var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
 }
 .stat-card:hover {
   box-shadow: var(--shadow-sm);
@@ -79,14 +73,26 @@ withDefaults(
   letter-spacing: var(--tracking-tight);
   line-height: var(--leading-tight);
 }
-.stat-card--primary .stat-card__value { color: var(--color-primary); }
-.stat-card--success .stat-card__value { color: var(--color-success); }
-.stat-card--warning .stat-card__value { color: var(--color-warning); }
-.stat-card--error .stat-card__value { color: var(--color-error); }
+.stat-card--primary .stat-card__value {
+  color: var(--color-primary);
+}
+.stat-card--success .stat-card__value {
+  color: var(--color-success);
+}
+.stat-card--warning .stat-card__value {
+  color: var(--color-warning);
+}
+.stat-card--error .stat-card__value {
+  color: var(--color-error);
+}
 .stat-card__trend {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
 }
-.stat-card--trend-up .stat-card__trend { color: var(--color-success); }
-.stat-card--trend-down .stat-card__trend { color: var(--color-error); }
+.stat-card--trend-up .stat-card__trend {
+  color: var(--color-success);
+}
+.stat-card--trend-down .stat-card__trend {
+  color: var(--color-error);
+}
 </style>

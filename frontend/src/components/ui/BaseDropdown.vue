@@ -134,13 +134,23 @@ defineExpose({ close })
   border-radius: var(--radius-md);
   box-shadow: var(--dropdown-shadow, var(--shadow-lg));
 }
-.base-dropdown--left { left: 0; }
-.base-dropdown--right { right: 0; left: auto; }
-.base-dropdown--center { left: 50%; transform: translateX(-50%); }
+.base-dropdown--left {
+  left: 0;
+}
+.base-dropdown--right {
+  right: 0;
+  left: auto;
+}
+.base-dropdown--center {
+  left: 50%;
+  transform: translateX(-50%);
+}
 
 .dropdown-enter-active,
 .dropdown-leave-active {
-  transition: opacity var(--duration-fast) var(--ease-in-out), transform var(--duration-fast) var(--ease-out-expo);
+  transition:
+    opacity var(--duration-fast) var(--ease-in-out),
+    transform var(--duration-fast) var(--ease-out-expo);
 }
 .dropdown-enter-from,
 .dropdown-leave-to {

@@ -30,11 +30,7 @@ function dismiss() {
 
 <template>
   <Transition name="slide">
-    <div
-      v-if="visible"
-      class="onboarding-banner"
-      role="banner"
-    >
+    <div v-if="visible" class="onboarding-banner" role="banner">
       <div class="onboarding-banner__content">
         <span class="onboarding-banner__icon">👋</span>
         <div class="onboarding-banner__text">

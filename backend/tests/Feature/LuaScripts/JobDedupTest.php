@@ -73,9 +73,9 @@ class JobDedupTest extends TestCase
         $this->travel(6)->seconds();
         $listener->handle(new StudySessionCreated($session));
 
-        // O script Lua volta a liberar a terceira chamada, mas o job segue protegido
-        // por ShouldBeUnique, então apenas um enqueue efetivo permanece visível aqui.
-        Queue::assertPushed(RecalculateMetricsJob::class, 1);
+        // Após o TTL (10s), o Lua volta a devolver 1 e o listener agenda outro dispatch;
+        // o Queue::fake conta cada dispatch separadamente.
+        Queue::assertPushed(RecalculateMetricsJob::class, 2);
     }
 
     private function createSession(): StudySession

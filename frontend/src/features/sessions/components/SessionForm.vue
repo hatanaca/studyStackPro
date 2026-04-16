@@ -4,7 +4,15 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  submit: [payload: { technology_id: string; started_at: string; ended_at?: string; notes?: string; mood?: number }]
+  submit: [
+    payload: {
+      technology_id: string
+      started_at: string
+      ended_at?: string
+      notes?: string
+      mood?: number
+    },
+  ]
 }>()
 
 function getString(fd: FormData, key: string): string | undefined {
@@ -37,15 +45,9 @@ function onSubmit(e: Event) {
 </script>
 
 <template>
-  <form
-    class="session-form"
-    @submit="onSubmit"
-  >
+  <form class="session-form" @submit="onSubmit">
     <slot />
-    <button
-      type="submit"
-      :disabled="loading"
-    >
+    <button type="submit" :disabled="loading">
       {{ loading ? 'Salvando...' : 'Salvar sessão' }}
     </button>
   </form>
@@ -62,7 +64,9 @@ function onSubmit(e: Event) {
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background var(--duration-fast) ease, transform var(--duration-fast) ease;
+  transition:
+    background var(--duration-fast) ease,
+    transform var(--duration-fast) ease;
 }
 .session-form button:hover:not(:disabled) {
   background: var(--color-primary-hover);

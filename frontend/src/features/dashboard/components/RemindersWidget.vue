@@ -39,10 +39,7 @@ function saveToStorage() {
 function addReminder() {
   const text = newReminder.value.trim()
   if (!text || reminders.value.length >= MAX_REMINDERS) return
-  reminders.value = [
-    ...reminders.value,
-    { id: crypto.randomUUID?.() ?? String(Date.now()), text },
-  ]
+  reminders.value = [...reminders.value, { id: crypto.randomUUID?.() ?? String(Date.now()), text }]
   newReminder.value = ''
   saveToStorage()
 }
@@ -58,9 +55,7 @@ function saveEdit(reminder: Reminder) {
     deleteReminder(reminder)
     return
   }
-  reminders.value = reminders.value.map((r) =>
-    r.id === reminder.id ? { ...r, text } : r
-  )
+  reminders.value = reminders.value.map((r) => (r.id === reminder.id ? { ...r, text } : r))
   editingId.value = null
   editingText.value = ''
   saveToStorage()
@@ -89,11 +84,13 @@ onMounted(() => {
   <section class="reminders-widget">
     <header class="reminders-header">
       <div>
-        <h3 class="reminders-title">
-          Lembretes rápidos
-        </h3>
+        <h3 class="reminders-title">Lembretes rápidos</h3>
         <p class="reminders-subtitle">
-          {{ atLimit ? `Limite de ${MAX_REMINDERS} lembretes. Remova algum para adicionar.` : `Anote o que não quer esquecer. (${remainingCount} restantes)` }}
+          {{
+            atLimit
+              ? `Limite de ${MAX_REMINDERS} lembretes. Remova algum para adicionar.`
+              : `Anote o que não quer esquecer. (${remainingCount} restantes)`
+          }}
         </p>
       </div>
     </header>
@@ -106,7 +103,7 @@ onMounted(() => {
         :placeholder="atLimit ? 'Limite atingido' : 'Ex.: Revisar Anki, terminar capítulo...'"
         :disabled="atLimit"
         @keyup.enter.prevent="addReminder"
-      >
+      />
       <Button
         label="Adicionar"
         size="small"
@@ -115,15 +112,8 @@ onMounted(() => {
       />
     </div>
 
-    <div
-      v-if="reminders.length"
-      class="reminders-list scroll-pretty"
-    >
-      <article
-        v-for="r in reminders"
-        :key="r.id"
-        class="reminders-item"
-      >
+    <div v-if="reminders.length" class="reminders-list scroll-pretty">
+      <article v-for="r in reminders" :key="r.id" class="reminders-item">
         <div class="reminders-item__content">
           <textarea
             v-if="editingId === r.id"
@@ -133,12 +123,7 @@ onMounted(() => {
             @keyup.meta.enter.prevent="saveEdit(r)"
             @keyup.ctrl.enter.prevent="saveEdit(r)"
           />
-          <button
-            v-else
-            type="button"
-            class="reminders-item__text"
-            @click="startEdit(r)"
-          >
+          <button v-else type="button" class="reminders-item__text" @click="startEdit(r)">
             {{ r.text }}
           </button>
         </div>
@@ -169,10 +154,7 @@ onMounted(() => {
         </div>
       </article>
     </div>
-    <div
-      v-else
-      class="reminders-widget__empty-wrap"
-    >
+    <div v-else class="reminders-widget__empty-wrap">
       <EmptyState
         icon="📝"
         title="Nenhum lembrete ainda"
@@ -234,7 +216,9 @@ onMounted(() => {
   font-size: var(--text-sm);
   background: var(--color-bg-card);
   color: var(--color-text);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .reminders-input__field:focus-visible {
   outline: none;
@@ -297,7 +281,9 @@ onMounted(() => {
   font-size: var(--text-sm);
   color: var(--color-text);
   background: var(--color-bg-card);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .reminders-item__textarea:focus-visible {
   outline: none;
@@ -319,7 +305,9 @@ onMounted(() => {
   cursor: pointer;
   background: var(--color-border);
   color: var(--color-text);
-  transition: background var(--duration-fast) ease, color var(--duration-fast) ease;
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease;
 }
 .reminders-chip:hover {
   background: var(--color-text-muted);
@@ -365,4 +353,3 @@ onMounted(() => {
   min-height: var(--input-height-sm);
 }
 </style>
-

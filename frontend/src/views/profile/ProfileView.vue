@@ -185,22 +185,11 @@ function formatDate(iso: string | null): string {
   >
     <div class="profile-view">
       <div class="profile-view__avatar-wrap">
-        <Avatar
-          :label="avatarLabel"
-          size="xlarge"
-          class="profile-view__avatar"
-        />
+        <Avatar :label="avatarLabel" size="xlarge" class="profile-view__avatar" />
       </div>
-      <Tabs
-        v-model:value="activeTab"
-        class="profile-view__tabs"
-      >
+      <Tabs v-model:value="activeTab" class="profile-view__tabs">
         <TabList>
-          <Tab
-            v-for="tab in profileTabs"
-            :key="tab.id"
-            :value="tab.id"
-          >
+          <Tab v-for="tab in profileTabs" :key="tab.id" :value="tab.id">
             {{ tab.label }}
           </Tab>
         </TabList>
@@ -209,10 +198,7 @@ function formatDate(iso: string | null): string {
             <Card class="profile-view__card">
               <template #content>
                 <h2 class="section-title">Dados do perfil</h2>
-                <form
-                  class="profile-form"
-                  @submit.prevent="saveProfile"
-                >
+                <form class="profile-form" @submit.prevent="saveProfile">
                   <div class="p-field">
                     <label for="profile-name">Nome</label>
                     <InputText
@@ -222,7 +208,9 @@ function formatDate(iso: string | null): string {
                       class="w-full"
                       :class="{ 'p-invalid': profileErrors.name }"
                     />
-                    <small v-if="profileErrors.name" class="p-error">{{ profileErrors.name }}</small>
+                    <small v-if="profileErrors.name" class="p-error">{{
+                      profileErrors.name
+                    }}</small>
                   </div>
                   <div class="p-field">
                     <label for="profile-timezone">Fuso horário</label>
@@ -233,7 +221,9 @@ function formatDate(iso: string | null): string {
                       class="w-full"
                       :class="{ 'p-invalid': profileErrors.timezone }"
                     />
-                    <small v-if="profileErrors.timezone" class="p-error">{{ profileErrors.timezone }}</small>
+                    <small v-if="profileErrors.timezone" class="p-error">{{
+                      profileErrors.timezone
+                    }}</small>
                   </div>
                   <Button
                     type="submit"
@@ -251,18 +241,24 @@ function formatDate(iso: string | null): string {
                 <p class="section-desc">
                   Após alterar a senha, você será desconectado de todos os dispositivos.
                 </p>
-                <form
-                  class="profile-form"
-                  @submit.prevent="changePassword"
-                >
+                <form class="profile-form" @submit.prevent="changePassword">
                   <input
                     type="text"
                     name="username"
                     autocomplete="username"
-                    style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0"
+                    style="
+                      position: absolute;
+                      width: 1px;
+                      height: 1px;
+                      padding: 0;
+                      margin: -1px;
+                      overflow: hidden;
+                      clip: rect(0, 0, 0, 0);
+                      border: 0;
+                    "
                     tabindex="-1"
                     aria-hidden="true"
-                  >
+                  />
                   <div class="p-field">
                     <label>Senha atual</label>
                     <InputText
@@ -273,7 +269,9 @@ function formatDate(iso: string | null): string {
                       class="w-full"
                       :class="{ 'p-invalid': passwordErrors.current_password }"
                     />
-                    <small v-if="passwordErrors.current_password" class="p-error">{{ passwordErrors.current_password }}</small>
+                    <small v-if="passwordErrors.current_password" class="p-error">{{
+                      passwordErrors.current_password
+                    }}</small>
                   </div>
                   <div class="p-field">
                     <label>Nova senha</label>
@@ -285,7 +283,9 @@ function formatDate(iso: string | null): string {
                       class="w-full"
                       :class="{ 'p-invalid': passwordErrors.password }"
                     />
-                    <small v-if="passwordErrors.password" class="p-error">{{ passwordErrors.password }}</small>
+                    <small v-if="passwordErrors.password" class="p-error">{{
+                      passwordErrors.password
+                    }}</small>
                   </div>
                   <div class="p-field">
                     <label>Confirmar nova senha</label>
@@ -297,7 +297,9 @@ function formatDate(iso: string | null): string {
                       class="w-full"
                       :class="{ 'p-invalid': passwordErrors.password_confirmation }"
                     />
-                    <small v-if="passwordErrors.password_confirmation" class="p-error">{{ passwordErrors.password_confirmation }}</small>
+                    <small v-if="passwordErrors.password_confirmation" class="p-error">{{
+                      passwordErrors.password_confirmation
+                    }}</small>
                   </div>
                   <Button
                     type="submit"
@@ -312,9 +314,7 @@ function formatDate(iso: string | null): string {
             <Card class="profile-view__card">
               <template #content>
                 <h2 class="section-title">Sessões ativas</h2>
-                <p class="section-desc">
-                  Gerencie os dispositivos onde você está logado.
-                </p>
+                <p class="section-desc">Gerencie os dispositivos onde você está logado.</p>
                 <div
                   v-if="tokensLoading"
                   class="profile-view__tokens-skeleton"
@@ -326,26 +326,14 @@ function formatDate(iso: string | null): string {
                   <Skeleton height="4.5rem" class="profile-view__token-skel" />
                 </div>
                 <template v-else>
-                  <ul
-                    v-if="tokens.length"
-                    class="tokens-list"
-                  >
-                    <li
-                      v-for="t in tokens"
-                      :key="t.id"
-                      class="token-item"
-                    >
+                  <ul v-if="tokens.length" class="tokens-list">
+                    <li v-for="t in tokens" :key="t.id" class="token-item">
                       <span class="token-name">{{ t.name }}</span>
                       <span class="token-date">Criado: {{ formatDate(t.created_at) }}</span>
                       <span class="token-date">Último uso: {{ formatDate(t.last_used_at) }}</span>
                     </li>
                   </ul>
-                  <p
-                    v-else
-                    class="no-tokens"
-                  >
-                    Nenhuma sessão ativa.
-                  </p>
+                  <p v-else class="no-tokens">Nenhuma sessão ativa.</p>
                   <Button
                     class="revoke-btn"
                     severity="danger"
@@ -421,7 +409,9 @@ function formatDate(iso: string | null): string {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .token-item:hover {
   border-color: var(--color-primary);
@@ -477,5 +467,7 @@ function formatDate(iso: string | null): string {
   line-height: var(--leading-snug);
   letter-spacing: var(--tracking-tight);
 }
-.w-full { width: 100%; }
+.w-full {
+  width: 100%;
+}
 </style>

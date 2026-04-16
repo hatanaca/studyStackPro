@@ -31,19 +31,12 @@ function onConfirm() {
 </script>
 
 <template>
-  <BaseModal
-    :show="show"
-    :title="title"
-    @close="emit('close')"
-  >
+  <BaseModal :show="show" :title="title" @close="emit('close')">
     <p class="confirm-dialog__message">
       {{ message }}
     </p>
     <div class="confirm-dialog__actions">
-      <BaseButton
-        variant="ghost"
-        @click="emit('close')"
-      >
+      <BaseButton variant="ghost" @click="emit('close')">
         {{ props.cancelLabel }}
       </BaseButton>
       <BaseButton

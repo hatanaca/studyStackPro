@@ -19,38 +19,21 @@ withDefaults(
 </script>
 
 <template>
-  <div
-    class="page-view"
-    :class="{ 'page-view--narrow': narrow }"
-  >
+  <div class="page-view" :class="{ 'page-view--narrow': narrow }">
     <Breadcrumb
       v-if="breadcrumb?.length"
       :model="breadcrumb.map((item) => ({ label: item.label, to: item.to }))"
       class="page-view__breadcrumb"
     />
-    <header
-      v-if="title"
-      class="page-header page-view__header"
-    >
+    <header v-if="title" class="page-header page-view__header">
       <div class="page-view__header-inner">
-        <h1
-          v-if="title"
-          class="page-title"
-        >
+        <h1 v-if="title" class="page-title">
           {{ title }}
         </h1>
-        <p
-          v-if="subtitle"
-          class="page-subtitle"
-        >
+        <p v-if="subtitle" class="page-subtitle">
           {{ subtitle }}
         </p>
-        <div
-          v-if="$slots.hint"
-          class="page-hint"
-          role="status"
-          aria-live="polite"
-        >
+        <div v-if="$slots.hint" class="page-hint" role="status" aria-live="polite">
           <slot name="hint" />
         </div>
       </div>

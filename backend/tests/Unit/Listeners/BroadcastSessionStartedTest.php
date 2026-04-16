@@ -27,6 +27,7 @@ class BroadcastSessionStartedTest extends TestCase
         $session = Mockery::mock(StudySession::class)->makePartial();
         $session->user_id = (string) Str::uuid();
         $session->ended_at = null;
+        $session->shouldReceive('loadMissing')->with('technology')->andReturnSelf();
 
         $listener = new BroadcastSessionStarted;
         $listener->handle(new StudySessionCreated($session));

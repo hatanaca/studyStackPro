@@ -11,21 +11,11 @@ defineProps<{
 </script>
 
 <template>
-  <nav
-    class="base-breadcrumb"
-    aria-label="Navegação"
-  >
+  <nav class="base-breadcrumb" aria-label="Navegação">
     <ol class="base-breadcrumb__list">
-      <li
-        v-for="(item, index) in items"
-        :key="index"
-        class="base-breadcrumb__item"
-      >
+      <li v-for="(item, index) in items" :key="index" class="base-breadcrumb__item">
         <template v-if="index > 0">
-          <span
-            class="base-breadcrumb__sep"
-            aria-hidden="true"
-          >/</span>
+          <span class="base-breadcrumb__sep" aria-hidden="true">/</span>
         </template>
         <RouterLink
           v-if="item.to && index < items.length - 1"
@@ -43,11 +33,7 @@ defineProps<{
         >
           {{ item.label }}
         </a>
-        <span
-          v-else
-          class="base-breadcrumb__current"
-          aria-current="page"
-        >
+        <span v-else class="base-breadcrumb__current" aria-current="page">
           {{ item.label }}
         </span>
       </li>
