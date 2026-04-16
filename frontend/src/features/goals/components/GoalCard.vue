@@ -39,7 +39,13 @@ function formatValue(): string {
     <template #header>
       <span class="goal-card__actions">
         <Button label="Editar" link size="small" severity="secondary" @click="emit('edit', goal)" />
-        <Button label="Excluir" link size="small" severity="secondary" @click="emit('delete', goal)" />
+        <Button
+          label="Excluir"
+          link
+          size="small"
+          severity="secondary"
+          @click="emit('delete', goal)"
+        />
       </span>
     </template>
     <template #content>
@@ -61,7 +67,8 @@ function formatValue(): string {
 
 <style scoped>
 .goal-card {
-  transition: box-shadow var(--duration-normal) var(--ease-in-out),
+  transition:
+    box-shadow var(--duration-normal) var(--ease-in-out),
     border-color var(--duration-normal) var(--ease-in-out);
 }
 .goal-card:hover {

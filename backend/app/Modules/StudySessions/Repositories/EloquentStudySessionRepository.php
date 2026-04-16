@@ -102,6 +102,10 @@ class EloquentStudySessionRepository implements StudySessionRepositoryInterface
     {
         $session->update($data);
 
+        if (array_key_exists('ended_at', $data)) {
+            Cache::tags(['sessions', "sessions:user:{$session->user_id}"])->forget("active-session:{$session->user_id}");
+        }
+
         return $session->fresh(['technology']);
     }
 

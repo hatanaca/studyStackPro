@@ -5,7 +5,9 @@ namespace Tests\Feature\Security;
 use App\Models\StudySession;
 use App\Models\Technology;
 use App\Models\User;
+use App\Modules\Analytics\Aggregators\MetricsAggregator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -161,6 +163,9 @@ class AuthorizationTest extends TestCase
             'started_at' => now()->subHours(3),
             'ended_at' => now()->subHours(2),
         ]);
+
+        app(MetricsAggregator::class)->recalculateUserMetrics($this->userA->id, 'UTC');
+        Cache::tags(['analytics', 'analytics:user:'.$this->userA->id])->flush();
 
         $response = $this->withHeader('Authorization', 'Bearer '.$this->tokenA)
             ->getJson('/api/v1/analytics/dashboard');

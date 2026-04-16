@@ -23,7 +23,7 @@ describe('usePagination', () => {
       current_page: 2,
       last_page: 5,
       per_page: 15,
-      total: 72
+      total: 72,
     })
 
     expect(currentPage.value).toBe(2)

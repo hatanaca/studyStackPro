@@ -39,16 +39,10 @@ function goTo(p: number) {
 </script>
 
 <template>
-  <nav
-    class="base-pagination"
-    role="navigation"
-    aria-label="Paginação"
-  >
-    <span
-      v-if="totalItems != null && pageSize != null"
-      class="base-pagination__info"
-    >
-      {{ (page - 1) * pageSize + 1 }}-{{ Math.min(page * pageSize, totalItems) }} de {{ totalItems }}
+  <nav class="base-pagination" role="navigation" aria-label="Paginação">
+    <span v-if="totalItems != null && pageSize != null" class="base-pagination__info">
+      {{ (page - 1) * pageSize + 1 }}-{{ Math.min(page * pageSize, totalItems) }} de
+      {{ totalItems }}
     </span>
     <ul class="base-pagination__list">
       <li v-if="showFirstLast">
@@ -73,10 +67,7 @@ function goTo(p: number) {
           ‹
         </button>
       </li>
-      <li
-        v-for="p in visiblePages"
-        :key="p"
-      >
+      <li v-for="p in visiblePages" :key="p">
         <button
           type="button"
           class="base-pagination__btn base-pagination__btn--page"
@@ -146,7 +137,8 @@ function goTo(p: number) {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background var(--duration-fast) ease,
+  transition:
+    background var(--duration-fast) ease,
     border-color var(--duration-fast) ease,
     color var(--duration-fast) ease;
 }

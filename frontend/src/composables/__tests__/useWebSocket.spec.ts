@@ -6,23 +6,23 @@ vi.mock('laravel-echo', () => ({
     connector: {
       pusher: {
         connection: {
-          bind: vi.fn()
-        }
-      }
+          bind: vi.fn(),
+        },
+      },
     },
     private: vi.fn().mockReturnValue({
-      listen: vi.fn().mockReturnThis()
+      listen: vi.fn().mockReturnThis(),
     }),
-    disconnect: vi.fn()
-  }))
+    disconnect: vi.fn(),
+  })),
 }))
 
 vi.mock('pusher-js', () => ({
-  default: vi.fn()
+  default: vi.fn(),
 }))
 
 vi.stubGlobal('window', {
-  Pusher: vi.fn()
+  Pusher: vi.fn(),
 })
 
 describe('useWebSocket', () => {

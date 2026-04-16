@@ -19,7 +19,7 @@ const GC_MS = 30 * 60 * 1000
 export function useTechnologiesQuery(options?: { enabled?: boolean }) {
   const store = useTechnologiesStore()
   const enabled = useQuerySessionEnabled(
-    options?.enabled !== undefined ? () => options.enabled! : undefined,
+    options?.enabled !== undefined ? () => options.enabled! : undefined
   )
 
   const query = useQuery({
@@ -39,7 +39,7 @@ export function useTechnologiesQuery(options?: { enabled?: boolean }) {
     (data) => {
       if (Array.isArray(data)) store.setTechnologies(data)
     },
-    { immediate: true },
+    { immediate: true }
   )
 
   return query

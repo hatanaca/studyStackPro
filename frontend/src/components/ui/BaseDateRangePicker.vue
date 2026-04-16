@@ -76,11 +76,8 @@ function clear() {
         :disabled="disabled"
         :aria-label="placeholderStart"
         @input="onStartInput"
-      >
-      <span
-        class="base-date-range__sep"
-        aria-hidden="true"
-      >até</span>
+      />
+      <span class="base-date-range__sep" aria-hidden="true">até</span>
       <input
         v-model="end"
         type="date"
@@ -91,7 +88,7 @@ function clear() {
         :disabled="disabled"
         :aria-label="placeholderEnd"
         @input="onEndInput"
-      >
+      />
     </div>
     <button
       v-if="start || end"
@@ -129,7 +126,9 @@ function clear() {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   min-width: 10rem;
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .base-date-range__input:focus-visible {
   outline: none;
@@ -154,7 +153,10 @@ function clear() {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: color var(--duration-fast) ease, border-color var(--duration-fast) ease, background var(--duration-fast) ease;
+  transition:
+    color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    background var(--duration-fast) ease;
 }
 .base-date-range__clear:hover:not(:disabled) {
   color: var(--color-primary);

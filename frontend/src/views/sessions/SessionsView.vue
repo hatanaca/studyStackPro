@@ -39,10 +39,7 @@ function staggerMs(index: number): number {
     <template #hint>
       Clique em uma tecnologia abaixo para filtrar o histórico ou acessar o detalhe.
     </template>
-    <section
-      v-if="technologiesStore.technologies.length"
-      class="sessions-view__by-tech"
-    >
+    <section v-if="technologiesStore.technologies.length" class="sessions-view__by-tech">
       <header class="sessions-view__section-header">
         <h2 class="sessions-view__section-title">Por tecnologia</h2>
         <p class="sessions-view__section-desc">

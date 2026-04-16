@@ -84,7 +84,8 @@ const hasScoreData = computed(() => {
   return scores.length > 0 && scores.length === values.length
 })
 
-const clamp = (value: number, min: number, max: number): number => Math.min(Math.max(value, min), max)
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(Math.max(value, min), max)
 
 const mix = (from: Rgb, to: Rgb, factor: number): Rgb => ({
   r: Math.round(from.r + (to.r - from.r) * factor),
@@ -138,7 +139,15 @@ const chartOptions = computed<ApexOptions>(() => {
         show: props.showToolbar,
         offsetX: 0,
         offsetY: 0,
-        tools: { download: true, selection: false, zoom: false, zoomin: false, zoomout: false, pan: false, reset: false },
+        tools: {
+          download: true,
+          selection: false,
+          zoom: false,
+          zoomin: false,
+          zoomout: false,
+          pan: false,
+          reset: false,
+        },
         export: { csv: { headerCategory: 'Categoria', headerValue: 'Valor' }, svg: {}, png: {} },
       },
       animations: {
@@ -162,22 +171,22 @@ const chartOptions = computed<ApexOptions>(() => {
     fill: hasScoreData.value
       ? { type: 'solid' }
       : props.gradientFill
-      ? {
-          type: 'gradient',
-          gradient: {
-            shade: 'light',
-            type: 'vertical',
-            shadeIntensity: 0.4,
-            opacityFrom: 0.9,
-            opacityTo: 0.7,
-            stops: [0, 100],
-            colorStops: [
-              { offset: 0, color: t.palette[0], opacity: 1 },
-              { offset: 100, color: t.palette[0], opacity: 0.75 },
-            ],
-          },
-        }
-      : undefined,
+        ? {
+            type: 'gradient',
+            gradient: {
+              shade: 'light',
+              type: 'vertical',
+              shadeIntensity: 0.4,
+              opacityFrom: 0.9,
+              opacityTo: 0.7,
+              stops: [0, 100],
+              colorStops: [
+                { offset: 0, color: t.palette[0], opacity: 1 },
+                { offset: 100, color: t.palette[0], opacity: 0.75 },
+              ],
+            },
+          }
+        : undefined,
     plotOptions: {
       bar: {
         horizontal: isHorizontal,
@@ -272,7 +281,8 @@ const chartOptions = computed<ApexOptions>(() => {
           style: { colors: t.textMuted, fontSize: yLabelFont },
           align: isHorizontal ? 'left' : 'right',
           offsetX: isHorizontal ? (compactViewport.value ? -4 : -10) : 0,
-          formatter: (val: number | string) => (isHorizontal ? String(val) : String(Math.round(Number(val)))),
+          formatter: (val: number | string) =>
+            isHorizontal ? String(val) : String(Math.round(Number(val))),
         },
         axisBorder: { show: false },
         axisTicks: { show: false },
@@ -298,16 +308,10 @@ const chartOptions = computed<ApexOptions>(() => {
 
 <template>
   <div class="bar-chart">
-    <h3
-      v-if="title"
-      class="chart-title"
-    >
+    <h3 v-if="title" class="chart-title">
       {{ title }}
     </h3>
-    <div
-      v-if="data?.values?.length"
-      class="chart-wrap"
-    >
+    <div v-if="data?.values?.length" class="chart-wrap">
       <VueApexCharts
         type="bar"
         :height="resolvedChartHeight"
@@ -316,9 +320,7 @@ const chartOptions = computed<ApexOptions>(() => {
         class="apex-bar"
       />
     </div>
-    <div v-else-if="!data?.values?.length" class="chart-placeholder">
-      Sem dados
-    </div>
+    <div v-else-if="!data?.values?.length" class="chart-placeholder">Sem dados</div>
   </div>
 </template>
 

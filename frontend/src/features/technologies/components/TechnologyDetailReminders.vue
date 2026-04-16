@@ -40,10 +40,7 @@ function saveToStorage() {
 function addReminder() {
   const text = newReminder.value.trim()
   if (!text || atLimit.value) return
-  reminders.value = [
-    ...reminders.value,
-    { id: crypto.randomUUID?.() ?? String(Date.now()), text },
-  ]
+  reminders.value = [...reminders.value, { id: crypto.randomUUID?.() ?? String(Date.now()), text }]
   newReminder.value = ''
   saveToStorage()
 }
@@ -59,9 +56,7 @@ function saveEdit(r: Reminder) {
     deleteReminder(r)
     return
   }
-  reminders.value = reminders.value.map((item) =>
-    item.id === r.id ? { ...item, text } : item
-  )
+  reminders.value = reminders.value.map((item) => (item.id === r.id ? { ...item, text } : item))
   editingId.value = null
   editingText.value = ''
   saveToStorage()
@@ -87,12 +82,8 @@ watch(() => props.technologyId, loadFromStorage)
 
 <template>
   <section class="tech-reminders">
-    <h2 class="tech-reminders__title">
-      Lembretes
-    </h2>
-    <p class="tech-reminders__subtitle">
-      Anote o que não quer esquecer para esta tecnologia.
-    </p>
+    <h2 class="tech-reminders__title">Lembretes</h2>
+    <p class="tech-reminders__subtitle">Anote o que não quer esquecer para esta tecnologia.</p>
     <div class="tech-reminders__input">
       <input
         v-model="newReminder"
@@ -101,7 +92,7 @@ watch(() => props.technologyId, loadFromStorage)
         :placeholder="atLimit ? 'Limite atingido' : 'Novo lembrete...'"
         :disabled="atLimit"
         @keyup.enter.prevent="addReminder"
-      >
+      />
       <Button
         label="Adicionar"
         size="small"
@@ -109,15 +100,8 @@ watch(() => props.technologyId, loadFromStorage)
         @click="addReminder"
       />
     </div>
-    <ul
-      v-if="reminders.length"
-      class="tech-reminders__list"
-    >
-      <li
-        v-for="r in reminders"
-        :key="r.id"
-        class="tech-reminders__item"
-      >
+    <ul v-if="reminders.length" class="tech-reminders__list">
+      <li v-for="r in reminders" :key="r.id" class="tech-reminders__item">
         <textarea
           v-if="editingId === r.id"
           v-model="editingText"
@@ -125,18 +109,19 @@ watch(() => props.technologyId, loadFromStorage)
           rows="2"
           @keydown.ctrl.enter.prevent="saveEdit(r)"
         />
-        <button
-          v-else
-          type="button"
-          class="tech-reminders__text"
-          @click="startEdit(r)"
-        >
+        <button v-else type="button" class="tech-reminders__text" @click="startEdit(r)">
           {{ r.text }}
         </button>
         <div class="tech-reminders__actions">
           <template v-if="editingId === r.id">
             <Button label="Salvar" size="small" @click="saveEdit(r)" />
-            <Button label="Cancelar" size="small" variant="text" severity="secondary" @click="cancelEdit" />
+            <Button
+              label="Cancelar"
+              size="small"
+              variant="text"
+              severity="secondary"
+              @click="cancelEdit"
+            />
           </template>
           <Button
             v-else
@@ -149,12 +134,7 @@ watch(() => props.technologyId, loadFromStorage)
         </div>
       </li>
     </ul>
-    <p
-      v-else
-      class="tech-reminders__empty"
-    >
-      Nenhum lembrete. Adicione um acima.
-    </p>
+    <p v-else class="tech-reminders__empty">Nenhum lembrete. Adicione um acima.</p>
   </section>
 </template>
 
@@ -193,7 +173,9 @@ watch(() => props.technologyId, loadFromStorage)
   font-size: var(--text-sm);
   background: var(--color-bg-card);
   color: var(--color-text);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .tech-reminders__field:focus-visible {
   outline: none;
@@ -243,7 +225,9 @@ watch(() => props.technologyId, loadFromStorage)
   font-family: inherit;
   background: var(--color-bg-card);
   color: var(--color-text);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .tech-reminders__textarea:focus-visible {
   outline: none;

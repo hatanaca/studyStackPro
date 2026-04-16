@@ -21,12 +21,10 @@ const activeTab = ref('appearance')
     narrow
   >
     <template #hint>
-      Alterações em Aparência são salvas automaticamente. Em Dados você pode limpar cache ou exportar.
+      Alterações em Aparência são salvas automaticamente. Em Dados você pode limpar cache ou
+      exportar.
     </template>
-    <Tabs
-      v-model:value="activeTab"
-      class="settings-view__tabs"
-    >
+    <Tabs v-model:value="activeTab" class="settings-view__tabs">
       <TabList>
         <Tab value="appearance">Aparência</Tab>
         <Tab value="data">Dados</Tab>

@@ -20,23 +20,12 @@ const variantIcon: Record<string, string> = {
 </script>
 
 <template>
-  <div
-    class="callout"
-    :class="`callout--${variant}`"
-    role="status"
-  >
-    <span
-      v-if="showIcon"
-      class="callout__icon"
-      aria-hidden="true"
-    >
+  <div class="callout" :class="`callout--${variant}`" role="status">
+    <span v-if="showIcon" class="callout__icon" aria-hidden="true">
       {{ variantIcon[variant] }}
     </span>
     <div class="callout__content">
-      <strong
-        v-if="title || $slots.title"
-        class="callout__title"
-      >
+      <strong v-if="title || $slots.title" class="callout__title">
         <slot name="title">{{ title }}</slot>
       </strong>
       <div class="callout__body">

@@ -3,7 +3,11 @@ import { ref, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useElementSize } from '@vueuse/core'
 import type { StudySession } from '@/types/domain.types'
-import { measureText, getSessionNotesFont, sessionCardNotesMaxWidth } from '@/composables/useTextMeasure'
+import {
+  measureText,
+  getSessionNotesFont,
+  sessionCardNotesMaxWidth,
+} from '@/composables/useTextMeasure'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',
@@ -63,10 +67,7 @@ const formattedDate = computed(() => {
       </div>
       <div class="session-card__meta">
         <span>{{ formattedDate }}</span>
-        <span
-          v-if="session.mood"
-          class="mood"
-        >Mood: {{ session.mood }}/5</span>
+        <span v-if="session.mood" class="mood">Mood: {{ session.mood }}/5</span>
       </div>
       <p
         v-if="session.notes"
@@ -90,18 +91,8 @@ const formattedDate = computed(() => {
         >
           Ver
         </RouterLink>
-        <button
-          type="button"
-          class="btn btn--ghost"
-          @click="emit('edit', session)"
-        >
-          Editar
-        </button>
-        <button
-          type="button"
-          class="btn btn--ghost btn--danger"
-          @click="emit('delete', session)"
-        >
+        <button type="button" class="btn btn--ghost" @click="emit('edit', session)">Editar</button>
+        <button type="button" class="btn btn--ghost btn--danger" @click="emit('delete', session)">
           Excluir
         </button>
       </div>
@@ -116,7 +107,9 @@ const formattedDate = computed(() => {
   overflow: hidden;
   box-shadow: var(--card-chrome-shadow);
   border: var(--card-chrome-border);
-  transition: box-shadow var(--duration-normal) var(--ease-out-expo), border-color var(--duration-fast) ease;
+  transition:
+    box-shadow var(--duration-normal) var(--ease-out-expo),
+    border-color var(--duration-fast) ease;
 }
 .session-card:hover {
   box-shadow: var(--shadow-card-hover);
@@ -210,7 +203,10 @@ const formattedDate = computed(() => {
   background: transparent;
   color: var(--color-text-muted);
   text-decoration: none;
-  transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
 }
 .btn--ghost:hover {
   background: var(--color-bg-soft);

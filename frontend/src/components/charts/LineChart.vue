@@ -53,123 +53,116 @@ const chartOptions = computed<ApexOptions>(() => {
   const isStockPreset = props.preset === 'stock'
   const stockColor = theme.value.stockColor
   return {
-  ...baseOptions.value,
-  chart: {
-    ...baseOptions.value.chart,
-    type: 'area',
-    height: chartHeightPx.value,
-    background: 'transparent',
-    toolbar: {
-      show: isStockPreset,
-      tools: {
-        download: true,
-        selection: false,
-        zoom: false,
-        zoomin: false,
-        zoomout: false,
-        pan: false,
-        reset: false,
+    ...baseOptions.value,
+    chart: {
+      ...baseOptions.value.chart,
+      type: 'area',
+      height: chartHeightPx.value,
+      background: 'transparent',
+      toolbar: {
+        show: isStockPreset,
+        tools: {
+          download: true,
+          selection: false,
+          zoom: false,
+          zoomin: false,
+          zoomout: false,
+          pan: false,
+          reset: false,
+        },
+      },
+      zoom: { enabled: false },
+      stacked: false,
+      animations: {
+        enabled: !prefersReducedMotion.value,
+        easing: 'easeinout',
+        speed: 400,
       },
     },
-    zoom: { enabled: false },
-    stacked: false,
-    animations: {
-      enabled: !prefersReducedMotion.value,
-      easing: 'easeinout',
-      speed: 400,
+    colors: [isStockPreset ? stockColor : theme.value.palette[0]],
+    stroke: {
+      curve: 'smooth',
+      width: isStockPreset ? 3.5 : 2,
+      lineCap: 'round',
     },
-  },
-  colors: [isStockPreset ? stockColor : theme.value.palette[0]],
-  stroke: {
-    curve: 'smooth',
-    width: isStockPreset ? 3.5 : 2,
-    lineCap: 'round',
-  },
-  fill: {
-    type: isStockPreset ? 'gradient' : (props.filled !== false ? 'gradient' : 'solid'),
-    opacity: isStockPreset ? 1 : 1,
-    gradient: isStockPreset
-      ? {
-          shadeIntensity: 0,
-          opacityFrom: 0.26,
-          opacityTo: 0.08,
-          stops: [0, 100],
-          colorStops: [
-            { offset: 0, color: stockColor, opacity: 0.3 },
-            { offset: 100, color: stockColor, opacity: 0.07 },
-          ],
-        }
-      : {
-          shadeIntensity: 1,
-          opacityFrom: 0.25,
-          opacityTo: 0.02,
-          stops: [0, 90],
-        },
-  },
-  markers: {
-    size: isStockPreset ? 0 : 3,
-    hover: { sizeOffset: 2 },
-  },
-  grid: {
-    ...baseOptions.value.grid,
-    padding: { left: isStockPreset ? 4 : 8, right: isStockPreset ? 8 : 16, top: isStockPreset ? 6 : 12, bottom: isStockPreset ? 8 : 40 },
-    xaxis: { lines: { show: false } },
-    yaxis: { lines: { show: true, strokeDashArray: isStockPreset ? 0 : 2 } },
-  },
-  xaxis: {
-    ...baseOptions.value.xaxis,
-    categories,
-    tickPlacement: isStockPreset ? 'on' : 'between',
-    tickAmount: categories.length
-      ? Math.min(12, Math.max(4, Math.floor(categories.length / 2)))
-      : undefined,
-    labels: {
-      rotate: isStockPreset ? 0 : -40,
-      maxHeight: isStockPreset ? 32 : 56,
-      style: { fontSize: theme.value.fontSizeAxis },
+    fill: {
+      type: isStockPreset ? 'gradient' : props.filled !== false ? 'gradient' : 'solid',
+      opacity: isStockPreset ? 1 : 1,
+      gradient: isStockPreset
+        ? {
+            shadeIntensity: 0,
+            opacityFrom: 0.26,
+            opacityTo: 0.08,
+            stops: [0, 100],
+            colorStops: [
+              { offset: 0, color: stockColor, opacity: 0.3 },
+              { offset: 100, color: stockColor, opacity: 0.07 },
+            ],
+          }
+        : {
+            shadeIntensity: 1,
+            opacityFrom: 0.25,
+            opacityTo: 0.02,
+            stops: [0, 90],
+          },
     },
-    axisBorder: { show: isStockPreset ? false : true },
-    axisTicks: { show: isStockPreset ? false : true },
-  },
-  yaxis: {
-    ...baseOptions.value.yaxis,
-    min: 0,
-    opposite: isStockPreset,
-    tickAmount: isStockPreset ? 4 : undefined,
-    labels: {
-      formatter: (val: number) =>
-        isStockPreset ? String(Math.round(val)) : valueFormatter(val),
+    markers: {
+      size: isStockPreset ? 0 : 3,
+      hover: { sizeOffset: 2 },
     },
-  },
-  legend: { show: false },
-  dataLabels: { enabled: false },
-  tooltip: {
-    ...baseOptions.value.tooltip,
-    shared: true,
-    intersect: false,
-    y: { formatter: valueFormatter },
-  },
-}
+    grid: {
+      ...baseOptions.value.grid,
+      padding: {
+        left: isStockPreset ? 4 : 8,
+        right: isStockPreset ? 8 : 16,
+        top: isStockPreset ? 6 : 12,
+        bottom: isStockPreset ? 8 : 40,
+      },
+      xaxis: { lines: { show: false } },
+      yaxis: { lines: { show: true, strokeDashArray: isStockPreset ? 0 : 2 } },
+    },
+    xaxis: {
+      ...baseOptions.value.xaxis,
+      categories,
+      tickPlacement: isStockPreset ? 'on' : 'between',
+      tickAmount: categories.length
+        ? Math.min(12, Math.max(4, Math.floor(categories.length / 2)))
+        : undefined,
+      labels: {
+        rotate: isStockPreset ? 0 : -40,
+        maxHeight: isStockPreset ? 32 : 56,
+        style: { fontSize: theme.value.fontSizeAxis },
+      },
+      axisBorder: { show: isStockPreset ? false : true },
+      axisTicks: { show: isStockPreset ? false : true },
+    },
+    yaxis: {
+      ...baseOptions.value.yaxis,
+      min: 0,
+      opposite: isStockPreset,
+      tickAmount: isStockPreset ? 4 : undefined,
+      labels: {
+        formatter: (val: number) => (isStockPreset ? String(Math.round(val)) : valueFormatter(val)),
+      },
+    },
+    legend: { show: false },
+    dataLabels: { enabled: false },
+    tooltip: {
+      ...baseOptions.value.tooltip,
+      shared: true,
+      intersect: false,
+      y: { formatter: valueFormatter },
+    },
+  }
 })
 </script>
 
 <template>
-  <div
-    class="line-chart"
-    :class="{ 'line-chart--tall': tall }"
-    role="img"
-    :aria-label="ariaLabel"
-  >
-    <h3
-      v-if="title"
-      class="chart-title"
-    >
+  <div class="line-chart" :class="{ 'line-chart--tall': tall }" role="img" :aria-label="ariaLabel">
+    <h3 v-if="title" class="chart-title">
       {{ title }}
     </h3>
-    <div
-      v-if="data?.values?.length"
-      class="chart-wrap"
-    >
+    <div v-if="data?.values?.length" class="chart-wrap">
       <VueApexCharts
         type="area"
         :height="chartHeightPx"
@@ -178,12 +171,7 @@ const chartOptions = computed<ApexOptions>(() => {
         class="apex-line"
       />
     </div>
-    <div
-      v-else
-      class="chart-placeholder"
-    >
-      Sem dados
-    </div>
+    <div v-else class="chart-placeholder">Sem dados</div>
   </div>
 </template>
 

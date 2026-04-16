@@ -11,7 +11,15 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  submit: [payload: { name: string; email: string; password: string; password_confirmation: string; timezone?: string }]
+  submit: [
+    payload: {
+      name: string
+      email: string
+      password: string
+      password_confirmation: string
+      timezone?: string
+    },
+  ]
 }>()
 
 const name = ref('')
@@ -19,7 +27,12 @@ const email = ref('')
 const password = ref('')
 const passwordConfirmation = ref('')
 
-const errors = ref<{ name?: string; email?: string; password?: string; password_confirmation?: string }>({})
+const errors = ref<{
+  name?: string
+  email?: string
+  password?: string
+  password_confirmation?: string
+}>({})
 
 const nameError = computed(() => errors.value.name)
 const emailError = computed(() => errors.value.email)
@@ -54,21 +67,22 @@ function onSubmit() {
     name: name.value.trim(),
     email: email.value.trim(),
     password: password.value,
-    password_confirmation: passwordConfirmation.value
+    password_confirmation: passwordConfirmation.value,
   })
 }
 
 defineExpose({
-  setError: (msg: string) => { errors.value = { email: msg } },
-  clearErrors: () => { errors.value = {} }
+  setError: (msg: string) => {
+    errors.value = { email: msg }
+  },
+  clearErrors: () => {
+    errors.value = {}
+  },
 })
 </script>
 
 <template>
-  <form
-    class="register-form"
-    @submit.prevent="onSubmit"
-  >
+  <form class="register-form" @submit.prevent="onSubmit">
     <BaseInput
       id="reg-name"
       v-model="name"

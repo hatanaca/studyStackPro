@@ -19,7 +19,7 @@ type ExportRow = { date: string; total_minutes: number; session_count?: number }
 
 function buildCSV(rows: ExportRow[]): string {
   const header = 'Data,Minutos,Sessões'
-  const lines = rows.map(r => `${r.date},${r.total_minutes ?? 0},${r.session_count ?? 0}`)
+  const lines = rows.map((r) => `${r.date},${r.total_minutes ?? 0},${r.session_count ?? 0}`)
   return [header, ...lines].join('\n')
 }
 
@@ -71,12 +71,22 @@ async function doExport() {
     exportDone.value = true
   } catch (e: unknown) {
     let msg: string | null = null
-    if (e && typeof e === 'object' && 'response' in e && e.response && typeof e.response === 'object' && 'data' in e.response) {
-      const data = (e.response as { data?: Record<string, unknown> }).data as Record<string, unknown> | undefined
+    if (
+      e &&
+      typeof e === 'object' &&
+      'response' in e &&
+      e.response &&
+      typeof e.response === 'object' &&
+      'data' in e.response
+    ) {
+      const data = (e.response as { data?: Record<string, unknown> }).data as
+        | Record<string, unknown>
+        | undefined
       const err = data?.error as { message?: string } | undefined
-      const firstError = data?.errors && typeof data.errors === 'object'
-        ? (Object.values(data.errors as Record<string, string[]>) as string[][])[0]?.[0]
-        : null
+      const firstError =
+        data?.errors && typeof data.errors === 'object'
+          ? (Object.values(data.errors as Record<string, string[]>) as string[][])[0]?.[0]
+          : null
       msg = err?.message ?? (data?.message as string) ?? firstError ?? null
     }
     exportError.value = msg ?? (e instanceof Error ? e.message : 'Erro ao gerar exportação')
@@ -94,13 +104,10 @@ async function doExport() {
     narrow
   >
     <template #hint>
-      Os dados são buscados no servidor para o período escolhido. O arquivo inclui data, minutos e quantidade de sessões por dia.
+      Os dados são buscados no servidor para o período escolhido. O arquivo inclui data, minutos e
+      quantidade de sessões por dia.
     </template>
-    <Card
-      class="export-view__card"
-      :aria-busy="exporting"
-      aria-live="polite"
-    >
+    <Card class="export-view__card" :aria-busy="exporting" aria-live="polite">
       <template #title>Opções de exportação</template>
       <template #content>
         <Fieldset legend="Período">
@@ -108,53 +115,35 @@ async function doExport() {
             Selecione o intervalo de datas para incluir no export.
           </p>
           <div class="export-view__dates">
-            <label
-              for="export-date-start"
-              class="p-field"
-            >
+            <label for="export-date-start" class="p-field">
               <span class="export-view__label">Data inicial</span>
               <input
                 id="export-date-start"
                 v-model="dateRange.start"
                 type="date"
                 class="p-inputtext p-component w-full"
-              >
+              />
             </label>
-            <label
-              for="export-date-end"
-              class="p-field"
-            >
+            <label for="export-date-end" class="p-field">
               <span class="export-view__label">Data final</span>
               <input
                 id="export-date-end"
                 v-model="dateRange.end"
                 type="date"
                 class="p-inputtext p-component w-full"
-              >
+              />
             </label>
           </div>
         </Fieldset>
         <Fieldset legend="Formato">
-          <p class="export-view__fieldset-desc">
-            Formato do arquivo gerado.
-          </p>
+          <p class="export-view__fieldset-desc">Formato do arquivo gerado.</p>
           <div class="export-view__format">
             <label class="export-view__radio-label">
-              <input
-                v-model="format"
-                type="radio"
-                value="csv"
-                name="export-format"
-              >
+              <input v-model="format" type="radio" value="csv" name="export-format" />
               CSV (planilha)
             </label>
             <label class="export-view__radio-label">
-              <input
-                v-model="format"
-                type="radio"
-                value="json"
-                name="export-format"
-              >
+              <input v-model="format" type="radio" value="json" name="export-format" />
               JSON
             </label>
           </div>
@@ -167,18 +156,13 @@ async function doExport() {
             @click="doExport"
           />
         </div>
-      <div
-        v-if="exportDone"
-        class="export-view__success"
-        role="status"
-        aria-live="polite"
-      >
-        <span
-          class="export-view__success-icon"
-          aria-hidden="true"
-        >✓</span>
-        <span>Exportação gerada. O download foi iniciado. Verifique a pasta de downloads do navegador.</span>
-      </div>
+        <div v-if="exportDone" class="export-view__success" role="status" aria-live="polite">
+          <span class="export-view__success-icon" aria-hidden="true">✓</span>
+          <span
+            >Exportação gerada. O download foi iniciado. Verifique a pasta de downloads do
+            navegador.</span
+          >
+        </div>
         <ErrorCard
           v-if="exportError"
           title="Falha na exportação"
@@ -207,7 +191,9 @@ async function doExport() {
   min-width: clamp(12rem, 40vw, 18rem);
   flex: 1 1 16rem;
 }
-.export-view__dates .w-full { min-width: clamp(8.75rem, 32vw, 12rem); }
+.export-view__dates .w-full {
+  min-width: clamp(8.75rem, 32vw, 12rem);
+}
 .export-view__label {
   display: block;
   font-size: var(--text-xs);
@@ -217,8 +203,15 @@ async function doExport() {
   line-height: var(--leading-snug);
   letter-spacing: var(--tracking-tight);
 }
-.p-field { display: flex; flex-direction: column; gap: var(--spacing-xs); margin-bottom: var(--spacing-lg); }
-.w-full { width: 100%; }
+.p-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-lg);
+}
+.w-full {
+  width: 100%;
+}
 .export-view__fieldset-desc {
   font-size: var(--text-xs);
   color: var(--color-text-muted);

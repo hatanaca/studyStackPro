@@ -9,6 +9,7 @@
 | Documento | Descrição |
 |-----------|-----------|
 | [technical/DOCUMENTACAO_TECNICA.md](technical/DOCUMENTACAO_TECNICA.md) | Arquitetura, stack, frontend, backend, infra, fluxos e pontos de atenção |
+| [technical/RESUMO_ARQUITETURAL_STUDYTRACK_PRO.md](technical/RESUMO_ARQUITETURAL_STUDYTRACK_PRO.md) | Resumo denso: stack, rotas, módulos, PG/Redis/filas, eventos, WS, frontend e fluxo sessão→métricas |
 | [technical/FLUXO_COMPLETO_STUDYTRACK_PRO.md](technical/FLUXO_COMPLETO_STUDYTRACK_PRO.md) | Ordem de execução ponta a ponta: Laravel, Vue, guards, Axios, WebSocket, eventos e broadcast |
 | [technical/DOCUMENTACAO_TECNICA_LUA.md](technical/DOCUMENTACAO_TECNICA_LUA.md) | Redis Lua, OpenResty na borda, PL/Lua no PostgreSQL, scripts em `redis-scripts/` |
 

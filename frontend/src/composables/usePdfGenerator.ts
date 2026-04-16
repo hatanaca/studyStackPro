@@ -85,7 +85,13 @@ export function usePdfGenerator() {
         if (y + needed > PAGE_H - MARGIN - FOOTER_H) addPage()
       }
 
-      function drawText(text: string, font: string, fontSize: number, lineHeight: number, color = 0) {
+      function drawText(
+        text: string,
+        font: string,
+        fontSize: number,
+        lineHeight: number,
+        color = 0
+      ) {
         const { lines } = pretextLines(text, font, CONTENT_W, lineHeight)
         pdf.setFontSize(fontSize)
         pdf.setTextColor(color)

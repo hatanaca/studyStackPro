@@ -96,7 +96,7 @@ const emitDebounced = useDebounceFn(() => emitIfChanged(buildFilters()), 300)
 
 watch(
   () => [dateFrom.value, dateTo.value, minDuration.value],
-  () => emitDebounced(),
+  () => emitDebounced()
 )
 
 function clear() {
@@ -113,29 +113,15 @@ function clear() {
     <div class="session-filters__row">
       <div v-if="!hideTechnology" class="filter-group">
         <label for="filter-tech">Tecnologia</label>
-        <TechnologyPicker
-          id="filter-tech"
-          v-model="technology"
-          placeholder="Todas"
-        />
+        <TechnologyPicker id="filter-tech" v-model="technology" placeholder="Todas" />
       </div>
       <div class="filter-group">
         <label for="filter-date-from">De</label>
-        <input
-          id="filter-date-from"
-          v-model="dateFrom"
-          type="date"
-          class="filter-input"
-        >
+        <input id="filter-date-from" v-model="dateFrom" type="date" class="filter-input" />
       </div>
       <div class="filter-group">
         <label for="filter-date-to">Até</label>
-        <input
-          id="filter-date-to"
-          v-model="dateTo"
-          type="date"
-          class="filter-input"
-        >
+        <input id="filter-date-to" v-model="dateTo" type="date" class="filter-input" />
       </div>
       <div class="filter-group">
         <label for="filter-min-duration">Mín. duração (min)</label>
@@ -146,41 +132,20 @@ function clear() {
           min="0"
           class="filter-input"
           placeholder="0"
-        >
+        />
       </div>
       <div class="filter-group">
         <label for="filter-mood">Mood (1-5)</label>
-        <select
-          id="filter-mood"
-          v-model="mood"
-          class="filter-input"
-        >
-          <option value="">
-            Todos
-          </option>
-          <option value="1">
-            1
-          </option>
-          <option value="2">
-            2
-          </option>
-          <option value="3">
-            3
-          </option>
-          <option value="4">
-            4
-          </option>
-          <option value="5">
-            5
-          </option>
+        <select id="filter-mood" v-model="mood" class="filter-input">
+          <option value="">Todos</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
         </select>
       </div>
-      <button
-        type="button"
-        class="btn-clear"
-        aria-label="Limpar filtros"
-        @click="clear"
-      >
+      <button type="button" class="btn-clear" aria-label="Limpar filtros" @click="clear">
         Limpar
       </button>
     </div>
@@ -224,7 +189,9 @@ function clear() {
   box-sizing: border-box;
   background: var(--color-bg-card);
   color: var(--color-text);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .filter-input:focus-visible {
   border-color: var(--color-primary);
@@ -243,7 +210,10 @@ function clear() {
   cursor: pointer;
   white-space: nowrap;
   align-self: flex-end;
-  transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
 }
 .btn-clear:hover {
   background: var(--color-primary-soft);

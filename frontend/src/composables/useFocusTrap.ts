@@ -60,7 +60,7 @@ export function useFocusTrap(container: Ref<HTMLElement | null>, active: Ref<boo
       if (isActive) activate()
       else deactivate()
     },
-    { flush: 'post' },
+    { flush: 'post' }
   )
 
   onMounted(() => {

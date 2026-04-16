@@ -5,14 +5,18 @@ namespace Tests\Feature\Health;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
+use Tests\Concerns\InteractsWithRealRedis;
 use Tests\TestCase;
 
 class HealthCheckTest extends TestCase
 {
+    use InteractsWithRealRedis;
     use RefreshDatabase;
 
     public function test_health_returns_200_when_all_services_ok(): void
     {
+        $this->skipUnlessRedisPingReachable();
+
         $response = $this->getJson('/api/health');
 
         $response->assertStatus(200)
@@ -25,6 +29,8 @@ class HealthCheckTest extends TestCase
 
     public function test_health_includes_services_in_testing_environment(): void
     {
+        $this->skipUnlessRedisPingReachable();
+
         $response = $this->getJson('/api/health');
 
         $response->assertStatus(200)
@@ -66,6 +72,8 @@ class HealthCheckTest extends TestCase
 
     public function test_health_does_not_require_authentication(): void
     {
+        $this->skipUnlessRedisPingReachable();
+
         $response = $this->getJson('/api/health');
 
         $response->assertStatus(200);

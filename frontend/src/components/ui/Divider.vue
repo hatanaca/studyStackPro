@@ -17,10 +17,7 @@ withDefaults(
     role="separator"
     :aria-hidden="!label"
   >
-    <span
-      v-if="label"
-      class="divider__label"
-    >
+    <span v-if="label" class="divider__label">
       {{ label }}
     </span>
   </div>

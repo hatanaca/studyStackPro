@@ -168,10 +168,7 @@ const barChartData = computed(() => {
 </script>
 
 <template>
-  <div
-    class="tech-dist-widget"
-    :class="{ 'tech-dist-widget--bar-mode': currentType === 'bar' }"
-  >
+  <div class="tech-dist-widget" :class="{ 'tech-dist-widget--bar-mode': currentType === 'bar' }">
     <div class="widget-header">
       <div class="widget-header__top">
         <h3 class="widget-title">Distribuição por tecnologia</h3>
@@ -232,12 +229,18 @@ const barChartData = computed(() => {
       </Transition>
 
       <p class="hint">
-        {{ currentType === 'polar' ? 'Toque ou passe o mouse nos setores para detalhes.' : 'Barras coloridas por intensidade relativa de horas.' }}
+        {{
+          currentType === 'polar'
+            ? 'Toque ou passe o mouse nos setores para detalhes.'
+            : 'Barras coloridas por intensidade relativa de horas.'
+        }}
       </p>
     </div>
     <div v-else class="tech-dist-widget__empty">
       <p class="tech-dist-widget__empty-text">Nenhum dado ainda.</p>
-      <p class="tech-dist-widget__empty-hint">Registre sessões de estudo para ver a distribuição por tecnologia.</p>
+      <p class="tech-dist-widget__empty-hint">
+        Registre sessões de estudo para ver a distribuição por tecnologia.
+      </p>
     </div>
   </div>
 </template>
@@ -444,7 +447,8 @@ const barChartData = computed(() => {
 @media (prefers-reduced-motion: no-preference) {
   .chart-switch-enter-active,
   .chart-switch-leave-active {
-    transition: opacity var(--duration-normal) var(--ease-out-expo),
+    transition:
+      opacity var(--duration-normal) var(--ease-out-expo),
       transform var(--duration-normal) var(--ease-out-expo);
   }
   .chart-switch-enter-from,

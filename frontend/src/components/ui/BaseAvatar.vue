@@ -44,13 +44,9 @@ const hasImage = computed(() => Boolean(props.src))
       :src="src!"
       :alt="alt || name || ''"
       class="base-avatar__img"
-      @error="(e: Event) => (e.currentTarget as HTMLImageElement).style.display = 'none'"
-    >
-    <span
-      v-else
-      class="base-avatar__initials"
-      :aria-hidden="true"
-    >
+      @error="(e: Event) => ((e.currentTarget as HTMLImageElement).style.display = 'none')"
+    />
+    <span v-else class="base-avatar__initials" :aria-hidden="true">
       {{ initials }}
     </span>
   </div>

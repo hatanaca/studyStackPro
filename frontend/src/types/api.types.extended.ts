@@ -26,7 +26,12 @@ export interface ApiSuccessResponse<T> {
 export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse
 
 export function isApiErrorResponse(r: unknown): r is ApiErrorResponse {
-  return typeof r === 'object' && r !== null && 'success' in r && (r as ApiErrorResponse).success === false
+  return (
+    typeof r === 'object' &&
+    r !== null &&
+    'success' in r &&
+    (r as ApiErrorResponse).success === false
+  )
 }
 
 export function getApiErrorMessage(r: ApiErrorResponse): string {

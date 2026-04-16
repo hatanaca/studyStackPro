@@ -54,21 +54,12 @@ function onPeriodChange(period: TimeSeriesPeriod) {
 <template>
   <header class="dashboard-header">
     <div class="dashboard-header__head">
-      <h1 class="dashboard-header__title">
-        Dashboard
-      </h1>
+      <h1 class="dashboard-header__title">Dashboard</h1>
       <p class="dashboard-header__desc">
         Visão geral das suas métricas, metas e atividade de estudo.
       </p>
-      <div
-        v-if="headerSummary.length"
-        class="dashboard-header__summary"
-      >
-        <div
-          v-for="item in headerSummary"
-          :key="item.label"
-          class="dashboard-header__summary-item"
-        >
+      <div v-if="headerSummary.length" class="dashboard-header__summary">
+        <div v-for="item in headerSummary" :key="item.label" class="dashboard-header__summary-item">
           <span class="dashboard-header__summary-label">{{ item.label }}</span>
           <strong class="dashboard-header__summary-value">{{ item.value }}</strong>
         </div>
@@ -95,10 +86,7 @@ function onPeriodChange(period: TimeSeriesPeriod) {
           role="status"
           aria-live="polite"
         >
-          <span
-            class="spinner"
-            aria-hidden="true"
-          />
+          <span class="spinner" aria-hidden="true" />
           Atualizando...
         </span>
         <Button

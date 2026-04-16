@@ -84,7 +84,9 @@ function goBack() {
     :breadcrumb="[
       { label: 'Dashboard', to: '/' },
       { label: 'Tecnologias', to: '/technologies' },
-      ...(session?.technology ? [{ label: session.technology.name, to: `/technologies/${session.technology.id}` }] : []),
+      ...(session?.technology
+        ? [{ label: session.technology.name, to: `/technologies/${session.technology.id}` }]
+        : []),
       { label: 'Sessão de estudo' },
     ]"
     title="Sessão de estudo"
@@ -101,11 +103,7 @@ function goBack() {
       <Skeleton class="session-detail__skeleton" height="8rem" />
     </div>
     <template v-else-if="error">
-      <ErrorCard
-        :message="error"
-        :on-retry="fetchSession"
-        class="session-detail__message"
-      />
+      <ErrorCard :message="error" :on-retry="fetchSession" class="session-detail__message" />
       <Button
         label="Voltar para Sessões"
         severity="secondary"
@@ -130,21 +128,21 @@ function goBack() {
       </div>
       <article
         class="session-detail__card"
-        :style="session.technology?.color ? { '--session-tech-color': session.technology.color } : undefined"
+        :style="
+          session.technology?.color
+            ? { '--session-tech-color': session.technology.color }
+            : undefined
+        "
       >
-        <div
-          v-if="session.technology?.color"
-          class="session-detail__card-bar"
-          aria-hidden="true"
-        />
+        <div v-if="session.technology?.color" class="session-detail__card-bar" aria-hidden="true" />
         <div class="session-detail__card-inner">
-          <div
-            v-if="session.technology"
-            class="session-detail__badge-wrap"
-          >
+          <div v-if="session.technology" class="session-detail__badge-wrap">
             <Tag
               :value="session.technology.name"
-              :style="{ background: session.technology.color, color: 'var(--color-primary-contrast)' }"
+              :style="{
+                background: session.technology.color,
+                color: 'var(--color-primary-contrast)',
+              }"
             />
             <span
               v-if="session.duration_formatted || session.duration_min != null"
@@ -154,11 +152,7 @@ function goBack() {
             </span>
           </div>
           <dl class="session-detail__meta key-value-list">
-            <div
-              v-for="item in sessionMetaItems"
-              :key="item.label"
-              class="key-value-list__row"
-            >
+            <div v-for="item in sessionMetaItems" :key="item.label" class="key-value-list__row">
               <dt class="key-value-list__term">{{ item.label }}</dt>
               <dd class="key-value-list__value">{{ item.value }}</dd>
             </div>
@@ -180,7 +174,9 @@ function goBack() {
 .session-detail__actions {
   margin-bottom: var(--spacing-lg);
 }
-.session-detail__message { margin-bottom: var(--spacing-lg); }
+.session-detail__message {
+  margin-bottom: var(--spacing-lg);
+}
 .session-detail__back {
   margin-top: var(--spacing-lg);
 }

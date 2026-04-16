@@ -44,10 +44,7 @@ const items = computed(() => {
 </script>
 
 <template>
-  <section
-    class="kpi-cards"
-    aria-label="Métricas principais"
-  >
+  <section class="kpi-cards" aria-label="Métricas principais">
     <Card
       v-for="item in items"
       :key="item.label"
@@ -82,7 +79,8 @@ const items = computed(() => {
   min-height: var(--widget-card-min-height);
   border-radius: var(--widget-radius);
   box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--duration-normal) var(--ease-in-out),
+  transition:
+    box-shadow var(--duration-normal) var(--ease-in-out),
     border-color var(--duration-fast) ease,
     transform var(--duration-fast) var(--ease-out-expo);
 }
@@ -103,8 +101,17 @@ const items = computed(() => {
   line-height: var(--leading-tight);
   opacity: 0.9;
 }
-.kpi-card__content { display: flex; flex-direction: column; gap: var(--spacing-xs); min-width: 0; }
-.kpi-card__label { font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600; }
+.kpi-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+.kpi-card__label {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
 .kpi-card__value {
   font-size: var(--text-xl);
   font-weight: 700;
@@ -113,13 +120,30 @@ const items = computed(() => {
   letter-spacing: var(--tracking-tight);
   line-height: var(--leading-tight);
 }
-.kpi-card--primary .kpi-card__value { color: var(--color-primary); }
-.kpi-card--success .kpi-card__value { color: var(--color-success); }
-.kpi-card--warning .kpi-card__value { color: var(--color-warning); }
-.kpi-card--error .kpi-card__value { color: var(--color-error); }
+.kpi-card--primary .kpi-card__value {
+  color: var(--color-primary);
+}
+.kpi-card--success .kpi-card__value {
+  color: var(--color-success);
+}
+.kpi-card--warning .kpi-card__value {
+  color: var(--color-warning);
+}
+.kpi-card--error .kpi-card__value {
+  color: var(--color-error);
+}
 @media (max-width: 640px) {
-  .kpi-card__inner { flex-direction: row; align-items: center; }
-  .kpi-card { min-height: auto; padding: var(--widget-padding-sm); }
-  .kpi-card__content { flex: 1; min-width: 0; }
+  .kpi-card__inner {
+    flex-direction: row;
+    align-items: center;
+  }
+  .kpi-card {
+    min-height: auto;
+    padding: var(--widget-padding-sm);
+  }
+  .kpi-card__content {
+    flex: 1;
+    min-width: 0;
+  }
 }
 </style>

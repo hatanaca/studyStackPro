@@ -152,11 +152,9 @@ function removeItem(item: MuralItem) {
 }
 
 function onImageError(e: Event) {
-  const target = (e.target as HTMLImageElement)
+  const target = e.target as HTMLImageElement
   if (target) target.style.display = 'none'
-  const item = items.value.find(
-    (i) => i.type === 'image' && i.url === target?.src
-  )
+  const item = items.value.find((i) => i.type === 'image' && i.url === target?.src)
   if (item) item.type = 'quote' as MuralItem['type']
 }
 
@@ -166,9 +164,7 @@ watch(() => props.technologyId, loadFromStorage)
 
 <template>
   <section class="tech-mural">
-    <h2 class="tech-mural__title">
-      Mural
-    </h2>
+    <h2 class="tech-mural__title">Mural</h2>
     <p class="tech-mural__subtitle">
       Adicione imagens (URL) ou citações para inspirar seus estudos.
     </p>
@@ -179,34 +175,34 @@ watch(() => props.technologyId, loadFromStorage)
         size="small"
         variant="outlined"
         severity="secondary"
-        @click="showAddImage = !showAddImage; showAddQuote = false"
+        @click="
+          showAddImage = !showAddImage
+          showAddQuote = false
+        "
       />
       <Button
         :label="showAddQuote ? 'Cancelar' : '+ Citação'"
         size="small"
         variant="outlined"
         severity="secondary"
-        @click="showAddQuote = !showAddQuote; showAddImage = false"
+        @click="
+          showAddQuote = !showAddQuote
+          showAddImage = false
+        "
       />
     </div>
 
-    <div
-      v-if="showAddImage"
-      class="tech-mural__form"
-    >
+    <div v-if="showAddImage" class="tech-mural__form">
       <input
         v-model="newUrl"
         type="url"
         class="tech-mural__input"
         placeholder="https://..."
         @keyup.enter.prevent="addImage"
-      >
+      />
       <Button label="Adicionar" size="small" :disabled="!newUrl.trim()" @click="addImage" />
     </div>
-    <div
-      v-if="showAddQuote"
-      class="tech-mural__form"
-    >
+    <div v-if="showAddQuote" class="tech-mural__form">
       <textarea
         v-model="newQuote"
         class="tech-mural__textarea"
@@ -236,17 +232,14 @@ watch(() => props.technologyId, loadFromStorage)
           height: `${pos.height}px`,
         }"
       >
-        <div
-          v-if="pos.item.type === 'image' && pos.item.url"
-          class="tech-mural__image-wrap"
-        >
+        <div v-if="pos.item.type === 'image' && pos.item.url" class="tech-mural__image-wrap">
           <img
             :src="pos.item.url"
             :alt="'Imagem do mural'"
             class="tech-mural__image"
             loading="lazy"
             @error="onImageError"
-          >
+          />
         </div>
         <blockquote
           v-else-if="pos.item.type === 'quote' && pos.item.text"
@@ -264,14 +257,8 @@ watch(() => props.technologyId, loadFromStorage)
         </button>
       </div>
     </div>
-    <div
-      v-else
-      ref="gridRef"
-      class="tech-mural__masonry tech-mural__masonry--empty"
-    >
-      <p class="tech-mural__empty">
-        Nenhum item no mural. Adicione uma imagem ou citação acima.
-      </p>
+    <div v-else ref="gridRef" class="tech-mural__masonry tech-mural__masonry--empty">
+      <p class="tech-mural__empty">Nenhum item no mural. Adicione uma imagem ou citação acima.</p>
     </div>
   </section>
 </template>
@@ -321,7 +308,9 @@ watch(() => props.technologyId, loadFromStorage)
   font-size: var(--text-sm);
   background: var(--color-bg-card);
   color: var(--color-text);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .tech-mural__input:focus-visible {
   outline: none;
@@ -339,7 +328,9 @@ watch(() => props.technologyId, loadFromStorage)
   resize: vertical;
   background: var(--color-bg-card);
   color: var(--color-text);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .tech-mural__textarea:focus-visible {
   outline: none;
@@ -360,7 +351,10 @@ watch(() => props.technologyId, loadFromStorage)
   overflow: hidden;
   border: 1px solid var(--color-border);
   background: var(--color-bg-soft);
-  transition: border-color var(--duration-fast) ease, transform var(--duration-normal) ease, top var(--duration-normal) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    transform var(--duration-normal) ease,
+    top var(--duration-normal) ease;
 }
 .tech-mural__item:hover {
   border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));

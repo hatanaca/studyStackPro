@@ -18,10 +18,18 @@ const GoalList = defineAsyncComponent({
             'aria-label': 'Carregando metas',
           },
           [
-            h(Skeleton, { width: '38%', height: '1rem', class: 'goals-view__async-placeholder__line' }),
+            h(Skeleton, {
+              width: '38%',
+              height: '1rem',
+              class: 'goals-view__async-placeholder__line',
+            }),
             h(Skeleton, { width: '100%', height: '10rem' }),
-            h(Skeleton, { width: '100%', height: '6rem', class: 'goals-view__async-placeholder__line' }),
-          ],
+            h(Skeleton, {
+              width: '100%',
+              height: '6rem',
+              class: 'goals-view__async-placeholder__line',
+            }),
+          ]
         )
     },
   },
@@ -37,7 +45,8 @@ const GoalList = defineAsyncComponent({
     narrow
   >
     <template #hint>
-      Metas de minutos por semana aparecem no dashboard. Crie ou edite uma meta ativa para personalizar seu objetivo.
+      Metas de minutos por semana aparecem no dashboard. Crie ou edite uma meta ativa para
+      personalizar seu objetivo.
     </template>
     <GoalList />
   </PageView>

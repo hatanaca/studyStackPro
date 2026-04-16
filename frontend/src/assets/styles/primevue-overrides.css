@@ -66,7 +66,9 @@
   font-weight: 700;
   letter-spacing: var(--tracking-tight);
   color: var(--color-text);
-  transition: background var(--duration-fast) ease, color var(--duration-fast) ease;
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease;
 }
 .p-accordionheader:hover {
   background: color-mix(in srgb, var(--color-bg-soft) 55%, var(--color-bg-card));

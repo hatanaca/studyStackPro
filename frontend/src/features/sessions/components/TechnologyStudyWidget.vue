@@ -14,7 +14,7 @@ const props = withDefaults(
     /** Atrasa o primeiro pedido (ms) para espalhar carga quando há muitos cartões na grelha. */
     staggerMs?: number
   }>(),
-  { staggerMs: 0 },
+  { staggerMs: 0 }
 )
 
 const totalMinutes = ref(0)
@@ -72,18 +72,21 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <Card
-    class="technology-study-widget"
-    :style="{ '--tech-color': technology.color }"
-  >
+  <Card class="technology-study-widget" :style="{ '--tech-color': technology.color }">
     <template #content>
       <div class="technology-study-widget__bar" />
       <div class="technology-study-widget__content">
         <h3 class="technology-study-widget__name">{{ technology.name }}</h3>
-        <p v-if="loading" class="technology-study-widget__total technology-study-widget__total--skeleton" aria-hidden="true">
+        <p
+          v-if="loading"
+          class="technology-study-widget__total technology-study-widget__total--skeleton"
+          aria-hidden="true"
+        >
           <Skeleton width="4rem" height="1.5rem" class="technology-study-widget__skeleton" />
         </p>
-        <p v-else class="technology-study-widget__total">{{ totalMinutes === 0 ? '0h' : totalHoursLabel }}</p>
+        <p v-else class="technology-study-widget__total">
+          {{ totalMinutes === 0 ? '0h' : totalHoursLabel }}
+        </p>
         <RouterLink
           :to="{ name: 'technology-detail', params: { id: technology.id } }"
           class="technology-study-widget__link"
@@ -100,11 +103,17 @@ onBeforeUnmount(() => {
 .technology-study-widget {
   position: relative;
   overflow: hidden;
-  transition: box-shadow var(--duration-normal) var(--ease-in-out), border-color var(--duration-fast) ease;
+  transition:
+    box-shadow var(--duration-normal) var(--ease-in-out),
+    border-color var(--duration-fast) ease;
 }
 .technology-study-widget:hover {
   box-shadow: var(--shadow-md);
-  border-color: color-mix(in srgb, var(--tech-color, var(--color-primary)) 40%, var(--color-border));
+  border-color: color-mix(
+    in srgb,
+    var(--tech-color, var(--color-primary)) 40%,
+    var(--color-border)
+  );
 }
 .technology-study-widget__bar {
   height: var(--spacing-xs);

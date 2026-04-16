@@ -93,16 +93,9 @@ function goBack() {
     </div>
 
     <template v-if="error">
-      <ErrorCard
-        :message="error"
-        :on-retry="fetchData"
-      />
+      <ErrorCard :message="error" :on-retry="fetchData" />
       <div class="technology-detail__back">
-        <BaseButton
-          variant="secondary"
-          type="button"
-          @click="goBack"
-        >
+        <BaseButton variant="secondary" type="button" @click="goBack">
           Voltar para Tecnologias
         </BaseButton>
       </div>

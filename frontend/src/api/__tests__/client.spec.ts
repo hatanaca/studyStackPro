@@ -39,7 +39,9 @@ describe('client', () => {
     })
 
     it('returns default message for unknown errors', () => {
-      expect(getApiErrorMessage(new Error('Network error'))).toBe('Erro na comunicação com o servidor.')
+      expect(getApiErrorMessage(new Error('Network error'))).toBe(
+        'Erro na comunicação com o servidor.'
+      )
       expect(getApiErrorMessage(null)).toBe('Erro na comunicação com o servidor.')
       expect(getApiErrorMessage(undefined)).toBe('Erro na comunicação com o servidor.')
       expect(getApiErrorMessage({})).toBe('Erro na comunicação com o servidor.')

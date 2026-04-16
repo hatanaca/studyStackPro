@@ -29,7 +29,9 @@ function closeDropdown() {
 function handleLogout() {
   try {
     disconnectWebSocket()
-  } catch { /* ws already disconnected */ }
+  } catch {
+    /* ws already disconnected */
+  }
   authStore.logout()
 }
 
@@ -42,13 +44,28 @@ type NavLink = {
 
 const navLinks: NavLink[] = [
   { to: '/', label: 'Dashboard', activePath: '/', prefetch: prefetchDashboardView },
-  { to: { name: 'sessions' }, label: 'Sessões', activePath: '/sessions', prefetch: prefetchSessionsView },
-  { to: '/technologies', label: 'Tecnologias', activePath: '/technologies', prefetch: prefetchTechnologiesView },
+  {
+    to: { name: 'sessions' },
+    label: 'Sessões',
+    activePath: '/sessions',
+    prefetch: prefetchSessionsView,
+  },
+  {
+    to: '/technologies',
+    label: 'Tecnologias',
+    activePath: '/technologies',
+    prefetch: prefetchTechnologiesView,
+  },
   { to: '/goals', label: 'Metas', activePath: '/goals', prefetch: prefetchGoalsView },
   { to: '/export', label: 'Exportar', activePath: '/export', prefetch: prefetchExportView },
   { to: '/reports', label: 'Relatórios', activePath: '/reports', prefetch: prefetchReportsView },
   { to: '/help', label: 'Ajuda', activePath: '/help', prefetch: prefetchHelpView },
-  { to: '/settings', label: 'Configurações', activePath: '/settings', prefetch: prefetchSettingsView },
+  {
+    to: '/settings',
+    label: 'Configurações',
+    activePath: '/settings',
+    prefetch: prefetchSettingsView,
+  },
   { to: '/profile', label: 'Perfil', activePath: '/profile', prefetch: prefetchProfileView },
 ]
 
@@ -77,10 +94,7 @@ function isActive(path: string) {
   </Button>
   <OverlayPanel ref="op" class="app-menu-dropdown__overlay">
     <div class="app-menu-dropdown__panel">
-      <nav
-        class="app-menu-dropdown__nav"
-        role="navigation"
-      >
+      <nav class="app-menu-dropdown__nav" role="navigation">
         <RouterLink
           v-for="link in navLinks"
           :key="link.label"
@@ -98,13 +112,7 @@ function isActive(path: string) {
         <ThemeToggle variant="default" />
       </div>
       <div class="app-menu-dropdown__footer">
-        <button
-          type="button"
-          class="app-menu-dropdown__logout"
-          @click="handleLogout"
-        >
-          Sair
-        </button>
+        <button type="button" class="app-menu-dropdown__logout" @click="handleLogout">Sair</button>
       </div>
     </div>
   </OverlayPanel>
@@ -125,7 +133,9 @@ function isActive(path: string) {
   font-weight: 500;
   cursor: pointer;
   box-shadow: var(--card-chrome-shadow);
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease,
+  transition:
+    background var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
     box-shadow var(--duration-fast) ease;
 }
 .app-menu-dropdown__trigger:hover {
@@ -162,7 +172,9 @@ function isActive(path: string) {
   text-decoration: none;
   font-size: var(--text-sm);
   border-radius: var(--radius-md);
-  transition: background var(--duration-fast) ease, color var(--duration-fast) ease;
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease;
 }
 .app-menu-dropdown__link:hover {
   background: var(--color-bg);
@@ -204,7 +216,9 @@ function isActive(path: string) {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
   cursor: pointer;
-  transition: background var(--duration-fast) ease, color var(--duration-fast) ease;
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease;
 }
 .app-menu-dropdown__logout:hover {
   background: var(--color-error-soft);

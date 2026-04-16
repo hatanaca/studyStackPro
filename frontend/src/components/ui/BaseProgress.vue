@@ -33,18 +33,11 @@ const variantClass = computed(() => `base-progress--${props.variant}`)
 
 <template>
   <div class="base-progress">
-    <div
-      v-if="showLabel || label"
-      class="base-progress__header"
-    >
-      <span
-        v-if="label"
-        class="base-progress__label"
-      >{{ label }}</span>
-      <span
-        v-else-if="showLabel && !indeterminate"
-        class="base-progress__percent"
-      >{{ percentage }}%</span>
+    <div v-if="showLabel || label" class="base-progress__header">
+      <span v-if="label" class="base-progress__label">{{ label }}</span>
+      <span v-else-if="showLabel && !indeterminate" class="base-progress__percent"
+        >{{ percentage }}%</span
+      >
     </div>
     <div
       class="base-progress__track"
@@ -55,15 +48,8 @@ const variantClass = computed(() => `base-progress--${props.variant}`)
       :aria-valuemax="max"
       :aria-label="label || (showLabel ? `${percentage}%` : undefined)"
     >
-      <div
-        v-if="!indeterminate"
-        class="base-progress__bar"
-        :style="{ width: `${percentage}%` }"
-      />
-      <div
-        v-else
-        class="base-progress__bar base-progress__bar--indeterminate"
-      />
+      <div v-if="!indeterminate" class="base-progress__bar" :style="{ width: `${percentage}%` }" />
+      <div v-else class="base-progress__bar base-progress__bar--indeterminate" />
     </div>
   </div>
 </template>
@@ -91,9 +77,15 @@ const variantClass = computed(() => `base-progress--${props.variant}`)
   border-radius: var(--radius-full);
   overflow: hidden;
 }
-.base-progress--sm { height: 0.375rem; }
-.base-progress--md { height: 0.5rem; }
-.base-progress--lg { height: 0.625rem; }
+.base-progress--sm {
+  height: 0.375rem;
+}
+.base-progress--md {
+  height: 0.5rem;
+}
+.base-progress--lg {
+  height: 0.625rem;
+}
 
 .base-progress__bar {
   height: 100%;
@@ -101,16 +93,26 @@ const variantClass = computed(() => `base-progress--${props.variant}`)
   background: var(--color-primary);
   transition: width var(--duration-normal) var(--ease-out-expo);
 }
-.base-progress--success .base-progress__bar { background: var(--color-success); }
-.base-progress--warning .base-progress__bar { background: var(--color-warning); }
-.base-progress--error .base-progress__bar { background: var(--color-error); }
+.base-progress--success .base-progress__bar {
+  background: var(--color-success);
+}
+.base-progress--warning .base-progress__bar {
+  background: var(--color-warning);
+}
+.base-progress--error .base-progress__bar {
+  background: var(--color-error);
+}
 
 .base-progress__bar--indeterminate {
   width: 40% !important;
   animation: base-progress-indeterminate 1.5s ease-in-out infinite;
 }
 @keyframes base-progress-indeterminate {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(350%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
 }
 </style>

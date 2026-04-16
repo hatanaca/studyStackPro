@@ -50,13 +50,17 @@ watch(search, () => {
   emitState()
 })
 watch(dateRange, emitState, { deep: true })
-watch(() => props.modelValue?.dateRange, (dr) => {
-  if (dr) {
-    dateRange.value = { start: dr.start ?? '', end: dr.end ?? '' }
-  } else {
-    dateRange.value = { start: '', end: '' }
-  }
-}, { immediate: true })
+watch(
+  () => props.modelValue?.dateRange,
+  (dr) => {
+    if (dr) {
+      dateRange.value = { start: dr.start ?? '', end: dr.end ?? '' }
+    } else {
+      dateRange.value = { start: '', end: '' }
+    }
+  },
+  { immediate: true }
+)
 
 function clearFilters() {
   search.value = ''
@@ -66,14 +70,8 @@ function clearFilters() {
 </script>
 
 <template>
-  <div
-    class="filter-bar"
-    role="search"
-  >
-    <div
-      v-if="showSearch"
-      class="filter-bar__search"
-    >
+  <div class="filter-bar" role="search">
+    <div v-if="showSearch" class="filter-bar__search">
       <InputText
         v-model="search"
         type="search"
@@ -82,22 +80,14 @@ function clearFilters() {
         @keyup.enter="emitState"
       />
     </div>
-    <div
-      v-if="showDateRange"
-      class="filter-bar__dates"
-    >
+    <div v-if="showDateRange" class="filter-bar__dates">
       <input
         v-model="dateRange.start"
         type="date"
         class="p-inputtext p-component"
         aria-label="Início"
-      >
-      <input
-        v-model="dateRange.end"
-        type="date"
-        class="p-inputtext p-component"
-        aria-label="Fim"
-      >
+      />
+      <input v-model="dateRange.end" type="date" class="p-inputtext p-component" aria-label="Fim" />
     </div>
     <Button
       label="Limpar filtros"

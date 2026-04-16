@@ -58,7 +58,10 @@ function select(period: TimeSeriesPeriod) {
   background: var(--color-bg-card);
   color: var(--color-text-muted);
   cursor: pointer;
-  transition: background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
 }
 .period-btn:hover {
   background: var(--color-bg-soft);

@@ -9,11 +9,21 @@ export function useStudySessions() {
   const sessionsStore = useSessionsStore()
   const queryClient = useQueryClient()
 
-  async function loadSessions(params?: { page?: number; per_page?: number; technology_id?: string }) {
+  async function loadSessions(params?: {
+    page?: number
+    per_page?: number
+    technology_id?: string
+  }) {
     await sessionsStore.fetchSessions(params)
   }
 
-  async function createSession(data: { technology_id: string; started_at: string; ended_at?: string; notes?: string; mood?: number }) {
+  async function createSession(data: {
+    technology_id: string
+    started_at: string
+    ended_at?: string
+    notes?: string
+    mood?: number
+  }) {
     const { data: res } = await sessionsApi.create(data)
     if (!res.success || !res.data) return null
     await queryClient.invalidateQueries({ queryKey: queryKeys.sessions.all })
@@ -34,6 +44,6 @@ export function useStudySessions() {
     total: computed(() => sessionsStore.total),
     loadSessions,
     createSession,
-    deleteSession
+    deleteSession,
   }
 }

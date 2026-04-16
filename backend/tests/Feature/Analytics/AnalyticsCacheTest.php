@@ -44,7 +44,7 @@ class AnalyticsCacheTest extends TestCase
         ]);
 
         $event = new \App\Events\StudySession\StudySessionCreated($session);
-        (new DispatchMetricsRecalculation)->handle($event);
+        app(DispatchMetricsRecalculation::class)->handle($event);
 
         Bus::assertDispatched(RecalculateMetricsJob::class, function (RecalculateMetricsJob $job) use ($user) {
             return $job->userId === $user->id;

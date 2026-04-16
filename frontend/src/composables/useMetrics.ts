@@ -13,6 +13,6 @@ export function useMetrics() {
     technologyMetrics: computed(() => analyticsStore.technologyMetrics),
     timeSeries30d: computed(() => analyticsStore.timeSeries30d),
     isLoading: computed(() => analyticsStore.isLoading),
-    refreshDashboard
+    refreshDashboard,
   }
 }

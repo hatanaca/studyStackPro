@@ -45,8 +45,7 @@ export const useTechnologiesStore = defineStore('technologies', () => {
     const q = query.trim().toLowerCase()
     if (!q) return technologies.value
     return technologies.value.filter(
-      (t) =>
-        t.name.toLowerCase().includes(q) || t.slug?.toLowerCase().includes(q)
+      (t) => t.name.toLowerCase().includes(q) || t.slug?.toLowerCase().includes(q)
     )
   }
 
@@ -85,7 +84,7 @@ export const useTechnologiesStore = defineStore('technologies', () => {
         technologies.value = [
           ...technologies.value.slice(0, idx),
           res.data,
-          ...technologies.value.slice(idx + 1)
+          ...technologies.value.slice(idx + 1),
         ]
       } else {
         technologies.value = [...technologies.value, res.data]
@@ -119,6 +118,6 @@ export const useTechnologiesStore = defineStore('technologies', () => {
     createTechnology,
     updateTechnology,
     deleteTechnology,
-    invalidate
+    invalidate,
   }
 })

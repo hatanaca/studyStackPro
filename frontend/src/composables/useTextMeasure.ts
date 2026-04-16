@@ -1,4 +1,10 @@
-import { prepare, layout, prepareWithSegments, layoutWithLines, walkLineRanges } from '@chenglou/pretext'
+import {
+  prepare,
+  layout,
+  prepareWithSegments,
+  layoutWithLines,
+  walkLineRanges,
+} from '@chenglou/pretext'
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 
 type Prepared = ReturnType<typeof prepare>
@@ -10,9 +16,8 @@ const segmentsMap = new Map<string, PreparedSegments>()
 
 function cacheKey(text: string, font: string): string {
   // Use a compact hash to avoid storing full text in keys
-  const textKey = text.length <= 80
-    ? text
-    : `${text.length}:${text.slice(0, 40)}|${text.slice(-30)}`
+  const textKey =
+    text.length <= 80 ? text : `${text.length}:${text.slice(0, 40)}|${text.slice(-30)}`
   return font + '\0' + textKey
 }
 
@@ -57,7 +62,7 @@ export function measureText(
   text: string,
   font: string,
   maxWidth: number,
-  lineHeight: number,
+  lineHeight: number
 ): { height: number; lineCount: number } {
   if (
     !text ||
@@ -80,7 +85,7 @@ export function measureTextWithLines(
   text: string,
   font: string,
   maxWidth: number,
-  lineHeight: number,
+  lineHeight: number
 ) {
   if (!text || maxWidth <= 0 || lineHeight <= 0) {
     return { height: 0, lineCount: 0, lines: [] as { text: string; width: number }[] }
@@ -91,7 +96,7 @@ export function measureTextWithLines(
 export function measureLineCount(
   text: string,
   font: string,
-  maxWidth: number,
+  maxWidth: number
 ): { lineCount: number; maxLineWidth: number } {
   if (!text || maxWidth <= 0) return { lineCount: 0, maxLineWidth: 0 }
   const prepared = getPreparedSegments(text, font)
@@ -110,10 +115,10 @@ export function useTextLayout(
   text: MaybeRefOrGetter<string>,
   font: MaybeRefOrGetter<string>,
   maxWidth: MaybeRefOrGetter<number>,
-  lineHeight: MaybeRefOrGetter<number>,
+  lineHeight: MaybeRefOrGetter<number>
 ) {
   const result = computed(() =>
-    measureText(toValue(text), toValue(font), toValue(maxWidth), toValue(lineHeight)),
+    measureText(toValue(text), toValue(font), toValue(maxWidth), toValue(lineHeight))
   )
   return {
     height: computed(() => result.value.height),
@@ -153,12 +158,15 @@ export function getSessionNotesFont(): { font: string; lineHeightPx: number } {
   if (snug) {
     const parsed = parseFloat(snug)
     lineHeightPx = Number.isFinite(parsed)
-      ? (parsed <= 3 ? sizePx * parsed : parsed)
+      ? parsed <= 3
+        ? sizePx * parsed
+        : parsed
       : sizePx * 1.375
   } else {
     lineHeightPx = sizePx * 1.375
   }
-  const fontFamily = rootCs.getPropertyValue('--font-sans').trim() || "'DM Sans', system-ui, sans-serif"
+  const fontFamily =
+    rootCs.getPropertyValue('--font-sans').trim() || "'DM Sans', system-ui, sans-serif"
   _sessionNotesFont = {
     font: `normal ${sizePx}px ${fontFamily}`,
     lineHeightPx,

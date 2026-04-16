@@ -19,21 +19,18 @@ export const sessionsApi = {
   /** Lista sessões com filtros e paginação */
   list: (params?: SessionsListParams) =>
     apiClient.get<ApiResponse<StudySession[]>>(ENDPOINTS.sessions.list, { params }),
-  getOne: (id: string) =>
-    apiClient.get<ApiResponse<StudySession>>(ENDPOINTS.sessions.one(id)),
+  getOne: (id: string) => apiClient.get<ApiResponse<StudySession>>(ENDPOINTS.sessions.one(id)),
   /** Sessão ativa (timer) com elapsed_seconds */
   getActive: () =>
     apiClient.get<ApiResponse<ActiveSessionResponse | null>>(ENDPOINTS.sessions.active),
   start: (technology_id?: string) =>
     apiClient.post<ApiResponse<StudySession>>(ENDPOINTS.sessions.start, {
-      technology_id: technology_id || undefined
+      technology_id: technology_id || undefined,
     }),
-  end: (id: string) =>
-    apiClient.patch<ApiResponse<StudySession>>(ENDPOINTS.sessions.end(id)),
+  end: (id: string) => apiClient.patch<ApiResponse<StudySession>>(ENDPOINTS.sessions.end(id)),
   create: (data: Partial<StudySession> & { technology_id: string; started_at: string }) =>
     apiClient.post<ApiResponse<StudySession>>(ENDPOINTS.sessions.create, data),
   update: (id: string, data: Partial<StudySession>) =>
     apiClient.patch<ApiResponse<StudySession>>(ENDPOINTS.sessions.one(id), data),
-  delete: (id: string) =>
-    apiClient.delete<ApiResponse<null>>(ENDPOINTS.sessions.one(id)),
+  delete: (id: string) => apiClient.delete<ApiResponse<null>>(ENDPOINTS.sessions.one(id)),
 }

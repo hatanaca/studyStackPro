@@ -5,6 +5,7 @@ namespace App\Modules\Technologies\Repositories;
 use App\Models\Technology;
 use App\Modules\Technologies\DTOs\TechnologyDTO;
 use App\Modules\Technologies\Repositories\Contracts\TechnologyRepositoryInterface;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -55,12 +56,17 @@ class EloquentTechnologyRepository implements TechnologyRepositoryInterface
             ->get();
     }
 
-    /** Busca por ID restrita ao usuário. ModelNotFoundException se não existir ou não pertencer ao usuário */
+    /**
+     * Busca por ID. 404 se não existir; 403 se existir mas for de outro utilizador (como StudySessionService).
+     */
     public function findForUser(string $id, string $userId): Technology
     {
-        $tech = Technology::where('user_id', $userId)->find($id);
+        $tech = Technology::find($id);
         if (! $tech) {
             throw (new ModelNotFoundException)->setModel(Technology::class, $id);
+        }
+        if ($tech->user_id !== $userId) {
+            throw new AuthorizationException('Acesso negado a este recurso.');
         }
 
         return $tech;

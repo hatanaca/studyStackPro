@@ -26,7 +26,9 @@ const showForm = ref(false)
 const goalToEdit = ref<Goal | null>(null)
 const showEditModal = computed({
   get: () => !!goalToEdit.value,
-  set: (v) => { if (!v) goalToEdit.value = null },
+  set: (v) => {
+    if (!v) goalToEdit.value = null
+  },
 })
 
 onMounted(() => {
@@ -99,10 +101,7 @@ async function handleUpdate(payload: { id: string; target_value: number }) {
       :on-retry="() => goalsStore.fetchGoals()"
     />
     <template v-else>
-      <div
-        v-if="goalsStore.items.length"
-        class="goal-list__grid"
-      >
+      <div v-if="goalsStore.items.length" class="goal-list__grid">
         <GoalCard
           v-for="goal in goalsStore.items"
           :key="goal.id"
@@ -129,11 +128,7 @@ async function handleUpdate(payload: { id: string; target_value: number }) {
       :style="{ width: 'min(92vw, 28rem)' }"
       @hide="showForm = false"
     >
-      <GoalForm
-        :loading="false"
-        @submit="handleCreate"
-        @cancel="showForm = false"
-      />
+      <GoalForm :loading="false" @submit="handleCreate" @cancel="showForm = false" />
     </Dialog>
 
     <Dialog

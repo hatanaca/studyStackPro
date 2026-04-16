@@ -12,18 +12,13 @@ function goToFocus() {
 </script>
 
 <template>
-  <div
-    v-if="activeSession"
-    class="active-session-banner"
-    @mouseenter="prefetchSessionFocusView"
-  >
+  <div v-if="activeSession" class="active-session-banner" @mouseenter="prefetchSessionFocusView">
     <div class="active-session-banner__content">
       <span class="active-session-banner__label">Sessão ativa</span>
-      <span class="active-session-banner__time" role="timer" aria-live="off" aria-atomic="true">{{ formattedTime }}</span>
-      <span
-        v-if="activeSession.technology"
-        class="active-session-banner__tech"
-      >
+      <span class="active-session-banner__time" role="timer" aria-live="off" aria-atomic="true">{{
+        formattedTime
+      }}</span>
+      <span v-if="activeSession.technology" class="active-session-banner__tech">
         {{ activeSession.technology.name }}
       </span>
     </div>
@@ -99,7 +94,9 @@ function goToFocus() {
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease;
+  transition:
+    background var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
 }
 .active-session-banner__btn--ghost {
   background: color-mix(in srgb, var(--color-primary-contrast) 12%, transparent);

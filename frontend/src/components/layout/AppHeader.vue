@@ -6,10 +6,7 @@ defineProps<{
 
 <template>
   <header class="app-header">
-    <h2
-      v-if="title"
-      class="app-header__title"
-    >
+    <h2 v-if="title" class="app-header__title">
       {{ title }}
     </h2>
     <slot />

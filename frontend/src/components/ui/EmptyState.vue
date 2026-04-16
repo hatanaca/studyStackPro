@@ -18,7 +18,13 @@ withDefaults(
     /** Ocultar área de ação */
     hideAction?: boolean
   }>(),
-  { title: 'Nenhum dado encontrado', description: '', icon: '📋', actionLabel: '', hideAction: true }
+  {
+    title: 'Nenhum dado encontrado',
+    description: '',
+    icon: '📋',
+    actionLabel: '',
+    hideAction: true,
+  }
 )
 
 const emit = defineEmits<{
@@ -36,40 +42,22 @@ function handleAction() {
     role="status"
     aria-live="polite"
     :aria-labelledby="titleId"
-    :aria-describedby="(description || $slots.description) ? descId : undefined"
+    :aria-describedby="description || $slots.description ? descId : undefined"
   >
-    <div
-      class="empty-state__icon"
-      aria-hidden="true"
-    >
+    <div class="empty-state__icon" aria-hidden="true">
       {{ icon }}
     </div>
-    <h3
-      :id="titleId"
-      class="empty-state__title"
-    >
+    <h3 :id="titleId" class="empty-state__title">
       {{ title }}
     </h3>
-    <p
-      v-if="description || $slots.description"
-      :id="descId"
-      class="empty-state__description"
-    >
+    <p v-if="description || $slots.description" :id="descId" class="empty-state__description">
       <slot name="description">
         {{ description }}
       </slot>
     </p>
-    <div
-      v-if="(!hideAction && actionLabel) || $slots.action"
-      class="empty-state__action"
-    >
+    <div v-if="(!hideAction && actionLabel) || $slots.action" class="empty-state__action">
       <slot name="action">
-        <button
-          v-if="actionLabel"
-          type="button"
-          class="empty-state__button"
-          @click="handleAction"
-        >
+        <button v-if="actionLabel" type="button" class="empty-state__button" @click="handleAction">
           {{ actionLabel }}
         </button>
       </slot>
@@ -129,7 +117,8 @@ function handleAction() {
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background var(--duration-fast) ease,
+  transition:
+    background var(--duration-fast) ease,
     border-color var(--duration-fast) ease,
     transform var(--duration-fast) var(--ease-out-expo);
 }

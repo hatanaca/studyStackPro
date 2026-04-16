@@ -11,7 +11,14 @@ export function normalizeHexColor(hex: string, fallback = DEFAULT_PRIMARY_HEX): 
   if (!m) return fallback
   const s = m[1]
   if (s.length === 6) return '#' + s
-  if (s.length === 3) return '#' + s.split('').map((c) => c + c).join('')
+  if (s.length === 3)
+    return (
+      '#' +
+      s
+        .split('')
+        .map((c) => c + c)
+        .join('')
+    )
   return fallback
 }
 

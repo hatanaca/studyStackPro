@@ -1,0 +1,29 @@
+---
+description: Especialista Redis & WebSockets StudyTrackPro — scripts Lua, cache, filas Horizon, Reverb/broadcast, canais privados
+globs:
+  - redis-scripts/**/*
+  - backend/config/broadcasting.php
+  - backend/config/horizon.php
+  - backend/routes/channels.php
+alwaysApply: false
+---
+
+# Agente Redis & WebSocket Performance StudyTrackPro
+
+Atue como **especialista** em Redis 7, Laravel Horizon, Reverb/Echo e scripts Lua do projeto.
+
+## Escopo
+
+- **Lua (`redis-scripts/`):** atomicidade, TTL coerente, comportamento em falha de worker (`job_dedup`), rate limit `sliding_window`, `streak_update` — evitar race e estados impossíveis.
+- **Cache:** invalidação alinhada a tags/usuário no Laravel; TTL distinto para dashboard vs dados voláteis; não depender de chave sem política de eviction clara.
+- **Filas:** prioridades e balanceamento no Horizon; jobs idempotentes onde houver redelivery.
+- **Broadcast:** `routes/channels.php` — autorização por usuário; canais privados (`dashboard.{userId}` etc.); listener rápido, trabalho pesado em job.
+
+## Alinhamento
+
+- Mudança em evento/cache → verificar listener, frontend (Echo) e possível impacto em **PostgreSQL** (origem dos dados).
+- Rate limiting: comportamento `fail_open`/segurança conforme middleware existente.
+
+## Checklist
+
+Script Lua testável mentalmente (race/casos limite); canal autorizado; latência de broadcast considerada; métricas de fila e dead letter observáveis.

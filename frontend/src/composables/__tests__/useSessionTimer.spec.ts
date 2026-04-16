@@ -6,8 +6,8 @@ import { sessionsApi } from '@/api/modules/sessions.api'
 
 vi.mock('@/api/modules/sessions.api', () => ({
   sessionsApi: {
-    getActive: vi.fn()
-  }
+    getActive: vi.fn(),
+  },
 }))
 
 /** Wrapper que usa o composable dentro de um componente para que onMounted/onUnmounted tenham contexto. */
@@ -15,7 +15,7 @@ const SessionTimerWrapper = defineComponent({
   setup() {
     return useSessionTimer()
   },
-  template: '<div></div>'
+  template: '<div></div>',
 })
 
 describe('useSessionTimer', () => {
@@ -25,7 +25,7 @@ describe('useSessionTimer', () => {
     vi.useFakeTimers()
     // Mock padrão: sem sessão ativa, para onMounted não quebrar ao montar o wrapper
     vi.mocked(sessionsApi.getActive).mockResolvedValue({
-      data: { success: true, data: null }
+      data: { success: true, data: null },
     } as never)
   })
 
@@ -49,9 +49,9 @@ describe('useSessionTimer', () => {
         data: {
           id: '1',
           elapsed_seconds: 120,
-          technology: {}
-        }
-      }
+          technology: {},
+        },
+      },
     } as never)
 
     const wrapper = mount(SessionTimerWrapper)

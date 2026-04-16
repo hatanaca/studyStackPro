@@ -90,7 +90,7 @@ describe('notifications.store', () => {
     store.markAllRead()
 
     expect(store.unreadCount).toBe(0)
-    expect(store.items.every(n => n.read)).toBe(true)
+    expect(store.items.every((n) => n.read)).toBe(true)
   })
 
   it('unreadCount reflects only unread items', () => {

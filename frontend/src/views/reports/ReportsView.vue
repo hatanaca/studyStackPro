@@ -20,7 +20,7 @@ const isLoading = ref(false)
 const { generating, generateReport } = usePdfGenerator()
 
 const canGenerate = computed(
-  () => dateRange.value.start && dateRange.value.end && !generating.value && !isLoading.value,
+  () => dateRange.value.start && dateRange.value.end && !generating.value && !isLoading.value
 )
 
 const dateError = computed(() => {
@@ -79,8 +79,7 @@ async function onGenerate() {
       sessions,
     })
   } catch {
-    fetchError.value =
-      'Não foi possível buscar as sessões. Verifique a conexão e tente de novo.'
+    fetchError.value = 'Não foi possível buscar as sessões. Verifique a conexão e tente de novo.'
   } finally {
     isLoading.value = false
   }
@@ -108,21 +107,17 @@ async function onGenerate() {
               type="date"
               class="reports-input"
               aria-label="Data inicial"
-            >
+            />
             <span class="reports-sep">até</span>
             <input
               v-model="dateRange.end"
               type="date"
               class="reports-input"
               aria-label="Data final"
-            >
+            />
           </div>
         </div>
-        <BaseButton
-          variant="primary"
-          :disabled="!canGenerate || !!dateError"
-          @click="onGenerate"
-        >
+        <BaseButton variant="primary" :disabled="!canGenerate || !!dateError" @click="onGenerate">
           {{ isLoading ? 'Buscando…' : generating ? 'Gerando…' : 'Gerar relatório PDF' }}
         </BaseButton>
       </div>
@@ -136,34 +131,18 @@ async function onGenerate() {
         <Skeleton height="3rem" class="reports-loading__skel" />
         <Skeleton height="3rem" class="reports-loading__skel" />
       </div>
-      <Callout
-        v-if="dateError"
-        variant="warning"
-        :title="dateError"
-      />
+      <Callout v-if="dateError" variant="warning" :title="dateError" />
       <ErrorCard
         v-else-if="fetchError"
         title="Erro ao montar o relatório"
         :message="fetchError"
         :on-retry="onGenerate"
       />
-      <Callout
-        v-else-if="periodEmptyMessage"
-        variant="info"
-        :title="periodEmptyMessage"
-      />
-      <Callout
-        v-else-if="warning"
-        variant="info"
-        :title="warning"
-      />
-      <Callout
-        v-else-if="!isLoading"
-        variant="info"
-        title="Relatório em PDF"
-      >
-        O relatório inclui resumo geral (sessões, tempo, tecnologias) e uma tabela detalhada
-        de todas as sessões no período. Selecione as datas e clique em gerar.
+      <Callout v-else-if="periodEmptyMessage" variant="info" :title="periodEmptyMessage" />
+      <Callout v-else-if="warning" variant="info" :title="warning" />
+      <Callout v-else-if="!isLoading" variant="info" title="Relatório em PDF">
+        O relatório inclui resumo geral (sessões, tempo, tecnologias) e uma tabela detalhada de
+        todas as sessões no período. Selecione as datas e clique em gerar.
       </Callout>
     </section>
   </PageView>
@@ -228,7 +207,9 @@ async function onGenerate() {
   color: var(--form-input-text);
   outline: none;
   box-sizing: border-box;
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .reports-input:focus-visible {
   border-color: var(--form-input-border-focus);

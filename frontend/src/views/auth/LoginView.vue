@@ -17,7 +17,10 @@ async function onSubmit(payload: { email: string; password: string }) {
     await authStore.login(payload.email, payload.password)
     router.push('/')
   } catch (e: unknown) {
-    const err = e as { response?: { data?: { error?: { message?: string }; message?: string }; status?: number }; message?: string }
+    const err = e as {
+      response?: { data?: { error?: { message?: string }; message?: string }; status?: number }
+      message?: string
+    }
     const msg =
       err?.response?.data?.error?.message ??
       err?.response?.data?.message ??
@@ -32,19 +35,9 @@ async function onSubmit(payload: { email: string; password: string }) {
 <template>
   <AuthLayout>
     <h1>StudyTrack Pro</h1>
-    <p class="subtitle">
-      Entrar
-    </p>
-    <LoginForm
-      ref="loginFormRef"
-      :loading="loading"
-      @submit="onSubmit"
-    />
-    <p class="footer">
-      Não tem conta? <router-link to="/register">
-        Registrar
-      </router-link>
-    </p>
+    <p class="subtitle">Entrar</p>
+    <LoginForm ref="loginFormRef" :loading="loading" @submit="onSubmit" />
+    <p class="footer">Não tem conta? <router-link to="/register"> Registrar </router-link></p>
   </AuthLayout>
 </template>
 

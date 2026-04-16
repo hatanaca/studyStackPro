@@ -1,5 +1,8 @@
 import type { Ref } from 'vue'
-import { useDebounce as useDebounceVueUse, useDebounceFn as useDebounceFnVueUse } from '@vueuse/core'
+import {
+  useDebounce as useDebounceVueUse,
+  useDebounceFn as useDebounceFnVueUse,
+} from '@vueuse/core'
 
 /**
  * Debounce de um valor reativo (VueUse).

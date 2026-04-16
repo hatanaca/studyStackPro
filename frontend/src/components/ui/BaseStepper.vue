@@ -23,9 +23,7 @@ const emit = defineEmits<{
   'step-click': [step: StepperStep]
 }>()
 
-const currentIndex = computed(() =>
-  props.steps.findIndex(s => s.id === props.currentStepId)
-)
+const currentIndex = computed(() => props.steps.findIndex((s) => s.id === props.currentStepId))
 
 function stepStatus(stepIndex: number): 'completed' | 'current' | 'upcoming' {
   if (stepIndex < currentIndex.value) return 'completed'
@@ -41,17 +39,16 @@ function onStepClick(step: StepperStep, index: number) {
 </script>
 
 <template>
-  <nav
-    class="base-stepper"
-    :class="[`base-stepper--${orientation}`]"
-    aria-label="Progresso"
-  >
+  <nav class="base-stepper" :class="[`base-stepper--${orientation}`]" aria-label="Progresso">
     <ol class="base-stepper__list">
       <li
         v-for="(step, index) in steps"
         :key="step.id"
         class="base-stepper__item"
-        :class="[`base-stepper__item--${stepStatus(index)}`, { 'base-stepper__item--clickable': allowStepClick && index <= currentIndex }]"
+        :class="[
+          `base-stepper__item--${stepStatus(index)}`,
+          { 'base-stepper__item--clickable': allowStepClick && index <= currentIndex },
+        ]"
         @click="onStepClick(step, index)"
       >
         <div class="base-stepper__indicator">
@@ -72,10 +69,7 @@ function onStepClick(step: StepperStep, index: number) {
         </div>
         <div class="base-stepper__content">
           <span class="base-stepper__label">{{ step.label }}</span>
-          <span
-            v-if="step.description"
-            class="base-stepper__desc"
-          >{{ step.description }}</span>
+          <span v-if="step.description" class="base-stepper__desc">{{ step.description }}</span>
         </div>
         <div
           v-if="orientation === 'horizontal' && index < steps.length - 1"
@@ -135,7 +129,8 @@ function onStepClick(step: StepperStep, index: number) {
   background: var(--color-bg-soft);
   color: var(--color-text-muted);
   border: 2px solid var(--color-border);
-  transition: background var(--duration-fast) ease,
+  transition:
+    background var(--duration-fast) ease,
     border-color var(--duration-fast) ease,
     color var(--duration-fast) ease;
 }

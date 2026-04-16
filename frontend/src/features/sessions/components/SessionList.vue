@@ -12,10 +12,17 @@ import SessionFilters from './SessionFilters.vue'
 import LogSessionForm from './LogSessionForm.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { useTechnologiesStore } from '@/stores/technologies.store'
-import { useSessionsInfiniteQuery, useInvalidateSessionsInfinite } from '@/features/sessions/composables/useSessionsInfiniteQuery'
+import {
+  useSessionsInfiniteQuery,
+  useInvalidateSessionsInfinite,
+} from '@/features/sessions/composables/useSessionsInfiniteQuery'
 import { useSessionEdit } from '@/features/sessions/composables/useSessionEdit'
 import { useSessionDelete } from '@/features/sessions/composables/useSessionDelete'
-import { measureText, getSessionNotesFont, sessionCardNotesMaxWidth } from '@/composables/useTextMeasure'
+import {
+  measureText,
+  getSessionNotesFont,
+  sessionCardNotesMaxWidth,
+} from '@/composables/useTextMeasure'
 import type { SessionListFilters } from '@/types/api.types'
 import type { StudySession } from '@/types/domain.types'
 
@@ -139,7 +146,7 @@ const virtualizer = useVirtualizer<HTMLElement, HTMLElement>(
         scheduleFetchNextPageIfNeeded(instance)
       },
     }
-  }),
+  })
 )
 
 function findScrollParent(el: HTMLElement | null): HTMLElement | null {
@@ -184,18 +191,10 @@ onBeforeUnmount(() => {
   <div class="session-list">
     <div class="session-list__header">
       <h2>Sessões de estudo</h2>
-      <Button
-        label="Nova sessão"
-        size="small"
-        @click="showAddModal = true"
-      />
+      <Button label="Nova sessão" size="small" @click="showAddModal = true" />
     </div>
 
-    <SessionFilters
-      v-model="filters"
-      :hide-technology="!!technologyId"
-      @change="onFiltersChange"
-    />
+    <SessionFilters v-model="filters" :hide-technology="!!technologyId" @change="onFiltersChange" />
 
     <div
       v-if="loading"
@@ -210,12 +209,10 @@ onBeforeUnmount(() => {
       <Skeleton class="loading__skeleton" height="6rem" />
     </div>
 
-    <div
-      v-else-if="hasError"
-      class="session-list__error"
-      role="alert"
-    >
-      <p class="session-list__error-msg">Erro ao carregar sessões. Verifique sua conexão e tente novamente.</p>
+    <div v-else-if="hasError" class="session-list__error" role="alert">
+      <p class="session-list__error-msg">
+        Erro ao carregar sessões. Verifique sua conexão e tente novamente.
+      </p>
       <Button
         label="Tentar novamente"
         severity="secondary"
@@ -233,7 +230,11 @@ onBeforeUnmount(() => {
       <div
         v-for="row in virtualizer.getVirtualItems()"
         :key="allSessions[row.index].id"
-        :ref="(el) => { if (el) virtualizer.measureElement(el as HTMLElement) }"
+        :ref="
+          (el) => {
+            if (el) virtualizer.measureElement(el as HTMLElement)
+          }
+        "
         :data-index="row.index"
         class="session-list__virtual-item"
         :style="{
@@ -263,22 +264,14 @@ onBeforeUnmount(() => {
     />
 
     <!-- Infinite scroll status -->
-    <div
-      v-if="allSessions.length && (isFetchingMore || hasMore)"
-      class="session-list__load-more"
-    >
+    <div v-if="allSessions.length && (isFetchingMore || hasMore)" class="session-list__load-more">
       <Skeleton v-if="isFetchingMore" class="loading__skeleton" height="4rem" />
       <span v-if="!isFetchingMore && hasMore" class="session-list__scroll-hint">
         Continue rolando para carregar mais sessões
       </span>
     </div>
-    <div
-      v-if="allSessions.length && !hasMore && totalCount > 0"
-      class="session-list__footer"
-    >
-      <span class="session-list__total">
-        {{ totalCount }} sessões no total
-      </span>
+    <div v-if="allSessions.length && !hasMore && totalCount > 0" class="session-list__footer">
+      <span class="session-list__total"> {{ totalCount }} sessões no total </span>
     </div>
 
     <!-- Add modal -->
@@ -305,27 +298,12 @@ onBeforeUnmount(() => {
       :style="{ width: 'min(90vw, 420px)' }"
       @hide="sessionEdit.closeEdit"
     >
-      <form
-        class="edit-form"
-        @submit.prevent="sessionEdit.saveEdit"
-      >
+      <form class="edit-form" @submit.prevent="sessionEdit.saveEdit">
         <div class="edit-form__field">
           <label class="edit-form__label">Tecnologia</label>
-          <select
-            v-model="editForm.technology_id"
-            class="edit-form__select"
-          >
-            <option
-              value=""
-              disabled
-            >
-              Selecione...
-            </option>
-            <option
-              v-for="t in technologiesStore.technologies"
-              :key="t.id"
-              :value="t.id"
-            >
+          <select v-model="editForm.technology_id" class="edit-form__select">
+            <option value="" disabled>Selecione...</option>
+            <option v-for="t in technologiesStore.technologies" :key="t.id" :value="t.id">
               {{ t.name }}
             </option>
           </select>
@@ -334,11 +312,7 @@ onBeforeUnmount(() => {
         <div class="edit-form__row">
           <div class="edit-form__field">
             <label class="edit-form__label">Data</label>
-            <input
-              v-model="editForm.date"
-              type="date"
-              class="edit-form__input"
-            >
+            <input v-model="editForm.date" type="date" class="edit-form__input" />
           </div>
           <div class="edit-form__field">
             <label class="edit-form__label">Duração (min)</label>
@@ -348,17 +322,13 @@ onBeforeUnmount(() => {
               min="1"
               max="1440"
               class="edit-form__input"
-            >
+            />
           </div>
         </div>
 
         <div class="edit-form__field">
           <label class="edit-form__label">Observações</label>
-          <textarea
-            v-model="editForm.notes"
-            rows="2"
-            class="edit-form__textarea"
-          />
+          <textarea v-model="editForm.notes" rows="2" class="edit-form__textarea" />
         </div>
 
         <div class="edit-form__actions">
@@ -388,11 +358,10 @@ onBeforeUnmount(() => {
       <div class="delete-confirm">
         <p class="delete-confirm__msg">
           Tem certeza que deseja excluir esta sessão de
-          <strong>{{ deletingSession?.technology?.name ?? 'estudo' }}</strong>?
+          <strong>{{ deletingSession?.technology?.name ?? 'estudo' }}</strong
+          >?
         </p>
-        <p class="delete-confirm__hint">
-          Esta ação não pode ser desfeita.
-        </p>
+        <p class="delete-confirm__hint">Esta ação não pode ser desfeita.</p>
         <div class="delete-confirm__actions">
           <button
             type="button"
@@ -402,11 +371,7 @@ onBeforeUnmount(() => {
           >
             {{ deleteLoading ? 'Excluindo...' : 'Excluir' }}
           </button>
-          <button
-            type="button"
-            class="delete-confirm__btn"
-            @click="sessionDelete.closeDelete"
-          >
+          <button type="button" class="delete-confirm__btn" @click="sessionDelete.closeDelete">
             Cancelar
           </button>
         </div>
@@ -530,7 +495,9 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
   background: var(--form-input-bg);
   color: var(--form-input-text);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .edit-form__select:focus-visible,
 .edit-form__input:focus-visible {
@@ -548,7 +515,9 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
   background: var(--form-input-bg);
   color: var(--form-input-text);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .edit-form__textarea:focus-visible {
   outline: none;
@@ -588,7 +557,11 @@ onBeforeUnmount(() => {
   font-weight: 500;
   background: var(--color-bg-card);
   color: var(--color-text);
-  transition: border-color var(--duration-fast) ease, background var(--duration-fast) ease, color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .delete-confirm__btn:focus-visible {
   outline: none;

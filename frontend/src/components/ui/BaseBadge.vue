@@ -6,10 +6,7 @@ defineProps<{
 </script>
 
 <template>
-  <span
-    class="base-badge"
-    :style="color ? { backgroundColor: `${color}20`, color } : undefined"
-  >
+  <span class="base-badge" :style="color ? { backgroundColor: `${color}20`, color } : undefined">
     {{ label }}
   </span>
 </template>
@@ -27,7 +24,7 @@ defineProps<{
   border: 1px solid transparent;
   transition: border-color var(--duration-fast) ease;
 }
-.base-badge:not([style*="background"]) {
+.base-badge:not([style*='background']) {
   border-color: color-mix(in srgb, var(--color-border) 60%, transparent);
 }
 </style>

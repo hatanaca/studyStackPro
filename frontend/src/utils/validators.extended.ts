@@ -49,10 +49,8 @@ export function isSlug(value: string): boolean {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)
 }
 
-export function composeValidators<T>(
-  ...fns: Array<(v: T) => boolean>
-): (v: T) => boolean {
-  return (v) => fns.every(fn => fn(v))
+export function composeValidators<T>(...fns: Array<(v: T) => boolean>): (v: T) => boolean {
+  return (v) => fns.every((fn) => fn(v))
 }
 
 export function withMessage(validator: (v: unknown) => boolean, message: string) {

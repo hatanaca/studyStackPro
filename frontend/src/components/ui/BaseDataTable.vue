@@ -51,7 +51,7 @@ const internalSortOrder = ref<'asc' | 'desc'>(props.sortOrder)
 const sortedData = computed(() => {
   const list = [...props.data]
   if (!internalSortBy.value) return list
-  const col = props.columns.find(c => c.key === internalSortBy.value)
+  const col = props.columns.find((c) => c.key === internalSortBy.value)
   if (!col?.sortable) return list
   return list.sort((a, b) => {
     const aVal = (a as Record<string, unknown>)[internalSortBy.value]
@@ -65,7 +65,7 @@ const sortedData = computed(() => {
 })
 
 function toggleSort(key: string) {
-  const col = props.columns.find(c => c.key === key)
+  const col = props.columns.find((c) => c.key === key)
   if (!col?.sortable) return
   if (internalSortBy.value === key) {
     internalSortOrder.value = internalSortOrder.value === 'asc' ? 'desc' : 'asc'
@@ -98,10 +98,7 @@ function onRowClick(row: unknown) {
       aria-live="polite"
       aria-label="Carregando tabela"
     >
-      <div
-        class="base-data-table__skeleton"
-        :style="{ '--table-skel-cols': columns.length || 1 }"
-      >
+      <div class="base-data-table__skeleton" :style="{ '--table-skel-cols': columns.length || 1 }">
         <div class="base-data-table__skeleton-row base-data-table__skeleton-row--head">
           <Skeleton
             v-for="col in columns"
@@ -110,11 +107,7 @@ function onRowClick(row: unknown) {
             class="base-data-table__skel-block"
           />
         </div>
-        <div
-          v-for="ri in 6"
-          :key="`r-${ri}`"
-          class="base-data-table__skeleton-row"
-        >
+        <div v-for="ri in 6" :key="`r-${ri}`" class="base-data-table__skeleton-row">
           <Skeleton
             v-for="col in columns"
             :key="`${ri}-${col.key}`"
@@ -124,10 +117,7 @@ function onRowClick(row: unknown) {
         </div>
       </div>
     </div>
-    <div
-      v-else
-      class="base-data-table__scroll"
-    >
+    <div v-else class="base-data-table__scroll">
       <table
         class="base-data-table__table"
         :class="{
@@ -148,9 +138,15 @@ function onRowClick(row: unknown) {
                 { 'base-data-table__th--sorted': sortBy === col.key },
               ]"
               :style="col.width ? { width: col.width } : undefined"
-              :aria-sort="col.sortable && internalSortBy === col.key
-                ? (internalSortOrder === 'asc' ? 'ascending' : 'descending')
-                : col.sortable ? 'none' : undefined"
+              :aria-sort="
+                col.sortable && internalSortBy === col.key
+                  ? internalSortOrder === 'asc'
+                    ? 'ascending'
+                    : 'descending'
+                  : col.sortable
+                    ? 'none'
+                    : undefined
+              "
               scope="col"
             >
               <button
@@ -172,10 +168,7 @@ function onRowClick(row: unknown) {
                   </span>
                 </span>
               </button>
-              <span
-                v-else
-                class="base-data-table__th-content"
-              >
+              <span v-else class="base-data-table__th-content">
                 {{ col.label }}
               </span>
             </th>
@@ -205,10 +198,7 @@ function onRowClick(row: unknown) {
           </tr>
         </tbody>
       </table>
-      <div
-        v-if="!loading && sortedData.length === 0"
-        class="base-data-table__empty"
-      >
+      <div v-if="!loading && sortedData.length === 0" class="base-data-table__empty">
         {{ emptyMessage }}
       </div>
     </div>
@@ -247,7 +237,9 @@ function onRowClick(row: unknown) {
   width: 100%;
   max-width: 100%;
 }
-.base-data-table__skeleton-row:not(.base-data-table__skeleton-row--head) .base-data-table__skel-block :deep(.p-skeleton) {
+.base-data-table__skeleton-row:not(.base-data-table__skeleton-row--head)
+  .base-data-table__skel-block
+  :deep(.p-skeleton) {
   border-radius: var(--radius-sm);
 }
 .base-data-table__scroll {
@@ -278,8 +270,12 @@ function onRowClick(row: unknown) {
   color: var(--color-text-muted);
   white-space: nowrap;
 }
-.base-data-table__th--center { text-align: center; }
-.base-data-table__th--right { text-align: right; }
+.base-data-table__th--center {
+  text-align: center;
+}
+.base-data-table__th--right {
+  text-align: right;
+}
 .base-data-table__sort-btn {
   all: unset;
   display: inline-flex;
@@ -320,7 +316,9 @@ function onRowClick(row: unknown) {
 .base-data-table__table--striped .base-data-table__tbody .base-data-table__tr:nth-child(even) {
   background: var(--color-bg-soft);
 }
-.base-data-table__table--striped .base-data-table__tbody .base-data-table__tr:nth-child(even):hover {
+.base-data-table__table--striped
+  .base-data-table__tbody
+  .base-data-table__tr:nth-child(even):hover {
   background: color-mix(in srgb, var(--color-border) 50%, var(--color-bg-soft));
 }
 .base-data-table__td {
@@ -328,8 +326,12 @@ function onRowClick(row: unknown) {
   color: var(--color-text);
   vertical-align: middle;
 }
-.base-data-table__td--center { text-align: center; }
-.base-data-table__td--right { text-align: right; }
+.base-data-table__td--center {
+  text-align: center;
+}
+.base-data-table__td--right {
+  text-align: right;
+}
 .base-data-table__empty {
   padding: var(--spacing-2xl);
   text-align: center;

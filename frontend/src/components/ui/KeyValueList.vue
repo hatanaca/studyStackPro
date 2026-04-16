@@ -19,9 +19,7 @@ const props = withDefaults(
 )
 
 const visibleItems = computed(() =>
-  (props.items ?? []).filter(
-    (item) => item.hideWhenEmpty !== true || item.value != null
-  )
+  (props.items ?? []).filter((item) => item.hideWhenEmpty !== true || item.value != null)
 )
 
 function getDisplayValue(value: KeyValueItem['value']): string {
@@ -31,10 +29,7 @@ function getDisplayValue(value: KeyValueItem['value']): string {
 </script>
 
 <template>
-  <dl
-    class="key-value-list"
-    :class="`key-value-list--${layout}`"
-  >
+  <dl class="key-value-list" :class="`key-value-list--${layout}`">
     <template v-if="items?.length">
       <div
         v-for="(item, index) in visibleItems"
@@ -45,11 +40,7 @@ function getDisplayValue(value: KeyValueItem['value']): string {
           {{ item.label }}
         </dt>
         <dd class="key-value-list__value">
-          <slot
-            name="value"
-            :item="item"
-            :value="item.value"
-          >
+          <slot name="value" :item="item" :value="item.value">
             {{ getDisplayValue(item.value) }}
           </slot>
         </dd>

@@ -36,6 +36,8 @@ class InvalidateSessionCacheTest extends TestCase
 
         $listener = new InvalidateSessionCache;
         $listener->handle(new StudySessionCreated($session));
+
+        $this->addToAssertionCount(1);
     }
 
     public function test_flushes_session_cache_on_updated(): void
@@ -53,6 +55,8 @@ class InvalidateSessionCacheTest extends TestCase
 
         $listener = new InvalidateSessionCache;
         $listener->handle(new StudySessionUpdated($session, ['notes']));
+
+        $this->addToAssertionCount(1);
     }
 
     public function test_flushes_session_cache_on_deleted(): void
@@ -70,5 +74,7 @@ class InvalidateSessionCacheTest extends TestCase
 
         $listener = new InvalidateSessionCache;
         $listener->handle($event);
+
+        $this->addToAssertionCount(1);
     }
 }

@@ -8,22 +8,11 @@ defineProps<{
 </script>
 
 <template>
-  <div
-    class="error-card"
-    role="alert"
-    aria-live="assertive"
-    aria-atomic="true"
-  >
-    <h2
-      v-if="title"
-      class="title"
-    >
+  <div class="error-card" role="alert" aria-live="assertive" aria-atomic="true">
+    <h2 v-if="title" class="title">
       {{ title }}
     </h2>
-    <p
-      id="error-card-message"
-      class="message"
-    >
+    <p id="error-card-message" class="message">
       {{ message || 'Ocorreu um erro ao carregar os dados.' }}
     </p>
     <button
@@ -72,7 +61,8 @@ defineProps<{
   cursor: pointer;
   font-weight: 600;
   font-size: var(--text-sm);
-  transition: background var(--duration-fast) ease,
+  transition:
+    background var(--duration-fast) ease,
     border-color var(--duration-fast) ease,
     transform var(--duration-fast) var(--ease-out-expo);
 }

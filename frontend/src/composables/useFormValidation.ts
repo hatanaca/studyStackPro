@@ -17,26 +17,40 @@ export function validate<T>(value: T, rules: ValidationRule<T>[]): string | null
  * Regras comuns reutilizáveis.
  */
 export const rules = {
-  required: (msg = 'Campo obrigatório.'): ValidationRule<string> =>
-    (v) => (v != null && String(v).trim() !== '' ? true : msg),
+  required:
+    (msg = 'Campo obrigatório.'): ValidationRule<string> =>
+    (v) =>
+      v != null && String(v).trim() !== '' ? true : msg,
 
-  minLength: (min: number, msg?: string): ValidationRule<string> =>
-    (v) => (String(v).length >= min ? true : (msg ?? `Mínimo ${min} caracteres.`)),
+  minLength:
+    (min: number, msg?: string): ValidationRule<string> =>
+    (v) =>
+      String(v).length >= min ? true : (msg ?? `Mínimo ${min} caracteres.`),
 
-  maxLength: (max: number, msg?: string): ValidationRule<string> =>
-    (v) => (String(v).length <= max ? true : (msg ?? `Máximo ${max} caracteres.`)),
+  maxLength:
+    (max: number, msg?: string): ValidationRule<string> =>
+    (v) =>
+      String(v).length <= max ? true : (msg ?? `Máximo ${max} caracteres.`),
 
-  email: (msg = 'E-mail inválido.'): ValidationRule<string> =>
-    (v) => (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v)) ? true : msg),
+  email:
+    (msg = 'E-mail inválido.'): ValidationRule<string> =>
+    (v) =>
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v)) ? true : msg,
 
-  number: (msg = 'Deve ser um número.'): ValidationRule<string> =>
-    (v) => (!isNaN(Number(v)) && v !== '' ? true : msg),
+  number:
+    (msg = 'Deve ser um número.'): ValidationRule<string> =>
+    (v) =>
+      !isNaN(Number(v)) && v !== '' ? true : msg,
 
-  min: (min: number, msg?: string): ValidationRule<number> =>
-    (v) => (v >= min ? true : (msg ?? `Valor mínimo: ${min}.`)),
+  min:
+    (min: number, msg?: string): ValidationRule<number> =>
+    (v) =>
+      v >= min ? true : (msg ?? `Valor mínimo: ${min}.`),
 
-  max: (max: number, msg?: string): ValidationRule<number> =>
-    (v) => (v <= max ? true : (msg ?? `Valor máximo: ${max}.`)),
+  max:
+    (max: number, msg?: string): ValidationRule<number> =>
+    (v) =>
+      v <= max ? true : (msg ?? `Valor máximo: ${max}.`),
 }
 
 /**

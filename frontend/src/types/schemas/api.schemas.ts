@@ -98,9 +98,7 @@ export type TechnologyParsed = z.infer<typeof technologySchema>
  * Valida o payload da API e retorna os dados tipados ou lança.
  */
 export function parseDashboardResponse(raw: unknown): DashboardDataParsed {
-  const parsed = z
-    .object({ success: z.boolean(), data: dashboardDataSchema })
-    .safeParse(raw)
+  const parsed = z.object({ success: z.boolean(), data: dashboardDataSchema }).safeParse(raw)
   if (!parsed.success) {
     console.warn('[Dashboard] Zod parse failed:', parsed.error.flatten())
     throw new Error('Resposta inválida do dashboard')

@@ -41,16 +41,10 @@ function goToRegisterSession() {
 </script>
 
 <template>
-  <div
-    class="time-series-widget"
-    role="region"
-    aria-label="Tempo estudado por dia"
-  >
+  <div class="time-series-widget" role="region" aria-label="Tempo estudado por dia">
     <div class="header">
       <div class="header__title-row">
-        <h3 class="title">
-          Tempo estudado por dia ({{ periodLabel }})
-        </h3>
+        <h3 class="title">Tempo estudado por dia ({{ periodLabel }})</h3>
         <PeriodSelector
           :model-value="analyticsStore.selectedPeriod"
           @update:model-value="
@@ -62,30 +56,15 @@ function goToRegisterSession() {
           "
         />
       </div>
-      <p
-        v-if="totalInPeriod && hasData"
-        class="total-period"
-      >
+      <p v-if="totalInPeriod && hasData" class="total-period">
         Total no período: {{ totalInPeriod }}
       </p>
-      <p
-        v-if="hasData && analyticsStore.isRecalculating"
-        class="recalc-hint"
-        role="status"
-      >
+      <p v-if="hasData && analyticsStore.isRecalculating" class="recalc-hint" role="status">
         Atualizando métricas…
       </p>
     </div>
-    <div
-      v-if="analyticsStore.timeSeriesLoading"
-      class="chart-skeleton"
-    >
-      <Skeleton
-        v-for="i in 8"
-        :key="i"
-        height="1.25rem"
-        class="skeleton-line"
-      />
+    <div v-if="analyticsStore.timeSeriesLoading" class="chart-skeleton">
+      <Skeleton v-for="i in 8" :key="i" height="1.25rem" class="skeleton-line" />
     </div>
     <LineChart
       v-else-if="hasData"

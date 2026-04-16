@@ -19,25 +19,13 @@ const hasActivity = computed(() => analyticsStore.todayMinutes > 0)
 </script>
 
 <template>
-  <section
-    class="today-summary"
-    aria-labelledby="today-summary-title"
-  >
-    <h3
-      id="today-summary-title"
-      class="today-summary__title"
-    >
-      <span
-        class="today-summary__title-icon"
-        aria-hidden="true"
-      >📅</span>
+  <section class="today-summary" aria-labelledby="today-summary-title">
+    <h3 id="today-summary-title" class="today-summary__title">
+      <span class="today-summary__title-icon" aria-hidden="true">📅</span>
       Resumo de Hoje
     </h3>
 
-    <div
-      v-if="hasActivity"
-      class="today-summary__content"
-    >
+    <div v-if="hasActivity" class="today-summary__content">
       <div class="today-summary__stats">
         <div class="today-summary__stat today-summary__stat--primary">
           <span class="today-summary__stat-value">{{ formattedTime }}</span>
@@ -51,10 +39,7 @@ const hasActivity = computed(() => analyticsStore.todayMinutes > 0)
         </div>
       </div>
 
-      <div
-        v-if="analyticsStore.todayTechnologies.length"
-        class="today-summary__techs"
-      >
+      <div v-if="analyticsStore.todayTechnologies.length" class="today-summary__techs">
         <span class="today-summary__techs-label">Tecnologias:</span>
         <div class="today-summary__tech-chips">
           <span
@@ -69,10 +54,7 @@ const hasActivity = computed(() => analyticsStore.todayMinutes > 0)
       </div>
     </div>
 
-    <div
-      v-else
-      class="today-summary__empty-wrap"
-    >
+    <div v-else class="today-summary__empty-wrap">
       <EmptyState
         icon="☕"
         title="Nenhuma sessão hoje"
@@ -94,7 +76,8 @@ const hasActivity = computed(() => analyticsStore.todayMinutes > 0)
   display: flex;
   flex-direction: column;
   justify-content: center;
-  transition: box-shadow var(--duration-normal) var(--ease-in-out),
+  transition:
+    box-shadow var(--duration-normal) var(--ease-in-out),
     border-color var(--duration-fast) ease;
 }
 .today-summary:hover {

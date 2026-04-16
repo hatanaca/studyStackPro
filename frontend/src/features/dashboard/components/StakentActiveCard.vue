@@ -2,10 +2,18 @@
 import { ref, computed, defineAsyncComponent } from 'vue'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 import { useDashboard } from '@/features/dashboard/composables/useDashboard'
-const LogSessionWidget = defineAsyncComponent(() => import('@/features/sessions/components/LogSessionWidget.vue'))
-const TechDistributionWidget = defineAsyncComponent(() => import('@/features/dashboard/components/TechDistributionWidget.vue'))
-const TimeSeriesWidget = defineAsyncComponent(() => import('@/features/dashboard/components/TimeSeriesWidget.vue'))
-const GoalsWidget = defineAsyncComponent(() => import('@/features/dashboard/components/GoalsWidget.vue'))
+const LogSessionWidget = defineAsyncComponent(
+  () => import('@/features/sessions/components/LogSessionWidget.vue')
+)
+const TechDistributionWidget = defineAsyncComponent(
+  () => import('@/features/dashboard/components/TechDistributionWidget.vue')
+)
+const TimeSeriesWidget = defineAsyncComponent(
+  () => import('@/features/dashboard/components/TimeSeriesWidget.vue')
+)
+const GoalsWidget = defineAsyncComponent(
+  () => import('@/features/dashboard/components/GoalsWidget.vue')
+)
 
 const analyticsStore = useAnalyticsStore()
 const { fetchDashboard } = useDashboard()
@@ -30,15 +38,12 @@ const lastUpdate = computed(() => {
   if (diff < 60) return `${Math.floor(diff)} min atrás`
   return `${Math.floor(diff / 60)} h atrás`
 })
-
 </script>
 
 <template>
   <section class="stakent-active">
     <header class="stakent-active__header">
-      <h3 class="stakent-active__title">
-        Sua atividade de estudo
-      </h3>
+      <h3 class="stakent-active__title">Sua atividade de estudo</h3>
       <div class="stakent-active__meta">
         <span class="stakent-active__updated">Última atualização – {{ lastUpdate }}</span>
         <div class="stakent-active__actions">
@@ -56,15 +61,17 @@ const lastUpdate = computed(() => {
               fill="none"
               stroke="currentColor"
               stroke-width="2"
-            ><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 21h5v-5" /></svg>
+            >
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+              <path d="M16 21h5v-5" />
+            </svg>
           </button>
         </div>
       </div>
     </header>
-    <div
-      class="stakent-active__tabs"
-      role="tablist"
-    >
+    <div class="stakent-active__tabs" role="tablist">
       <button
         v-for="t in tabs"
         :id="`stakent-tab-${t.id}`"
@@ -95,10 +102,7 @@ const lastUpdate = computed(() => {
           :metrics="analyticsStore.technologyMetrics"
           :loading="analyticsStore.isRecalculating"
         />
-        <p
-          v-else
-          class="stakent-active__empty"
-        >
+        <p v-else class="stakent-active__empty">
           Nenhum dado ainda. Registre sessões para ver a distribuição por tecnologia.
         </p>
       </div>
@@ -184,7 +188,9 @@ const lastUpdate = computed(() => {
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   cursor: pointer;
-  transition: color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+  transition:
+    color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
 }
 .stakent-active__tab:hover {
   color: var(--color-text);
@@ -208,7 +214,11 @@ const lastUpdate = computed(() => {
   padding: var(--spacing-2xl);
 }
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>

@@ -16,19 +16,13 @@ withDefaults(
       <h2 class="section-header__title">
         {{ title }}
       </h2>
-      <p
-        v-if="description || $slots.description"
-        class="section-header__description"
-      >
+      <p v-if="description || $slots.description" class="section-header__description">
         <slot name="description">
           {{ description }}
         </slot>
       </p>
     </div>
-    <div
-      v-if="$slots.actions"
-      class="section-header__actions"
-    >
+    <div v-if="$slots.actions" class="section-header__actions">
       <slot name="actions" />
     </div>
   </header>

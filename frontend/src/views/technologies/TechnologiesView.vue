@@ -10,7 +10,8 @@ import PageView from '@/components/layout/PageView.vue'
     subtitle="Suas sessões de estudo ficam organizadas por tecnologia. Clique em uma para ver e registrar sessões."
   >
     <template #hint>
-      Adicione uma tecnologia (ex.: JavaScript, React), acesse seus detalhes e registre sessões diretamente de lá.
+      Adicione uma tecnologia (ex.: JavaScript, React), acesse seus detalhes e registre sessões
+      diretamente de lá.
     </template>
     <TechnologyList />
   </PageView>

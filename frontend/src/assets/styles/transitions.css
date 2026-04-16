@@ -20,7 +20,8 @@
 }
 
 .fade-up-enter-active {
-  transition: opacity var(--duration-slow) var(--ease-out-expo),
+  transition:
+    opacity var(--duration-slow) var(--ease-out-expo),
     transform var(--duration-slow) var(--ease-out-expo);
 }
 .fade-up-enter-from {

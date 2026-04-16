@@ -14,7 +14,17 @@ vi.mock('@/api/modules/auth.api', () => ({
 }))
 
 function makeTo(meta: Record<string, unknown> = {}, name = 'some-route'): RouteLocationNormalized {
-  return { meta, name, path: '/', fullPath: '/', query: {}, params: {}, hash: '', matched: [], redirectedFrom: undefined } as unknown as RouteLocationNormalized
+  return {
+    meta,
+    name,
+    path: '/',
+    fullPath: '/',
+    query: {},
+    params: {},
+    hash: '',
+    matched: [],
+    redirectedFrom: undefined,
+  } as unknown as RouteLocationNormalized
 }
 
 const from = makeTo({}, 'home')

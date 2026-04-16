@@ -32,7 +32,7 @@ const props = withDefaults(
 const { baseOptions, palette, theme } = useApexChartTheme()
 const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
 
-const chartSeries = computed(() => props.series.length ? props.series : [])
+const chartSeries = computed(() => (props.series.length ? props.series : []))
 
 const labels = computed(() =>
   props.labels.length ? props.labels : chartSeries.value.map((_, i) => `Item ${i + 1}`)
@@ -51,7 +51,15 @@ const chartOptions = computed<ApexOptions>(() => {
       background: 'transparent',
       toolbar: {
         show: props.showToolbar,
-        tools: { download: true, selection: false, zoom: false, zoomin: false, zoomout: false, pan: false, reset: false },
+        tools: {
+          download: true,
+          selection: false,
+          zoom: false,
+          zoomin: false,
+          zoomout: false,
+          pan: false,
+          reset: false,
+        },
         export: { csv: { headerCategory: 'Categoria', headerValue: 'Valor' }, svg: {}, png: {} },
       },
       animations: {
@@ -146,7 +154,10 @@ const chartOptions = computed<ApexOptions>(() => {
       shared: true,
       followCursor: true,
       y: {
-        formatter: (val: number, opts: { w?: { globals?: { seriesTotals?: number[] } }; seriesIndex?: number }) => {
+        formatter: (
+          val: number,
+          opts: { w?: { globals?: { seriesTotals?: number[] } }; seriesIndex?: number }
+        ) => {
           const w = opts?.w
           const sum = w?.globals?.seriesTotals?.reduce((a, b) => a + b, 0) ?? total.value
           const pct = sum ? ((Number(val) / sum) * 100).toFixed(1) : '0'
@@ -157,8 +168,18 @@ const chartOptions = computed<ApexOptions>(() => {
       },
     },
     responsive: [
-      { breakpoint: 520, options: { chart: { height: 300 }, plotOptions: { pie: { donut: { size: '60%' } } } } },
-      { breakpoint: 380, options: { chart: { height: 260 }, plotOptions: { pie: { donut: { size: '55%' } } }, legend: { markers: { size: 4 } } } },
+      {
+        breakpoint: 520,
+        options: { chart: { height: 300 }, plotOptions: { pie: { donut: { size: '60%' } } } },
+      },
+      {
+        breakpoint: 380,
+        options: {
+          chart: { height: 260 },
+          plotOptions: { pie: { donut: { size: '55%' } } },
+          legend: { markers: { size: 4 } },
+        },
+      },
     ],
   }
 })
@@ -166,16 +187,10 @@ const chartOptions = computed<ApexOptions>(() => {
 
 <template>
   <div class="donut-chart">
-    <h3
-      v-if="title"
-      class="chart-title"
-    >
+    <h3 v-if="title" class="chart-title">
       {{ title }}
     </h3>
-    <div
-      v-if="chartSeries.length"
-      class="chart-wrap"
-    >
+    <div v-if="chartSeries.length" class="chart-wrap">
       <VueApexCharts
         type="donut"
         :options="chartOptions"
@@ -183,12 +198,7 @@ const chartOptions = computed<ApexOptions>(() => {
         class="apex-donut"
       />
     </div>
-    <div
-      v-else
-      class="chart-placeholder"
-    >
-      Sem dados
-    </div>
+    <div v-else class="chart-placeholder">Sem dados</div>
   </div>
 </template>
 

@@ -10,7 +10,7 @@ withDefaults(
     width: '100%',
     height: '1rem',
     borderRadius: '0.25rem',
-    variant: 'rectangular'
+    variant: 'rectangular',
   }
 )
 </script>
@@ -22,7 +22,7 @@ withDefaults(
     :style="{
       width,
       height,
-      borderRadius: variant === 'circular' ? '50%' : borderRadius
+      borderRadius: variant === 'circular' ? '50%' : borderRadius,
     }"
   />
 </template>

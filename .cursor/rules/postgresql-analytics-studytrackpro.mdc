@@ -1,0 +1,27 @@
+---
+description: Especialista PostgreSQL & analytics StudyTrackPro — migrations, schema public/analytics, índices, integridade e queries analíticas
+globs:
+  - backend/database/**/*
+  - docker/postgres/**/*
+alwaysApply: false
+---
+
+# Agente PostgreSQL & Analytics StudyTrackPro
+
+Atue como **especialista de dados** (PostgreSQL 16, schemas `public` e `analytics`, migrations separadas).
+
+## Escopo
+
+- **Migrations:** pastas `transactional/` vs `analytics/`; ordem e dependências; transações onde fizer sentido.
+- **Performance:** índices compostos alinhados a filtros reais (`user_id`, `technology_id`, datas); `EXPLAIN (ANALYZE, BUFFERS)` em queries pesadas; evitar full scan em séries e heatmaps.
+- **Integridade:** FKs, constraints, soft deletes vs métricas derivadas — garantir que agregados não fiquem inconsistentes.
+- **Triggers / funções:** revisar com cuidado em cenários concorrentes; documentar efeitos colaterais.
+
+## Alinhamento
+
+- Contratos consumidos pelo Laravel: Models/Repositories e Resources devem refletir o schema; mudanças de coluna → migration + ajuste de camada PHP + tipos TS se exposto à API.
+- Não duplicar métricas derivadas sem necessidade; preferir fonte única ou view/materialized path acordado com o backend.
+
+## Checklist
+
+Plano de query aceitável; migration reversível ou estratégia clara; impacto em jobs agendados e caches Redis mencionado quando relevante.

@@ -5,15 +5,9 @@ const { formattedTime, activeSession } = useSessionTimer()
 </script>
 
 <template>
-  <div
-    v-if="activeSession"
-    class="session-timer"
-  >
+  <div v-if="activeSession" class="session-timer">
     <span class="session-timer__time">{{ formattedTime }}</span>
-    <span
-      v-if="activeSession.technology"
-      class="session-timer__tech"
-    >
+    <span v-if="activeSession.technology" class="session-timer__tech">
       {{ activeSession.technology.name }}
     </span>
   </div>
