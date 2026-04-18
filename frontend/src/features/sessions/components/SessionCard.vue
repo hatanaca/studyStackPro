@@ -18,6 +18,8 @@ const MAX_VISIBLE_LINES = 3
 
 const props = defineProps<{
   session: StudySession
+  /** Na página de uma tecnologia: só o tema estudado (título), sem repetir o nome da tecnologia no cartão. */
+  topicOnly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -48,52 +50,82 @@ const formattedDate = computed(() => {
     return props.session.started_at
   }
 })
+
+const accentColor = computed(() => props.session.technology?.color ?? 'var(--color-text-muted)')
+
+const displayTitle = computed(() => {
+  if (props.topicOnly) {
+    return props.session.title?.trim() || 'Sem tema definido'
+  }
+  return (
+    props.session.title?.trim() ||
+    props.session.technology?.name ||
+    'Sem tecnologia'
+  )
+})
+
+const showTechUnderTitle = computed(
+  () =>
+    !props.topicOnly &&
+    !!(props.session.title?.trim() && props.session.technology?.name),
+)
 </script>
 
 <template>
   <div class="session-card">
-    <div
-      class="session-card__bar"
-      :style="{ background: session.technology?.color ?? 'var(--color-text-muted)' }"
-    />
-    <div ref="contentRef" class="session-card__content">
+    <div class="session-card__accent" :style="{ background: accentColor }" aria-hidden="true" />
+    <div ref="contentRef" class="session-card__body">
+      <RouterLink
+        :to="{ name: 'session-detail', params: { id: session.id } }"
+        class="session-card__icon"
+        :title="'Ver sessão'"
+      >
+        <span class="session-card__icon-inner" aria-hidden="true">📚</span>
+      </RouterLink>
       <div class="session-card__main">
-        <span class="session-card__tech">
-          {{ session.technology?.name ?? 'Sem tecnologia' }}
-        </span>
-        <span class="session-card__duration">
-          {{ session.duration_formatted ?? 'Em andamento' }}
-        </span>
-      </div>
-      <div class="session-card__meta">
-        <span>{{ formattedDate }}</span>
-        <span v-if="session.mood" class="mood">Mood: {{ session.mood }}/5</span>
-      </div>
-      <p
-        v-if="session.notes"
-        class="session-card__notes"
-        :class="{ 'session-card__notes--clamped': needsTruncation && !expanded }"
-      >
-        {{ session.notes }}
-      </p>
-      <button
-        v-if="needsTruncation"
-        type="button"
-        class="session-card__toggle"
-        @click="expanded = !expanded"
-      >
-        {{ expanded ? 'Ver menos' : 'Ver mais' }}
-      </button>
-      <div class="session-card__actions">
-        <RouterLink
-          :to="{ name: 'session-detail', params: { id: session.id } }"
-          class="btn btn--ghost"
+        <div class="session-card__title-row">
+          <RouterLink
+            :to="{ name: 'session-detail', params: { id: session.id } }"
+            class="session-card__title"
+          >
+            {{ displayTitle }}
+          </RouterLink>
+          <span class="session-card__date-sep" aria-hidden="true">·</span>
+          <time class="session-card__date" :datetime="session.started_at">{{ formattedDate }}</time>
+        </div>
+        <p v-if="showTechUnderTitle" class="session-card__tech-under">
+          {{ session.technology?.name }}
+        </p>
+        <p
+          v-if="session.notes"
+          class="session-card__notes"
+          :class="{ 'session-card__notes--clamped': needsTruncation && !expanded }"
         >
-          Ver
-        </RouterLink>
-        <button type="button" class="btn btn--ghost" @click="emit('edit', session)">Editar</button>
-        <button type="button" class="btn btn--ghost btn--danger" @click="emit('delete', session)">
-          Excluir
+          {{ session.notes }}
+        </p>
+        <button
+          v-if="needsTruncation"
+          type="button"
+          class="session-card__toggle"
+          @click="expanded = !expanded"
+        >
+          {{ expanded ? 'Ver menos' : 'Ver mais' }}
+        </button>
+        <div class="session-card__links">
+          <button type="button" class="session-card__link" @click="emit('edit', session)">Editar</button>
+        </div>
+      </div>
+      <div class="session-card__side">
+        <span class="session-card__duration-strong">
+          {{ session.duration_formatted ?? (session.ended_at == null ? 'Em andamento' : '—') }}
+        </span>
+        <button
+          type="button"
+          class="session-card__delete"
+          aria-label="Excluir sessão"
+          @click="emit('delete', session)"
+        >
+          ✕
         </button>
       </div>
     </div>
@@ -102,62 +134,108 @@ const formattedDate = computed(() => {
 
 <style scoped>
 .session-card {
+  position: relative;
   background: var(--color-bg-card);
-  border-radius: var(--card-chrome-radius);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  box-shadow: none;
   overflow: hidden;
-  box-shadow: var(--card-chrome-shadow);
-  border: var(--card-chrome-border);
   transition:
-    box-shadow var(--duration-normal) var(--ease-out-expo),
-    border-color var(--duration-fast) ease;
+    border-color var(--duration-fast) ease,
+    background var(--duration-fast) ease;
 }
 .session-card:hover {
-  box-shadow: var(--shadow-card-hover);
-  border-color: color-mix(in srgb, var(--color-primary) 25%, var(--color-border));
+  border-color: color-mix(in srgb, var(--color-primary) 22%, var(--color-border));
+  background: color-mix(in srgb, var(--color-bg-soft) 35%, var(--color-bg-card));
 }
-.session-card__bar {
-  height: var(--spacing-xs);
+.session-card__accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
 }
-.session-card__content {
-  padding: var(--widget-padding);
+.session-card__body {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) calc(var(--spacing-sm) + 3px);
+  min-width: 0;
+}
+.session-card__icon {
+  flex-shrink: 0;
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  text-decoration: none;
+  transition:
+    background var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
+}
+.session-card__icon:hover {
+  background: color-mix(in srgb, var(--color-bg-soft) 70%, var(--color-primary));
+  border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+}
+.session-card__icon-inner {
+  font-size: 0.95rem;
+  line-height: 1;
 }
 .session-card__main {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-xs);
-  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
 }
-.session-card__tech {
+.session-card__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.35rem;
+  margin-bottom: 0;
+}
+.session-card__title {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: var(--text-sm);
-  line-height: var(--leading-snug);
+  font-size: var(--text-xs);
   color: var(--color-text);
+  text-decoration: none;
   letter-spacing: var(--tracking-tight);
-}
-.session-card__duration {
-  font-size: var(--text-sm);
   line-height: var(--leading-snug);
+  min-width: 0;
+}
+.session-card__date-sep {
+  font-size: var(--text-xs);
   color: var(--color-text-muted);
+  user-select: none;
+}
+.session-card__title:hover {
+  color: var(--color-primary);
+}
+.session-card__tech-under {
+  margin: 2px 0 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  line-height: var(--leading-snug);
+}
+.session-card__date {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  line-height: var(--leading-snug);
   white-space: nowrap;
 }
-.session-card__meta {
-  font-size: var(--text-xs);
-  line-height: var(--leading-normal);
-  color: var(--color-text-muted);
-  margin-bottom: var(--spacing-sm);
-}
-.session-card__meta .mood {
-  margin-left: var(--spacing-sm);
-}
 .session-card__notes {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   line-height: var(--leading-snug);
   color: var(--color-text-muted);
-  margin: var(--spacing-sm) 0 0;
-  /* Alinhado ao alvo do @chenglou/pretext: word-break normal + overflow-wrap break-word */
+  margin: var(--spacing-2xs) 0 0;
   overflow-wrap: break-word;
   word-break: normal;
 }
@@ -186,34 +264,65 @@ const formattedDate = computed(() => {
   box-shadow: var(--shadow-focus);
   border-radius: var(--radius-sm);
 }
-.session-card__actions {
-  display: flex;
-  gap: var(--spacing-xs);
-  margin-top: var(--spacing-lg);
-  flex-wrap: wrap;
+.session-card__links {
+  margin-top: var(--spacing-xs);
 }
-.btn {
-  padding: var(--spacing-xs) var(--spacing-sm);
+.session-card__link {
+  padding: 0;
+  border: none;
+  background: none;
   font-size: var(--text-xs);
-  line-height: var(--leading-snug);
   font-weight: 500;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  background: transparent;
   color: var(--color-text-muted);
-  text-decoration: none;
-  transition:
-    background var(--duration-fast) ease,
-    color var(--duration-fast) ease,
-    border-color var(--duration-fast) ease;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
-.btn--ghost:hover {
-  background: var(--color-bg-soft);
+.session-card__link:hover {
+  color: var(--color-primary);
+}
+.session-card__side {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: var(--spacing-xs);
+  min-width: 2.75rem;
+}
+.session-card__duration-strong {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-xs);
   color: var(--color-text);
+  white-space: nowrap;
 }
-.btn--danger:hover {
-  background: var(--color-error-soft);
+.session-card__delete {
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-soft);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    background var(--duration-fast) ease;
+}
+.session-card__delete:hover {
+  border-color: var(--color-error);
   color: var(--color-error);
+  background: var(--color-error-soft);
+}
+.session-card__delete:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 </style>

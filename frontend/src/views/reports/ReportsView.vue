@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import PageView from '@/components/layout/PageView.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import Callout from '@/components/ui/Callout.vue'
 import ErrorCard from '@/components/ui/ErrorCard.vue'
@@ -87,15 +86,10 @@ async function onGenerate() {
 </script>
 
 <template>
-  <PageView
-    :breadcrumb="[{ label: 'Dashboard', to: '/' }, { label: 'Relatórios' }]"
-    title="Relatórios"
-    subtitle="Gere relatórios de estudo por período em PDF."
-    narrow
-  >
-    <template #hint>
+  <div class="reports-view">
+    <p class="reports-view__lead">
       Selecione um período para gerar um relatório em PDF com resumo e detalhamento de sessões.
-    </template>
+    </p>
     <section class="reports-card">
       <h2 class="reports-card__title">Relatório de atividades</h2>
       <div class="reports-form">
@@ -145,10 +139,22 @@ async function onGenerate() {
         todas as sessões no período. Selecione as datas e clique em gerar.
       </Callout>
     </section>
-  </PageView>
+  </div>
 </template>
 
 <style scoped>
+.reports-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+.reports-view__lead {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: var(--leading-snug);
+  max-width: 52ch;
+}
 .reports-card {
   background: var(--surface-page-header-bg);
   border: var(--card-chrome-border);

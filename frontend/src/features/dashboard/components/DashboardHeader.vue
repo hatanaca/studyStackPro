@@ -4,8 +4,6 @@ import { useAnalyticsStore } from '@/stores/analytics.store'
 import { useDashboard } from '@/features/dashboard/composables/useDashboard'
 import Button from 'primevue/button'
 import NotificationCenter from '@/features/notifications/components/NotificationCenter.vue'
-import PeriodSelector from './PeriodSelector.vue'
-import type { TimeSeriesPeriod } from '@/stores/analytics.store'
 
 const analyticsStore = useAnalyticsStore()
 const { fetchDashboard } = useDashboard()
@@ -21,14 +19,13 @@ function formatHours(hours: number): string {
 const headerSummary = computed(() => {
   const metrics = analyticsStore.userMetrics
   if (!metrics) return []
+  const streak = metrics.current_streak_days ?? 0
   return [
     { label: 'Total de horas', value: formatHours(metrics.total_hours ?? 0) },
     { label: 'Sessões', value: String(metrics.total_sessions ?? 0) },
     {
-      label: 'Último estudo',
-      value: metrics.last_session_at
-        ? new Date(metrics.last_session_at).toLocaleDateString('pt-BR')
-        : 'Sem registro',
+      label: 'Streak atual',
+      value: streak > 0 ? `${streak} ${streak === 1 ? 'dia' : 'dias'}` : '0 dias',
     },
   ]
 })
@@ -42,12 +39,6 @@ async function handleRefresh() {
     analyticsStore.fetchTimeSeries('30d'),
     analyticsStore.fetchTimeSeries('90d'),
   ]).catch(() => {})
-}
-
-function onPeriodChange(period: TimeSeriesPeriod) {
-  analyticsStore.setSelectedPeriod(period)
-  const hasData = analyticsStore.timeSeriesData[period]?.length
-  if (!hasData) analyticsStore.fetchTimeSeries(period)
 }
 </script>
 
@@ -66,17 +57,6 @@ function onPeriodChange(period: TimeSeriesPeriod) {
       </div>
     </div>
     <div class="dashboard-header__toolbar">
-      <div
-        v-if="analyticsStore.dashboard"
-        class="dashboard-header__period"
-        aria-label="Período dos gráficos"
-      >
-        <span class="dashboard-header__period-label">Período:</span>
-        <PeriodSelector
-          :model-value="analyticsStore.selectedPeriod"
-          @update:model-value="onPeriodChange"
-        />
-      </div>
       <div class="dashboard-header__actions">
         <NotificationCenter />
         <span
@@ -178,18 +158,6 @@ function onPeriodChange(period: TimeSeriesPeriod) {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--spacing-lg);
-}
-.dashboard-header__period {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-.dashboard-header__period-label {
-  font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-wide);
 }
 .dashboard-header__actions {
   display: flex;

@@ -4,7 +4,6 @@ import Accordion from 'primevue/accordion'
 import AccordionPanel from 'primevue/accordionpanel'
 import AccordionHeader from 'primevue/accordionheader'
 import AccordionContent from 'primevue/accordioncontent'
-import PageView from '@/components/layout/PageView.vue'
 
 const faqItems = [
   {
@@ -23,7 +22,7 @@ const faqItems = [
     id: 'export',
     title: 'Como exportar meus dados?',
     description:
-      'Acesse Exportar no menu. Selecione o período e o formato (CSV ou JSON). O arquivo será gerado para download.',
+      'Em Configurações → Exportar dados, selecione o período e o formato (CSV ou JSON). O arquivo será gerado para download.',
   },
   {
     id: 'theme',
@@ -35,16 +34,11 @@ const faqItems = [
 </script>
 
 <template>
-  <PageView
-    :breadcrumb="[{ label: 'Dashboard', to: '/' }, { label: 'Ajuda' }]"
-    title="Ajuda"
-    subtitle="Dúvidas frequentes e dicas para usar o StudyTrack Pro."
-    narrow
-  >
-    <template #hint>
+  <div class="help-view">
+    <p class="help-view__lead">
       Expanda os itens abaixo para ver as respostas. Em caso de problema, use o bloco Contato ao
       final.
-    </template>
+    </p>
     <Card class="help-view__card">
       <template #title>Perguntas frequentes</template>
       <template #content>
@@ -52,7 +46,7 @@ const faqItems = [
           <AccordionPanel v-for="item in faqItems" :key="item.id" :value="item.id">
             <AccordionHeader>{{ item.title }}</AccordionHeader>
             <AccordionContent>
-              <p class="help-view__answer">{{ item.description }}</p>
+              <p class="help-view__answer allow-user-select">{{ item.description }}</p>
             </AccordionContent>
           </AccordionPanel>
         </Accordion>
@@ -61,16 +55,28 @@ const faqItems = [
     <Card class="help-view__card">
       <template #title>Contato</template>
       <template #content>
-        <p class="help-view__text">
+        <p class="help-view__text allow-user-select">
           Encontrou um bug ou tem uma sugestão? Abra uma issue no repositório do projeto ou entre em
           contato com o time de desenvolvimento.
         </p>
       </template>
     </Card>
-  </PageView>
+  </div>
 </template>
 
 <style scoped>
+.help-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+.help-view__lead {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: var(--leading-snug);
+  max-width: 52ch;
+}
 .help-view__card {
   margin-top: 0;
 }

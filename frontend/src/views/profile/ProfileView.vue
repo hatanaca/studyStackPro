@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch, defineAsyncComponent, h } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import PageView from '@/components/layout/PageView.vue'
 import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
@@ -18,16 +18,71 @@ import { authApi, type TokenInfo } from '@/api/modules/auth.api'
 import { useToast } from '@/composables/useToast'
 
 const authStore = useAuthStore()
+const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const confirm = useConfirm()
 
+const GoalList = defineAsyncComponent({
+  loader: () => import('@/features/goals/components/GoalList.vue'),
+  loadingComponent: {
+    name: 'ProfileGoalListLoading',
+    setup() {
+      return () =>
+        h(
+          'div',
+          {
+            class: 'profile-goals__async-placeholder',
+            role: 'status',
+            'aria-live': 'polite',
+            'aria-label': 'Carregando metas',
+          },
+          [
+            h(Skeleton, {
+              width: '38%',
+              height: '1rem',
+              class: 'profile-goals__async-placeholder__line',
+            }),
+            h(Skeleton, { width: '100%', height: '10rem' }),
+            h(Skeleton, {
+              width: '100%',
+              height: '6rem',
+              class: 'profile-goals__async-placeholder__line',
+            }),
+          ]
+        )
+    },
+  },
+  delay: 100,
+})
+
 const profileTabs = [
   { id: 'profile', label: 'Perfil' },
   { id: 'password', label: 'Senha' },
+  { id: 'goals', label: 'Metas' },
   { id: 'sessions', label: 'Sessões' },
 ]
 const activeTab = ref('profile')
+
+watch(
+  () => route.query.tab,
+  (tab) => {
+    if (tab === 'goals') activeTab.value = 'goals'
+  },
+  { immediate: true },
+)
+
+watch(activeTab, (tab) => {
+  if (tab === 'goals') {
+    if (route.query.tab !== 'goals') {
+      router.replace({ name: 'profile', query: { ...route.query, tab: 'goals' } })
+    }
+  } else if (route.query.tab === 'goals') {
+    const nextQuery = { ...route.query } as Record<string, string | string[] | undefined>
+    delete nextQuery.tab
+    router.replace({ name: 'profile', query: nextQuery })
+  }
+})
 const avatarLabel = computed(() => {
   const name = authStore.user?.name ?? ''
   const parts = name.trim().split(/\s+/)
@@ -231,6 +286,18 @@ function formatDate(iso: string | null): string {
                     :loading="profileLoading"
                   />
                 </form>
+              </template>
+            </Card>
+          </TabPanel>
+          <TabPanel value="goals">
+            <Card class="profile-view__card">
+              <template #content>
+                <h2 class="section-title">Metas de estudo</h2>
+                <p class="section-desc">
+                  Defina e acompanhe metas por semana ou sequência de dias. O progresso semanal também
+                  aparece no dashboard.
+                </p>
+                <GoalList />
               </template>
             </Card>
           </TabPanel>
@@ -444,6 +511,15 @@ function formatDate(iso: string | null): string {
 .revoke-btn :deep(.p-button:focus-visible) {
   outline: none;
   box-shadow: var(--shadow-focus);
+}
+.profile-goals__async-placeholder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) 0;
+}
+.profile-goals__async-placeholder__line {
+  display: block;
 }
 .profile-view__tokens-skeleton {
   display: flex;

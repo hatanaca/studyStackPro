@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import Button from 'primevue/button'
 import TechnologyList from '@/features/technologies/components/TechnologyList.vue'
 import PageView from '@/components/layout/PageView.vue'
+
+const technologyListRef = ref<{ openCreate: () => void } | null>(null)
 </script>
 
 <template>
@@ -11,8 +15,11 @@ import PageView from '@/components/layout/PageView.vue'
   >
     <template #hint>
       Adicione uma tecnologia (ex.: JavaScript, React), acesse seus detalhes e registre sessões
-      diretamente de lá.
+      diretamente de lá. Em cada tecnologia encontra o mapa de estudos (fluxograma local).
     </template>
-    <TechnologyList />
+    <template #actions>
+      <Button label="Nova tecnologia" size="small" @click="technologyListRef?.openCreate()" />
+    </template>
+    <TechnologyList ref="technologyListRef" />
   </PageView>
 </template>

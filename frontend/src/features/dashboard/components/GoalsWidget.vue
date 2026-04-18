@@ -43,7 +43,7 @@ function formatMinutes(m: number): string {
     <template #title>
       <span class="goals-widget__title-row">
         Meta semanal
-        <RouterLink to="/goals" class="goals-widget__link">
+        <RouterLink :to="{ name: 'profile', query: { tab: 'goals' } }" class="goals-widget__link">
           <Button
             :label="hasCustomGoal ? 'Gerenciar' : 'Criar meta'"
             link

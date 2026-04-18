@@ -20,6 +20,7 @@ class StoreStudySessionRequest extends FormRequest
     {
         return [
             'technology_id' => ['nullable', 'uuid', 'exists:technologies,id'],
+            'title' => ['required', 'string', 'max:255'],
             'started_at' => ['required', 'date'],
             'ended_at' => ['nullable', 'date', 'after:started_at'],
             'notes' => ['nullable', 'string', 'max:2000'],

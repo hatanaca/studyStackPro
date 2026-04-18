@@ -15,7 +15,8 @@ export function prefetchSessionFocusView() {
 }
 
 export function prefetchGoalsView() {
-  void import('@/views/goals/GoalsView.vue')
+  void import('@/views/profile/ProfileView.vue')
+  void import('@/features/goals/components/GoalList.vue')
 }
 
 export function prefetchTechnologiesView() {
@@ -23,23 +24,11 @@ export function prefetchTechnologiesView() {
 }
 
 export function prefetchTechnologyDetailView() {
-  void import('@/views/technologies/TechnologyDetailView.vue')
-}
-
-export function prefetchExportView() {
-  void import('@/views/export/ExportView.vue')
-}
-
-export function prefetchReportsView() {
-  void import('@/views/reports/ReportsView.vue')
+  void import('@/views/technologies/TechnologyDetailLayout.vue')
 }
 
 export function prefetchSettingsView() {
-  void import('@/views/settings/SettingsView.vue')
-}
-
-export function prefetchHelpView() {
-  void import('@/views/help/HelpView.vue')
+  void import('@/views/settings/SettingsLayout.vue')
 }
 
 export function prefetchProfileView() {

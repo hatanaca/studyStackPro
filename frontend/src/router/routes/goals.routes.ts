@@ -1,8 +1,7 @@
+/** Metas passam a viver no perfil (tab «Metas»); `/goals` mantém compatibilidade. */
 export const goalsRoutes = [
   {
     path: 'goals',
-    name: 'goals',
-    component: () => import('@/views/goals/GoalsView.vue'),
-    meta: { title: 'Metas' },
+    redirect: { name: 'profile', query: { tab: 'goals' } },
   },
 ]

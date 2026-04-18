@@ -5,14 +5,14 @@ import Fieldset from 'primevue/fieldset'
 
 const router = useRouter()
 function handleExport() {
-  router.push({ name: 'export' })
+  router.push({ name: 'settings-export' })
 }
 </script>
 
 <template>
   <Fieldset legend="Dados">
     <p class="data-section__desc">
-      Na página Exportar você baixa sessões e métricas por período (dados do servidor). Metas e
+      Em Exportar dados (Configurações) você baixa sessões e métricas por período (servidor). Metas e
       preferências continuam armazenadas no navegador.
     </p>
     <div class="data-section">

@@ -42,6 +42,31 @@ describe('SessionCard', () => {
     expect(wrapper.text()).toContain('1h 30min')
   })
 
+  it('prioriza título personalizado e mostra tecnologia abaixo', () => {
+    const wrapper = mount(SessionCard, {
+      props: {
+        session: { ...mockSession, title: 'Funções' },
+      },
+      global: { plugins: [router] },
+    })
+
+    expect(wrapper.text()).toContain('Funções')
+    expect(wrapper.text()).toContain('Vue.js')
+  })
+
+  it('com topicOnly mostra só o tema, sem repetir o nome da tecnologia', () => {
+    const wrapper = mount(SessionCard, {
+      props: {
+        session: { ...mockSession, title: 'Funções' },
+        topicOnly: true,
+      },
+      global: { plugins: [router] },
+    })
+
+    expect(wrapper.text()).toContain('Funções')
+    expect(wrapper.text()).not.toContain('Vue.js')
+  })
+
   it('renderiza notas quando presentes', () => {
     const wrapper = mount(SessionCard, {
       props: { session: mockSession },
@@ -49,15 +74,6 @@ describe('SessionCard', () => {
     })
 
     expect(wrapper.text()).toContain('Sessão produtiva')
-  })
-
-  it('renderiza mood quando presente', () => {
-    const wrapper = mount(SessionCard, {
-      props: { session: mockSession },
-      global: { plugins: [router] },
-    })
-
-    expect(wrapper.text()).toContain('Mood: 4/5')
   })
 
   it('emite edit ao clicar em Editar', async () => {

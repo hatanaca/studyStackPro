@@ -11,13 +11,17 @@ import { profileRoutes } from './routes/profile.routes'
 import { sessionsRoutes } from './routes/sessions.routes'
 import { technologiesRoutes } from './routes/technologies.routes'
 import { goalsRoutes } from './routes/goals.routes'
-import { exportRoutes } from './routes/export.routes'
-import { settingsRoutes } from './routes/settings.routes'
-import { reportsRoutes } from './routes/reports.routes'
-import { helpRoutes } from './routes/help.routes'
+import { settingsRoutes, legacySettingsRedirects } from './routes/settings.routes'
+import { studyPathRoutes } from './routes/study-path.routes'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  /** Garante scroll à âncora quando a rota define `hash` (ex.: links internos). */
+  scrollBehavior(to, _from, savedPosition) {
+    if (savedPosition) return savedPosition
+    if (to.hash) return { el: to.hash, behavior: 'smooth' }
+    return { top: 0 }
+  },
   routes: [
     ...authRoutes,
     {
@@ -29,10 +33,9 @@ const router = createRouter({
         ...sessionsRoutes,
         ...technologiesRoutes,
         ...goalsRoutes,
-        ...exportRoutes,
+        ...studyPathRoutes,
         ...settingsRoutes,
-        ...reportsRoutes,
-        ...helpRoutes,
+        ...legacySettingsRedirects,
         ...profileRoutes,
       ],
     },

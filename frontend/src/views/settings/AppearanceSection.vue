@@ -18,7 +18,11 @@ const form = ref<CustomThemeOptions>({
 })
 
 const FONT_OPTIONS = [
-  { value: '', label: 'Padrão (DM Sans)' },
+  { value: '', label: 'Padrão (Plus Jakarta Sans)' },
+  {
+    value: "'Plus Jakarta Sans', 'DM Sans', system-ui, sans-serif",
+    label: 'Plus Jakarta Sans',
+  },
   { value: "'DM Sans', system-ui, sans-serif", label: 'DM Sans' },
   { value: 'system-ui, -apple-system, sans-serif', label: 'System UI' },
   { value: 'Georgia, serif', label: 'Georgia' },

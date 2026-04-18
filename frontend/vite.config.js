@@ -44,6 +44,12 @@ export default defineConfig({
                     if (id.includes('/jspdf/')) {
                         return 'pdf-vendor';
                     }
+                    if (id.includes('/viewerjs/') || id.includes('/v-viewer/')) {
+                        return 'viewer-vendor';
+                    }
+                    if (id.includes('/@vue-flow/core/')) {
+                        return 'vue-flow-vendor';
+                    }
                 },
             },
         },

@@ -1,20 +1,19 @@
 import { ref, type Ref } from 'vue'
 import { getApiErrorMessage } from '@/api/client'
 import { sessionsApi } from '@/api/modules/sessions.api'
-import { useTechnologiesStore } from '@/stores/technologies.store'
 import { useToast } from '@/composables/useToast'
 import { useInvalidateSessions } from './useSessionsListQuery'
 import type { StudySession } from '@/types/domain.types'
 
 export interface EditFormState {
-  technology_id: string
+  title: string
   date: string
   duration: number
   notes: string
 }
 
 const DEFAULT_EDIT_FORM: EditFormState = {
-  technology_id: '',
+  title: '',
   date: '',
   duration: 0,
   notes: '',
@@ -22,7 +21,6 @@ const DEFAULT_EDIT_FORM: EditFormState = {
 
 export function useSessionEdit() {
   const toast = useToast()
-  const technologiesStore = useTechnologiesStore()
   const invalidateSessions = useInvalidateSessions()
 
   const showEditModal: Ref<boolean> = ref(false)
@@ -33,15 +31,12 @@ export function useSessionEdit() {
   function openEdit(session: StudySession) {
     editingSession.value = session
     editForm.value = {
-      technology_id: session.technology_id ?? session.technology?.id ?? '',
+      title: session.title?.trim() ?? '',
       date: session.started_at?.slice(0, 10) ?? '',
       duration: session.duration_min ?? 0,
       notes: session.notes ?? '',
     }
     showEditModal.value = true
-    if (!technologiesStore.technologies.length) {
-      void technologiesStore.fetchTechnologies()
-    }
   }
 
   function closeEdit() {
@@ -55,7 +50,8 @@ export function useSessionEdit() {
     const form = editForm.value
     if (!session || editLoading.value) return
     editLoading.value = true
-    if (!form.technology_id || !form.date || form.duration < 1) {
+    const technologyId = session.technology_id ?? session.technology?.id ?? ''
+    if (!technologyId || !form.date || form.duration < 1) {
       toast.error('Preencha todos os campos obrigatórios')
       editLoading.value = false
       return
@@ -73,7 +69,8 @@ export function useSessionEdit() {
         return `${y}-${mo}-${dd}T${hh}:${mi}:${ss}`
       }
       await sessionsApi.update(session.id, {
-        technology_id: form.technology_id,
+        title: form.title.trim() ? form.title.trim() : null,
+        technology_id: technologyId,
         started_at: toISO(start),
         ended_at: toISO(end),
         duration_min: form.duration,

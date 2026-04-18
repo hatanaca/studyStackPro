@@ -4,6 +4,7 @@ import type { ApexOptions } from 'apexcharts'
 import VueApexCharts from 'vue3-apexcharts'
 import { useApexChartTheme } from '@/composables/useApexChartTheme'
 import { useMediaQuery } from '@/composables/useMediaQuery'
+import { useUiStore } from '@/stores/ui.store'
 import { formatMinutesToHoursLabel } from '@/utils/formatters'
 
 const props = withDefaults(
@@ -33,6 +34,7 @@ const props = withDefaults(
 )
 
 const { baseOptions, theme } = useApexChartTheme()
+const uiStore = useUiStore()
 const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
 
 /** ApexCharts com height % costuma ficar 0px se o pai não tem altura definida — usar pixels */
@@ -52,8 +54,12 @@ const chartOptions = computed<ApexOptions>(() => {
   const categories = props.data?.labels ?? []
   const isStockPreset = props.preset === 'stock'
   const stockColor = theme.value.stockColor
+  const chartThemeMode = uiStore.theme === 'dark' ? 'dark' : 'light'
   return {
     ...baseOptions.value,
+    theme: {
+      mode: chartThemeMode,
+    },
     chart: {
       ...baseOptions.value.chart,
       type: 'area',
@@ -214,6 +220,19 @@ const chartOptions = computed<ApexOptions>(() => {
   width: 100%;
   height: 100%;
   display: block;
+}
+/* Menu da toolbar (exportar PNG/SVG): contraste no tema escuro */
+:deep(.apexcharts-menu) {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+:deep(.apexcharts-menu-item) {
+  color: var(--color-text);
+}
+:deep(.apexcharts-menu-item:hover) {
+  background: var(--color-bg-soft);
+  color: var(--color-text);
 }
 .chart-placeholder {
   flex: 1 1 auto;

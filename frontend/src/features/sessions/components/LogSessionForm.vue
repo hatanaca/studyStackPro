@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import Skeleton from 'primevue/skeleton'
@@ -8,6 +8,10 @@ import { useTechnologiesStore } from '@/stores/technologies.store'
 import { getApiErrorMessage } from '@/api/client'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import { useToast } from '@/composables/useToast'
+import {
+  STUDYTRACK_REMINDER_REMOVED_EVENT,
+  stripNotesLinesMatching,
+} from '@/features/sessions/utils/reminderRemovedSync'
 
 const props = defineProps<{
   showCancel?: boolean
@@ -32,10 +36,12 @@ const technologiesStore = useTechnologiesStore()
 const toast = useToast()
 
 const technologyId = ref('')
+const sessionTitle = ref('')
 const date = ref('')
 const durationMinutes = ref(30)
 const notes = ref('')
 const errors = ref<{
+  title?: string
   technology_id?: string
   date?: string
   duration?: string
@@ -52,6 +58,24 @@ const today = computed(() => {
   return `${y}-${m}-${day}`
 })
 
+/** Na página de uma tecnologia: sessão conta sempre para essa tecnologia (sem troca). */
+const technologyFixed = computed(() => !!props.defaultTechnologyId?.trim())
+
+const lockedTechnologyLabel = computed(() => {
+  const id = props.defaultTechnologyId?.trim()
+  if (!id) return ''
+  return technologiesStore.technologies.find((t) => t.id === id)?.name ?? ''
+})
+
+watch(
+  () => props.defaultTechnologyId,
+  (id) => {
+    const t = id?.trim()
+    if (t) technologyId.value = t
+  },
+  { immediate: true },
+)
+
 onMounted(async () => {
   try {
     if (!technologiesStore.technologies.length) {
@@ -63,15 +87,70 @@ onMounted(async () => {
     listReady.value = true
   }
   date.value = today.value
-  if (props.defaultTechnologyId) {
-    technologyId.value = props.defaultTechnologyId
-  } else if (technologiesStore.technologies.length) {
+  if (!props.defaultTechnologyId?.trim() && technologiesStore.technologies.length) {
     technologyId.value = technologiesStore.technologies[0].id
   }
+  window.addEventListener(
+    STUDYTRACK_REMINDER_REMOVED_EVENT,
+    onStudytrackReminderRemoved as EventListener,
+  )
 })
+
+onBeforeUnmount(() => {
+  window.removeEventListener(
+    STUDYTRACK_REMINDER_REMOVED_EVENT,
+    onStudytrackReminderRemoved as EventListener,
+  )
+})
+
+function onStudytrackReminderRemoved(ev: Event) {
+  const d = (ev as CustomEvent<{ technologyId?: string; text?: string }>).detail
+  // #region agent log
+  fetch('http://127.0.0.1:7251/ingest/086e8d00-457e-4a30-82b0-abf450d19c28', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '4b11d9' },
+    body: JSON.stringify({
+      sessionId: '4b11d9',
+      location: 'LogSessionForm.vue:onStudytrackReminderRemoved',
+      message: 'reminder removed (registrar sessão)',
+      data: {
+        hasDetail: !!d,
+        tidMatch: d?.technologyId === technologyId.value,
+        techId: technologyId.value,
+        eventTech: d?.technologyId,
+      },
+      timestamp: Date.now(),
+      hypothesisId: 'H2',
+    }),
+  }).catch(() => {})
+  // #endregion
+  if (!d?.technologyId || !d.text?.trim()) return
+  if (d.technologyId !== technologyId.value) return
+  const before = notes.value
+  notes.value = stripNotesLinesMatching(notes.value, d.text)
+  // #region agent log
+  fetch('http://127.0.0.1:7251/ingest/086e8d00-457e-4a30-82b0-abf450d19c28', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '4b11d9' },
+    body: JSON.stringify({
+      sessionId: '4b11d9',
+      location: 'LogSessionForm.vue:afterStripNotes',
+      message: 'observações após strip',
+      data: {
+        beforeLen: before.length,
+        afterLen: notes.value.length,
+        changed: before !== notes.value,
+      },
+      timestamp: Date.now(),
+      hypothesisId: 'H2',
+    }),
+  }).catch(() => {})
+  // #endregion
+}
 
 function validate(): boolean {
   const e: typeof errors.value = {}
+  if (!sessionTitle.value.trim()) e.title = 'Informe um nome para a sessão (ex.: Funções)'
   if (!technologyId.value) e.technology_id = 'Selecione uma tecnologia'
   if (!date.value) e.date = 'Data é obrigatória'
   if (!durationMinutes.value || durationMinutes.value < 1) {
@@ -102,6 +181,7 @@ async function onSubmit(e: Event) {
     }
     await sessionsApi.create({
       technology_id: technologyId.value,
+      title: sessionTitle.value.trim(),
       started_at: toISO(start),
       ended_at: toISO(end),
       duration_min: durationMinutes.value,
@@ -117,6 +197,7 @@ async function onSubmit(e: Event) {
       (technologiesStore.technologies.length ? technologiesStore.technologies[0].id : '')
     date.value = today.value
     durationMinutes.value = 30
+    sessionTitle.value = ''
     notes.value = ''
     emit('success', {
       date: savedDate,
@@ -161,23 +242,54 @@ function onCancel() {
   />
   <form v-else class="log-session-form" @submit="onSubmit">
     <div class="log-session-form__field">
-      <label for="log-tech" class="log-session-form__label"> Tecnologia </label>
-      <select
-        id="log-tech"
-        v-model="technologyId"
-        class="log-session-form__select"
-        :class="{ 'log-session-form__select--error': errors.technology_id }"
-        aria-label="Selecionar tecnologia da sessão"
-        @change="errors.technology_id = undefined"
-      >
-        <option value="" disabled>Selecione...</option>
-        <option v-for="t in technologiesStore.technologies" :key="t.id" :value="t.id">
-          {{ t.name }}
-        </option>
-      </select>
-      <p v-if="errors.technology_id" class="log-session-form__error">
-        {{ errors.technology_id }}
+      <label for="log-title" class="log-session-form__label"> Nome / tópico da sessão </label>
+      <input
+        id="log-title"
+        v-model="sessionTitle"
+        type="text"
+        class="log-session-form__input"
+        :class="{ 'log-session-form__input--error': errors.title }"
+        maxlength="255"
+        placeholder="Ex.: Funções, diretivas, testes unitários…"
+        autocomplete="off"
+        @input="errors.title = undefined"
+      />
+      <p v-if="errors.title" class="log-session-form__error">
+        {{ errors.title }}
       </p>
+    </div>
+    <div class="log-session-form__field">
+      <template v-if="technologyFixed">
+        <span class="log-session-form__label">Tecnologia</span>
+        <p class="log-session-form__locked-tech" aria-live="polite">
+          {{ lockedTechnologyLabel || '…' }}
+        </p>
+        <p class="log-session-form__tech-note">
+          Nesta página todas as sessões registam-se nesta tecnologia.
+        </p>
+      </template>
+      <template v-else>
+        <label for="log-tech" class="log-session-form__label"> Tecnologia </label>
+        <select
+          id="log-tech"
+          v-model="technologyId"
+          class="log-session-form__select"
+          :class="{ 'log-session-form__select--error': errors.technology_id }"
+          aria-label="Selecionar tecnologia da sessão"
+          @change="errors.technology_id = undefined"
+        >
+          <option value="" disabled>Selecione...</option>
+          <option v-for="t in technologiesStore.technologies" :key="t.id" :value="t.id">
+            {{ t.name }}
+          </option>
+        </select>
+        <p v-if="errors.technology_id" class="log-session-form__error">
+          {{ errors.technology_id }}
+        </p>
+        <button type="button" class="log-session-form__tech-manage" @click="router.push('/technologies')">
+          Gerir ou criar tecnologias
+        </button>
+      </template>
     </div>
 
     <div class="log-session-form__row">
@@ -218,7 +330,7 @@ function onCancel() {
         </p>
       </div>
       <div class="log-session-form__field">
-        <label for="log-notes" class="log-session-form__label"> Lembretes (opcional) </label>
+        <label for="log-notes" class="log-session-form__label"> Observações (opcional) </label>
         <textarea
           id="log-notes"
           v-model="notes"
@@ -265,6 +377,42 @@ function onCancel() {
   display: flex;
   flex-direction: column;
   gap: var(--form-field-gap);
+}
+.log-session-form__locked-tech {
+  margin: 0;
+  min-height: var(--form-input-height);
+  padding: var(--form-input-padding);
+  border: 1px solid var(--form-input-border);
+  border-radius: var(--form-input-radius);
+  font-size: var(--form-input-font-size);
+  font-weight: 600;
+  background: var(--form-input-bg);
+  color: var(--form-input-text);
+  line-height: var(--leading-snug);
+  display: flex;
+  align-items: center;
+}
+.log-session-form__tech-note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: var(--leading-snug);
+}
+.log-session-form__tech-manage {
+  align-self: flex-start;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.log-session-form__tech-manage:hover {
+  color: var(--color-primary-hover);
 }
 .log-session-form__row {
   display: flex;

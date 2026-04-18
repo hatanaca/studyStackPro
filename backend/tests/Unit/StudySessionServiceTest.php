@@ -126,6 +126,7 @@ class StudySessionServiceTest extends TestCase
             endedAt: null,
             notes: null,
             mood: null,
+            title: null,
         );
 
         $session = $this->service->create($this->user->id, $dto);

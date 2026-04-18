@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watchPostEffect, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useElementSize } from '@vueuse/core'
 import { useVirtualizer } from '@tanstack/vue-virtual'
@@ -11,7 +11,6 @@ import SessionCard from './SessionCard.vue'
 import SessionFilters from './SessionFilters.vue'
 import LogSessionForm from './LogSessionForm.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
-import { useTechnologiesStore } from '@/stores/technologies.store'
 import {
   useSessionsInfiniteQuery,
   useInvalidateSessionsInfinite,
@@ -25,15 +24,20 @@ import {
 } from '@/composables/useTextMeasure'
 import type { SessionListFilters } from '@/types/api.types'
 import type { StudySession } from '@/types/domain.types'
+import {
+  STUDYTRACK_REMINDER_REMOVED_EVENT,
+  stripNotesLinesMatching,
+} from '@/features/sessions/utils/reminderRemovedSync'
 
 const props = defineProps<{
   technologyId?: string
 }>()
 
-const CARD_FIXED_HEIGHT = 130
-const NOTES_MARGIN = 8
+/** Altura base cartão compacto (lista); medição virtualizada corrige diferenças. */
+const CARD_FIXED_HEIGHT = 96
+const NOTES_MARGIN = 6
 const MAX_NOTE_LINES = 3
-const CARD_GAP = 8
+const CARD_GAP = 6
 const SCROLL_THRESHOLD = 5
 
 let _toggleExtraPx: number | null = null
@@ -50,7 +54,6 @@ function estimateNotesToggleExtraPx(): number {
 const heightCache = new Map<string, number>()
 
 const route = useRoute()
-const technologiesStore = useTechnologiesStore()
 const invalidateSessions = useInvalidateSessionsInfinite()
 const sessionEdit = useSessionEdit()
 const sessionDelete = useSessionDelete()
@@ -58,6 +61,7 @@ const sessionDelete = useSessionDelete()
 const showEditModal = sessionEdit.showEditModal
 const showDeleteConfirm = sessionDelete.showDeleteConfirm
 const deletingSession = sessionDelete.deletingSession
+const editingSession = sessionEdit.editingSession
 const editForm = sessionEdit.editForm
 const editLoading = sessionEdit.editLoading
 const deleteLoading = sessionDelete.deleteLoading
@@ -76,7 +80,6 @@ const activeFilters = computed<SessionListFilters>(() => {
   if (filters.value.date_from) f.date_from = filters.value.date_from
   if (filters.value.date_to) f.date_to = filters.value.date_to
   if (filters.value.min_duration != null) f.min_duration = filters.value.min_duration
-  if (filters.value.mood != null) f.mood = filters.value.mood
   return f
 })
 
@@ -121,6 +124,9 @@ function scheduleFetchNextPageIfNeeded(instance: Virtualizer<HTMLElement, HTMLEl
   const items = instance.getVirtualItems()
   const lastIndex = items.length ? items[items.length - 1].index : -1
   if (fetchDebounceTimer) clearTimeout(fetchDebounceTimer)
+  const total = totalCount.value
+  const loaded = allSessions.value.length
+  if (total > 0 && loaded >= total) return
   if (
     lastIndex >= 0 &&
     lastIndex >= allSessions.value.length - SCROLL_THRESHOLD &&
@@ -135,6 +141,7 @@ function scheduleFetchNextPageIfNeeded(instance: Virtualizer<HTMLElement, HTMLEl
 
 const virtualizer = useVirtualizer<HTMLElement, HTMLElement>(
   computed(() => {
+    void scrollContainerRef.value
     const outerW = listOuterWidth.value || listRef.value?.clientWidth || 0
     return {
       count: allSessions.value.length,
@@ -149,27 +156,118 @@ const virtualizer = useVirtualizer<HTMLElement, HTMLElement>(
   })
 )
 
-function findScrollParent(el: HTMLElement | null): HTMLElement | null {
+/** Início da semana ISO (segunda-feira) no fuso local. */
+function startOfIsoWeek(d: Date): Date {
+  const day = d.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  const x = new Date(d)
+  x.setDate(d.getDate() + diff)
+  x.setHours(0, 0, 0, 0)
+  return x
+}
+
+const sessionStats = computed(() => {
+  const list = allSessions.value
+  const totalSessions = totalCount.value
+  let minutesSum = 0
+  const weekStart = startOfIsoWeek(new Date())
+  let weekCount = 0
+  for (const s of list) {
+    minutesSum += s.duration_min ?? 0
+    try {
+      const t = new Date(s.started_at).getTime()
+      if (!Number.isNaN(t) && t >= weekStart.getTime()) weekCount += 1
+    } catch {
+      /* ignore */
+    }
+  }
+  const hours = Math.round((minutesSum / 60) * 10) / 10
+  const partial = list.length < totalSessions && totalSessions > 0
+  return {
+    totalSessions,
+    hours,
+    weekCount,
+    partial,
+  }
+})
+
+function findScrollParent(el: HTMLElement | null): HTMLElement {
+  const wrap =
+    typeof document !== 'undefined'
+      ? document.querySelector<HTMLElement>('.app-layout__main-wrap')
+      : null
+  if (wrap) {
+    const { overflowY } = window.getComputedStyle(wrap)
+    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
+      return wrap
+    }
+  }
   let cur = el?.parentElement ?? null
   while (cur) {
     const { overflowY } = window.getComputedStyle(cur)
-    if (overflowY === 'auto' || overflowY === 'scroll') return cur
+    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') return cur
     cur = cur.parentElement
   }
   return document.documentElement
 }
 
 function onFiltersChange() {
-  // Infinite query resets automatically via queryKey change
+  heightCache.clear()
 }
+
+/** Na página Sessões, aplica filtro por tecnologia e leva o utilizador à lista (sem navegar para o detalhe). */
+function applyTechnologyFilter(technologyId: string | undefined) {
+  if (props.technologyId) return
+  const next: SessionListFilters = { ...filters.value }
+  if (technologyId) {
+    next.technology_id = technologyId
+  } else {
+    delete next.technology_id
+  }
+  filters.value = next
+  onFiltersChange()
+  void nextTick(() => {
+    document.getElementById('session-list-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+}
+
+watch(
+  () => props.technologyId,
+  (id) => {
+    if (id) {
+      filters.value = { ...filters.value, technology_id: id }
+      onFiltersChange()
+    }
+  }
+)
 
 async function onSessionCreated() {
   showAddModal.value = false
   await invalidateSessions()
 }
 
-onMounted(() => {
-  scrollContainerRef.value = findScrollParent(listRef.value)
+function onReminderRemovedSyncEditNotes(ev: Event) {
+  const d = (ev as CustomEvent<{ technologyId?: string; text?: string }>).detail
+  if (!d?.technologyId || !d.text?.trim()) return
+  const sess = editingSession.value
+  if (!showEditModal.value || !sess || sess.technology_id !== d.technologyId) return
+  editForm.value.notes = stripNotesLinesMatching(editForm.value.notes, d.text)
+}
+
+watchPostEffect(() => {
+  const el = listRef.value
+  if (!el) return
+  const next = findScrollParent(el)
+  if (scrollContainerRef.value !== next) {
+    scrollContainerRef.value = next
+  }
+})
+
+onMounted(async () => {
+  await nextTick()
+  if (listRef.value) {
+    scrollContainerRef.value = findScrollParent(listRef.value)
+  }
 
   if (!props.technologyId) {
     const techId = route.query.technology_id
@@ -177,6 +275,10 @@ onMounted(() => {
       filters.value = { ...filters.value, technology_id: techId }
     }
   }
+  window.addEventListener(
+    STUDYTRACK_REMINDER_REMOVED_EVENT,
+    onReminderRemovedSyncEditNotes as EventListener,
+  )
 })
 
 onBeforeUnmount(() => {
@@ -184,14 +286,34 @@ onBeforeUnmount(() => {
     clearTimeout(fetchDebounceTimer)
     fetchDebounceTimer = null
   }
+  window.removeEventListener(
+    STUDYTRACK_REMINDER_REMOVED_EVENT,
+    onReminderRemovedSyncEditNotes as EventListener,
+  )
+})
+
+defineExpose({
+  openAddModal: () => {
+    showAddModal.value = true
+  },
+  applyTechnologyFilter,
 })
 </script>
 
 <template>
-  <div class="session-list">
-    <div class="session-list__header">
-      <h2>Sessões de estudo</h2>
-      <Button label="Nova sessão" size="small" @click="showAddModal = true" />
+  <div id="session-list-anchor" class="session-list">
+    <div v-if="technologyId" class="session-list__stats" aria-label="Resumo das sessões">
+      <div class="session-list__stat">
+        <span class="session-list__stat-label">Total de horas</span>
+        <span class="session-list__stat-value">{{ sessionStats.hours }}h</span>
+        <span v-if="sessionStats.partial" class="session-list__stat-note">nas carregadas</span>
+        <span class="session-list__stat-sub">{{ sessionStats.totalSessions }} sessões</span>
+      </div>
+      <div class="session-list__stat">
+        <span class="session-list__stat-label">Esta semana</span>
+        <span class="session-list__stat-value">{{ sessionStats.weekCount }}</span>
+        <span class="session-list__stat-sub">sessões</span>
+      </div>
     </div>
 
     <SessionFilters v-model="filters" :hide-technology="!!technologyId" @change="onFiltersChange" />
@@ -247,6 +369,7 @@ onBeforeUnmount(() => {
       >
         <SessionCard
           :session="allSessions[row.index]"
+          :topic-only="!!technologyId"
           @edit="sessionEdit.openEdit"
           @delete="sessionDelete.openDelete"
         />
@@ -298,15 +421,25 @@ onBeforeUnmount(() => {
       :style="{ width: 'min(90vw, 420px)' }"
       @hide="sessionEdit.closeEdit"
     >
+      <div class="edit-form-scroll">
       <form class="edit-form" @submit.prevent="sessionEdit.saveEdit">
         <div class="edit-form__field">
-          <label class="edit-form__label">Tecnologia</label>
-          <select v-model="editForm.technology_id" class="edit-form__select">
-            <option value="" disabled>Selecione...</option>
-            <option v-for="t in technologiesStore.technologies" :key="t.id" :value="t.id">
-              {{ t.name }}
-            </option>
-          </select>
+          <label class="edit-form__label">Nome / tópico da sessão</label>
+          <input
+            v-model="editForm.title"
+            type="text"
+            class="edit-form__input"
+            maxlength="255"
+            placeholder="Ex.: Funções, rotas, testes…"
+            autocomplete="off"
+          />
+        </div>
+        <div class="edit-form__field">
+          <span class="edit-form__label">Tecnologia</span>
+          <p class="edit-form__tech-readonly" aria-live="polite">
+            {{ editingSession?.technology?.name ?? '—' }}
+          </p>
+          <p class="edit-form__tech-note">A tecnologia da sessão não pode ser alterada.</p>
         </div>
 
         <div class="edit-form__row">
@@ -328,7 +461,7 @@ onBeforeUnmount(() => {
 
         <div class="edit-form__field">
           <label class="edit-form__label">Observações</label>
-          <textarea v-model="editForm.notes" rows="2" class="edit-form__textarea" />
+          <textarea v-model="editForm.notes" rows="4" class="edit-form__textarea" />
         </div>
 
         <div class="edit-form__actions">
@@ -345,6 +478,7 @@ onBeforeUnmount(() => {
           />
         </div>
       </form>
+      </div>
     </Dialog>
 
     <!-- Delete confirm modal -->
@@ -357,8 +491,10 @@ onBeforeUnmount(() => {
     >
       <div class="delete-confirm">
         <p class="delete-confirm__msg">
-          Tem certeza que deseja excluir esta sessão de
-          <strong>{{ deletingSession?.technology?.name ?? 'estudo' }}</strong
+          Tem certeza que deseja excluir a sessão
+          <strong>{{
+            deletingSession?.title?.trim() || deletingSession?.technology?.name || 'estudo'
+          }}</strong
           >?
         </p>
         <p class="delete-confirm__hint">Esta ação não pode ser desfeita.</p>
@@ -381,27 +517,51 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.session-list__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--page-section-gap);
-  flex-wrap: wrap;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-lg) var(--spacing-xl);
-  background: var(--surface-page-header-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--surface-page-header-shadow);
+.edit-form-scroll {
+  max-height: min(70vh, 26rem);
+  overflow-y: auto;
+  padding-right: var(--spacing-2xs);
 }
-.session-list h2 {
+.session-list__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md) 0;
+}
+.session-list__stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+  min-width: 0;
+}
+.session-list__stat-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.session-list__stat-value {
   font-family: var(--font-display);
-  font-size: var(--text-lg);
+  font-size: var(--text-xl);
   font-weight: 700;
-  margin: 0;
-  color: var(--color-text);
-  letter-spacing: var(--tracking-tight);
   line-height: var(--leading-tight);
+  color: var(--color-text);
+}
+.session-list__stat-sub {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.session-list__stat-note {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+@media (max-width: 640px) {
+  .session-list__stats {
+    grid-template-columns: 1fr;
+  }
 }
 .session-list__grid {
   display: flex;
@@ -473,12 +633,36 @@ onBeforeUnmount(() => {
   font-size: var(--form-label-size);
   font-weight: var(--form-label-weight);
   letter-spacing: var(--form-label-tracking);
-  margin-bottom: var(--form-field-gap);
+  margin-bottom: 0;
   color: var(--form-label-color);
 }
 .edit-form__field {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--form-field-gap);
+}
+.edit-form__tech-readonly {
+  margin: 0;
+  min-height: var(--form-input-height);
+  padding: var(--form-input-padding);
+  border: 1px solid var(--form-input-border);
+  border-radius: var(--form-input-radius);
+  font-size: var(--form-input-font-size);
+  font-weight: 600;
+  background: var(--color-bg-soft);
+  color: var(--form-input-text);
+  line-height: var(--leading-snug);
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+.edit-form__tech-note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: var(--leading-snug);
 }
 .edit-form__row {
   display: flex;
@@ -507,11 +691,14 @@ onBeforeUnmount(() => {
 }
 .edit-form__textarea {
   width: 100%;
+  min-height: 6rem;
+  max-height: 9rem;
   padding: var(--form-input-padding);
   border: 1px solid var(--form-input-border);
   border-radius: var(--form-input-radius);
   font-size: var(--form-input-font-size);
-  resize: vertical;
+  resize: none;
+  overflow-y: auto;
   box-sizing: border-box;
   background: var(--form-input-bg);
   color: var(--form-input-text);

@@ -40,6 +40,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  /* Evita caret de seleção em texto de UI (logs: selectionType Caret + activeElement BODY). */
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 input,
@@ -48,6 +52,17 @@ textarea,
 button {
   font: inherit;
   color: inherit;
+}
+
+/* Campos e blocos opt-in continuam com seleção/caret de texto. */
+input,
+textarea,
+select,
+option,
+[contenteditable='true'],
+.allow-user-select {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 a {

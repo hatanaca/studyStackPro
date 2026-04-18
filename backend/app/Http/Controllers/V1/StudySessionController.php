@@ -70,6 +70,7 @@ class StudySessionController extends Controller
             notes: $validated['notes'] ?? null,
             mood: $validated['mood'] ?? null,
             focusScore: $validated['focus_score'] ?? null,
+            title: $validated['title'],
         );
         $session = $this->studySessionService->create($request->user()->id, $dto);
 
@@ -147,6 +148,7 @@ class StudySessionController extends Controller
             endedAt: null,
             notes: null,
             mood: null,
+            title: null,
         );
 
         try {

@@ -26,6 +26,7 @@ const sessionMetaItems = computed(() => {
   const duration = s.duration_formatted ?? (s.duration_min != null ? `${s.duration_min} min` : '—')
   return [
     { label: 'Tecnologia', value: s.technology?.name ?? '—' },
+    ...(s.title?.trim() ? [{ label: 'Nome da sessão', value: s.title.trim() }] : []),
     { label: 'Início', value: s.started_at ? formatDateTime(s.started_at) : '—' },
     { label: 'Fim', value: s.ended_at ? formatDateTime(s.ended_at) : '—' },
     { label: 'Duração', value: duration },
@@ -67,7 +68,15 @@ const pageSubtitle = computed(() => {
   if (!s) return ''
   const tech = s.technology?.name ?? 'Estudo'
   const dur = s.duration_formatted ?? (s.duration_min != null ? `${s.duration_min} min` : '')
+  const name = s.title?.trim()
+  if (name && dur) return `${name} · ${tech} · ${dur}`
+  if (name) return `${name} · ${tech}`
   return dur ? `${tech} · ${dur}` : tech
+})
+
+const pageTitle = computed(() => {
+  const t = session.value?.title?.trim()
+  return t ? `Sessão: ${t}` : 'Sessão de estudo'
 })
 
 function goBack() {
@@ -89,7 +98,7 @@ function goBack() {
         : []),
       { label: 'Sessão de estudo' },
     ]"
-    title="Sessão de estudo"
+    :title="pageTitle"
     :subtitle="pageSubtitle"
     narrow
   >

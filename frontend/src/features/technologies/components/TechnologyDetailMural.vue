@@ -33,6 +33,7 @@ const newUrl = ref('')
 const newQuote = ref('')
 const showAddImage = ref(false)
 const showAddQuote = ref(false)
+const imageFileInputRef = ref<HTMLInputElement | null>(null)
 const gridRef = ref<HTMLElement>()
 const { width: containerWidth } = useElementSize(gridRef)
 
@@ -122,8 +123,22 @@ function saveToStorage() {
   }
 }
 
+function normalizeImageUrl(raw: string): string | null {
+  const u = raw.trim()
+  if (!u) return null
+  if (/^data:image\//i.test(u)) return u
+  if (/^https?:\/\//i.test(u)) return u
+  if (/^\/\//.test(u)) return `https:${u}`
+  if (/\.(png|jpe?g|gif|webp|svg|avif)(\?|#|$)/i.test(u)) {
+    return u.includes('://') ? u : `https://${u}`
+  }
+  return u.includes('.') && !/\s/.test(u) ? `https://${u}` : null
+}
+
+const canAddImageFromUrl = computed(() => normalizeImageUrl(newUrl.value) != null)
+
 function addImage() {
-  const url = newUrl.value.trim()
+  const url = normalizeImageUrl(newUrl.value)
   if (!url) return
   items.value = [
     ...items.value,
@@ -132,6 +147,36 @@ function addImage() {
   newUrl.value = ''
   showAddImage.value = false
   saveToStorage()
+}
+
+function onPickImageFile(ev: Event) {
+  const input = ev.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file || !file.type.startsWith('image/')) {
+    input.value = ''
+    return
+  }
+  const reader = new FileReader()
+  reader.onload = () => {
+    const dataUrl = reader.result
+    if (typeof dataUrl === 'string' && dataUrl.startsWith('data:image')) {
+      items.value = [
+        ...items.value,
+        { id: crypto.randomUUID?.() ?? String(Date.now()), type: 'image', url: dataUrl },
+      ]
+      saveToStorage()
+    }
+    input.value = ''
+    showAddImage.value = false
+  }
+  reader.onerror = () => {
+    input.value = ''
+  }
+  reader.readAsDataURL(file)
+}
+
+function openImageFilePicker() {
+  imageFileInputRef.value?.click()
 }
 
 function addQuote() {
@@ -153,9 +198,21 @@ function removeItem(item: MuralItem) {
 
 function onImageError(e: Event) {
   const target = e.target as HTMLImageElement
+  const badSrc = target?.src
   if (target) target.style.display = 'none'
-  const item = items.value.find((i) => i.type === 'image' && i.url === target?.src)
-  if (item) item.type = 'quote' as MuralItem['type']
+  if (!badSrc) return
+  items.value = items.value.filter((i) => !(i.type === 'image' && i.url === badSrc))
+  saveToStorage()
+}
+
+function toggleAddImage() {
+  showAddImage.value = !showAddImage.value
+  showAddQuote.value = false
+}
+
+function toggleAddQuote() {
+  showAddQuote.value = !showAddQuote.value
+  showAddImage.value = false
 }
 
 onMounted(loadFromStorage)
@@ -169,38 +226,48 @@ watch(() => props.technologyId, loadFromStorage)
       Adicione imagens (URL) ou citações para inspirar seus estudos.
     </p>
 
+    <input
+      ref="imageFileInputRef"
+      type="file"
+      class="tech-mural__file-input"
+      accept="image/*"
+      aria-hidden="true"
+      tabindex="-1"
+      @change="onPickImageFile"
+    />
+
     <div class="tech-mural__add">
       <Button
         :label="showAddImage ? 'Cancelar' : '+ Imagem'"
         size="small"
         variant="outlined"
         severity="secondary"
-        @click="
-          showAddImage = !showAddImage
-          showAddQuote = false
-        "
+        @click="toggleAddImage"
       />
       <Button
         :label="showAddQuote ? 'Cancelar' : '+ Citação'"
         size="small"
         variant="outlined"
         severity="secondary"
-        @click="
-          showAddQuote = !showAddQuote
-          showAddImage = false
-        "
+        @click="toggleAddQuote"
       />
     </div>
 
-    <div v-if="showAddImage" class="tech-mural__form">
-      <input
-        v-model="newUrl"
-        type="url"
-        class="tech-mural__input"
-        placeholder="https://..."
-        @keyup.enter.prevent="addImage"
-      />
-      <Button label="Adicionar" size="small" :disabled="!newUrl.trim()" @click="addImage" />
+    <div v-if="showAddImage" class="tech-mural__form tech-mural__form--stack">
+      <div class="tech-mural__form-row">
+        <input
+          v-model="newUrl"
+          type="text"
+          class="tech-mural__input"
+          placeholder="URL da imagem (https://…)"
+          @keyup.enter.prevent="addImage"
+        />
+        <Button label="Adicionar URL" size="small" :disabled="!canAddImageFromUrl" @click="addImage" />
+      </div>
+      <div class="tech-mural__upload-row">
+        <span class="tech-mural__upload-hint">ou envie um ficheiro do computador</span>
+        <Button label="Escolher ficheiro…" size="small" severity="secondary" @click="openImageFilePicker" />
+      </div>
     </div>
     <div v-if="showAddQuote" class="tech-mural__form">
       <textarea
@@ -208,7 +275,7 @@ watch(() => props.technologyId, loadFromStorage)
         class="tech-mural__textarea"
         rows="2"
         placeholder="Digite uma citação..."
-        @keydown.ctrl.enter.prevent="addQuote"
+        @keydown.enter.exact.prevent="addQuote"
       />
       <Button label="Adicionar" size="small" :disabled="!newQuote.trim()" @click="addQuote" />
     </div>
@@ -216,6 +283,7 @@ watch(() => props.technologyId, loadFromStorage)
     <div
       v-if="items.length"
       ref="gridRef"
+      v-viewer.rebuild
       class="tech-mural__masonry"
       :style="{ height: `${masonry.totalHeight}px` }"
     >
@@ -265,6 +333,7 @@ watch(() => props.technologyId, loadFromStorage)
 
 <style scoped>
 .tech-mural {
+  position: relative;
   background: var(--color-bg-card);
   border-radius: var(--radius-md);
   padding: var(--widget-padding);
@@ -288,11 +357,38 @@ watch(() => props.technologyId, loadFromStorage)
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-lg);
 }
+.tech-mural__file-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
 .tech-mural__form {
   display: flex;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-lg);
   align-items: flex-start;
+}
+.tech-mural__form--stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+.tech-mural__form-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: flex-start;
+  width: 100%;
+}
+.tech-mural__upload-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+.tech-mural__upload-hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
 }
 .tech-mural__add :deep(.p-button:focus-visible),
 .tech-mural__form :deep(.p-button:focus-visible) {
@@ -369,6 +465,7 @@ watch(() => props.technologyId, loadFromStorage)
   height: 100%;
   object-fit: cover;
   display: block;
+  cursor: zoom-in;
 }
 .tech-mural__quote {
   margin: 0;

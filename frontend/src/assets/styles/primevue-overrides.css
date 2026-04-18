@@ -268,13 +268,25 @@ input.p-inputtext[type='datetime-local'] {
 }
 
 /* ── ConfirmDialog ── */
+.p-confirmdialog.p-dialog {
+  width: min(92vw, 22rem);
+  max-width: 22rem;
+}
+.p-confirmdialog .p-dialog-header {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--text-base);
+}
 .p-confirmdialog .p-dialog-content {
-  padding-top: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg) var(--spacing-lg);
 }
 .p-confirmdialog-message {
   font-size: var(--text-sm);
   line-height: var(--leading-normal);
   color: var(--color-text);
+}
+.p-confirmdialog .p-dialog-footer {
+  padding: 0 var(--spacing-lg) var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
 /* ── Skeleton ── */
