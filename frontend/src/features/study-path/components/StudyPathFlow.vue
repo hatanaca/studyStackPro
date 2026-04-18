@@ -523,9 +523,9 @@ function onNodeDoubleClick(e: NodeMouseEvent) {
       <div class="study-path-editor__viewport" role="application" aria-label="Editor de mapa de estudos">
         <div ref="mapViewportRef" class="study-path-editor__viewport-inner" tabindex="-1">
           <VueFlow
-            class="study-path-editor__flow"
             v-model:nodes="nodes"
             v-model:edges="edges"
+            class="study-path-editor__flow"
             :fit-view-on-init="false"
             :default-viewport="{ zoom: 0.48, x: 0, y: 0 }"
             :min-zoom="0.22"
