@@ -74,7 +74,7 @@ defineExpose({ openCreate })
     <Dialog
       v-model:visible="showForm"
       modal
-      dismissableMask
+      dismissable-mask
       :header="formDialogTitle"
       :style="{ width: 'min(90vw, 440px)' }"
       :breakpoints="{ '640px': '95vw' }"
