@@ -13,7 +13,6 @@ import {
   inject,
   ref,
 } from 'vue'
-import { useRouter } from 'vue-router'
 import { useApexChartTheme } from '@/composables/useApexChartTheme'
 import { useDashboardQuery } from '@/features/dashboard/composables/useDashboardQuery'
 import { useDashboard } from '@/features/dashboard/composables/useDashboard'
@@ -21,8 +20,6 @@ import { useAnalyticsStore } from '@/stores/analytics.store'
 import Skeleton from 'primevue/skeleton'
 import DashboardHeader from '@/features/dashboard/components/DashboardHeader.vue'
 import ErrorCard from '@/components/ui/ErrorCard.vue'
-import EmptyState from '@/components/ui/EmptyState.vue'
-import KpiCards from '@/features/dashboard/components/KpiCards.vue'
 import TodaySummaryCard from '@/features/dashboard/components/TodaySummaryCard.vue'
 import OnboardingBanner from '@/components/onboarding/OnboardingBanner.vue'
 
@@ -41,12 +38,14 @@ const LogSessionWidget = defineAsyncComponent({
             'aria-label': 'Carregando formulário de registro',
           },
           [
-            h(Skeleton, {
-              width: '42%',
-              height: '1rem',
-              class: 'dashboard-log-session-loading__title',
-            }),
-            h(Skeleton, { width: '100%', height: '11rem' }),
+            h('div', { class: 'dashboard-log-session-loading__head' }, [
+              h(Skeleton, {
+                width: '42%',
+                height: '1rem',
+                class: 'dashboard-log-session-loading__title',
+              }),
+              h(Skeleton, { width: '8.5rem', height: '2rem', borderRadius: 'var(--radius-md)' }),
+            ]),
           ]
         )
     },
@@ -79,7 +78,6 @@ const GoalsWidget = defineAsyncComponent(
   () => import('@/features/dashboard/components/GoalsWidget.vue')
 )
 
-const router = useRouter()
 const stakentStyle = inject<{ value: boolean }>('stakentStyle', { value: false })
 const { theme: chartTheme } = useApexChartTheme()
 const stakentMetricColors = computed(() => ({
@@ -94,6 +92,23 @@ const { initDashboard } = useDashboard({
 const analyticsStore = useAnalyticsStore()
 const hasError = computed(() => dashboardQuery.isError.value)
 const showHeavyWidgets = ref(false)
+
+const TODAY_SUMMARY_DISMISS_KEY = 'studytrack.todaySummaryDismissed'
+function todayCalendarKey(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+const showTodaySummaryFloat = ref(false)
+
+function dismissTodaySummaryFloat() {
+  try {
+    localStorage.setItem(TODAY_SUMMARY_DISMISS_KEY, todayCalendarKey())
+  } catch {
+    /* ignore */
+  }
+  showTodaySummaryFloat.value = false
+}
 type IdleCapableGlobal = typeof globalThis & {
   requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void
 }
@@ -124,6 +139,14 @@ watch(
 let _heavyWidgetTimer: ReturnType<typeof setTimeout> | null = null
 
 onMounted(async () => {
+  try {
+    if (localStorage.getItem(TODAY_SUMMARY_DISMISS_KEY) !== todayCalendarKey()) {
+      showTodaySummaryFloat.value = true
+    }
+  } catch {
+    showTodaySummaryFloat.value = true
+  }
+
   try {
     await initDashboard()
   } catch {
@@ -158,13 +181,30 @@ async function retry() {
   ])
 }
 
-function goRegisterSession() {
-  router.push({ name: 'sessions' })
-}
 </script>
 
 <template>
   <div class="dashboard">
+    <Teleport to="body">
+      <Transition name="today-summary-float">
+        <aside
+          v-if="showTodaySummaryFloat && !stakentStyle?.value"
+          class="today-summary-float"
+          role="complementary"
+          aria-label="Resumo de hoje"
+        >
+          <button
+            type="button"
+            class="today-summary-float__close"
+            aria-label="Fechar resumo de hoje"
+            @click="dismissTodaySummaryFloat"
+          >
+            <i class="pi pi-times" aria-hidden="true" />
+          </button>
+          <TodaySummaryCard class="today-summary-float__card" />
+        </aside>
+      </Transition>
+    </Teleport>
     <DashboardHeader v-if="!stakentStyle?.value" />
     <div v-if="hasError" class="dashboard__error">
       <ErrorCard
@@ -224,10 +264,14 @@ function goRegisterSession() {
             aria-live="polite"
             aria-label="Carregando dashboard"
           >
-            <section class="kpi-skeleton">
-              <div v-for="i in 3" :key="i" class="kpi-card-skeleton">
-                <Skeleton width="60%" height="0.875rem" />
-                <Skeleton width="80%" height="1.5rem" class="skeleton-spacer" />
+            <section class="dashboard-two-skeleton">
+              <div class="kpi-card-skeleton">
+                <Skeleton width="45%" height="1rem" />
+                <Skeleton width="7rem" height="2rem" class="skeleton-spacer" />
+              </div>
+              <div class="kpi-card-skeleton">
+                <Skeleton width="45%" height="1rem" />
+                <Skeleton width="7rem" height="2rem" class="skeleton-spacer" />
               </div>
             </section>
           </div>
@@ -245,35 +289,17 @@ function goRegisterSession() {
             <RemindersWidget />
           </div>
           <div class="widgets__item widgets__item--2">
-            <TodaySummaryCard />
-          </div>
-          <template v-if="analyticsStore.userMetrics">
-            <div class="widgets__item widgets__item--3">
-              <KpiCards :metrics="analyticsStore.userMetrics" />
-            </div>
-          </template>
-          <div v-else class="widgets__item widgets__item--3 widgets__item--full dashboard__empty">
-            <EmptyState
-              title="Nenhum dado ainda"
-              description="Sua primeira sessão desbloqueia métricas e gráficos. Registre uma sessão para ver totais, evolução e metas."
-              icon="📊"
-              action-label="Registrar sessão"
-              :hide-action="false"
-              @action="goRegisterSession"
-            />
-          </div>
-          <div class="widgets__item widgets__item--4">
             <GoalsWidget />
           </div>
           <template v-if="showHeavyWidgets">
-            <div class="widgets__item widgets__item--5 widget-full">
+            <div class="widgets__item widgets__item--3 widget-full">
               <TimeSeriesWidget />
             </div>
-            <div class="widgets__item widgets__item--6 widget-full">
+            <div class="widgets__item widgets__item--4 widget-full">
               <WeeklyComparisonWidget />
             </div>
             <template v-if="analyticsStore.technologyMetrics?.length">
-              <div class="widgets__item widgets__item--7 widget-full">
+              <div class="widgets__item widgets__item--5 widget-full">
                 <TechDistributionWidget
                   :metrics="analyticsStore.technologyMetrics"
                   :loading="analyticsStore.isRecalculating"
@@ -282,7 +308,7 @@ function goRegisterSession() {
             </template>
           </template>
           <template v-else>
-            <div class="widgets__item widgets__item--5 widget-full">
+            <div class="widgets__item widgets__item--3 widget-full">
               <section class="kpi-card-skeleton" aria-hidden="true">
                 <Skeleton width="45%" height="1rem" />
                 <Skeleton width="100%" height="14rem" class="skeleton-spacer" />
@@ -309,13 +335,6 @@ function goRegisterSession() {
 .dashboard__error {
   margin: var(--spacing-lg) 0;
   max-width: 28rem;
-}
-.dashboard__empty {
-  min-height: var(--widget-card-min-height);
-}
-.dashboard__empty :deep(.empty-state) {
-  border-radius: var(--widget-radius);
-  min-height: min(var(--empty-state-min-height), 100%);
 }
 .widgets {
   display: grid;
@@ -353,12 +372,6 @@ function goRegisterSession() {
   .widgets--animate .widgets__item--5 {
     animation-delay: 0.2s;
   }
-  .widgets--animate .widgets__item--6 {
-    animation-delay: 0.23s;
-  }
-  .widgets--animate .widgets__item--7 {
-    animation-delay: 0.26s;
-  }
 }
 @keyframes fadeUpIn {
   from {
@@ -374,7 +387,8 @@ function goRegisterSession() {
 .widgets__item--1,
 .widgets__item--2,
 .widgets__item--3,
-.widgets__item--4 {
+.widgets__item--4,
+.widgets__item--5 {
   min-width: 0;
 }
 /* Mesma altura: Registrar estudo e Lembretes rápidos */
@@ -384,13 +398,7 @@ function goRegisterSession() {
   flex-direction: column;
   align-items: stretch;
 }
-.widgets__item--0 :deep(.p-card) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-.widgets__item--0 :deep(.p-card-content) {
+.widgets__item--0 .log-session-widget {
   flex: 1;
   min-height: 0;
 }
@@ -399,6 +407,9 @@ function goRegisterSession() {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+}
+.widgets__item--2 :deep(.p-card) {
+  height: 100%;
 }
 .widgets__item--full {
   grid-column: 1 / -1;
@@ -415,22 +426,19 @@ function goRegisterSession() {
     grid-column: 2;
   }
   .widgets__item--2 {
-    grid-column: 1;
+    grid-column: 1 / -1;
   }
   .widgets__item--3 {
-    grid-column: 2;
-  }
-  .widgets__item--4 {
     grid-column: 1 / -1;
   }
-  .widgets__item--5,
-  .widgets__item--6,
-  .widgets__item--7 {
+  .widgets__item--3,
+  .widgets__item--4,
+  .widgets__item--5 {
     grid-column: 1 / -1;
   }
-  .widgets__item--5,
-  .widgets__item--6,
-  .widgets__item--7 {
+  .widgets__item--3,
+  .widgets__item--4,
+  .widgets__item--5 {
     min-height: var(--widget-chart-min-height-sm);
   }
 }
@@ -449,57 +457,42 @@ function goRegisterSession() {
     grid-row: 1;
   }
   .widgets__item--2 {
-    grid-column: 1 / 5;
+    grid-column: 1 / -1;
     grid-row: 2;
+    min-width: 0;
   }
   .widgets__item--3 {
-    grid-column: 5 / 13;
-    grid-row: 2;
-  }
-  .widgets__item--4 {
     grid-column: 1 / -1;
     grid-row: 3;
     grid-row-start: 3;
     grid-row-end: 4;
+    min-height: var(--widget-chart-min-height);
     min-width: 0;
   }
-  .widgets__item--5 {
-    grid-column: 1 / -1;
+  .widgets__item--4 {
+    grid-column: 1 / 13;
     grid-row: 4;
     grid-row-start: 4;
     grid-row-end: 5;
     min-height: var(--widget-chart-min-height);
-    min-width: 0;
   }
-  .widgets__item--6 {
+  .widgets__item--5 {
     grid-column: 1 / 13;
     grid-row: 5;
     grid-row-start: 5;
     grid-row-end: 6;
     min-height: var(--widget-chart-min-height);
   }
-  .widgets__item--7 {
-    grid-column: 1 / 13;
-    grid-row: 6;
-    grid-row-start: 6;
-    grid-row-end: 7;
-    min-height: var(--widget-chart-min-height);
-  }
 }
-.kpi-skeleton {
+.dashboard-two-skeleton {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--widget-gap);
 }
 @media (min-width: 640px) {
-  .kpi-skeleton {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  }
-}
-@media (min-width: 1024px) {
-  .kpi-skeleton {
-    grid-template-columns: repeat(3, 1fr);
+  .dashboard-two-skeleton {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 .kpi-card-skeleton {
@@ -522,6 +515,71 @@ function goRegisterSession() {
 }
 .dashboard-register {
   margin-bottom: 0;
+}
+
+.today-summary-float {
+  position: fixed;
+  z-index: 2000;
+  right: max(var(--spacing-md), env(safe-area-inset-right));
+  bottom: max(var(--spacing-md), env(safe-area-inset-bottom));
+  width: min(22.5rem, calc(100vw - var(--spacing-xl)));
+  max-height: min(70vh, 28rem);
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+  filter: drop-shadow(0 12px 40px color-mix(in srgb, var(--color-text) 18%, transparent));
+}
+.today-summary-float__close {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  z-index: 2;
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-bg-card) 88%, transparent);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+}
+.today-summary-float__close:hover {
+  background: var(--color-bg-soft);
+  color: var(--color-text);
+}
+.today-summary-float__card {
+  overflow: auto;
+  max-height: inherit;
+  border-radius: var(--radius-lg);
+}
+.today-summary-float__card :deep(.today-summary) {
+  min-height: 0;
+  margin: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .today-summary-float-enter-active,
+  .today-summary-float-leave-active {
+    transition:
+      opacity var(--duration-slow) var(--ease-out-expo),
+      transform var(--duration-slow) var(--ease-out-expo);
+  }
+  .today-summary-float-enter-from,
+  .today-summary-float-leave-to {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .today-summary-float-enter-active,
+  .today-summary-float-leave-active {
+    transition: none;
+  }
 }
 
 /* Layout estilo Stakent */
@@ -591,6 +649,13 @@ function goRegisterSession() {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+}
+.dashboard-log-session-loading__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
 }
 .dashboard-log-session-loading__title {
   display: block;

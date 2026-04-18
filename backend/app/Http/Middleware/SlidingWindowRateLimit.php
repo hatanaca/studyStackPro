@@ -34,51 +34,10 @@ class SlidingWindowRateLimit
 
             [$allowed, $retryAfter] = $this->normalizeResult($result);
 
-            // #region agent log
-            @file_put_contents(
-                base_path('../debug-ba100a.log'),
-                json_encode([
-                    'sessionId' => 'ba100a',
-                    'runId' => 'project-smoke',
-                    'hypothesisId' => 'H4',
-                    'location' => 'backend/app/Http/Middleware/SlidingWindowRateLimit.php',
-                    'message' => 'rate_limit_evaluated',
-                    'data' => [
-                        'path' => $path,
-                        'limit' => $limit,
-                        'allowed' => $allowed,
-                        'retryAfter' => $retryAfter,
-                    ],
-                    'timestamp' => (int) round(microtime(true) * 1000),
-                ], JSON_UNESCAPED_SLASHES).PHP_EOL,
-                FILE_APPEND
-            );
-            // #endregion
-
             if ($allowed !== 1) {
                 return $this->buildBlockedResponse($limit, $retryAfter);
             }
         } catch (Throwable $exception) {
-            // #region agent log
-            @file_put_contents(
-                base_path('../debug-ba100a.log'),
-                json_encode([
-                    'sessionId' => 'ba100a',
-                    'runId' => 'project-smoke',
-                    'hypothesisId' => 'H4',
-                    'location' => 'backend/app/Http/Middleware/SlidingWindowRateLimit.php',
-                    'message' => 'rate_limit_exception',
-                    'data' => [
-                        'path' => $path,
-                        'limit' => $limit,
-                        'error' => $exception->getMessage(),
-                        'failOpen' => (bool) config('services.rate_limit.fail_open', false),
-                    ],
-                    'timestamp' => (int) round(microtime(true) * 1000),
-                ], JSON_UNESCAPED_SLASHES).PHP_EOL,
-                FILE_APPEND
-            );
-            // #endregion
             Log::warning('Sliding window Lua indisponível.', [
                 'path' => $path,
                 'user_key' => $userKey,

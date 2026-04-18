@@ -63,6 +63,7 @@ class PayloadInjectionTest extends TestCase
         $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
             ->postJson('/api/v1/study-sessions', [
                 'technology_id' => $this->technology->id,
+                'title' => 'Ignorar user_id',
                 'started_at' => now()->subHour()->toIso8601String(),
                 'ended_at' => now()->toIso8601String(),
                 'user_id' => $otherUser->id,
@@ -79,6 +80,7 @@ class PayloadInjectionTest extends TestCase
         $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
             ->postJson('/api/v1/study-sessions', [
                 'technology_id' => $this->technology->id,
+                'title' => 'Ignorar duration',
                 'started_at' => now()->subHour()->toIso8601String(),
                 'ended_at' => now()->toIso8601String(),
                 'duration_min' => 999,
@@ -125,6 +127,7 @@ class PayloadInjectionTest extends TestCase
         $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
             ->postJson('/api/v1/study-sessions', [
                 'technology_id' => $this->technology->id,
+                'title' => 'Notas XSS',
                 'started_at' => now()->subHour()->toIso8601String(),
                 'ended_at' => now()->toIso8601String(),
                 'notes' => $xssPayload,

@@ -10,10 +10,12 @@ import App from './App.vue'
 import router from './router'
 import './assets/styles/main.css'
 import 'primeicons/primeicons.css'
+import 'viewerjs/dist/viewer.css'
+import VueViewer from 'v-viewer'
 
 /**
  * Bootstrap da aplicação Vue.
- * Plugins: Pinia, Vue Query, Router, PrimeVue (Aura), Confirmation, Toast.
+ * Plugins: Pinia, Vue Query, Router, PrimeVue (Aura), Confirmation, Toast, v-viewer.
  * Tema (light/dark) aplicado no document antes do primeiro render.
  */
 const savedTheme = (() => {
@@ -60,4 +62,9 @@ app.use(PrimeVue, {
 })
 app.use(ConfirmationService)
 app.use(ToastService)
+app.use(VueViewer, {
+  defaultOptions: {
+    zIndex: 12000,
+  },
+})
 app.mount('#app')

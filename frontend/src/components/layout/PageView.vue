@@ -26,16 +26,21 @@ withDefaults(
       class="page-view__breadcrumb"
     />
     <header v-if="title" class="page-header page-view__header">
-      <div class="page-view__header-inner">
-        <h1 v-if="title" class="page-title">
-          {{ title }}
-        </h1>
-        <p v-if="subtitle" class="page-subtitle">
-          {{ subtitle }}
-        </p>
-        <div v-if="$slots.hint" class="page-hint" role="status" aria-live="polite">
-          <slot name="hint" />
+      <div class="page-view__header-row">
+        <div class="page-view__header-inner">
+          <h1 v-if="title" class="page-title">
+            {{ title }}
+          </h1>
+          <p v-if="subtitle" class="page-subtitle">
+            {{ subtitle }}
+          </p>
         </div>
+        <div v-if="$slots.actions" class="page-view__header-actions">
+          <slot name="actions" />
+        </div>
+      </div>
+      <div v-if="$slots.hint" class="page-hint" role="status" aria-live="polite">
+        <slot name="hint" />
       </div>
     </header>
     <div class="page-view__body">
@@ -92,10 +97,30 @@ withDefaults(
 .page-view__header .page-title {
   font-family: var(--font-display);
 }
+.page-view__header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+.page-view__header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+  margin-top: 0;
+  margin-inline-start: auto;
+  padding-top: var(--spacing-2xs);
+}
 .page-view__header-inner {
   display: flex;
   flex-direction: column;
   gap: var(--page-header-gap);
+  min-width: 0;
+  flex: 1 1 12rem;
 }
 .page-hint {
   font-size: var(--text-xs);

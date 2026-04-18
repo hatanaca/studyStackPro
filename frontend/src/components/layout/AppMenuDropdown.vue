@@ -8,11 +8,7 @@ import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 import { disconnectWebSocket } from '@/composables/useWebSocket'
 import {
   prefetchDashboardView,
-  prefetchExportView,
-  prefetchGoalsView,
-  prefetchHelpView,
   prefetchProfileView,
-  prefetchReportsView,
   prefetchSessionsView,
   prefetchSettingsView,
   prefetchTechnologiesView,
@@ -36,7 +32,7 @@ function handleLogout() {
 }
 
 type NavLink = {
-  to: string | { name: string }
+  to: string | { name: string; query?: Record<string, string> }
   label: string
   activePath: string
   prefetch?: () => void
@@ -56,10 +52,12 @@ const navLinks: NavLink[] = [
     activePath: '/technologies',
     prefetch: prefetchTechnologiesView,
   },
-  { to: '/goals', label: 'Metas', activePath: '/goals', prefetch: prefetchGoalsView },
-  { to: '/export', label: 'Exportar', activePath: '/export', prefetch: prefetchExportView },
-  { to: '/reports', label: 'Relatórios', activePath: '/reports', prefetch: prefetchReportsView },
-  { to: '/help', label: 'Ajuda', activePath: '/help', prefetch: prefetchHelpView },
+  {
+    to: { name: 'profile', query: { tab: 'goals' } },
+    label: 'Metas',
+    activePath: '__metas_tab__',
+    prefetch: prefetchProfileView,
+  },
   {
     to: '/settings',
     label: 'Configurações',
@@ -70,7 +68,14 @@ const navLinks: NavLink[] = [
 ]
 
 function isActive(path: string) {
+  if (path === '__metas_tab__') {
+    return route.name === 'profile' && route.query.tab === 'goals'
+  }
   if (path === '/') return route.path === '/'
+  if (path === '/settings') return route.path.startsWith('/settings')
+  if (path === '/profile') {
+    return route.path.startsWith('/profile') && route.query.tab !== 'goals'
+  }
   return route.path.startsWith(path)
 }
 </script>

@@ -14,6 +14,10 @@ const route = useRoute()
 const searchQuery = ref('')
 
 const pageTitle = computed(() => {
+  const metaTitle = route.meta?.title
+  if (typeof metaTitle === 'string' && metaTitle.length && route.path.startsWith('/settings')) {
+    return metaTitle
+  }
   const name = route.name?.toString() ?? ''
   const map: Record<string, string> = {
     dashboard: 'Dashboard',
@@ -21,10 +25,11 @@ const pageTitle = computed(() => {
     'session-focus': 'Sessão ativa',
     technologies: 'Tecnologias',
     goals: 'Metas',
-    export: 'Exportar',
-    reports: 'Relatórios',
-    help: 'Ajuda',
-    settings: 'Configurações',
+    'settings-index': 'Configurações',
+    'settings-appearance': 'Aparência',
+    'settings-export': 'Exportar dados',
+    'settings-reports': 'Relatórios',
+    'settings-help': 'Ajuda',
     profile: 'Perfil',
   }
   return map[name] ?? 'Dashboard'

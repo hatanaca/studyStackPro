@@ -68,6 +68,7 @@ export const studySessionSchema = z.object({
   id: z.string(),
   user_id: z.string(),
   technology_id: z.string(),
+  title: z.string().nullable().optional(),
   technology: technologySchema.optional(),
   started_at: z.string(),
   ended_at: z.string().nullable(),

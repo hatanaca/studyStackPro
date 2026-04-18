@@ -37,6 +37,7 @@ class SlidingWindowTest extends TestCase
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/v1/study-sessions', [
                 'technology_id' => $technology->id,
+                'title' => 'Rate limit ok',
                 'started_at' => Carbon::now()->subHour()->toIso8601String(),
                 'ended_at' => Carbon::now()->toIso8601String(),
             ]);
@@ -87,6 +88,7 @@ class SlidingWindowTest extends TestCase
         $allowed = $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/v1/study-sessions', [
                 'technology_id' => $technology->id,
+                'title' => 'Após janela',
                 'started_at' => Carbon::now()->subMinutes(50)->toIso8601String(),
                 'ended_at' => Carbon::now()->toIso8601String(),
             ]);

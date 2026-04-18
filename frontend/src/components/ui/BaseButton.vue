@@ -93,6 +93,21 @@ withDefaults(
   background: color-mix(in srgb, var(--color-error) 88%, var(--color-bg));
   border-color: color-mix(in srgb, var(--color-error) 88%, var(--color-bg));
 }
+
+[data-theme='dark'] .base-button--secondary {
+  background: color-mix(in srgb, var(--color-bg-soft) 88%, #020617 12%);
+  border-color: color-mix(in srgb, var(--color-border) 100%, transparent);
+  color: var(--color-text);
+  box-shadow: none;
+}
+[data-theme='dark'] .base-button--secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-primary) 18%, var(--color-bg-soft));
+  border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
+  color: var(--color-primary);
+}
+[data-theme='dark'] .base-button--danger:hover:not(:disabled) {
+  color: var(--color-primary-contrast);
+}
 .base-button--outline {
   background: transparent;
   border: 1px solid var(--color-border);

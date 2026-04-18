@@ -25,10 +25,21 @@ export function useSessionsInfiniteQuery(filters: MaybeRefOrGetter<SessionListFi
       const res = await sessionsApi.list({ ...f, page: pageParam, per_page: PER_PAGE })
       return parseSessionsListResponse(res.data)
     },
-    getNextPageParam: (lastPage) => {
+    getNextPageParam: (lastPage, allPages) => {
       const meta = lastPage.meta
-      if (meta && meta.current_page < meta.last_page) return meta.current_page + 1
-      return undefined
+      if (!meta || meta.last_page < 1) return undefined
+      if (meta.current_page >= meta.last_page) return undefined
+      const rows = lastPage.data ?? []
+      if (rows.length === 0) return undefined
+      /* Se a API repetir os mesmos IDs da página anterior, não pedir mais páginas (evita lista infinita). */
+      if (allPages && allPages.length > 1) {
+        const seen = new Set(
+          allPages.slice(0, -1).flatMap((p) => (p.data ?? []).map((s) => s.id))
+        )
+        const newCount = rows.filter((s) => !seen.has(s.id)).length
+        if (newCount === 0) return undefined
+      }
+      return meta.current_page + 1
     },
     initialPageParam: 1,
   })
@@ -43,7 +54,13 @@ export function useSessionsInfiniteQuery(filters: MaybeRefOrGetter<SessionListFi
         allSessions.value = []
         return
       }
-      allSessions.value = pages.flatMap((p) => p.data as StudySession[])
+      const flat = pages.flatMap((p) => (p.data ?? []) as StudySession[])
+      const seen = new Set<string>()
+      allSessions.value = flat.filter((s) => {
+        if (seen.has(s.id)) return false
+        seen.add(s.id)
+        return true
+      })
     },
     { immediate: true }
   )

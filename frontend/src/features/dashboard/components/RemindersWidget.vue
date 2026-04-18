@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
 import EmptyState from '@/components/ui/EmptyState.vue'
 
 interface Reminder {
@@ -15,6 +16,7 @@ const reminders = ref<Reminder[]>([])
 const newReminder = ref('')
 const editingId = ref<string | null>(null)
 const editingText = ref('')
+const showDialog = ref(false)
 
 const atLimit = computed(() => reminders.value.length >= MAX_REMINDERS)
 const remainingCount = computed(() => Math.max(0, MAX_REMINDERS - reminders.value.length))
@@ -28,7 +30,7 @@ function loadFromStorage() {
       reminders.value = parsed
     }
   } catch {
-    // ignore
+    /* ignore */
   }
 }
 
@@ -82,131 +84,153 @@ onMounted(() => {
 
 <template>
   <section class="reminders-widget">
-    <header class="reminders-header">
-      <div>
-        <h3 class="reminders-title">Lembretes rápidos</h3>
-        <p class="reminders-subtitle">
+    <div class="reminders-widget__head">
+      <h2 class="reminders-widget__title">Lembretes rápidos</h2>
+      <Button
+        label="Gerir lembretes"
+        icon="pi pi-list"
+        size="small"
+        @click="showDialog = true"
+      />
+    </div>
+
+    <Dialog
+      v-model:visible="showDialog"
+      header="Lembretes rápidos"
+      modal
+      :style="{ width: 'min(92vw, 28rem)' }"
+      :dismissable-mask="true"
+      @hide="showDialog = false"
+    >
+      <div class="reminders-dialog">
+        <p class="reminders-dialog__subtitle">
           {{
             atLimit
               ? `Limite de ${MAX_REMINDERS} lembretes. Remova algum para adicionar.`
               : `Anote o que não quer esquecer. (${remainingCount} restantes)`
           }}
         </p>
-      </div>
-    </header>
 
-    <div class="reminders-input">
-      <input
-        v-model="newReminder"
-        type="text"
-        class="reminders-input__field"
-        :placeholder="atLimit ? 'Limite atingido' : 'Ex.: Revisar Anki, terminar capítulo...'"
-        :disabled="atLimit"
-        @keyup.enter.prevent="addReminder"
-      />
-      <Button
-        label="Adicionar"
-        size="small"
-        :disabled="!newReminder.trim() || atLimit"
-        @click="addReminder"
-      />
-    </div>
-
-    <div v-if="reminders.length" class="reminders-list scroll-pretty">
-      <article v-for="r in reminders" :key="r.id" class="reminders-item">
-        <div class="reminders-item__content">
-          <textarea
-            v-if="editingId === r.id"
-            v-model="editingText"
-            class="reminders-item__textarea"
-            rows="2"
-            @keyup.meta.enter.prevent="saveEdit(r)"
-            @keyup.ctrl.enter.prevent="saveEdit(r)"
+        <div class="reminders-dialog__input">
+          <input
+            v-model="newReminder"
+            type="text"
+            class="reminders-dialog__field"
+            :placeholder="atLimit ? 'Limite atingido' : 'Ex.: Revisar Anki, terminar capítulo…'"
+            :disabled="atLimit"
+            @keyup.enter.prevent="addReminder"
           />
-          <button v-else type="button" class="reminders-item__text" @click="startEdit(r)">
-            {{ r.text }}
-          </button>
+          <Button
+            label="Adicionar"
+            size="small"
+            :disabled="!newReminder.trim() || atLimit"
+            @click="addReminder"
+          />
         </div>
-        <div class="reminders-item__actions">
-          <button
-            v-if="editingId === r.id"
-            type="button"
-            class="reminders-chip reminders-chip--primary"
-            @click="saveEdit(r)"
-          >
-            Salvar
-          </button>
-          <button
-            v-if="editingId === r.id"
-            type="button"
-            class="reminders-chip"
-            @click="cancelEdit"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            class="reminders-chip reminders-chip--danger"
-            @click="deleteReminder(r)"
-          >
-            Remover
-          </button>
+
+        <div v-if="reminders.length" class="reminders-dialog__list scroll-pretty">
+          <article v-for="r in reminders" :key="r.id" class="reminders-dialog__item">
+            <div class="reminders-dialog__item-body">
+              <textarea
+                v-if="editingId === r.id"
+                v-model="editingText"
+                class="reminders-dialog__textarea"
+                rows="2"
+                @keyup.meta.enter.prevent="saveEdit(r)"
+                @keyup.ctrl.enter.prevent="saveEdit(r)"
+              />
+              <button v-else type="button" class="reminders-dialog__text" @click="startEdit(r)">
+                {{ r.text }}
+              </button>
+            </div>
+            <div class="reminders-dialog__item-actions">
+              <button
+                v-if="editingId === r.id"
+                type="button"
+                class="reminders-chip reminders-chip--primary"
+                @click="saveEdit(r)"
+              >
+                Salvar
+              </button>
+              <button
+                v-if="editingId === r.id"
+                type="button"
+                class="reminders-chip"
+                @click="cancelEdit"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                class="reminders-chip reminders-chip--danger"
+                @click="deleteReminder(r)"
+              >
+                Remover
+              </button>
+            </div>
+          </article>
         </div>
-      </article>
-    </div>
-    <div v-else class="reminders-widget__empty-wrap">
-      <EmptyState
-        icon="📝"
-        title="Nenhum lembrete ainda"
-        description="Use o campo acima para criar o primeiro."
-      />
-    </div>
+        <div v-else class="reminders-dialog__empty">
+          <EmptyState
+            icon="📝"
+            title="Nenhum lembrete ainda"
+            description="Use o campo acima para criar o primeiro."
+          />
+        </div>
+      </div>
+    </Dialog>
   </section>
 </template>
 
 <style scoped>
 .reminders-widget {
+  background: var(--color-bg-card);
+  border: var(--card-chrome-border);
+  border-radius: var(--card-chrome-radius);
+  padding: var(--spacing-xl);
   display: flex;
   flex-direction: column;
+  gap: var(--spacing-md);
+  box-shadow: var(--card-chrome-shadow);
   min-height: var(--widget-card-min-height);
   height: 100%;
-  background: var(--color-bg-card);
-  border-radius: var(--widget-radius);
-  padding: var(--widget-padding);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
-  overflow: hidden;
 }
-.reminders-header {
-  flex-shrink: 0;
+.reminders-widget__head {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
   gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-sm);
+  flex-wrap: wrap;
 }
-.reminders-title {
-  font-size: var(--widget-title-size);
-  font-weight: var(--widget-title-weight);
-  color: var(--color-text);
+.reminders-widget__title {
   margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: var(--leading-tight);
   letter-spacing: var(--tracking-tight);
 }
-.reminders-subtitle {
-  margin: var(--spacing-xs) 0 0;
+
+.reminders-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  min-height: 0;
+}
+.reminders-dialog__subtitle {
+  margin: 0;
   font-size: var(--text-xs);
   color: var(--color-text-muted);
   line-height: var(--leading-snug);
 }
-
-.reminders-input {
-  flex-shrink: 0;
+.reminders-dialog__input {
   display: flex;
   gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-sm);
   align-items: stretch;
+  flex-wrap: wrap;
 }
-.reminders-input__field {
+.reminders-dialog__field {
   flex: 1;
   min-width: 0;
   min-height: var(--input-height-sm);
@@ -214,32 +238,30 @@ onMounted(() => {
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   font-size: var(--text-sm);
-  background: var(--color-bg-card);
+  background: var(--form-input-bg);
   color: var(--color-text);
   transition:
     border-color var(--duration-fast) ease,
     box-shadow var(--duration-fast) ease;
 }
-.reminders-input__field:focus-visible {
+.reminders-dialog__field:focus-visible {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: var(--shadow-focus);
 }
-.reminders-input__field::placeholder {
+.reminders-dialog__field::placeholder {
   color: var(--color-text-muted);
 }
-
-.reminders-list {
+.reminders-dialog__list {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-  margin-top: var(--spacing-2xs);
-  flex: 1;
-  min-height: 0;
+  max-height: min(50vh, 22rem);
   overflow-y: auto;
   overflow-x: hidden;
+  padding: var(--spacing-2xs) 0;
 }
-.reminders-item {
+.reminders-dialog__item {
   flex-shrink: 0;
   padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-md);
@@ -250,13 +272,13 @@ onMounted(() => {
   gap: var(--spacing-sm);
   transition: border-color var(--duration-fast) ease;
 }
-.reminders-item:hover {
+.reminders-dialog__item:hover {
   border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
 }
-.reminders-item__content {
+.reminders-dialog__item-body {
   width: 100%;
 }
-.reminders-item__text {
+.reminders-dialog__text {
   all: unset;
   display: block;
   width: 100%;
@@ -266,12 +288,12 @@ onMounted(() => {
   cursor: pointer;
   text-align: left;
 }
-.reminders-item__text:focus-visible {
+.reminders-dialog__text:focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus);
   border-radius: var(--radius-sm);
 }
-.reminders-item__textarea {
+.reminders-dialog__textarea {
   width: 100%;
   min-height: 2.5rem;
   resize: vertical;
@@ -280,17 +302,17 @@ onMounted(() => {
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--text-sm);
   color: var(--color-text);
-  background: var(--color-bg-card);
+  background: var(--form-input-bg);
   transition:
     border-color var(--duration-fast) ease,
     box-shadow var(--duration-fast) ease;
 }
-.reminders-item__textarea:focus-visible {
+.reminders-dialog__textarea:focus-visible {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: var(--shadow-focus);
 }
-.reminders-item__actions {
+.reminders-dialog__item-actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-xs);
@@ -332,24 +354,13 @@ onMounted(() => {
   outline: none;
   box-shadow: var(--shadow-focus);
 }
-
-.reminders-widget__empty-wrap {
-  margin-top: var(--spacing-sm);
-}
-.reminders-widget__empty-wrap :deep(.empty-state) {
+.reminders-dialog__empty :deep(.empty-state) {
   min-height: 0;
-  padding: var(--spacing-md) var(--spacing-sm);
+  padding: var(--spacing-lg) var(--spacing-md);
 }
-
 @media (max-width: 640px) {
-  .reminders-input {
+  .reminders-dialog__input {
     flex-direction: column;
-    align-items: stretch;
   }
-}
-
-.reminders-input :deep(.base-button) {
-  min-width: 6.5rem;
-  min-height: var(--input-height-sm);
 }
 </style>

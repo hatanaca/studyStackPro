@@ -128,6 +128,7 @@ class AuthorizationTest extends TestCase
         $response = $this->withHeader('Authorization', 'Bearer '.$this->tokenB)
             ->postJson('/api/v1/study-sessions', [
                 'technology_id' => $this->techA->id,
+                'title' => 'Cross-user',
                 'started_at' => now()->subHour()->toIso8601String(),
                 'ended_at' => now()->toIso8601String(),
             ]);

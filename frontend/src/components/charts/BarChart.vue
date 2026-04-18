@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import type { ApexOptions } from 'apexcharts'
 import VueApexCharts from 'vue3-apexcharts'
 import { useApexChartTheme } from '@/composables/useApexChartTheme'
@@ -211,7 +211,7 @@ const chartOptions = computed<ApexOptions>(() => {
       enabled: props.showDataLabels,
       formatter: (val: number) => `${val} ${unit}`,
       style: { fontSize: t.fontSize, fontFamily: t.fontFamily },
-      offsetY: isHorizontal ? 0 : -4,
+      offsetY: isHorizontal ? 0 : tinyViewport.value ? -10 : -6,
       dropShadow: { enabled: false },
     },
     grid: {
@@ -224,10 +224,20 @@ const chartOptions = computed<ApexOptions>(() => {
       },
       yaxis: { lines: { show: true, strokeDashArray: 2 } },
       padding: {
-        top: isHorizontal ? 18 : 12,
-        right: isHorizontal ? (compactViewport.value ? 10 : 18) : 12,
-        bottom: isHorizontal ? (tinyViewport.value ? 36 : compactViewport.value ? 44 : 52) : 36,
-        left: isHorizontal ? (compactViewport.value ? 4 : 10) : 12,
+        top: isHorizontal ? 18 : 16,
+        right: isHorizontal ? (compactViewport.value ? 10 : 18) : 14,
+        bottom: isHorizontal
+          ? tinyViewport.value
+            ? 36
+            : compactViewport.value
+              ? 44
+              : 52
+          : tinyViewport.value
+            ? 56
+            : compactViewport.value
+              ? 64
+              : 72,
+        left: isHorizontal ? (compactViewport.value ? 4 : 10) : 14,
       },
     },
     xaxis: {
@@ -250,10 +260,12 @@ const chartOptions = computed<ApexOptions>(() => {
       labels: {
         ...baseOptions.value.xaxis?.labels,
         show: true,
-        rotate: isHorizontal ? 0 : -40,
-        maxHeight: 72,
+        rotate: isHorizontal ? 0 : -35,
+        rotateAlways: !isHorizontal,
+        hideOverlappingLabels: true,
+        maxHeight: isHorizontal ? 72 : 120,
         trim: true,
-        offsetY: isHorizontal ? 4 : 0,
+        offsetY: isHorizontal ? 4 : 6,
       },
       crosshairs: { show: false },
     },
@@ -303,6 +315,33 @@ const chartOptions = computed<ApexOptions>(() => {
     },
     responsive: [],
   }
+})
+
+onMounted(() => {
+  const n = props.data?.labels?.length ?? 0
+  // #region agent log
+  fetch('http://127.0.0.1:7251/ingest/086e8d00-457e-4a30-82b0-abf450d19c28', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '4b11d9' },
+    body: JSON.stringify({
+      sessionId: '4b11d9',
+      runId: 'bar-chart',
+      hypothesisId: 'H2',
+      location: 'BarChart.vue:onMounted',
+      message: 'bar chart mount',
+      data: {
+        categories: n,
+        orientation: props.orientation,
+        compact: compactViewport.value,
+        tiny: tinyViewport.value,
+        chartHeight: resolvedChartHeight.value,
+        showDataLabels: props.showDataLabels,
+        hasTitle: !!(props.yAxisTitle || props.xAxisTitle),
+      },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {})
+  // #endregion
 })
 </script>
 

@@ -3,9 +3,14 @@ import { computed } from 'vue'
 import Card from 'primevue/card'
 import type { UserMetrics } from '@/types/domain.types'
 
-const props = defineProps<{
-  metrics: UserMetrics | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    metrics: UserMetrics | null
+    /** Cartões mais compactos (ex.: dashboard) */
+    compact?: boolean
+  }>(),
+  { compact: false },
+)
 
 function formatTotalHours(hours: number): string {
   if (hours <= 0) return '0h'
@@ -24,19 +29,19 @@ const items = computed(() => {
     {
       label: 'Total de sessões',
       value: props.metrics?.total_sessions ?? 0,
-      icon: '📚',
+      iconClass: 'pi pi-book',
       variant: 'default' as StatVariant,
     },
     {
       label: 'Total de horas',
       value: formatTotalHours(props.metrics?.total_hours ?? 0),
-      icon: '⏱',
+      iconClass: 'pi pi-clock',
       variant: 'primary' as StatVariant,
     },
     {
       label: 'Streak atual',
       value: streakDays > 0 ? `${streakDays} ${streakDays === 1 ? 'dia' : 'dias'}` : '0 dias',
-      icon: '🔥',
+      iconClass: 'pi pi-bolt',
       variant: streakVariant,
     },
   ]
@@ -44,7 +49,7 @@ const items = computed(() => {
 </script>
 
 <template>
-  <section class="kpi-cards" aria-label="Métricas principais">
+  <section class="kpi-cards" :class="{ 'kpi-cards--compact': compact }" aria-label="Métricas principais">
     <Card
       v-for="item in items"
       :key="item.label"
@@ -53,7 +58,7 @@ const items = computed(() => {
     >
       <template #content>
         <div class="kpi-card__inner">
-          <span v-if="item.icon" class="kpi-card__icon" aria-hidden="true">{{ item.icon }}</span>
+          <span v-if="item.iconClass" class="kpi-card__icon" :class="item.iconClass" aria-hidden="true" />
           <div class="kpi-card__content">
             <span class="kpi-card__label">{{ item.label }}</span>
             <span class="kpi-card__value">{{ item.value }}</span>
@@ -98,8 +103,27 @@ const items = computed(() => {
 }
 .kpi-card__icon {
   font-size: var(--icon-size-md);
-  line-height: var(--leading-tight);
+  line-height: 1;
   opacity: 0.9;
+  color: var(--color-primary);
+}
+.kpi-card--success .kpi-card__icon {
+  color: var(--color-success);
+}
+.kpi-cards--compact .kpi-card {
+  min-height: 0;
+}
+.kpi-cards--compact :deep(.p-card-body) {
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+.kpi-cards--compact .kpi-card__inner {
+  gap: var(--spacing-md);
+}
+.kpi-cards--compact .kpi-card__icon {
+  font-size: 1.125rem;
+}
+.kpi-cards--compact .kpi-card__value {
+  font-size: var(--text-lg);
 }
 .kpi-card__content {
   display: flex;

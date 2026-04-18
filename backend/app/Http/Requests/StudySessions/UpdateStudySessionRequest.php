@@ -20,6 +20,7 @@ class UpdateStudySessionRequest extends FormRequest
     {
         return [
             'technology_id' => ['sometimes', 'uuid', 'exists:technologies,id'],
+            'title' => ['sometimes', 'nullable', 'string', 'max:255'],
             'started_at' => ['sometimes', 'date'],
             // 'after:started_at' só se aplica quando started_at também está presente
             // na requisição; PATCH parcial com apenas ended_at não deve falhar.

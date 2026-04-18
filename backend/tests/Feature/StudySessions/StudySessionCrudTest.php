@@ -91,6 +91,7 @@ class StudySessionCrudTest extends TestCase
         $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
             ->postJson('/api/v1/study-sessions', [
                 'technology_id' => $this->technology->id,
+                'title' => 'Revisão de componentes',
                 'started_at' => $startedAt->toIso8601String(),
                 'ended_at' => $endedAt->toIso8601String(),
                 'notes' => 'Sessão de estudo',
@@ -104,6 +105,7 @@ class StudySessionCrudTest extends TestCase
                 'message' => 'Sessão criada.',
                 'data' => [
                     'technology_id' => $this->technology->id,
+                    'title' => 'Revisão de componentes',
                     'notes' => 'Sessão de estudo',
                     'mood' => 4,
                     'focus_score' => 8,
@@ -113,8 +115,21 @@ class StudySessionCrudTest extends TestCase
         $this->assertDatabaseHas('study_sessions', [
             'user_id' => $this->user->id,
             'technology_id' => $this->technology->id,
+            'title' => 'Revisão de componentes',
             'notes' => 'Sessão de estudo',
         ]);
+    }
+
+    public function test_store_requires_title(): void
+    {
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
+            ->postJson('/api/v1/study-sessions', [
+                'technology_id' => $this->technology->id,
+                'started_at' => Carbon::now()->subHour()->toIso8601String(),
+                'ended_at' => Carbon::now()->toIso8601String(),
+            ]);
+
+        $response->assertStatus(422);
     }
 
     public function test_store_rejects_technology_from_another_user(): void
@@ -131,6 +146,7 @@ class StudySessionCrudTest extends TestCase
         $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
             ->postJson('/api/v1/study-sessions', [
                 'technology_id' => $otherTech->id,
+                'title' => 'Tentativa',
                 'started_at' => Carbon::now()->toIso8601String(),
             ]);
 

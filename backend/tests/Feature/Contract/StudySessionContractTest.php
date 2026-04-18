@@ -52,7 +52,7 @@ class StudySessionContractTest extends TestCase
 
         $data = $response->json('data');
         $requiredKeys = [
-            'id', 'user_id', 'technology_id', 'started_at', 'ended_at',
+            'id', 'user_id', 'technology_id', 'title', 'started_at', 'ended_at',
             'duration_min', 'notes', 'mood', 'focus_score', 'productivity_score',
             'duration_formatted', 'created_at', 'updated_at',
         ];
@@ -83,6 +83,7 @@ class StudySessionContractTest extends TestCase
         $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
             ->postJson('/api/v1/study-sessions', [
                 'technology_id' => $this->technology->id,
+                'title' => 'Sessão contrato',
                 'started_at' => now()->subHour()->toIso8601String(),
                 'ended_at' => now()->toIso8601String(),
             ]);

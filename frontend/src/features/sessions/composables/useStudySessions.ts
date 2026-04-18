@@ -19,6 +19,7 @@ export function useStudySessions() {
 
   async function createSession(data: {
     technology_id: string
+    title: string
     started_at: string
     ended_at?: string
     notes?: string

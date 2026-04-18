@@ -3,7 +3,6 @@ import { ref, computed } from 'vue'
 import Card from 'primevue/card'
 import Button from 'primevue/button'
 import Fieldset from 'primevue/fieldset'
-import PageView from '@/components/layout/PageView.vue'
 import ErrorCard from '@/components/ui/ErrorCard.vue'
 import { analyticsApi } from '@/api/modules/analytics.api'
 
@@ -97,16 +96,11 @@ async function doExport() {
 </script>
 
 <template>
-  <PageView
-    :breadcrumb="[{ label: 'Dashboard', to: '/' }, { label: 'Exportar' }]"
-    title="Exportar dados"
-    subtitle="Exporte suas sessões e métricas por período para análise externa."
-    narrow
-  >
-    <template #hint>
+  <div class="export-view">
+    <p class="export-view__lead">
       Os dados são buscados no servidor para o período escolhido. O arquivo inclui data, minutos e
       quantidade de sessões por dia.
-    </template>
+    </p>
     <Card class="export-view__card" :aria-busy="exporting" aria-live="polite">
       <template #title>Opções de exportação</template>
       <template #content>
@@ -171,10 +165,22 @@ async function doExport() {
         />
       </template>
     </Card>
-  </PageView>
+  </div>
 </template>
 
 <style scoped>
+.export-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+.export-view__lead {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: var(--leading-snug);
+  max-width: 52ch;
+}
 .export-view__card {
   margin-top: 0;
 }

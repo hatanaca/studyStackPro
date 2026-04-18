@@ -4,6 +4,7 @@ namespace App\Exceptions;
 
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\MissingAttributeException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
@@ -55,6 +56,8 @@ class Handler extends ExceptionHandler
                     'success' => false,
                     'error' => ['code' => \App\Exceptions\Domain\ConcurrentSessionException::CODE, 'message' => 'O usuário já possui uma sessão ativa.'],
                 ], 409),
+                $e instanceof MissingAttributeException && $this->isMissingStudySessionTitleAttribute($e) => $this->schemaOutdatedStudySessionsTitleResponse($e),
+                $e instanceof QueryException && $this->isMissingStudySessionsTitleColumn($e) => $this->schemaOutdatedStudySessionsTitleResponse($e),
                 $e instanceof TooManyRequestsHttpException => response()->json([
                     'success' => false,
                     'error' => [
@@ -71,6 +74,63 @@ class Handler extends ExceptionHandler
         }
 
         return parent::render($request, $e);
+    }
+
+    /**
+     * Postgres 42703 / texto típico quando a migração `add_title_to_study_sessions_table` não foi aplicada.
+     */
+    private function isMissingStudySessionsTitleColumn(QueryException $e): bool
+    {
+        $m = $e->getMessage();
+        if (! str_contains($m, 'title')) {
+            return false;
+        }
+
+        // Postgres: 42703 undefined_column — a mensagem nem sempre repete o nome da tabela.
+        $state = (string) ($e->errorInfo[0] ?? '');
+        if ($state === '42703' || $state === '42S22') {
+            return true;
+        }
+
+        return str_contains($m, 'study_sessions')
+            || str_contains($m, 'does not exist')
+            || str_contains($m, 'Undefined column')
+            || str_contains($m, 'Unknown column');
+    }
+
+    private function isMissingStudySessionTitleAttribute(MissingAttributeException $e): bool
+    {
+        $m = $e->getMessage();
+
+        return str_contains($m, '[title]') && str_contains($m, 'StudySession');
+    }
+
+    /** Resposta JSON clara + linha NDJSON em debug-4b11d9.log (sessão de debug do agente). */
+    private function schemaOutdatedStudySessionsTitleResponse(Throwable $e): \Illuminate\Http\JsonResponse
+    {
+        $logPath = dirname(base_path()).DIRECTORY_SEPARATOR.'debug-4b11d9.log';
+        $sqlState = $e instanceof QueryException ? ($e->errorInfo[0] ?? null) : null;
+        $line = json_encode([
+            'sessionId' => '4b11d9',
+            'hypothesisId' => 'H500',
+            'location' => 'Handler.php:schemaOutdatedStudySessionsTitleResponse',
+            'message' => 'Schema study_sessions.title em falta (QueryException ou MissingAttributeException)',
+            'data' => [
+                'exceptionClass' => $e::class,
+                'sqlState' => $sqlState,
+                'exceptionSnippet' => substr($e->getMessage(), 0, 240),
+            ],
+            'timestamp' => (int) (microtime(true) * 1000),
+        ], JSON_UNESCAPED_UNICODE)."\n";
+        @file_put_contents($logPath, $line, FILE_APPEND);
+
+        return response()->json([
+            'success' => false,
+            'error' => [
+                'code' => 'SCHEMA_OUTDATED',
+                'message' => 'A tabela study_sessions ainda não tem a coluna title. Na pasta do backend execute: php artisan migrate (ou com Docker: docker compose exec php-fpm php artisan migrate).',
+            ],
+        ], 503);
     }
 
     protected function validationError(ValidationException $e)

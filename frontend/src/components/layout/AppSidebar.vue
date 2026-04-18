@@ -5,16 +5,13 @@
  * Suporta estado colapsado (ícones apenas) via uiStore.sidebarCollapsed.
  */
 import { computed, inject, useAttrs, watch } from 'vue'
+import { useMediaQuery } from '@vueuse/core'
 
 defineOptions({ inheritAttrs: false })
 import { RouterLink, useRoute } from 'vue-router'
 import {
   prefetchDashboardView,
-  prefetchExportView,
-  prefetchGoalsView,
-  prefetchHelpView,
   prefetchProfileView,
-  prefetchReportsView,
   prefetchSessionsView,
   prefetchSettingsView,
   prefetchTechnologiesView,
@@ -22,7 +19,6 @@ import {
 
 /** Referências explícitas para o vue-tsc reconhecer uso (handlers no template). */
 const prefetch = {
-  help: prefetchHelpView,
   profile: prefetchProfileView,
   settings: prefetchSettingsView,
 }
@@ -36,6 +32,7 @@ const attrs = useAttrs()
 const authStore = useAuthStore()
 const uiStore = useUiStore()
 const route = useRoute()
+const isDesktopLayout = useMediaQuery('(min-width: 768px)')
 const analyticsStore = useAnalyticsStore()
 const stakentStyle = inject<{ value: boolean }>('stakentStyle', { value: false })
 
@@ -46,6 +43,24 @@ const userInitials = computed(() => {
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
   return `${parts[0][0] ?? ''}${parts[parts.length - 1][0] ?? ''}`.toUpperCase()
 })
+
+/** Perfil completo: drawer mobile aberto ou sidebar expandida no desktop. */
+const showFullProfileBlock = computed(
+  () =>
+    !!authStore.user &&
+    !stakentStyle?.value &&
+    (!uiStore.sidebarCollapsed || uiStore.mobileSidebarOpen),
+)
+
+/** Atalho só com avatar quando a barra está recolhida no desktop (evita duplicar no drawer mobile). */
+const showCollapsedProfileShortcut = computed(
+  () =>
+    !!authStore.user &&
+    !stakentStyle?.value &&
+    uiStore.sidebarCollapsed &&
+    !uiStore.mobileSidebarOpen &&
+    isDesktopLayout.value,
+)
 
 function formatHours(h: number): string {
   if (h <= 0) return '0h'
@@ -142,7 +157,13 @@ function handleLogout() {
         ✕
       </button>
     </div>
-    <div v-if="authStore.user && !stakentStyle?.value" class="app-sidebar__profile">
+    <RouterLink
+      v-if="showFullProfileBlock && authStore.user"
+      :to="{ name: 'profile' }"
+      class="app-sidebar__profile"
+      :class="{ 'app-sidebar__profile--active': route.name === 'profile' && route.query.tab !== 'goals' }"
+      @click="uiStore.closeMobileSidebar()"
+    >
       <div class="app-sidebar__avatar-wrap">
         <img
           v-if="authStore.user.avatar_url"
@@ -162,7 +183,26 @@ function handleLogout() {
           {{ authStore.user.email }}
         </p>
       </div>
-    </div>
+    </RouterLink>
+    <RouterLink
+      v-if="showCollapsedProfileShortcut && authStore.user"
+      :to="{ name: 'profile' }"
+      class="app-sidebar__profile-rail"
+      :class="{ 'app-sidebar__profile-rail--active': route.name === 'profile' && route.query.tab !== 'goals' }"
+      title="Perfil"
+      aria-label="Abrir perfil"
+      @click="uiStore.closeMobileSidebar()"
+    >
+      <img
+        v-if="authStore.user.avatar_url"
+        :src="authStore.user.avatar_url"
+        alt=""
+        class="app-sidebar__profile-rail-avatar"
+      />
+      <span v-else class="app-sidebar__profile-rail-avatar app-sidebar__profile-rail-avatar--fallback" aria-hidden="true">
+        {{ userInitials }}
+      </span>
+    </RouterLink>
     <div v-if="stakentStyle?.value" class="app-sidebar__pills">
       <RouterLink
         to="/"
@@ -173,10 +213,10 @@ function handleLogout() {
         Estudo
       </RouterLink>
       <RouterLink
-        to="/goals"
+        :to="{ name: 'profile', query: { tab: 'goals' } }"
         class="app-sidebar__pill"
-        :class="{ active: route.path.startsWith('/goals') }"
-        @mouseenter="prefetchGoalsView"
+        :class="{ active: route.name === 'profile' && route.query.tab === 'goals' }"
+        @mouseenter="prefetchProfileView"
       >
         Metas
       </RouterLink>
@@ -271,118 +311,9 @@ function handleLogout() {
         <span class="app-sidebar__link-text">Tecnologias</span>
       </RouterLink>
       <RouterLink
-        to="/goals"
-        active-class="active"
-        class="app-sidebar__link"
-        title="Metas"
-        aria-label="Ir para Metas"
-        @mouseenter="prefetchGoalsView"
-      >
-        <span class="app-sidebar__icon" aria-hidden="true">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 6v6l4 2" />
-          </svg>
-        </span>
-        <span class="app-sidebar__link-text">Metas</span>
-      </RouterLink>
-      <RouterLink
-        to="/export"
-        active-class="active"
-        class="app-sidebar__link"
-        title="Exportar"
-        aria-label="Ir para Exportar"
-        @mouseenter="prefetchExportView"
-      >
-        <span class="app-sidebar__icon" aria-hidden="true">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-        </span>
-        <span class="app-sidebar__link-text">Exportar</span>
-      </RouterLink>
-      <RouterLink
-        to="/reports"
-        active-class="active"
-        class="app-sidebar__link"
-        title="Relatórios"
-        aria-label="Ir para Relatórios"
-        @mouseenter="prefetchReportsView"
-      >
-        <span class="app-sidebar__icon" aria-hidden="true">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
-            <polyline points="10 9 9 9 8 9" />
-          </svg>
-        </span>
-        <span class="app-sidebar__link-text">Relatórios</span>
-      </RouterLink>
-      <RouterLink
-        to="/help"
-        active-class="active"
-        class="app-sidebar__link"
-        title="Ajuda"
-        aria-label="Ir para Ajuda"
-        @mouseenter="prefetch.help"
-      >
-        <span class="app-sidebar__icon" aria-hidden="true">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-            <path d="M12 17h.01" />
-          </svg>
-        </span>
-        <span class="app-sidebar__link-text">Ajuda</span>
-      </RouterLink>
-      <RouterLink
         to="/settings"
-        active-class="active"
         class="app-sidebar__link"
+        :class="{ active: route.path.startsWith('/settings') }"
         title="Configurações"
         aria-label="Ir para Configurações"
         @mouseenter="prefetch.settings"
@@ -406,32 +337,6 @@ function handleLogout() {
           </svg>
         </span>
         <span class="app-sidebar__link-text">Configurações</span>
-      </RouterLink>
-      <RouterLink
-        to="/profile"
-        active-class="active"
-        class="app-sidebar__link"
-        title="Perfil"
-        aria-label="Ir para Perfil"
-        @mouseenter="prefetch.profile"
-      >
-        <span class="app-sidebar__icon" aria-hidden="true">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-        </span>
-        <span class="app-sidebar__link-text">Perfil</span>
       </RouterLink>
     </nav>
     <template v-if="stakentStyle?.value">
@@ -746,6 +651,9 @@ function handleLogout() {
   background: color-mix(in srgb, var(--color-bg-soft) 70%, transparent);
   overflow: hidden;
   min-width: 0;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
   /* anima colapso via max-height em vez de display:none */
   max-height: 5rem;
   opacity: 1;
@@ -755,16 +663,65 @@ function handleLogout() {
     opacity var(--duration-normal) ease,
     margin-bottom var(--duration-slow) ease,
     padding var(--duration-slow) ease,
-    border-color var(--duration-normal) ease;
+    border-color var(--duration-normal) ease,
+    background var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
-.app-sidebar--collapsed .app-sidebar__profile {
-  max-height: 0;
-  opacity: 0;
-  margin-bottom: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-  border-color: transparent;
-  pointer-events: none;
+.app-sidebar__profile:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary-soft) 35%, var(--color-bg-soft));
+}
+.app-sidebar__profile:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+.app-sidebar__profile--active {
+  border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border));
+  background: var(--color-primary-soft);
+}
+.app-sidebar__profile-rail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--spacing-sm);
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+  background: color-mix(in srgb, var(--color-bg-soft) 70%, transparent);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color var(--duration-fast) ease,
+    background var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
+}
+.app-sidebar__profile-rail:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary-soft) 35%, var(--color-bg-soft));
+}
+.app-sidebar__profile-rail:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+.app-sidebar__profile-rail--active {
+  border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border));
+  background: var(--color-primary-soft);
+}
+.app-sidebar__profile-rail-avatar {
+  width: var(--avatar-size-sm);
+  height: var(--avatar-size-sm);
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary-soft) 55%, var(--color-bg-card));
+}
+.app-sidebar__profile-rail-avatar--fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  font-size: var(--text-xs);
+  font-weight: 700;
 }
 .app-sidebar__avatar-wrap {
   flex-shrink: 0;
@@ -795,11 +752,6 @@ function handleLogout() {
   transition:
     width var(--duration-slow) var(--ease-out-expo),
     opacity var(--duration-normal) ease;
-}
-.app-sidebar--collapsed .app-sidebar__profile-meta {
-  width: 0;
-  opacity: 0;
-  pointer-events: none;
 }
 .app-sidebar__profile-name {
   margin: 0;

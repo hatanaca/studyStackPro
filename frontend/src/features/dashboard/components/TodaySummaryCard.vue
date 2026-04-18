@@ -21,7 +21,7 @@ const hasActivity = computed(() => analyticsStore.todayMinutes > 0)
 <template>
   <section class="today-summary" aria-labelledby="today-summary-title">
     <h3 id="today-summary-title" class="today-summary__title">
-      <span class="today-summary__title-icon" aria-hidden="true">📅</span>
+      <i class="today-summary__title-icon pi pi-calendar" aria-hidden="true" />
       Resumo de Hoje
     </h3>
 
@@ -96,8 +96,9 @@ const hasActivity = computed(() => analyticsStore.todayMinutes > 0)
   margin: 0 0 var(--spacing-sm);
 }
 .today-summary__title-icon {
-  font-size: var(--icon-size-sm);
-  opacity: 0.9;
+  font-size: 1rem;
+  opacity: 0.85;
+  color: var(--color-primary);
 }
 .today-summary__content {
   display: flex;

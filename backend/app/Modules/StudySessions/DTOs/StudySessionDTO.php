@@ -20,5 +20,6 @@ final readonly class StudySessionDTO
         public ?string $notes,
         public ?int $mood,
         public ?int $focusScore = null,
+        public ?string $title = null,
     ) {}
 }

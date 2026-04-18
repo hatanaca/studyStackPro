@@ -25,6 +25,7 @@ class StudySession extends BaseModel
     protected $fillable = [
         'user_id',
         'technology_id',
+        'title',
         'started_at',
         'ended_at',
         'notes',

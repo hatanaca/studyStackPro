@@ -24,15 +24,13 @@ const technology = ref<Technology | null>(null)
 const dateFrom = ref(props.modelValue?.date_from ?? '')
 const dateTo = ref(props.modelValue?.date_to ?? '')
 const minDuration = ref(props.modelValue?.min_duration?.toString() ?? '')
-const mood = ref(props.modelValue?.mood?.toString() ?? '')
 
 function filtersEqual(a: SessionListFilters, b: SessionListFilters): boolean {
   return (
     (a.technology_id ?? '') === (b.technology_id ?? '') &&
     (a.date_from ?? '') === (b.date_from ?? '') &&
     (a.date_to ?? '') === (b.date_to ?? '') &&
-    (a.min_duration ?? undefined) === (b.min_duration ?? undefined) &&
-    (a.mood ?? undefined) === (b.mood ?? undefined)
+    (a.min_duration ?? undefined) === (b.min_duration ?? undefined)
   )
 }
 
@@ -47,7 +45,6 @@ function syncFromModelValue(val: SessionListFilters | undefined) {
   dateFrom.value = v.date_from ?? ''
   dateTo.value = v.date_to ?? ''
   minDuration.value = v.min_duration != null ? String(v.min_duration) : ''
-  mood.value = v.mood != null ? String(v.mood) : ''
 }
 
 watch(
@@ -73,7 +70,6 @@ function buildFilters(): SessionListFilters {
     date_from: dateFrom.value || undefined,
     date_to: dateTo.value || undefined,
     min_duration: minDuration.value ? parseInt(minDuration.value, 10) : undefined,
-    mood: mood.value ? parseInt(mood.value, 10) : undefined,
   }
 }
 
@@ -84,9 +80,9 @@ function emitIfChanged(filters: SessionListFilters) {
   }
 }
 
-// Selects (technology, mood) → emit imediato
+// Select tecnologia → emit imediato
 watch(
-  () => [technology.value, mood.value],
+  () => technology.value,
   () => emitIfChanged(buildFilters()),
   { deep: true }
 )
@@ -104,7 +100,6 @@ function clear() {
   dateFrom.value = ''
   dateTo.value = ''
   minDuration.value = ''
-  mood.value = ''
 }
 </script>
 
@@ -133,17 +128,6 @@ function clear() {
           class="filter-input"
           placeholder="0"
         />
-      </div>
-      <div class="filter-group">
-        <label for="filter-mood">Mood (1-5)</label>
-        <select id="filter-mood" v-model="mood" class="filter-input">
-          <option value="">Todos</option>
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-          <option value="5">5</option>
-        </select>
       </div>
       <button type="button" class="btn-clear" aria-label="Limpar filtros" @click="clear">
         Limpar

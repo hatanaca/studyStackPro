@@ -28,6 +28,8 @@ export interface StudySession {
   user_id: string
   technology_id: string
   technology?: Technology
+  /** Nome exibido da sessão (ex.: tópico); a métrica continua ligada a `technology_id`. */
+  title?: string | null
   started_at: string
   ended_at: string | null
   duration_min: number | null

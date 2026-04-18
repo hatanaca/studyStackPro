@@ -14,16 +14,26 @@ class StudySessionResource extends JsonResource
         /** @var StudySession $session */
         $session = $this->resource;
 
+        $attrs = $session->getAttributes();
+
         return [
             'id' => $session->id,
             'user_id' => $session->user_id,
             'technology_id' => $session->technology_id,
-            'technology' => $this->whenLoaded('technology', fn () => [
-                'id' => $session->technology->id,
-                'name' => $session->technology->name,
-                'slug' => $session->technology->slug,
-                'color' => $session->technology->color,
-            ]),
+            // Evita MissingAttributeException com Model::shouldBeStrict() antes da migração `title`.
+            'title' => array_key_exists('title', $attrs) ? $attrs['title'] : null,
+            'technology' => $this->when($session->relationLoaded('technology'), function () use ($session) {
+                if ($session->technology === null) {
+                    return null;
+                }
+
+                return [
+                    'id' => $session->technology->id,
+                    'name' => $session->technology->name,
+                    'slug' => $session->technology->slug,
+                    'color' => $session->technology->color,
+                ];
+            }),
             'started_at' => $session->started_at?->toIso8601String(),
             'ended_at' => $session->ended_at?->toIso8601String(),
             'duration_min' => $session->duration_min,

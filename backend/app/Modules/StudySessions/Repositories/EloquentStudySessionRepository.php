@@ -89,6 +89,7 @@ class EloquentStudySessionRepository implements StudySessionRepositoryInterface
         return StudySession::create([
             'user_id' => $dto->userId,
             'technology_id' => $dto->technologyId ?: null,
+            'title' => $dto->title,
             'started_at' => $dto->startedAt,
             'ended_at' => $dto->endedAt,
             'notes' => $dto->notes,

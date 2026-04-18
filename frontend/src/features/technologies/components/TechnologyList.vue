@@ -3,7 +3,7 @@ import { ref, computed, defineAsyncComponent } from 'vue'
 import TechnologyCard from './TechnologyCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ErrorCard from '@/components/ui/ErrorCard.vue'
-import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
 import Skeleton from 'primevue/skeleton'
 import { useConfirm } from 'primevue/useconfirm'
 import { useTechnologiesStore } from '@/stores/technologies.store'
@@ -24,11 +24,7 @@ const showForm = ref(false)
 
 const loading = computed(() => technologiesQuery.isPending.value)
 const hasError = computed(() => technologiesQuery.isError.value)
-
-function openCreate() {
-  editingTech.value = null
-  showForm.value = true
-}
+const formDialogTitle = computed(() => (editingTech.value ? 'Editar tecnologia' : 'Nova tecnologia'))
 
 function openEdit(tech: Technology) {
   editingTech.value = tech
@@ -51,6 +47,11 @@ function handleCancel() {
   editingTech.value = null
 }
 
+function openCreate() {
+  editingTech.value = null
+  showForm.value = true
+}
+
 function handleDelete(tech: Technology) {
   confirm.require({
     header: 'Excluir tecnologia',
@@ -64,21 +65,29 @@ function handleDelete(tech: Technology) {
     },
   })
 }
+
+defineExpose({ openCreate })
 </script>
 
 <template>
   <div class="technology-list">
-    <div class="technology-list__header">
-      <h2>Tecnologias</h2>
-      <Button v-if="!showForm" label="Nova tecnologia" @click="openCreate" />
-    </div>
-
-    <TechnologyForm
-      v-if="showForm"
-      :model-value="editingTech"
-      @submit="handleSubmit"
-      @cancel="handleCancel"
-    />
+    <Dialog
+      v-model:visible="showForm"
+      modal
+      dismissableMask
+      :header="formDialogTitle"
+      :style="{ width: 'min(90vw, 440px)' }"
+      :breakpoints="{ '640px': '95vw' }"
+      @hide="handleCancel"
+    >
+      <TechnologyForm
+        v-if="showForm"
+        :key="editingTech?.id ?? 'new'"
+        :model-value="editingTech"
+        @submit="handleSubmit"
+        @cancel="handleCancel"
+      />
+    </Dialog>
 
     <div
       v-if="loading"
@@ -122,33 +131,11 @@ function handleDelete(tech: Technology) {
 .technology-list {
   padding: 0;
 }
-.technology-list__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--page-section-gap);
-  flex-wrap: wrap;
-  gap: var(--spacing-md);
-  padding: var(--spacing-lg) var(--spacing-xl);
-  background: var(--surface-page-header-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--surface-page-header-shadow);
-}
-.technology-list__header h2 {
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
-  font-weight: 700;
-  margin: 0;
-  color: var(--color-text);
-  letter-spacing: var(--tracking-tight);
-  line-height: var(--leading-tight);
-}
 .technology-list__grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--spacing-lg);
-  margin-top: var(--spacing-lg);
+  gap: var(--spacing-md);
+  margin-top: 0;
 }
 @media (min-width: 640px) {
   .technology-list__grid {
