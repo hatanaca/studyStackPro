@@ -6,6 +6,7 @@ use App\Models\StudySession;
 use App\Models\Technology;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -38,22 +39,24 @@ class GenericTwoMonthsDailyStudySeeder extends Seeder
         );
 
         $technologyByName = [];
-        foreach (self::TECHNOLOGIES as $index => $name) {
-            $technology = Technology::updateOrCreate(
-                [
-                    'user_id' => $user->id,
-                    'slug' => Str::slug($name),
-                ],
-                [
-                    'name' => $name,
-                    'color' => $this->colorByIndex($index),
-                    'description' => 'Tecnologia generica para dados de estudo diario',
-                    'is_active' => true,
-                ]
-            );
+        Model::unguarded(function () use ($user, &$technologyByName) {
+            foreach (self::TECHNOLOGIES as $index => $name) {
+                $technology = Technology::updateOrCreate(
+                    [
+                        'user_id' => $user->id,
+                        'slug' => Str::slug($name),
+                    ],
+                    [
+                        'name' => $name,
+                        'color' => $this->colorByIndex($index),
+                        'description' => 'Tecnologia generica para dados de estudo diario',
+                        'is_active' => true,
+                    ]
+                );
 
-            $technologyByName[$name] = $technology;
-        }
+                $technologyByName[$name] = $technology;
+            }
+        });
 
         // Reimportacao limpa para evitar duplicidade.
         $user->studySessions()->delete();
@@ -71,7 +74,7 @@ class GenericTwoMonthsDailyStudySeeder extends Seeder
             $startedAt = $currentDay->setTime(19, 0);
             $endedAt = $startedAt->addMinutes($durationMin);
 
-            StudySession::create([
+            StudySession::forceCreate([
                 'user_id' => $user->id,
                 'technology_id' => $technology->id,
                 'started_at' => $startedAt->toIso8601String(),

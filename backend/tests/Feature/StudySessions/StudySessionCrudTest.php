@@ -27,7 +27,7 @@ class StudySessionCrudTest extends TestCase
         Event::fake();
         Queue::fake();
         $this->user = User::factory()->create();
-        $this->technology = Technology::create([
+        $this->technology = Technology::forceCreate([
             'user_id' => $this->user->id,
             'name' => 'Vue.js',
             'slug' => 'vuejs',
@@ -57,7 +57,7 @@ class StudySessionCrudTest extends TestCase
 
     public function test_index_filters_by_technology_id(): void
     {
-        $tech2 = Technology::create([
+        $tech2 = Technology::forceCreate([
             'user_id' => $this->user->id,
             'name' => 'Laravel',
             'slug' => 'laravel',
@@ -81,6 +81,42 @@ class StudySessionCrudTest extends TestCase
         $data = $response->json('data');
         $this->assertCount(1, $data);
         $this->assertEquals($this->technology->id, $data[0]['technology_id']);
+    }
+
+    public function test_index_rejects_invalid_status_query(): void
+    {
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
+            ->getJson('/api/v1/study-sessions?status=unknown');
+
+        $response->assertStatus(422)
+            ->assertJson(['success' => false]);
+    }
+
+    public function test_index_rejects_per_page_above_fifty(): void
+    {
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
+            ->getJson('/api/v1/study-sessions?per_page=99');
+
+        $response->assertStatus(422)
+            ->assertJson(['success' => false]);
+    }
+
+    public function test_index_rejects_date_to_before_date_from(): void
+    {
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
+            ->getJson('/api/v1/study-sessions?date_from=2025-06-01&date_to=2025-01-01');
+
+        $response->assertStatus(422)
+            ->assertJson(['success' => false]);
+    }
+
+    public function test_index_rejects_invalid_page(): void
+    {
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
+            ->getJson('/api/v1/study-sessions?page=0');
+
+        $response->assertStatus(422)
+            ->assertJson(['success' => false]);
     }
 
     public function test_store_creates_session(): void
@@ -135,7 +171,7 @@ class StudySessionCrudTest extends TestCase
     public function test_store_rejects_technology_from_another_user(): void
     {
         $otherUser = User::factory()->create();
-        $otherTech = Technology::create([
+        $otherTech = Technology::forceCreate([
             'user_id' => $otherUser->id,
             'name' => 'Outro',
             'slug' => 'outro',
@@ -173,7 +209,7 @@ class StudySessionCrudTest extends TestCase
     public function test_show_returns_403_for_cross_user(): void
     {
         $otherUser = User::factory()->create();
-        $otherTech = Technology::create([
+        $otherTech = Technology::forceCreate([
             'user_id' => $otherUser->id,
             'name' => 'Outro',
             'slug' => 'outro',

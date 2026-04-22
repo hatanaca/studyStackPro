@@ -120,7 +120,10 @@ onBeforeUnmount(() => {
     class="technology-study-widget technology-study-widget--list"
     :style="{ '--tech-color': technology.color }"
   >
-    <div class="technology-study-widget__bar technology-study-widget__bar--side" aria-hidden="true" />
+    <div
+      class="technology-study-widget__bar technology-study-widget__bar--side"
+      aria-hidden="true"
+    />
     <div class="technology-study-widget__list-inner">
       <div class="technology-study-widget__list-head">
         <h3 class="technology-study-widget__name technology-study-widget__name--list">

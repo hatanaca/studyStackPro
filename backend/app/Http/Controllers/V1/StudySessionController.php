@@ -4,6 +4,7 @@ namespace App\Http\Controllers\V1;
 
 use App\Exceptions\Domain\ConcurrentSessionException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StudySessions\IndexStudySessionsRequest;
 use App\Http\Requests\StudySessions\StartStudySessionRequest;
 use App\Http\Requests\StudySessions\StoreStudySessionRequest;
 use App\Http\Requests\StudySessions\UpdateStudySessionRequest;
@@ -37,9 +38,9 @@ class StudySessionController extends Controller
      * Lista sessões do usuário com filtros e paginação.
      * Filtros: tecnologia, período, página, por página.
      */
-    public function index(Request $request): JsonResponse
+    public function index(IndexStudySessionsRequest $request): JsonResponse
     {
-        $filterDto = StudySessionFilterDTO::fromArray($request->query());
+        $filterDto = StudySessionFilterDTO::fromArray($request->validated());
         $paginator = $this->studySessionService->listForUser($request->user()->id, $filterDto);
 
         return $this->success(

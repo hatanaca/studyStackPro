@@ -13,8 +13,8 @@ use Illuminate\Support\Facades\Hash;
  * Serviço de autenticação.
  *
  * Centraliza lógica de registro, login, troca de senha. Usa AuthRepository para persistência
- * e Sanctum para tokens. Login valida credenciais sem sessão web (API stateless), para o
- * guard Sanctum não autenticar requisições seguintes só pela sessão.
+ * e Sanctum. Login/registo criam sessão web (cookie HttpOnly) para a SPA; tokens pessoais
+ * (Bearer) continuam disponíveis para testes e integrações que os criem explicitamente.
  */
 class AuthService
 {
@@ -42,10 +42,10 @@ class AuthService
     }
 
     /**
-     * Valida email/senha e retorna user + token. Revoga tokens anteriores. Não usa Auth::attempt
-     * (evita sessão web; o Guard do Sanctum consulta o guard "web" antes do Bearer).
+     * Valida email/senha, revoga tokens pessoais antigos e devolve o utilizador.
+     * A sessão web (cookie) é iniciada no controlador após este retorno.
      *
-     * @return array{user: User, token: string}|null null se credenciais inválidas
+     * @return array{user: User}|null null se credenciais inválidas
      */
     public function login(LoginDTO $dto): ?array
     {
@@ -55,9 +55,8 @@ class AuthService
         }
 
         $this->tokenService->revokeMany($user->tokens()->get());
-        $token = $user->createToken('api-token')->plainTextToken;
 
-        return ['user' => $user->fresh(), 'token' => $token];
+        return ['user' => $user->fresh()];
     }
 
     /**

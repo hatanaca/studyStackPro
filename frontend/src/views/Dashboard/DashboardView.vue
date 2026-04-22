@@ -180,7 +180,6 @@ async function retry() {
     analyticsStore.fetchWeekly(),
   ])
 }
-
 </script>
 
 <template>

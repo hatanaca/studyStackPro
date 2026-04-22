@@ -12,8 +12,8 @@ function handleExport() {
 <template>
   <Fieldset legend="Dados">
     <p class="data-section__desc">
-      Em Exportar dados (Configurações) você baixa sessões e métricas por período (servidor). Metas e
-      preferências continuam armazenadas no navegador.
+      Em Exportar dados (Configurações) você baixa sessões e métricas por período (servidor). Metas
+      e preferências continuam armazenadas no navegador.
     </p>
     <div class="data-section">
       <Button

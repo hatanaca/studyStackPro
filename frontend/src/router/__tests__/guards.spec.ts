@@ -40,50 +40,31 @@ describe('setupAuthGuard', () => {
     next = vi.fn() as unknown as NavigationGuardNext
   })
 
-  it('redirects to login when route requires auth and no token', async () => {
+  it('redirecciona para login quando a rota exige auth e não há sessão', async () => {
     const to = makeTo({ requiresAuth: true })
     await setupAuthGuard(to, from, next)
 
     expect(next).toHaveBeenCalledWith({ name: 'login' })
   })
 
-  it('redirects to dashboard when guest route and authenticated', async () => {
-    vi.mocked(authApi.me).mockResolvedValue({
-      data: { success: true, data: { id: 'u1', name: 'User', email: 'u@e.com', timezone: 'UTC' } },
-    } as never)
-
+  it('redirecciona para o dashboard em rota guest com sessão já validada', async () => {
     const authStore = useAuthStore()
-    authStore.token = 'valid-token'
+    authStore.user = { id: 'u1', name: 'User', email: 'u@e.com', timezone: 'UTC' } as never
+    authStore.sessionValidated = true
     const to = makeTo({ guest: true })
 
     await setupAuthGuard(to, from, next)
 
-    expect(authApi.me).toHaveBeenCalledOnce()
+    expect(authApi.me).not.toHaveBeenCalled()
     expect(next).toHaveBeenCalledWith({ name: 'dashboard' })
   })
 
-  it('calls fetchMe when authenticated but no user', async () => {
+  it('valida sessão com fetchMe quando há cache e rota exige auth', async () => {
     vi.mocked(authApi.me).mockResolvedValue({
       data: { success: true, data: { id: 'u1', name: 'User', email: 'u@e.com', timezone: 'UTC' } },
     } as never)
 
     const authStore = useAuthStore()
-    authStore.token = 'valid-token'
-    const to = makeTo({ requiresAuth: true })
-
-    await setupAuthGuard(to, from, next)
-
-    expect(authApi.me).toHaveBeenCalledOnce()
-    expect(next).toHaveBeenCalledWith()
-  })
-
-  it('calls fetchMe once when authenticated with cached user (valida token antes da rota)', async () => {
-    vi.mocked(authApi.me).mockResolvedValue({
-      data: { success: true, data: { id: 'u1', name: 'User', email: 'u@e.com', timezone: 'UTC' } },
-    } as never)
-
-    const authStore = useAuthStore()
-    authStore.token = 'valid-token'
     authStore.user = { id: 'u1', name: 'User', email: 'u@e.com', timezone: 'UTC' } as never
 
     const to = makeTo({ requiresAuth: true })
@@ -93,13 +74,12 @@ describe('setupAuthGuard', () => {
     expect(authApi.me).toHaveBeenCalledOnce()
   })
 
-  it('skips fetchMe on second navigation when sessão já validada', async () => {
+  it('não chama fetchMe na segunda navegação quando a sessão já está validada', async () => {
     vi.mocked(authApi.me).mockResolvedValue({
       data: { success: true, data: { id: 'u1', name: 'User', email: 'u@e.com', timezone: 'UTC' } },
     } as never)
 
     const authStore = useAuthStore()
-    authStore.token = 'valid-token'
     authStore.user = { id: 'u1', name: 'User', email: 'u@e.com', timezone: 'UTC' } as never
 
     const to = makeTo({ requiresAuth: true })
@@ -113,7 +93,7 @@ describe('setupAuthGuard', () => {
     expect(authApi.me).not.toHaveBeenCalled()
   })
 
-  it('does not call fetchMe twice simultaneously', async () => {
+  it('não dispara fetchMe em duplicado em navegações simultâneas', async () => {
     let resolveMe!: (v: unknown) => void
     vi.mocked(authApi.me).mockImplementation(
       () =>
@@ -123,7 +103,7 @@ describe('setupAuthGuard', () => {
     )
 
     const authStore = useAuthStore()
-    authStore.token = 'valid-token'
+    authStore.user = { id: 'u1', name: 'User', email: 'u@e.com', timezone: 'UTC' } as never
     const to = makeTo({ requiresAuth: true })
 
     const next1 = vi.fn()
@@ -143,14 +123,11 @@ describe('setupAuthGuard', () => {
     expect(next2).toHaveBeenCalledWith()
   })
 
-  it('redirects to login if fetchMe fails and token was cleared (401 interceptor)', async () => {
-    const authStore = useAuthStore()
-    authStore.token = 'valid-token'
+  it('redirecciona para login quando fetchMe falha sem sessão válida', async () => {
+    vi.mocked(authApi.me).mockRejectedValue({ response: { status: 401 } })
 
-    vi.mocked(authApi.me).mockImplementation(() => {
-      authStore.token = null
-      return Promise.reject(new Error('Unauthorized'))
-    })
+    const authStore = useAuthStore()
+    authStore.user = { id: 'u1', name: 'User', email: 'u@e.com', timezone: 'UTC' } as never
 
     const to = makeTo({ requiresAuth: true })
     await setupAuthGuard(to, from, next)
@@ -158,19 +135,19 @@ describe('setupAuthGuard', () => {
     expect(next).toHaveBeenCalledWith({ name: 'login' })
   })
 
-  it('calls next if fetchMe fails but token still valid', async () => {
+  it('redirecciona para login quando fetchMe falha por rede e a sessão não foi validada', async () => {
     vi.mocked(authApi.me).mockRejectedValue(new Error('Network error'))
 
     const authStore = useAuthStore()
-    authStore.token = 'valid-token'
+    authStore.user = { id: 'u1', name: 'User', email: 'u@e.com', timezone: 'UTC' } as never
     const to = makeTo({ requiresAuth: true })
 
     await setupAuthGuard(to, from, next)
 
-    expect(next).toHaveBeenCalledWith()
+    expect(next).toHaveBeenCalledWith({ name: 'login' })
   })
 
-  it('calls next for non-protected non-guest routes', async () => {
+  it('chama next em rotas sem meta guest nem requiresAuth', async () => {
     const to = makeTo({})
     await setupAuthGuard(to, from, next)
 

@@ -81,7 +81,7 @@ class JobDedupTest extends TestCase
     private function createSession(): StudySession
     {
         $user = User::factory()->create();
-        $technology = Technology::create([
+        $technology = Technology::forceCreate([
             'user_id' => $user->id,
             'name' => 'Lua',
             'slug' => 'lua',

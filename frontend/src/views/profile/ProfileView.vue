@@ -69,7 +69,7 @@ watch(
   (tab) => {
     if (tab === 'goals') activeTab.value = 'goals'
   },
-  { immediate: true },
+  { immediate: true }
 )
 
 watch(activeTab, (tab) => {
@@ -294,8 +294,8 @@ function formatDate(iso: string | null): string {
               <template #content>
                 <h2 class="section-title">Metas de estudo</h2>
                 <p class="section-desc">
-                  Defina e acompanhe metas por semana ou sequência de dias. O progresso semanal também
-                  aparece no dashboard.
+                  Defina e acompanhe metas por semana ou sequência de dias. O progresso semanal
+                  também aparece no dashboard.
                 </p>
                 <GoalList />
               </template>

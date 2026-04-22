@@ -57,17 +57,11 @@ const displayTitle = computed(() => {
   if (props.topicOnly) {
     return props.session.title?.trim() || 'Sem tema definido'
   }
-  return (
-    props.session.title?.trim() ||
-    props.session.technology?.name ||
-    'Sem tecnologia'
-  )
+  return props.session.title?.trim() || props.session.technology?.name || 'Sem tecnologia'
 })
 
 const showTechUnderTitle = computed(
-  () =>
-    !props.topicOnly &&
-    !!(props.session.title?.trim() && props.session.technology?.name),
+  () => !props.topicOnly && !!(props.session.title?.trim() && props.session.technology?.name)
 )
 </script>
 
@@ -112,7 +106,9 @@ const showTechUnderTitle = computed(
           {{ expanded ? 'Ver menos' : 'Ver mais' }}
         </button>
         <div class="session-card__links">
-          <button type="button" class="session-card__link" @click="emit('edit', session)">Editar</button>
+          <button type="button" class="session-card__link" @click="emit('edit', session)">
+            Editar
+          </button>
         </div>
       </div>
       <div class="session-card__side">

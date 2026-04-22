@@ -64,7 +64,7 @@ class UserContractTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $response = $this->postJson('/api/v1/auth/login', [
+        $response = $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])->postJson('/api/v1/auth/login', [
             'email' => 'contract@example.com',
             'password' => 'password123',
         ]);
@@ -74,15 +74,13 @@ class UserContractTest extends TestCase
                 'success',
                 'data' => [
                     'user' => ['id', 'name', 'email'],
-                    'token',
-                    'token_type',
                 ],
             ]);
     }
 
     public function test_register_response_matches_login_response(): void
     {
-        $response = $this->postJson('/api/v1/auth/register', [
+        $response = $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])->postJson('/api/v1/auth/register', [
             'name' => 'Contract Test',
             'email' => 'register-contract@example.com',
             'password' => 'password123',
@@ -94,8 +92,6 @@ class UserContractTest extends TestCase
                 'success',
                 'data' => [
                     'user' => ['id', 'name', 'email'],
-                    'token',
-                    'token_type',
                 ],
             ]);
     }

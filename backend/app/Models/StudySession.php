@@ -22,8 +22,11 @@ class StudySession extends BaseModel
 
     protected $table = 'study_sessions';
 
+    /**
+     * user_id não é fillable: só pode ser definido por código confiável (repositório forceCreate / factory em unguard).
+     * Evita atribuição em massa acidental a partir de payloads HTTP.
+     */
     protected $fillable = [
-        'user_id',
         'technology_id',
         'title',
         'started_at',

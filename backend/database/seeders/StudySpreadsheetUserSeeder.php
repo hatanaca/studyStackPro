@@ -6,6 +6,7 @@ use App\Models\StudySession;
 use App\Models\Technology;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -196,22 +197,24 @@ class StudySpreadsheetUserSeeder extends Seeder
         /** @var array<string, Technology> $technologyBySubject */
         $technologyBySubject = [];
 
-        foreach (self::SUBJECTS as $index => $subject) {
-            $technology = Technology::updateOrCreate(
-                [
-                    'user_id' => $user->id,
-                    'slug' => Str::slug($subject),
-                ],
-                [
-                    'name' => $subject,
-                    'color' => $this->colorByIndex($index),
-                    'description' => 'Importado de planilha de estudos',
-                    'is_active' => true,
-                ]
-            );
+        Model::unguarded(function () use ($user, &$technologyBySubject) {
+            foreach (self::SUBJECTS as $index => $subject) {
+                $technology = Technology::updateOrCreate(
+                    [
+                        'user_id' => $user->id,
+                        'slug' => Str::slug($subject),
+                    ],
+                    [
+                        'name' => $subject,
+                        'color' => $this->colorByIndex($index),
+                        'description' => 'Importado de planilha de estudos',
+                        'is_active' => true,
+                    ]
+                );
 
-            $technologyBySubject[$subject] = $technology;
-        }
+                $technologyBySubject[$subject] = $technology;
+            }
+        });
 
         foreach (self::MONTHLY_BREAKDOWN as $row) {
             $baseStart = CarbonImmutable::parse($row['date'], 'America/Sao_Paulo');
@@ -226,7 +229,7 @@ class StudySpreadsheetUserSeeder extends Seeder
                 $startedAt = $baseStart->addMinutes($slot * 5);
                 $endedAt = $startedAt->addMinutes($durationMin);
 
-                StudySession::create([
+                StudySession::forceCreate([
                     'user_id' => $user->id,
                     'technology_id' => $technologyBySubject[$subject]->id,
                     'started_at' => $startedAt->toIso8601String(),
@@ -240,18 +243,20 @@ class StudySpreadsheetUserSeeder extends Seeder
             }
         }
 
-        $networkTech = Technology::firstOrCreate(
-            [
-                'user_id' => $user->id,
-                'slug' => Str::slug('Cursos concluidos'),
-            ],
-            [
-                'name' => 'Cursos concluidos',
-                'color' => '#6B7280',
-                'description' => 'Cursos concluidos importados da planilha',
-                'is_active' => true,
-            ]
-        );
+        $networkTech = Model::unguarded(function () use ($user) {
+            return Technology::firstOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'slug' => Str::slug('Cursos concluidos'),
+                ],
+                [
+                    'name' => 'Cursos concluidos',
+                    'color' => '#6B7280',
+                    'description' => 'Cursos concluidos importados da planilha',
+                    'is_active' => true,
+                ]
+            );
+        });
 
         foreach (self::COMPLETED_COURSES as $course) {
             $startedAt = CarbonImmutable::createFromFormat(
@@ -269,7 +274,7 @@ class StudySpreadsheetUserSeeder extends Seeder
                 continue;
             }
 
-            StudySession::create([
+            StudySession::forceCreate([
                 'user_id' => $user->id,
                 'technology_id' => $networkTech->id,
                 'started_at' => $startedAt->toIso8601String(),

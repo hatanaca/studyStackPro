@@ -28,6 +28,7 @@ import {
   STUDYTRACK_REMINDER_REMOVED_EVENT,
   stripNotesLinesMatching,
 } from '@/features/sessions/utils/reminderRemovedSync'
+import { isUUID } from '@/utils/validators.extended'
 
 const props = defineProps<{
   technologyId?: string
@@ -68,7 +69,7 @@ const deleteLoading = sessionDelete.deleteLoading
 
 const showAddModal = ref(false)
 const filters = ref<SessionListFilters>(
-  props.technologyId ? { technology_id: props.technologyId } : {}
+  props.technologyId && isUUID(props.technologyId) ? { technology_id: props.technologyId } : {}
 )
 const scrollContainerRef = ref<HTMLElement | null>(null)
 const listRef = ref<HTMLElement | null>(null)
@@ -220,6 +221,7 @@ function applyTechnologyFilter(technologyId: string | undefined) {
   if (props.technologyId) return
   const next: SessionListFilters = { ...filters.value }
   if (technologyId) {
+    if (!isUUID(technologyId)) return
     next.technology_id = technologyId
   } else {
     delete next.technology_id
@@ -227,14 +229,16 @@ function applyTechnologyFilter(technologyId: string | undefined) {
   filters.value = next
   onFiltersChange()
   void nextTick(() => {
-    document.getElementById('session-list-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    document
+      .getElementById('session-list-anchor')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   })
 }
 
 watch(
   () => props.technologyId,
   (id) => {
-    if (id) {
+    if (id && isUUID(id)) {
       filters.value = { ...filters.value, technology_id: id }
       onFiltersChange()
     }
@@ -271,13 +275,13 @@ onMounted(async () => {
 
   if (!props.technologyId) {
     const techId = route.query.technology_id
-    if (typeof techId === 'string' && techId) {
+    if (typeof techId === 'string' && techId && isUUID(techId)) {
       filters.value = { ...filters.value, technology_id: techId }
     }
   }
   window.addEventListener(
     STUDYTRACK_REMINDER_REMOVED_EVENT,
-    onReminderRemovedSyncEditNotes as EventListener,
+    onReminderRemovedSyncEditNotes as EventListener
   )
 })
 
@@ -288,7 +292,7 @@ onBeforeUnmount(() => {
   }
   window.removeEventListener(
     STUDYTRACK_REMINDER_REMOVED_EVENT,
-    onReminderRemovedSyncEditNotes as EventListener,
+    onReminderRemovedSyncEditNotes as EventListener
   )
 })
 
@@ -422,62 +426,62 @@ defineExpose({
       @hide="sessionEdit.closeEdit"
     >
       <div class="edit-form-scroll">
-      <form class="edit-form" @submit.prevent="sessionEdit.saveEdit">
-        <div class="edit-form__field">
-          <label class="edit-form__label">Nome / tópico da sessão</label>
-          <input
-            v-model="editForm.title"
-            type="text"
-            class="edit-form__input"
-            maxlength="255"
-            placeholder="Ex.: Funções, rotas, testes…"
-            autocomplete="off"
-          />
-        </div>
-        <div class="edit-form__field">
-          <span class="edit-form__label">Tecnologia</span>
-          <p class="edit-form__tech-readonly" aria-live="polite">
-            {{ editingSession?.technology?.name ?? '—' }}
-          </p>
-          <p class="edit-form__tech-note">A tecnologia da sessão não pode ser alterada.</p>
-        </div>
-
-        <div class="edit-form__row">
+        <form class="edit-form" @submit.prevent="sessionEdit.saveEdit">
           <div class="edit-form__field">
-            <label class="edit-form__label">Data</label>
-            <input v-model="editForm.date" type="date" class="edit-form__input" />
-          </div>
-          <div class="edit-form__field">
-            <label class="edit-form__label">Duração (min)</label>
+            <label class="edit-form__label">Nome / tópico da sessão</label>
             <input
-              v-model.number="editForm.duration"
-              type="number"
-              min="1"
-              max="1440"
+              v-model="editForm.title"
+              type="text"
               class="edit-form__input"
+              maxlength="255"
+              placeholder="Ex.: Funções, rotas, testes…"
+              autocomplete="off"
             />
           </div>
-        </div>
+          <div class="edit-form__field">
+            <span class="edit-form__label">Tecnologia</span>
+            <p class="edit-form__tech-readonly" aria-live="polite">
+              {{ editingSession?.technology?.name ?? '—' }}
+            </p>
+            <p class="edit-form__tech-note">A tecnologia da sessão não pode ser alterada.</p>
+          </div>
 
-        <div class="edit-form__field">
-          <label class="edit-form__label">Observações</label>
-          <textarea v-model="editForm.notes" rows="4" class="edit-form__textarea" />
-        </div>
+          <div class="edit-form__row">
+            <div class="edit-form__field">
+              <label class="edit-form__label">Data</label>
+              <input v-model="editForm.date" type="date" class="edit-form__input" />
+            </div>
+            <div class="edit-form__field">
+              <label class="edit-form__label">Duração (min)</label>
+              <input
+                v-model.number="editForm.duration"
+                type="number"
+                min="1"
+                max="1440"
+                class="edit-form__input"
+              />
+            </div>
+          </div>
 
-        <div class="edit-form__actions">
-          <Button
-            type="submit"
-            :label="editLoading ? 'Salvando...' : 'Salvar'"
-            :loading="editLoading"
-          />
-          <Button
-            label="Cancelar"
-            severity="secondary"
-            variant="outlined"
-            @click="sessionEdit.closeEdit"
-          />
-        </div>
-      </form>
+          <div class="edit-form__field">
+            <label class="edit-form__label">Observações</label>
+            <textarea v-model="editForm.notes" rows="4" class="edit-form__textarea" />
+          </div>
+
+          <div class="edit-form__actions">
+            <Button
+              type="submit"
+              :label="editLoading ? 'Salvando...' : 'Salvar'"
+              :loading="editLoading"
+            />
+            <Button
+              label="Cancelar"
+              severity="secondary"
+              variant="outlined"
+              @click="sessionEdit.closeEdit"
+            />
+          </div>
+        </form>
       </div>
     </Dialog>
 

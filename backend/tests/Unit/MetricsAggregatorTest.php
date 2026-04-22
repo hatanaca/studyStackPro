@@ -38,7 +38,7 @@ class MetricsAggregatorTest extends TestCase
     public function test_streak_n_days_with_consecutive_sessions(): void
     {
         $user = User::factory()->create();
-        $tech = Technology::create([
+        $tech = Technology::forceCreate([
             'user_id' => $user->id,
             'name' => 'PHP',
             'slug' => 'php',
@@ -50,7 +50,7 @@ class MetricsAggregatorTest extends TestCase
         for ($i = 0; $i < 3; $i++) {
             $start = $baseDate->copy()->addDays($i)->setTime(10, 0);
             $end = $start->copy()->addMinutes(30);
-            StudySession::create([
+            StudySession::forceCreate([
                 'user_id' => $user->id,
                 'technology_id' => $tech->id,
                 'started_at' => $start,
@@ -74,7 +74,7 @@ class MetricsAggregatorTest extends TestCase
     public function test_gap_breaks_streak(): void
     {
         $user = User::factory()->create();
-        $tech = Technology::create([
+        $tech = Technology::forceCreate([
             'user_id' => $user->id,
             'name' => 'PHP',
             'slug' => 'php',
@@ -88,7 +88,7 @@ class MetricsAggregatorTest extends TestCase
         $day3 = now()->timezone($tz)->subDays(5)->startOfDay()->setTime(10, 0); // gap de 4 dias
 
         foreach ([$day1, $day2, $day3] as $start) {
-            StudySession::create([
+            StudySession::forceCreate([
                 'user_id' => $user->id,
                 'technology_id' => $tech->id,
                 'started_at' => $start,
@@ -110,7 +110,7 @@ class MetricsAggregatorTest extends TestCase
     public function test_personal_best_preserved_after_gap(): void
     {
         $user = User::factory()->create();
-        $tech = Technology::create([
+        $tech = Technology::forceCreate([
             'user_id' => $user->id,
             'name' => 'PHP',
             'slug' => 'php',
@@ -121,7 +121,7 @@ class MetricsAggregatorTest extends TestCase
         $tz = config('app.timezone', 'UTC');
         for ($i = 0; $i < 5; $i++) {
             $start = now()->timezone($tz)->subDays(20)->addDays($i)->startOfDay()->setTime(10, 0);
-            StudySession::create([
+            StudySession::forceCreate([
                 'user_id' => $user->id,
                 'technology_id' => $tech->id,
                 'started_at' => $start,
@@ -136,7 +136,7 @@ class MetricsAggregatorTest extends TestCase
         $maxBefore = (int) $rowBefore->max_streak_days;
 
         $gapStart = now()->timezone($tz)->subDays(10)->startOfDay()->setTime(10, 0);
-        StudySession::create([
+        StudySession::forceCreate([
             'user_id' => $user->id,
             'technology_id' => $tech->id,
             'started_at' => $gapStart,

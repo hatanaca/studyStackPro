@@ -3,7 +3,8 @@
 
 services:
   pgadmin:
-    image: dpage/pgadmin4:8
+    # Versão fixa (evita :latest). 9.14.x inclui cadeia Python mais recente (ex. authlib ≥ 1.6.9 para CVE-2026-27962).
+    image: dpage/pgadmin4:9.14.0
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@studytrack.dev
       PGADMIN_DEFAULT_PASSWORD: admin

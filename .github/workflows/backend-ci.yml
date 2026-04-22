@@ -24,7 +24,8 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       redis:
-        image: redis:7-alpine
+        # Alinhado ao compose raiz (redis:alpine); evita redis:7-alpine com cadeia antiga de CVEs.
+        image: redis:alpine
         ports:
           - 6379:6379
         options: >-

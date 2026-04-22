@@ -80,7 +80,7 @@ function deleteReminder(r: Reminder) {
     new CustomEvent(STUDYTRACK_REMINDER_REMOVED_EVENT, {
       detail: { technologyId: props.technologyId, text: removedText },
       bubbles: true,
-    }),
+    })
   )
 }
 

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\MissingAttributeException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Throwable;
@@ -105,24 +106,16 @@ class Handler extends ExceptionHandler
         return str_contains($m, '[title]') && str_contains($m, 'StudySession');
     }
 
-    /** Resposta JSON clara + linha NDJSON em debug-4b11d9.log (sessão de debug do agente). */
+    /**
+     * Resposta JSON quando a coluna `title` de `study_sessions` ainda não existe (migração pendente).
+     * Registo apenas via canal de log da app — evita escrita em paths arbitrários fora do projeto.
+     */
     private function schemaOutdatedStudySessionsTitleResponse(Throwable $e): \Illuminate\Http\JsonResponse
     {
-        $logPath = dirname(base_path()).DIRECTORY_SEPARATOR.'debug-4b11d9.log';
-        $sqlState = $e instanceof QueryException ? ($e->errorInfo[0] ?? null) : null;
-        $line = json_encode([
-            'sessionId' => '4b11d9',
-            'hypothesisId' => 'H500',
-            'location' => 'Handler.php:schemaOutdatedStudySessionsTitleResponse',
-            'message' => 'Schema study_sessions.title em falta (QueryException ou MissingAttributeException)',
-            'data' => [
-                'exceptionClass' => $e::class,
-                'sqlState' => $sqlState,
-                'exceptionSnippet' => substr($e->getMessage(), 0, 240),
-            ],
-            'timestamp' => (int) (microtime(true) * 1000),
-        ], JSON_UNESCAPED_UNICODE)."\n";
-        @file_put_contents($logPath, $line, FILE_APPEND);
+        Log::notice('Schema study_sessions: coluna title em falta ou modelo desatualizado.', [
+            'exception' => $e::class,
+            'sql_state' => $e instanceof QueryException ? ($e->errorInfo[0] ?? null) : null,
+        ]);
 
         return response()->json([
             'success' => false,

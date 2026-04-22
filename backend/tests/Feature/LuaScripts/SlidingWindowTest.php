@@ -103,7 +103,7 @@ class SlidingWindowTest extends TestCase
     private function createAuthenticatedContext(): array
     {
         $user = User::factory()->create();
-        $technology = Technology::create([
+        $technology = Technology::forceCreate([
             'user_id' => $user->id,
             'name' => 'Redis',
             'slug' => 'redis',

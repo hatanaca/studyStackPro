@@ -25,7 +25,7 @@ class AnalyticsCacheTest extends TestCase
         Bus::fake([RecalculateMetricsJob::class]);
 
         $user = User::factory()->create();
-        $tech = Technology::create([
+        $tech = Technology::forceCreate([
             'user_id' => $user->id,
             'name' => 'PHP',
             'slug' => 'php',
@@ -33,7 +33,7 @@ class AnalyticsCacheTest extends TestCase
             'is_active' => true,
         ]);
 
-        $session = StudySession::create([
+        $session = StudySession::forceCreate([
             'user_id' => $user->id,
             'technology_id' => $tech->id,
             'started_at' => now(),

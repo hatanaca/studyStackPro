@@ -1,4 +1,7 @@
-.PHONY: dev stop build setup shell-php shell-vue test test-back test-front test-db-setup migrate seed fresh horizon pint lint logs
+.PHONY: dev stop build setup shell-php shell-vue test test-back test-front test-db-setup migrate seed fresh horizon pint lint logs prod-build prod-up prod-down
+
+# Serviços Docker sem o Vite dev (node) — produção com frontend em frontend/dist
+PROD_SERVICES := nginx php-fpm reverb horizon scheduler postgres redis
 
 setup:
 	@test -f .env || cp .env.example .env
@@ -52,3 +55,12 @@ lint:
 
 logs:
 	docker compose logs -f
+
+prod-build:
+	cd frontend && npm ci && npm run build
+
+prod-up:
+	docker compose -f docker-compose.yml -f docker-compose.production.yml up -d --build $(PROD_SERVICES)
+
+prod-down:
+	docker compose -f docker-compose.yml -f docker-compose.production.yml down

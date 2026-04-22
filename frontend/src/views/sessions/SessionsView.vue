@@ -53,9 +53,10 @@ function staggerMs(index: number): number {
   return Math.min(index * 45, 900)
 }
 
-const sessionListRef = ref<{ openAddModal: () => void; applyTechnologyFilter: (id?: string) => void } | null>(
-  null,
-)
+const sessionListRef = ref<{
+  openAddModal: () => void
+  applyTechnologyFilter: (id?: string) => void
+} | null>(null)
 const techListExpanded = ref(false)
 
 function onViewSessionList(technologyId: string) {
@@ -91,7 +92,9 @@ function onViewSessionList(technologyId: string) {
           severity="secondary"
           :aria-expanded="techListExpanded"
           aria-controls="sessions-by-tech-widgets"
-          :aria-label="techListExpanded ? 'Recolher lista por tecnologia' : 'Expandir lista por tecnologia'"
+          :aria-label="
+            techListExpanded ? 'Recolher lista por tecnologia' : 'Expandir lista por tecnologia'
+          "
           @click="techListExpanded = !techListExpanded"
         />
       </header>

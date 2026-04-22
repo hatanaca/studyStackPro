@@ -1,0 +1,47 @@
+# Overlay para produção: use com o compose principal.
+# - Não expõe Postgres/Redis na máquina anfitriã (só rede interna Docker).
+# - APP_ENV/APP_DEBUG explícitos no PHP e workers.
+# - Segredos obrigatórios (sem fallback do compose base): defina no .env antes de `docker compose ... -f docker-compose.production.yml up`.
+#
+# Build do frontend antes: make prod-build
+# Subir sem Vite dev: make prod-up (só serviços necessários; não sobe "node")
+#
+
+services:
+  nginx:
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env de produção}
+
+  php-fpm:
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env de produção}
+
+  reverb:
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env de produção}
+
+  horizon:
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env de produção}
+
+  scheduler:
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env de produção}
+
+  postgres:
+    ports: []
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env de produção}
+
+  redis:
+    ports: []
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env de produção}

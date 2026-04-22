@@ -51,7 +51,7 @@ class ErrorContractTest extends TestCase
         $userA = User::factory()->create();
         $userB = User::factory()->create();
 
-        $tech = Technology::create([
+        $tech = Technology::forceCreate([
             'user_id' => $userA->id,
             'name' => 'Private Tech',
             'slug' => 'private-tech',
@@ -94,7 +94,7 @@ class ErrorContractTest extends TestCase
     {
         $userA = User::factory()->create();
         $userB = User::factory()->create();
-        $tech = Technology::create([
+        $tech = Technology::forceCreate([
             'user_id' => $userA->id,
             'name' => 'Owned Tech',
             'slug' => 'owned-tech',

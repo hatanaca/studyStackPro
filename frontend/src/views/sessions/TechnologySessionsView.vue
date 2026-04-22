@@ -63,19 +63,31 @@ async function loadTechnology() {
   }
 }
 
+const MAX_SESSION_PAGES = 500
+
 async function loadSessions() {
   if (!id.value) return
   sessionsError.value = null
   try {
-    const { data } = await sessionsApi.list({
-      technology_id: id.value,
-      per_page: 500,
-    })
-    if (data.success && Array.isArray(data.data)) {
-      sessions.value = data.data
-    } else {
-      sessions.value = []
-    }
+    const all: StudySession[] = []
+    let page = 1
+    let lastPage = 1
+    do {
+      const { data } = await sessionsApi.list({
+        technology_id: id.value,
+        per_page: 50,
+        page,
+      })
+      if (!data.success || !Array.isArray(data.data)) {
+        sessions.value = []
+        return
+      }
+      all.push(...data.data)
+      lastPage = data.meta?.last_page ?? 1
+      page++
+      if (page > MAX_SESSION_PAGES) break
+    } while (page <= lastPage)
+    sessions.value = all
   } catch {
     sessions.value = []
     sessionsError.value = 'Não foi possível carregar as sessões desta tecnologia.'

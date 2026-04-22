@@ -11,6 +11,8 @@ import {
   useTechnologiesQuery,
   useInvalidateTechnologies,
 } from '@/features/technologies/composables/useTechnologiesQuery'
+import { useToast } from '@/composables/useToast'
+import { getApiErrorMessage } from '@/api/client'
 import type { Technology } from '@/types/domain.types'
 
 const TechnologyForm = defineAsyncComponent(() => import('./TechnologyForm.vue'))
@@ -19,12 +21,25 @@ const technologiesQuery = useTechnologiesQuery()
 const store = useTechnologiesStore()
 const invalidateTechnologies = useInvalidateTechnologies()
 const confirm = useConfirm()
+const toast = useToast()
 const editingTech = ref<Technology | null>(null)
 const showForm = ref(false)
+const formSubmitting = ref(false)
+const technologyFormRef = ref<{ setError: (msg: string) => void } | null>(null)
+
+/** Trecho seguro para mensagens de confirmação (evita quebra de linha / marcadores). */
+function safeConfirmSnippet(text: string, max = 100): string {
+  return text
+    .replace(/[\r\n<>]/g, ' ')
+    .trim()
+    .slice(0, max)
+}
 
 const loading = computed(() => technologiesQuery.isPending.value)
 const hasError = computed(() => technologiesQuery.isError.value)
-const formDialogTitle = computed(() => (editingTech.value ? 'Editar tecnologia' : 'Nova tecnologia'))
+const formDialogTitle = computed(() =>
+  editingTech.value ? 'Editar tecnologia' : 'Nova tecnologia'
+)
 
 function openEdit(tech: Technology) {
   editingTech.value = tech
@@ -32,14 +47,26 @@ function openEdit(tech: Technology) {
 }
 
 async function handleSubmit(payload: { name: string; color: string; description?: string }) {
-  if (editingTech.value) {
-    await store.updateTechnology(editingTech.value.id, payload)
-  } else {
-    await store.createTechnology(payload)
+  if (formSubmitting.value) return
+  const wasEdit = !!editingTech.value
+  formSubmitting.value = true
+  try {
+    if (editingTech.value) {
+      await store.updateTechnology(editingTech.value.id, payload)
+    } else {
+      await store.createTechnology(payload)
+    }
+    showForm.value = false
+    editingTech.value = null
+    await invalidateTechnologies()
+    toast.success(wasEdit ? 'Tecnologia atualizada.' : 'Tecnologia criada.')
+  } catch (err) {
+    const msg = getApiErrorMessage(err)
+    toast.error(msg)
+    technologyFormRef.value?.setError(msg)
+  } finally {
+    formSubmitting.value = false
   }
-  showForm.value = false
-  editingTech.value = null
-  await invalidateTechnologies()
 }
 
 function handleCancel() {
@@ -53,15 +80,21 @@ function openCreate() {
 }
 
 function handleDelete(tech: Technology) {
+  const label = safeConfirmSnippet(tech.name)
   confirm.require({
     header: 'Excluir tecnologia',
-    message: `Excluir "${tech.name}"? Esta ação não pode ser desfeita.`,
+    message: `Excluir "${label}"? Esta ação não pode ser desfeita.`,
     acceptLabel: 'Excluir',
     rejectLabel: 'Cancelar',
     acceptClass: 'p-button-danger',
     accept: async () => {
-      await store.deleteTechnology(tech.id)
-      await invalidateTechnologies()
+      try {
+        await store.deleteTechnology(tech.id)
+        await invalidateTechnologies()
+        toast.success('Tecnologia excluída.')
+      } catch (err) {
+        toast.error(getApiErrorMessage(err))
+      }
     },
   })
 }
@@ -82,8 +115,10 @@ defineExpose({ openCreate })
     >
       <TechnologyForm
         v-if="showForm"
+        ref="technologyFormRef"
         :key="editingTech?.id ?? 'new'"
         :model-value="editingTech"
+        :submitting="formSubmitting"
         @submit="handleSubmit"
         @cancel="handleCancel"
       />

@@ -101,7 +101,9 @@ export type TechnologyParsed = z.infer<typeof technologySchema>
 export function parseDashboardResponse(raw: unknown): DashboardDataParsed {
   const parsed = z.object({ success: z.boolean(), data: dashboardDataSchema }).safeParse(raw)
   if (!parsed.success) {
-    console.warn('[Dashboard] Zod parse failed:', parsed.error.flatten())
+    if (import.meta.env.DEV) {
+      console.warn('[Dashboard] Zod parse failed:', parsed.error.flatten())
+    }
     throw new Error('Resposta inválida do dashboard')
   }
   if (!parsed.data.success || !parsed.data.data) {
@@ -135,7 +137,9 @@ export function parseTechnologiesListResponse(raw: unknown): TechnologyParsed[] 
     })
     .safeParse(raw)
   if (!parsed.success) {
-    console.warn('[Technologies] Zod parse failed:', parsed.error.flatten())
+    if (import.meta.env.DEV) {
+      console.warn('[Technologies] Zod parse failed:', parsed.error.flatten())
+    }
     throw new Error('Resposta inválida da lista de tecnologias')
   }
   if (!parsed.data.success) {

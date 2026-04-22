@@ -27,7 +27,7 @@ class PayloadInjectionTest extends TestCase
         Queue::fake();
 
         $this->user = User::factory()->create();
-        $this->technology = Technology::create([
+        $this->technology = Technology::forceCreate([
             'user_id' => $this->user->id,
             'name' => 'PHP',
             'slug' => 'php',
@@ -39,7 +39,7 @@ class PayloadInjectionTest extends TestCase
 
     public function test_register_ignores_extra_fields(): void
     {
-        $response = $this->postJson('/api/v1/auth/register', [
+        $response = $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])->postJson('/api/v1/auth/register', [
             'name' => 'Test User',
             'email' => 'extra@example.com',
             'password' => 'password123',

@@ -49,7 +49,7 @@ const showFullProfileBlock = computed(
   () =>
     !!authStore.user &&
     !stakentStyle?.value &&
-    (!uiStore.sidebarCollapsed || uiStore.mobileSidebarOpen),
+    (!uiStore.sidebarCollapsed || uiStore.mobileSidebarOpen)
 )
 
 /** Atalho só com avatar quando a barra está recolhida no desktop (evita duplicar no drawer mobile). */
@@ -59,7 +59,7 @@ const showCollapsedProfileShortcut = computed(
     !stakentStyle?.value &&
     uiStore.sidebarCollapsed &&
     !uiStore.mobileSidebarOpen &&
-    isDesktopLayout.value,
+    isDesktopLayout.value
 )
 
 function formatHours(h: number): string {
@@ -161,7 +161,9 @@ function handleLogout() {
       v-if="showFullProfileBlock && authStore.user"
       :to="{ name: 'profile' }"
       class="app-sidebar__profile"
-      :class="{ 'app-sidebar__profile--active': route.name === 'profile' && route.query.tab !== 'goals' }"
+      :class="{
+        'app-sidebar__profile--active': route.name === 'profile' && route.query.tab !== 'goals',
+      }"
       @click="uiStore.closeMobileSidebar()"
     >
       <div class="app-sidebar__avatar-wrap">
@@ -188,7 +190,10 @@ function handleLogout() {
       v-if="showCollapsedProfileShortcut && authStore.user"
       :to="{ name: 'profile' }"
       class="app-sidebar__profile-rail"
-      :class="{ 'app-sidebar__profile-rail--active': route.name === 'profile' && route.query.tab !== 'goals' }"
+      :class="{
+        'app-sidebar__profile-rail--active':
+          route.name === 'profile' && route.query.tab !== 'goals',
+      }"
       title="Perfil"
       aria-label="Abrir perfil"
       @click="uiStore.closeMobileSidebar()"
@@ -199,7 +204,11 @@ function handleLogout() {
         alt=""
         class="app-sidebar__profile-rail-avatar"
       />
-      <span v-else class="app-sidebar__profile-rail-avatar app-sidebar__profile-rail-avatar--fallback" aria-hidden="true">
+      <span
+        v-else
+        class="app-sidebar__profile-rail-avatar app-sidebar__profile-rail-avatar--fallback"
+        aria-hidden="true"
+      >
         {{ userInitials }}
       </span>
     </RouterLink>

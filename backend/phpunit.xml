@@ -44,12 +44,13 @@
         <env name="REDIS_CLIENT" value="predis" force="true"/>
         <env name="REDIS_HOST" value="127.0.0.1" force="true"/>
         <env name="REDIS_PORT" value="6379" force="true"/>
-        <!-- Vazio = Redis local / CI (redis:7 sem requirepass). Com Docker na raiz: REDIS_PASSWORD=... php artisan test -->
+        <!-- Vazio = Redis local / CI (sem requirepass). Com Docker na raiz: REDIS_PASSWORD=... php artisan test -->
         <env name="REDIS_PASSWORD" value="" force="true"/>
         <!-- Sem Redis alinhado ao phpunit, o rate limit Lua falha e devolvia 503 em quase todas as rotas. -->
         <env name="RATE_LIMIT_FAIL_OPEN" value="true"/>
         <env name="REVERB_APP_ID" value="test"/>
         <env name="REVERB_APP_KEY" value="test-key"/>
         <env name="REVERB_APP_SECRET" value="test-secret"/>
+        <env name="SANCTUM_STATEFUL_DOMAINS" value="localhost,127.0.0.1,localhost:5173,127.0.0.1:5173" force="true"/>
     </php>
 </phpunit>

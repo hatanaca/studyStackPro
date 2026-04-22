@@ -86,12 +86,7 @@ onMounted(() => {
   <section class="reminders-widget">
     <div class="reminders-widget__head">
       <h2 class="reminders-widget__title">Lembretes rápidos</h2>
-      <Button
-        label="Gerir lembretes"
-        icon="pi pi-list"
-        size="small"
-        @click="showDialog = true"
-      />
+      <Button label="Gerir lembretes" icon="pi pi-list" size="small" @click="showDialog = true" />
     </div>
 
     <Dialog

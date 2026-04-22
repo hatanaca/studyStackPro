@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import axios from 'axios'
 import { useQueryClient } from '@tanstack/vue-query'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAnalyticsStore } from '@/stores/analytics.store'
@@ -59,6 +60,11 @@ export async function connectWebSocket(userId: string): Promise<void> {
   if (import.meta.env.VITE_REVERB_ENABLED === 'false') return
   if (!authStore.sessionValidated) return
 
+  const expectedUserId = authStore.user?.id
+  if (!expectedUserId || String(expectedUserId) !== String(userId)) {
+    return
+  }
+
   disconnectWebSocket()
 
   const [{ default: Echo }, { default: Pusher }] = await Promise.all([
@@ -74,6 +80,43 @@ export async function connectWebSocket(userId: string): Promise<void> {
   const port = import.meta.env.VITE_REVERB_PORT || '8080'
   const key = import.meta.env.VITE_REVERB_APP_KEY || 'local-key'
   const apiUrl = import.meta.env.VITE_API_URL || ''
+  const broadcastingAuthUrl = `${apiUrl.replace(/\/+$/, '')}/api/broadcasting/auth`
+
+  /**
+   * O transporte XHR do pusher-js não activa `withCredentials`; com API noutro host a sessão
+   * Sanctum não chegava ao `/broadcasting/auth`. Axios envia cookies + CSRF como o resto da SPA.
+   */
+  const channelAuthorization = {
+    /** Satisfaz tipos do Echo 2.x / pusher-js; a autorização real usa `customHandler` (cookies + CSRF). */
+    transport: 'ajax' as const,
+    endpoint: broadcastingAuthUrl,
+    customHandler: (
+      params: { socketId: string; channelName: string },
+      callback: (error: Error | null, data: { auth: string; channel_data?: string } | null) => void
+    ) => {
+      const body = new URLSearchParams()
+      body.set('socket_id', params.socketId)
+      body.set('channel_name', params.channelName)
+      axios
+        .post(broadcastingAuthUrl, body, {
+          withCredentials: true,
+          withXSRFToken: true,
+          headers: { Accept: 'application/json' },
+        })
+        .then((res) => {
+          callback(null, res.data as { auth: string; channel_data?: string })
+        })
+        .catch((err: unknown) => {
+          const msg =
+            axios.isAxiosError(err) && err.response?.data && typeof err.response.data === 'object'
+              ? JSON.stringify(err.response.data)
+              : err instanceof Error
+                ? err.message
+                : 'Falha na autorização do canal.'
+          callback(new Error(msg), null)
+        })
+    },
+  }
 
   echo = new Echo({
     broadcaster: 'reverb',
@@ -83,13 +126,7 @@ export async function connectWebSocket(userId: string): Promise<void> {
     wssPort: scheme === 'https' ? 443 : parseInt(port, 10),
     forceTLS: scheme === 'https',
     enabledTransports: ['ws', 'wss'],
-    authEndpoint: `${apiUrl || ''}/api/broadcasting/auth`,
-    auth: {
-      headers: {
-        Authorization: `Bearer ${authStore.token}`,
-        Accept: 'application/json',
-      },
-    },
+    channelAuthorization,
   }) as EchoInstance
 
   echo.connector.pusher.connection.bind('connected', () => {
