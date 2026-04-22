@@ -5,9 +5,17 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import type { Technology } from '@/types/domain.types'
 import { normalizeHexColor, safeHexColor } from '@/utils/color'
 
-const props = defineProps<{
-  modelValue?: Technology | null
-}>()
+const NAME_MAX = 255
+const DESCRIPTION_MAX = 2000
+
+const props = withDefaults(
+  defineProps<{
+    modelValue?: Technology | null
+    /** Bloqueia envio duplo enquanto o pai grava na API */
+    submitting?: boolean
+  }>(),
+  { submitting: false }
+)
 
 const emit = defineEmits<{
   'update:modelValue': [Technology | null]
@@ -18,7 +26,7 @@ const emit = defineEmits<{
 const name = ref('')
 const color = ref('#3b82f6')
 const description = ref('')
-const errors = ref<{ name?: string }>({})
+const errors = ref<{ name?: string; description?: string }>({})
 
 watch(
   () => props.modelValue,
@@ -42,8 +50,14 @@ function reset() {
 }
 
 function validate(): boolean {
-  const e: { name?: string } = {}
-  if (!name.value.trim()) e.name = 'Nome é obrigatório'
+  const e: { name?: string; description?: string } = {}
+  const n = name.value.trim()
+  if (!n) e.name = 'Nome é obrigatório'
+  else if (n.length > NAME_MAX) e.name = `Nome deve ter no máximo ${NAME_MAX} caracteres`
+  const desc = description.value.trim()
+  if (desc.length > DESCRIPTION_MAX) {
+    e.description = `Descrição deve ter no máximo ${DESCRIPTION_MAX} caracteres`
+  }
   errors.value = e
   return Object.keys(e).length === 0
 }
@@ -71,7 +85,7 @@ function onCancel() {
 defineExpose({
   reset,
   setError: (msg: string) => {
-    errors.value = { name: msg }
+    errors.value = { name: msg, description: undefined }
   },
 })
 </script>
@@ -83,6 +97,8 @@ defineExpose({
       v-model="name"
       label="Nome"
       placeholder="Ex: JavaScript"
+      :maxlength="NAME_MAX"
+      :disabled="submitting"
       :error="errors.name"
     />
     <div class="field">
@@ -92,9 +108,17 @@ defineExpose({
           :value="safeHexColor(color)"
           type="color"
           class="color-picker"
+          :disabled="submitting"
           @input="onColorPickerInput"
         />
-        <input v-model="color" type="text" class="color-text" maxlength="7" placeholder="#3b82f6" />
+        <input
+          v-model="color"
+          type="text"
+          class="color-text"
+          maxlength="7"
+          placeholder="#3b82f6"
+          :disabled="submitting"
+        />
       </div>
     </div>
     <BaseInput
@@ -102,12 +126,17 @@ defineExpose({
       v-model="description"
       label="Descrição"
       placeholder="Descrição (opcional)"
+      :maxlength="DESCRIPTION_MAX"
+      :disabled="submitting"
+      :error="errors.description"
     />
     <div class="actions">
-      <BaseButton type="submit" variant="primary">
+      <BaseButton type="submit" variant="primary" :disabled="submitting">
         {{ modelValue ? 'Salvar' : 'Criar' }}
       </BaseButton>
-      <BaseButton type="button" variant="secondary" @click="onCancel"> Cancelar </BaseButton>
+      <BaseButton type="button" variant="secondary" :disabled="submitting" @click="onCancel">
+        Cancelar
+      </BaseButton>
     </div>
   </form>
 </template>

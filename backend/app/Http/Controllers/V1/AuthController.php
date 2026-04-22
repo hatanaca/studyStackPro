@@ -15,12 +15,13 @@ use App\Modules\Auth\Services\TokenService;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * Controlador de autenticação e gerenciamento de usuário.
  *
  * Responsável por: registro, login, logout, perfil, troca de senha e gestão de tokens
- * (Sanctum). Todas as rotas exigem middleware de autenticação, exceto register/login.
+ * (Sanctum: sessão web para SPA + Bearer opcional). Todas as rotas exigem auth, exceto register/login.
  */
 class AuthController extends Controller
 {
@@ -35,8 +36,7 @@ class AuthController extends Controller
     ) {}
 
     /**
-     * Registra um novo usuário no sistema.
-     * Cria o usuário via AuthService, gera token Sanctum e retorna user + token no body (consistente com login).
+     * Registra um novo utilizador, inicia sessão web (cookie HttpOnly) e devolve o perfil.
      */
     public function register(RegisterRequest $request): JsonResponse
     {
@@ -47,18 +47,16 @@ class AuthController extends Controller
             timezone: $request->validated('timezone', 'UTC')
         );
         $user = $this->authService->register($dto);
-        $token = $user->createToken('api-token')->plainTextToken;
+        Auth::guard('web')->login($user);
+        $request->session()->regenerate();
 
         return $this->success([
-            'user' => new UserResource($user),
-            'token' => $token,
-            'token_type' => 'Bearer',
+            'user' => new UserResource($user->fresh()),
         ], 'Registrado com sucesso.', 201);
     }
 
     /**
-     * Autentica o usuário com email e senha.
-     * Retorna user + token em caso de sucesso; 401 se credenciais inválidas.
+     * Autentica com email/senha, inicia sessão web (cookie HttpOnly) e devolve o perfil.
      */
     public function login(LoginRequest $request): JsonResponse
     {
@@ -72,24 +70,33 @@ class AuthController extends Controller
             return $this->error('Credenciais inválidas.', 'UNAUTHENTICATED', null, 401);
         }
 
+        $user = $result['user'];
+        Auth::guard('web')->login($user, $dto->remember);
+        $request->session()->regenerate();
+
         return $this->success([
-            'user' => new UserResource($result['user']),
-            'token' => $result['token'],
-            'token_type' => 'Bearer',
+            'user' => new UserResource($user),
         ]);
     }
 
     /**
-     * Revoga o token atual (logout). O token em uso é removido da base.
+     * Termina sessão web e, se aplicável, revoga o token Bearer atual (PAT).
      */
     public function logout(Request $request): JsonResponse
     {
-        $currentToken = $request->user()->currentAccessToken();
+        $currentToken = $request->user()?->currentAccessToken();
         if ($currentToken !== null) {
             $this->tokenService->revoke($currentToken);
         }
 
-        return $this->success(null, 'Token revogado com sucesso.');
+        Auth::guard('web')->logout();
+
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
+        return $this->success(null, 'Sessão terminada.');
     }
 
     /**

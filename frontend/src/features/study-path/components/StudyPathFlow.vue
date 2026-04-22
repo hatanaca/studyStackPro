@@ -4,7 +4,14 @@
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { VueFlow, addEdge, isEdge, useVueFlow } from '@vue-flow/core'
-import type { Connection, Edge, EdgeMouseEvent, Node, NodeMouseEvent, XYPosition } from '@vue-flow/core'
+import type {
+  Connection,
+  Edge,
+  EdgeMouseEvent,
+  Node,
+  NodeMouseEvent,
+  XYPosition,
+} from '@vue-flow/core'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
@@ -419,7 +426,13 @@ function onNodeDoubleClick(e: NodeMouseEvent) {
   <div class="study-path-editor">
     <div class="study-path-editor__shell">
       <div class="study-path-editor__toolbar-row" role="toolbar" aria-label="Ferramentas do mapa">
-        <Button type="button" label="Adicionar tópico" size="small" class="study-path-editor__tb-btn" @click="addNode" />
+        <Button
+          type="button"
+          label="Adicionar tópico"
+          size="small"
+          class="study-path-editor__tb-btn"
+          @click="addNode"
+        />
         <Button
           type="button"
           label="Repor mapa"
@@ -505,22 +518,47 @@ function onNodeDoubleClick(e: NodeMouseEvent) {
               maxlength="120"
               @keydown.enter.prevent="applyBarLabel"
             />
-            <Button type="button" label="Aplicar" size="small" class="study-path-editor__grid-apply" @click="applyBarLabel" />
+            <Button
+              type="button"
+              label="Aplicar"
+              size="small"
+              class="study-path-editor__grid-apply"
+              @click="applyBarLabel"
+            />
             <div class="study-path-editor__grid-actions">
-              <Button type="button" label="Excluir tópico" size="small" severity="danger" outlined @click="deleteSelectedNode" />
-              <Button type="button" label="Apagar ligações" size="small" severity="secondary" outlined @click="clearAllEdges" />
+              <Button
+                type="button"
+                label="Excluir tópico"
+                size="small"
+                severity="danger"
+                outlined
+                @click="deleteSelectedNode"
+              />
+              <Button
+                type="button"
+                label="Apagar ligações"
+                size="small"
+                severity="secondary"
+                outlined
+                @click="clearAllEdges"
+              />
             </div>
           </div>
         </div>
       </Transition>
 
       <p class="study-path-editor__hint">
-        <strong>Um clique</strong> num tópico abre a edição. <strong>Duplo clique</strong> foca o texto.
-        <strong>Botão direito</strong> abre o menu geral. Clique <strong>dentro do mapa</strong> antes de usar a roda
-        para zoom; com o rato fora, a página rola normalmente.
+        <strong>Um clique</strong> num tópico abre a edição. <strong>Duplo clique</strong> foca o
+        texto. <strong>Botão direito</strong> abre o menu geral. Clique
+        <strong>dentro do mapa</strong> antes de usar a roda para zoom; com o rato fora, a página
+        rola normalmente.
       </p>
 
-      <div class="study-path-editor__viewport" role="application" aria-label="Editor de mapa de estudos">
+      <div
+        class="study-path-editor__viewport"
+        role="application"
+        aria-label="Editor de mapa de estudos"
+      >
         <div ref="mapViewportRef" class="study-path-editor__viewport-inner" tabindex="-1">
           <VueFlow
             v-model:nodes="nodes"
@@ -551,21 +589,72 @@ function onNodeDoubleClick(e: NodeMouseEvent) {
           aria-hidden="true"
           @pointerdown.prevent="closeCtxMenu"
         />
-        <div v-if="ctxMenu" class="study-path-editor__ctx-menu" role="menu" :style="ctxMenuStyleComp" @pointerdown.stop>
-        <button type="button" class="study-path-editor__ctx-item" role="menuitem" @click="addNodeAt(ctxMenu.flow)">
-          Adicionar tópico aqui
-        </button>
-        <button type="button" class="study-path-editor__ctx-item" role="menuitem" @click="fitMap">Encaixar vista</button>
-        <button type="button" class="study-path-editor__ctx-item" role="menuitem" @click="layoutHorizontal">
-          Layout em linha
-        </button>
-        <button type="button" class="study-path-editor__ctx-item" role="menuitem" @click="layoutVertical">
-          Layout em coluna
-        </button>
-        <button type="button" class="study-path-editor__ctx-item" role="menuitem" @click="layoutGrid">Layout em grelha</button>
-        <button type="button" class="study-path-editor__ctx-item" role="menuitem" @click="clearAllEdges">Apagar ligações</button>
-        <button type="button" class="study-path-editor__ctx-item" role="menuitem" @click="openImport">Importar JSON…</button>
-        <button type="button" class="study-path-editor__ctx-item" role="menuitem" @click="exportJson">Exportar JSON</button>
+        <div
+          v-if="ctxMenu"
+          class="study-path-editor__ctx-menu"
+          role="menu"
+          :style="ctxMenuStyleComp"
+          @pointerdown.stop
+        >
+          <button
+            type="button"
+            class="study-path-editor__ctx-item"
+            role="menuitem"
+            @click="addNodeAt(ctxMenu.flow)"
+          >
+            Adicionar tópico aqui
+          </button>
+          <button type="button" class="study-path-editor__ctx-item" role="menuitem" @click="fitMap">
+            Encaixar vista
+          </button>
+          <button
+            type="button"
+            class="study-path-editor__ctx-item"
+            role="menuitem"
+            @click="layoutHorizontal"
+          >
+            Layout em linha
+          </button>
+          <button
+            type="button"
+            class="study-path-editor__ctx-item"
+            role="menuitem"
+            @click="layoutVertical"
+          >
+            Layout em coluna
+          </button>
+          <button
+            type="button"
+            class="study-path-editor__ctx-item"
+            role="menuitem"
+            @click="layoutGrid"
+          >
+            Layout em grelha
+          </button>
+          <button
+            type="button"
+            class="study-path-editor__ctx-item"
+            role="menuitem"
+            @click="clearAllEdges"
+          >
+            Apagar ligações
+          </button>
+          <button
+            type="button"
+            class="study-path-editor__ctx-item"
+            role="menuitem"
+            @click="openImport"
+          >
+            Importar JSON…
+          </button>
+          <button
+            type="button"
+            class="study-path-editor__ctx-item"
+            role="menuitem"
+            @click="exportJson"
+          >
+            Exportar JSON
+          </button>
         </div>
       </div>
     </div>
@@ -725,7 +814,9 @@ function onNodeDoubleClick(e: NodeMouseEvent) {
   outline: none;
 }
 .study-path-editor__viewport-inner:focus-visible {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-text) 4%, transparent), var(--shadow-focus);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--color-text) 4%, transparent),
+    var(--shadow-focus);
 }
 .study-path-editor__flow {
   width: 100%;

@@ -27,7 +27,7 @@ class StudySessionStartEndTest extends TestCase
         Event::fake();
         Queue::fake();
         $this->user = User::factory()->create();
-        $this->technology = Technology::create([
+        $this->technology = Technology::forceCreate([
             'user_id' => $this->user->id,
             'name' => 'Laravel',
             'slug' => 'laravel',
@@ -161,7 +161,7 @@ class StudySessionStartEndTest extends TestCase
     public function test_end_other_users_session_returns_403(): void
     {
         $otherUser = User::factory()->create();
-        $otherTech = Technology::create([
+        $otherTech = Technology::forceCreate([
             'user_id' => $otherUser->id,
             'name' => 'Python',
             'slug' => 'python',

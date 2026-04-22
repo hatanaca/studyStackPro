@@ -75,7 +75,8 @@ const breadcrumbModel = computed(() => {
   text-decoration: none;
   border-radius: var(--radius-sm);
 }
-.settings-layout__breadcrumb :deep(.p-breadcrumb-item:not(:last-child) .p-breadcrumb-item-link:hover) {
+.settings-layout__breadcrumb
+  :deep(.p-breadcrumb-item:not(:last-child) .p-breadcrumb-item-link:hover) {
   color: var(--color-primary);
 }
 .settings-layout__breadcrumb :deep(.p-breadcrumb-item:last-child .p-breadcrumb-item-link) {

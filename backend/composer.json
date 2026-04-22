@@ -4,6 +4,7 @@
     "description": "StudyTrack Pro API",
     "require": {
         "php": "^8.2",
+        "league/commonmark": "^2.8.2",
         "laravel/framework": "^11.0",
         "laravel/sanctum": "^4.0",
         "laravel/reverb": "^1.0",

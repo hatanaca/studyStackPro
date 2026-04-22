@@ -26,7 +26,7 @@ class AnalyticsDashboardTest extends TestCase
         Event::fake();
         Queue::fake();
         $this->user = User::factory()->create();
-        $this->technology = Technology::create([
+        $this->technology = Technology::forceCreate([
             'user_id' => $this->user->id,
             'name' => 'PHP',
             'slug' => 'php',

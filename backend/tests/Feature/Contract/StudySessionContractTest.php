@@ -27,7 +27,7 @@ class StudySessionContractTest extends TestCase
         Queue::fake();
 
         $this->user = User::factory()->create();
-        $this->technology = Technology::create([
+        $this->technology = Technology::forceCreate([
             'user_id' => $this->user->id,
             'name' => 'Laravel',
             'slug' => 'laravel',

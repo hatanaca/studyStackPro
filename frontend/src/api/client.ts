@@ -23,6 +23,14 @@ function getErrorBody(error: unknown): ApiErrorBody | undefined {
 
 /** Extrai mensagem de erro da resposta da API (formato { success: false, error: { message } }). */
 export function getApiErrorMessage(error: unknown): string {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    (error as { code?: string }).code === 'ECONNABORTED'
+  ) {
+    return 'Tempo esgotado ao contactar o servidor. Tente novamente.'
+  }
   const data = getErrorBody(error)
   if (data) {
     const msg = data.error?.message ?? data.message
@@ -32,18 +40,24 @@ export function getApiErrorMessage(error: unknown): string {
 }
 
 /**
- * Cliente Axios para a API. Interceptors: injeta Bearer token; 401 → logout + redirect; 429 → toast.
+ * Cliente Axios para a API. Cookies de sessão Sanctum (withCredentials).
+ * Interceptor: evita pedidos (exceto /auth/me) enquanto há cache de utilizador mas a sessão ainda não foi validada.
  */
+const DEFAULT_REQUEST_TIMEOUT_MS = 60_000
+
 export const apiClient = axios.create({
   baseURL,
-  withCredentials: false,
+  timeout: DEFAULT_REQUEST_TIMEOUT_MS,
+  withCredentials: true,
+  /** Em SPA com API noutro origin, força envio de X-XSRF-TOKEN quando o cookie XSRF-TOKEN é legível. */
+  withXSRFToken: true,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
 })
 
-/** Erro síncrono quando há token mas a sessão ainda não foi validada (evita 401 em cascata). */
+/** Erro síncrono quando há cache de utilizador mas a sessão ainda não foi validada (evita 401 em cascata). */
 export const SESSION_NOT_READY = 'SESSION_NOT_READY'
 
 function joinAxiosUrl(baseURL: string, url: string): string {
@@ -70,37 +84,26 @@ function isAllowedBeforeSessionReady(config: InternalAxiosRequestConfig): boolea
   return false
 }
 
-/** Request interceptor: Bearer; bloqueia demais rotas se token existe e sessionValidated é false */
 apiClient.interceptors.request.use((config) => {
   const authStore = useAuthStore()
-  const token = authStore.token
-
-  if (token && !authStore.sessionValidated && !isAllowedBeforeSessionReady(config)) {
+  if (authStore.user && !authStore.sessionValidated && !isAllowedBeforeSessionReady(config)) {
     const err = new Error(SESSION_NOT_READY) as Error & { __sessionNotReady?: true }
     err.__sessionNotReady = true
     return Promise.reject(err)
   }
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
   return config
 })
 
-/** Tipo da função de toast para feedback de erros (ex: rate limit) */
 type ToastFn = (msg: string, type?: 'success' | 'error' | 'info') => void
 
 let toastFn: ToastFn | null = null
 
-/** Registra callback de toast para o interceptor de resposta (401/429) */
 export function setApiToast(fn: ToastFn) {
   toastFn = fn
 }
 
-/** Evita centenas de logouts/redirects paralelos quando várias APIs retornam 401 ao mesmo tempo */
 let handlingUnauthorized = false
 
-/** Response interceptor: 401 → limpa sessão local + /login (sem chamar API de logout em loop) */
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -140,7 +143,7 @@ apiClient.interceptors.response.use(
         getApiErrorMessage(error) || 'Muitas requisições. Aguarde um momento e tente novamente.'
       if (toastFn) {
         toastFn(message, 'error')
-      } else {
+      } else if (import.meta.env.DEV) {
         console.warn('[API] Rate limit (429):', message)
       }
     }

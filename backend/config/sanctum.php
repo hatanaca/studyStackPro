@@ -1,15 +1,20 @@
 <?php
 
+$sanctumExpiration = env('SANCTUM_EXPIRATION');
+
 return [
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', 'localhost,127.0.0.1')),
+    'stateful' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', env('SANCTUM_STATEFUL_DOMAINS', 'localhost,localhost:5173,127.0.0.1,127.0.0.1:5173'))
+    ))),
     /**
-     * Guards consultados antes do Bearer. Por defeito vazio (API só com token).
-     * Para SPA (sessão + Sanctum), defina no .env: SANCTUM_GUARD=web
+     * Guard web para sessão HttpOnly da SPA; tokens Bearer (PAT) continuam a ser aceites pelo Sanctum.
      */
     'guard' => env('SANCTUM_GUARD')
         ? array_values(array_filter(explode(',', (string) env('SANCTUM_GUARD'))))
-        : [],
-    'expiration' => 1440,
+        : ['web'],
+    /** Minutos até expirar tokens Sanctum (defina SANCTUM_EXPIRATION vazio para manter 1440). */
+    'expiration' => $sanctumExpiration !== null && $sanctumExpiration !== '' ? (int) $sanctumExpiration : 1440,
     'middleware' => [
         'authenticate_session' => Laravel\Sanctum\Http\Middleware\AuthenticateSession::class,
         'encrypt_cookies' => Illuminate\Cookie\Middleware\EncryptCookies::class,

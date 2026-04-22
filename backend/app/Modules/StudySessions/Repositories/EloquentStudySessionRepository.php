@@ -86,7 +86,7 @@ class EloquentStudySessionRepository implements StudySessionRepositoryInterface
     /** Cria sessão a partir do DTO */
     public function create(StudySessionDTO $dto): StudySession
     {
-        return StudySession::create([
+        return StudySession::forceCreate([
             'user_id' => $dto->userId,
             'technology_id' => $dto->technologyId ?: null,
             'title' => $dto->title,

@@ -24,7 +24,7 @@ class TechnologyContractTest extends TestCase
 
     public function test_technology_resource_contains_required_fields(): void
     {
-        $tech = Technology::create([
+        $tech = Technology::forceCreate([
             'user_id' => $this->user->id,
             'name' => 'Laravel',
             'slug' => 'laravel',
@@ -51,7 +51,7 @@ class TechnologyContractTest extends TestCase
 
     public function test_technology_list_returns_array(): void
     {
-        Technology::create([
+        Technology::forceCreate([
             'user_id' => $this->user->id,
             'name' => 'PHP',
             'slug' => 'php',
@@ -59,7 +59,7 @@ class TechnologyContractTest extends TestCase
             'is_active' => true,
         ]);
 
-        Technology::create([
+        Technology::forceCreate([
             'user_id' => $this->user->id,
             'name' => 'JavaScript',
             'slug' => 'javascript',
@@ -80,7 +80,7 @@ class TechnologyContractTest extends TestCase
 
     public function test_deactivated_technology_not_in_list(): void
     {
-        $tech = Technology::create([
+        $tech = Technology::forceCreate([
             'user_id' => $this->user->id,
             'name' => 'Ruby',
             'slug' => 'ruby',

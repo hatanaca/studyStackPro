@@ -29,6 +29,29 @@ return Application::configure(basePath: dirname(__DIR__))
             'throttle.sliding' => \App\Http\Middleware\SlidingWindowRateLimit::class,
         ]);
 
+        $middleware->statefulApi();
+
+        if (env('APP_ENV') === 'testing') {
+            $middleware->validateCsrfTokens(except: [
+                'api/*',
+                'sanctum/*',
+            ]);
+        }
+
+        // Atrás de Nginx / load balancer: necessário para URL HTTPS, rate limit por IP real e cookies seguros.
+        $trusted = env('TRUSTED_PROXIES');
+        if (is_string($trusted) && trim($trusted) !== '') {
+            $trimmed = trim($trusted);
+            if ($trimmed === '*') {
+                $middleware->trustProxies(at: '*');
+            } else {
+                $at = array_values(array_filter(array_map('trim', explode(',', $trusted))));
+                if ($at !== []) {
+                    $middleware->trustProxies(at: $at);
+                }
+            }
+        }
+
         $middleware->api(prepend: [
             \App\Http\Middleware\EnsureJsonResponse::class,
         ]);

@@ -32,7 +32,7 @@ class RateLimitTest extends TestCase
         $hit429 = false;
 
         for ($i = 0; $i < 30; $i++) {
-            $response = $this->postJson('/api/v1/auth/login', [
+            $response = $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])->postJson('/api/v1/auth/login', [
                 'email' => 'ratelimit@test.com',
                 'password' => 'wrong-password',
             ]);
@@ -51,7 +51,7 @@ class RateLimitTest extends TestCase
         $hit429 = false;
 
         for ($i = 0; $i < 30; $i++) {
-            $response = $this->postJson('/api/v1/auth/register', [
+            $response = $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])->postJson('/api/v1/auth/register', [
                 'name' => 'User '.$i,
                 'email' => "user{$i}@test.com",
                 'password' => 'password123',
@@ -69,7 +69,7 @@ class RateLimitTest extends TestCase
 
     public function test_authenticated_read_endpoints_are_rate_limited(): void
     {
-        Technology::create([
+        Technology::forceCreate([
             'user_id' => $this->user->id,
             'name' => 'PHP',
             'slug' => 'php',
@@ -97,7 +97,7 @@ class RateLimitTest extends TestCase
         $response = null;
 
         for ($i = 0; $i < 30; $i++) {
-            $response = $this->postJson('/api/v1/auth/login', [
+            $response = $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])->postJson('/api/v1/auth/login', [
                 'email' => 'ratelimit@test.com',
                 'password' => 'wrong-password',
             ]);

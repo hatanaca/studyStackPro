@@ -23,7 +23,7 @@ class StudySessionConcurrentTest extends TestCase
     public function test_cannot_start_second_session_without_ending_first(): void
     {
         $user = User::factory()->create();
-        $tech = Technology::create([
+        $tech = Technology::forceCreate([
             'user_id' => $user->id,
             'name' => 'JavaScript',
             'slug' => 'javascript',

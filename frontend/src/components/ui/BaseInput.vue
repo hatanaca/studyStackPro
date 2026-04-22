@@ -11,6 +11,7 @@ const props = defineProps<{
   disabled?: boolean
   error?: string
   autocomplete?: string
+  maxlength?: number
 }>()
 
 defineEmits<{
@@ -30,6 +31,7 @@ const inputId = computed(() => props.id ?? props.name ?? undefined)
       :placeholder="placeholder"
       :name="name"
       :disabled="disabled"
+      :maxlength="maxlength"
       :autocomplete="autocomplete"
       :class="{ 'base-input__field--error': error }"
       class="base-input__field"

@@ -262,11 +262,21 @@ watch(() => props.technologyId, loadFromStorage)
           placeholder="URL da imagem (https://…)"
           @keyup.enter.prevent="addImage"
         />
-        <Button label="Adicionar URL" size="small" :disabled="!canAddImageFromUrl" @click="addImage" />
+        <Button
+          label="Adicionar URL"
+          size="small"
+          :disabled="!canAddImageFromUrl"
+          @click="addImage"
+        />
       </div>
       <div class="tech-mural__upload-row">
         <span class="tech-mural__upload-hint">ou envie um ficheiro do computador</span>
-        <Button label="Escolher ficheiro…" size="small" severity="secondary" @click="openImageFilePicker" />
+        <Button
+          label="Escolher ficheiro…"
+          size="small"
+          severity="secondary"
+          @click="openImageFilePicker"
+        />
       </div>
     </div>
     <div v-if="showAddQuote" class="tech-mural__form">

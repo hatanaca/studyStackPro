@@ -37,7 +37,7 @@ class AuthorizationTest extends TestCase
         $this->userA = User::factory()->create();
         $this->userB = User::factory()->create();
 
-        $this->techA = Technology::create([
+        $this->techA = Technology::forceCreate([
             'user_id' => $this->userA->id,
             'name' => 'Laravel',
             'slug' => 'laravel',
@@ -45,7 +45,7 @@ class AuthorizationTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->techB = Technology::create([
+        $this->techB = Technology::forceCreate([
             'user_id' => $this->userB->id,
             'name' => 'Vue.js',
             'slug' => 'vuejs',

@@ -81,10 +81,15 @@ class TokenManagementTest extends TestCase
         ]);
         $oldToken = $user->createToken('api-token')->plainTextToken;
 
-        $this->postJson('/api/v1/auth/login', [
+        $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])->postJson('/api/v1/auth/login', [
             'email' => 'john@example.com',
             'password' => 'password123',
         ])->assertStatus(200);
+
+        $this->assertSame(0, $user->fresh()->tokens()->count(), 'Login deve revogar PATs existentes.');
+
+        // Evita que a sessão web do login autentique o pedido seguinte (Sanctum aceita sessão ou PAT).
+        $this->flushSession();
 
         $this->withHeader('Authorization', 'Bearer '.$oldToken)
             ->getJson('/api/v1/auth/me')

@@ -7,17 +7,16 @@ use Illuminate\Support\Facades\Route;
  * Rotas da API e canais de broadcast (WebSocket).
  *
  * v1: prefixo de versão. Auth: register/login sem auth; demais rotas com auth:sanctum.
- * Throttle por grupo: login, register, search, sensitive, recalculate, health.
+ * Throttle: login e register em rotas separadas (limites independentes); search, sensitive, recalculate, export, health.
  */
 Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
 Route::prefix('v1')->name('v1.')->group(function () {
-    // Endpoints de autenticação - rate limit mais restritivo
-    Route::middleware('throttle:login')->group(function () {
-        Route::post('auth/register', [\App\Http\Controllers\V1\AuthController::class, 'register'])
-            ->middleware('throttle:register');
-        Route::post('auth/login', [\App\Http\Controllers\V1\AuthController::class, 'login']);
-    });
+    // Registo e login: limitadores separados (register não deve herdar o limite mais apertado de login).
+    Route::post('auth/register', [\App\Http\Controllers\V1\AuthController::class, 'register'])
+        ->middleware('throttle:register');
+    Route::post('auth/login', [\App\Http\Controllers\V1\AuthController::class, 'login'])
+        ->middleware('throttle:login');
 
     Route::middleware(['auth:sanctum'])->group(function () {
         // User info endpoints

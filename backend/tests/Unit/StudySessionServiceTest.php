@@ -34,7 +34,7 @@ class StudySessionServiceTest extends TestCase
         Queue::fake();
         $this->service = app(StudySessionService::class);
         $this->user = User::factory()->create();
-        $this->technology = Technology::create([
+        $this->technology = Technology::forceCreate([
             'user_id' => $this->user->id,
             'name' => 'Vue.js',
             'slug' => 'vuejs',
@@ -60,7 +60,7 @@ class StudySessionServiceTest extends TestCase
 
     public function test_list_for_user_filters_by_technology(): void
     {
-        $tech2 = Technology::create([
+        $tech2 = Technology::forceCreate([
             'user_id' => $this->user->id,
             'name' => 'Laravel',
             'slug' => 'laravel',
@@ -100,7 +100,7 @@ class StudySessionServiceTest extends TestCase
     public function test_find_for_user_aborts_403_when_cross_user(): void
     {
         $otherUser = User::factory()->create();
-        $otherTech = Technology::create([
+        $otherTech = Technology::forceCreate([
             'user_id' => $otherUser->id,
             'name' => 'Outro',
             'slug' => 'outro',
@@ -135,6 +135,24 @@ class StudySessionServiceTest extends TestCase
         $this->assertEquals($this->user->id, $session->user_id);
         $this->assertEquals($this->technology->id, $session->technology_id);
         Event::assertDispatched(StudySessionCreated::class);
+    }
+
+    public function test_create_aborts_when_dto_user_id_differs_from_caller(): void
+    {
+        $other = User::factory()->create();
+        $dto = new StudySessionDTO(
+            userId: $other->id,
+            technologyId: $this->technology->id,
+            startedAt: Carbon::now(),
+            endedAt: null,
+            notes: null,
+            mood: null,
+            title: 'X',
+        );
+
+        $this->expectException(\Illuminate\Auth\Access\AuthorizationException::class);
+
+        $this->service->create($this->user->id, $dto);
     }
 
     public function test_update_dispatches_event(): void

@@ -9,7 +9,7 @@ const props = withDefaults(
     /** Cartões mais compactos (ex.: dashboard) */
     compact?: boolean
   }>(),
-  { compact: false },
+  { compact: false }
 )
 
 function formatTotalHours(hours: number): string {
@@ -49,7 +49,11 @@ const items = computed(() => {
 </script>
 
 <template>
-  <section class="kpi-cards" :class="{ 'kpi-cards--compact': compact }" aria-label="Métricas principais">
+  <section
+    class="kpi-cards"
+    :class="{ 'kpi-cards--compact': compact }"
+    aria-label="Métricas principais"
+  >
     <Card
       v-for="item in items"
       :key="item.label"
@@ -58,7 +62,12 @@ const items = computed(() => {
     >
       <template #content>
         <div class="kpi-card__inner">
-          <span v-if="item.iconClass" class="kpi-card__icon" :class="item.iconClass" aria-hidden="true" />
+          <span
+            v-if="item.iconClass"
+            class="kpi-card__icon"
+            :class="item.iconClass"
+            aria-hidden="true"
+          />
           <div class="kpi-card__content">
             <span class="kpi-card__label">{{ item.label }}</span>
             <span class="kpi-card__value">{{ item.value }}</span>

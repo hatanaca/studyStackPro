@@ -13,7 +13,10 @@ return [
     'cookie' => env('SESSION_COOKIE', 'studytrack_session'),
     'path' => '/',
     'domain' => env('SESSION_DOMAIN'),
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => filter_var(
+        env('SESSION_SECURE_COOKIE', env('APP_ENV', 'local') === 'production'),
+        FILTER_VALIDATE_BOOL
+    ),
     'http_only' => true,
     'same_site' => 'lax',
 ];

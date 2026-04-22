@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Technology;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -26,19 +27,21 @@ class TechnologySeeder extends Seeder
             ['name' => 'Docker', 'color' => '#2496ED', 'description' => 'Containerização de aplicações'],
         ];
 
-        foreach ($technologies as $tech) {
-            Technology::firstOrCreate(
-                [
-                    'slug' => Str::slug($tech['name']),
-                    'user_id' => $user->id,
-                ],
-                [
-                    'name' => $tech['name'],
-                    'color' => $tech['color'],
-                    'description' => $tech['description'] ?? null,
-                    'is_active' => true,
-                ]
-            );
-        }
+        Model::unguarded(function () use ($user, $technologies) {
+            foreach ($technologies as $tech) {
+                Technology::firstOrCreate(
+                    [
+                        'slug' => Str::slug($tech['name']),
+                        'user_id' => $user->id,
+                    ],
+                    [
+                        'name' => $tech['name'],
+                        'color' => $tech['color'],
+                        'description' => $tech['description'] ?? null,
+                        'is_active' => true,
+                    ]
+                );
+            }
+        });
     }
 }

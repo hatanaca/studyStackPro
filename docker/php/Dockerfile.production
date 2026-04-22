@@ -24,6 +24,8 @@ RUN composer dump-autoload --optimize --no-dev
 # Stage 2: Runtime
 FROM php:8.3-fpm-alpine
 
+RUN apk upgrade --no-cache
+
 RUN apk add --no-cache \
     libpq-dev \
     icu-dev \
@@ -33,6 +35,8 @@ RUN apk add --no-cache \
 
 RUN docker-php-ext-install pdo_pgsql intl zip bcmath opcache
 RUN pecl install redis && docker-php-ext-enable redis
+
+RUN apk upgrade --no-cache
 
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
 COPY docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf

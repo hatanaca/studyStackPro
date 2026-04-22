@@ -33,9 +33,7 @@ export function useSessionsInfiniteQuery(filters: MaybeRefOrGetter<SessionListFi
       if (rows.length === 0) return undefined
       /* Se a API repetir os mesmos IDs da página anterior, não pedir mais páginas (evita lista infinita). */
       if (allPages && allPages.length > 1) {
-        const seen = new Set(
-          allPages.slice(0, -1).flatMap((p) => (p.data ?? []).map((s) => s.id))
-        )
+        const seen = new Set(allPages.slice(0, -1).flatMap((p) => (p.data ?? []).map((s) => s.id)))
         const newCount = rows.filter((s) => !seen.has(s.id)).length
         if (newCount === 0) return undefined
       }

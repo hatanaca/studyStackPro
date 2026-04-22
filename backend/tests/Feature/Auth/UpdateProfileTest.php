@@ -96,7 +96,7 @@ class UpdateProfileTest extends TestCase
             ])
             ->assertStatus(200);
 
-        $this->postJson('/api/v1/auth/login', [
+        $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])->postJson('/api/v1/auth/login', [
             'email' => 'test@example.com',
             'password' => 'original-password',
         ])->assertStatus(200);

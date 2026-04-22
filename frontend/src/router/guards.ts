@@ -10,7 +10,7 @@ export function resetBackgroundRefresh() {
 }
 
 async function awaitSessionValidation(authStore: ReturnType<typeof useAuthStore>): Promise<void> {
-  if (!authStore.token) return
+  if (!authStore.user) return
   if (authStore.sessionValidated) return
   if (!fetchMePromise) {
     fetchMePromise = authStore.fetchMe().finally(() => {
@@ -22,8 +22,7 @@ async function awaitSessionValidation(authStore: ReturnType<typeof useAuthStore>
 
 /**
  * Guard de autenticação.
- * requiresAuth sem token → redirect login; guest com token → redirect dashboard.
- * Com token e sessão ainda não validada (sessionValidated) → await fetchMe antes de prosseguir.
+ * Hidrata sessão com /auth/me quando há utilizador em cache mas sessionValidated ainda é false.
  */
 export async function setupAuthGuard(
   to: RouteLocationNormalized,
@@ -32,27 +31,17 @@ export async function setupAuthGuard(
 ): Promise<void> {
   const authStore = useAuthStore()
 
-  /** Rota protegida sem autenticação → login */
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next({ name: 'login' })
-    return
-  }
-
-  /** Token presente mas sessão não validada na API (ex.: JWT morto + user em cache) */
-  if (authStore.token && !authStore.sessionValidated) {
+  if (authStore.user && !authStore.sessionValidated) {
     try {
       await awaitSessionValidation(authStore)
     } catch {
-      /* fetchMe já tratou via interceptor */
+      /* fetchMe / interceptor tratam 401 */
     }
-    if (!authStore.isAuthenticated) {
-      if (to.meta.requiresAuth) {
-        next({ name: 'login' })
-        return
-      }
-      next()
-      return
-    }
+  }
+
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    next({ name: 'login' })
+    return
   }
 
   if (to.meta.guest && authStore.isAuthenticated) {

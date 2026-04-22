@@ -7,6 +7,7 @@ use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -18,6 +19,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $appUrl = config('app.url');
+        if (is_string($appUrl) && str_starts_with($appUrl, 'https://')) {
+            URL::forceScheme('https');
+        }
+
         Model::shouldBeStrict(! app()->isProduction());
 
         // Authentication endpoints - strict rate limiting to prevent brute force
@@ -44,6 +50,11 @@ class AppServiceProvider extends ServiceProvider
 
         if (class_exists(\Laravel\Horizon\Horizon::class)) {
             \Laravel\Horizon\Horizon::auth(function ($request) {
+                $allowedIps = array_filter(array_map('trim', explode(',', (string) env('HORIZON_ALLOWED_IPS', ''))));
+                if ($allowedIps !== [] && ! in_array($request->ip(), $allowedIps, true)) {
+                    return false;
+                }
+
                 $user = $request->user();
                 if (! $user) {
                     return false;

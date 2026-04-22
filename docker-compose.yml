@@ -1,9 +1,12 @@
 # Docker Compose - StudyTrackPro
+# Produção (sem portas DB/Redis, sem Vite): docker-compose.production.yml + alvo `make prod-up` no Makefile.
 # Services: nginx (proxy), php-fpm (Laravel), reverb (WebSocket), horizon (queue worker),
 # scheduler (cron), node (Vite dev), postgres, redis
 # 
 # Network: app (internal) - all services communicate internally
 # Public: Only nginx exposes ports to host
+#
+# PgAdmin (só desenvolvimento): imagem pinada em docker-compose.dev.yml → dpage/pgadmin4:9.14.0 (nunca :latest).
 
 services:
   # ========================
@@ -31,6 +34,7 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-c812c3a3c4685cda4fc087d6d4edf667}
       REDIS_DATABASE: ${CACHE_DATABASE:-1}
       REDIS_PREFIX: ${REDIS_PREFIX:-studytrackpro_database_}
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE:-studytrack_session}
     networks:
       - app
     restart: unless-stopped
@@ -270,7 +274,8 @@ services:
   # ========================
   redis:
     container_name: redis
-    image: redis:7-alpine
+    # Tag oficial `alpine` = último Redis estável em Alpine (equiv. a “pull latest alpine”; evita redis:7-alpine com Go/openssl antigos).
+    image: redis:alpine
     entrypoint: ["sh", "/usr/local/bin/docker-entrypoint.sh"]
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-c812c3a3c4685cda4fc087d6d4edf667}

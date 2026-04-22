@@ -73,7 +73,7 @@ watch(
     const t = id?.trim()
     if (t) technologyId.value = t
   },
-  { immediate: true },
+  { immediate: true }
 )
 
 onMounted(async () => {
@@ -92,14 +92,14 @@ onMounted(async () => {
   }
   window.addEventListener(
     STUDYTRACK_REMINDER_REMOVED_EVENT,
-    onStudytrackReminderRemoved as EventListener,
+    onStudytrackReminderRemoved as EventListener
   )
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener(
     STUDYTRACK_REMINDER_REMOVED_EVENT,
-    onStudytrackReminderRemoved as EventListener,
+    onStudytrackReminderRemoved as EventListener
   )
 })
 
@@ -286,7 +286,11 @@ function onCancel() {
         <p v-if="errors.technology_id" class="log-session-form__error">
           {{ errors.technology_id }}
         </p>
-        <button type="button" class="log-session-form__tech-manage" @click="router.push('/technologies')">
+        <button
+          type="button"
+          class="log-session-form__tech-manage"
+          @click="router.push('/technologies')"
+        >
           Gerir ou criar tecnologias
         </button>
       </template>

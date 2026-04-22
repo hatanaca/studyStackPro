@@ -67,6 +67,10 @@ class StudySessionService
      */
     public function create(string $userId, StudySessionDTO $dto): StudySession
     {
+        if ($dto->userId !== $userId) {
+            throw new AuthorizationException('Acesso negado a este recurso.');
+        }
+
         $session = $this->repository->create($dto);
         event(new StudySessionCreated($session));
 

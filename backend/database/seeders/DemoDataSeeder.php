@@ -53,7 +53,7 @@ class DemoDataSeeder extends Seeder
                     break;
                 }
 
-                StudySession::create([
+                StudySession::forceCreate([
                     'user_id' => $user->id,
                     'technology_id' => $techId,
                     'started_at' => $current->toIso8601String(),

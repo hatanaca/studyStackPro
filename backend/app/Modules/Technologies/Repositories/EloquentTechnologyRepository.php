@@ -75,7 +75,7 @@ class EloquentTechnologyRepository implements TechnologyRepositoryInterface
     /** Cria tecnologia e invalida cache do usuário */
     public function create(TechnologyDTO $dto): Technology
     {
-        $tech = Technology::create([
+        $tech = Technology::forceCreate([
             'user_id' => $dto->userId,
             'name' => $dto->name,
             'slug' => Str::slug($dto->name),

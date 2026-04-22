@@ -46,11 +46,7 @@ function onSuccess(payload: SessionSavedPayload) {
       :dismissable-mask="true"
       @hide="showDialog = false"
     >
-      <LogSessionForm
-        show-cancel
-        @success="onSuccess"
-        @cancel="showDialog = false"
-      />
+      <LogSessionForm show-cancel @success="onSuccess" @cancel="showDialog = false" />
     </Dialog>
   </section>
 </template>

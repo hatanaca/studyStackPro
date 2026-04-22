@@ -24,7 +24,7 @@ class TechnologyCrudTest extends TestCase
 
     public function test_index_returns_technologies_for_authenticated_user(): void
     {
-        Technology::create([
+        Technology::forceCreate([
             'user_id' => $this->user->id,
             'name' => 'Vue.js',
             'slug' => 'vuejs',
@@ -66,7 +66,7 @@ class TechnologyCrudTest extends TestCase
 
     public function test_show_returns_technology_for_owner(): void
     {
-        $tech = Technology::create([
+        $tech = Technology::forceCreate([
             'user_id' => $this->user->id,
             'name' => 'Laravel',
             'slug' => 'laravel',
@@ -87,7 +87,7 @@ class TechnologyCrudTest extends TestCase
     public function test_show_returns_403_for_cross_user(): void
     {
         $otherUser = User::factory()->create();
-        $tech = Technology::create([
+        $tech = Technology::forceCreate([
             'user_id' => $otherUser->id,
             'name' => 'Outro',
             'slug' => 'outro',
@@ -104,7 +104,7 @@ class TechnologyCrudTest extends TestCase
 
     public function test_update_modifies_technology(): void
     {
-        $tech = Technology::create([
+        $tech = Technology::forceCreate([
             'user_id' => $this->user->id,
             'name' => 'PHP',
             'slug' => 'php',
@@ -127,7 +127,7 @@ class TechnologyCrudTest extends TestCase
 
     public function test_destroy_deactivates_technology(): void
     {
-        $tech = Technology::create([
+        $tech = Technology::forceCreate([
             'user_id' => $this->user->id,
             'name' => 'Ruby',
             'slug' => 'ruby',

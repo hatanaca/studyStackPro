@@ -17,7 +17,7 @@ export default [
         parser: '@typescript-eslint/parser',
         extraFileExtensions: ['.vue']
       },
-      globals: {
+    globals: {
         defineProps: 'readonly',
         defineEmits: 'readonly',
         defineExpose: 'readonly',
@@ -45,7 +45,15 @@ export default [
         crypto: 'readonly',
         Blob: 'readonly',
         URL: 'readonly',
-      }
+        // NOVAS ADIÇÕES:
+        fetch: 'readonly',
+        EventListener: 'readonly',
+        CustomEvent: 'readonly',
+        HTMLInputElement: 'readonly',
+        FileReader: 'readonly',
+        PointerEvent: 'readonly',
+        File: 'readonly'
+}
     }
   }
   ),
