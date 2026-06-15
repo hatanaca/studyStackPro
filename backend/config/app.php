@@ -36,6 +36,7 @@ return [
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
         App\Providers\AppServiceProvider::class,
+        App\Providers\YouTubeServiceProvider::class,
         Laravel\Sanctum\SanctumServiceProvider::class,
         Laravel\Reverb\ReverbServiceProvider::class,
         Laravel\Horizon\HorizonServiceProvider::class,

@@ -12,6 +12,7 @@ import { sessionsRoutes } from './routes/sessions.routes'
 import { technologiesRoutes } from './routes/technologies.routes'
 import { goalsRoutes } from './routes/goals.routes'
 import { settingsRoutes, legacySettingsRedirects } from './routes/settings.routes'
+import { youtubeRoutes } from './routes/youtube.routes'
 import { studyPathRoutes } from './routes/study-path.routes'
 
 const router = createRouter({
@@ -33,6 +34,7 @@ const router = createRouter({
         ...sessionsRoutes,
         ...technologiesRoutes,
         ...goalsRoutes,
+        ...youtubeRoutes,
         ...studyPathRoutes,
         ...settingsRoutes,
         ...legacySettingsRedirects,

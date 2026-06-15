@@ -11,4 +11,10 @@ export const authRoutes = [
     component: () => import('@/views/auth/RegisterView.vue'),
     meta: { guest: true, title: 'Criar conta' },
   },
+  {
+    path: '/auth/callback',
+    name: 'auth-callback',
+    component: () => import('@/views/auth/AuthCallbackView.vue'),
+    meta: { guest: true, title: 'Autenticando...' },
+  },
 ]

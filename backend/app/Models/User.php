@@ -32,12 +32,19 @@ class User extends Authenticatable
         'timezone',
         'locale',
         'avatar_url',
+        'google_id',
+        'discord_id',
+        'discord_token',
+        'discord_refresh_token',
+        'discord_token_expires_at',
     ];
 
     /** Campos nunca expostos em JSON (segurança) */
     protected $hidden = [
         'password',
         'remember_token',
+        'discord_token',
+        'discord_refresh_token',
     ];
 
     /** Casts de atributos (tipos e mutators) */
@@ -46,6 +53,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'discord_token_expires_at' => 'datetime',
         ];
     }
 

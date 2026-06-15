@@ -13,6 +13,8 @@ export const ENDPOINTS = {
     changePassword: '/auth/change-password',
     tokens: '/auth/tokens',
     revokeTokens: '/auth/tokens',
+    oauthRedirect: (provider: string) => `/auth/${provider}`,
+    oauthCallback: (provider: string) => `/auth/${provider}/callback`,
   },
   sessions: {
     list: '/study-sessions',
@@ -36,5 +38,9 @@ export const ENDPOINTS = {
     heatmap: '/analytics/heatmap',
     recalculate: '/analytics/recalculate',
     export: '/analytics/export',
+  },
+  youtube: {
+    search: '/youtube/search',
+    videos: '/youtube/videos',
   },
 } as const
