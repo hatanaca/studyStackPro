@@ -3,7 +3,7 @@
  * Player YouTube usando a IFrame API oficial (YT.Player).
  * Muito mais confiável que postMessage manual.
  */
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { watch, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps<{
   playlistId: string | null
@@ -27,6 +27,7 @@ const containerId = 'yt-player-' + Math.random().toString(36).slice(2, 8)
 let player: YT.Player | null = null
 let timeInterval: ReturnType<typeof setInterval> | null = null
 let isReady = false
+let isCreating = false
 let apiLoaded = false
 
 function loadYT(cb: () => void) {
@@ -47,14 +48,16 @@ function loadYT(cb: () => void) {
 }
 
 function createPlayer() {
+  if (isCreating) return
   if (player) { player.destroy(); player = null }
   if (!props.playlistId && !props.videoId) return
 
+  isCreating = true
   isReady = false
 
   const config: YT.PlayerOptions = {
-    height: '1',
-    width: '1',
+    height: '200',
+    width: '200',
     playerVars: {
       enablejsapi: 1,
       modestbranding: 1,
@@ -67,6 +70,7 @@ function createPlayer() {
     events: {
       onReady: () => {
         isReady = true
+        isCreating = false
         player?.setShuffle(props.isShuffled)
         player?.setVolume(props.volume)
         updateRepeat()
@@ -76,9 +80,17 @@ function createPlayer() {
       },
       onStateChange: (e: YT.OnStateChangeEvent) => {
         emit('stateChange', e.data)
-        if (e.data === 0) emit('ended')
+        if (e.data === 0) {
+          if (props.repeatMode === 'single') {
+            player?.seekTo(0, true)
+            player?.playVideo()
+            return
+          }
+          emit('ended')
+        }
       },
       onError: () => {
+        isCreating = false
         // Tentar novamente após erro
         setTimeout(() => { if (!isReady) { isReady = true; emit('ready') } }, 2000)
       },
@@ -114,8 +126,7 @@ function startTimePoll() {
 
 function updateRepeat() {
   if (!player || !isReady) return
-  if (props.repeatMode === 'single') player.setLoop(true)
-  else player.setLoop(false)
+  player.setLoop(props.repeatMode !== 'none')
 }
 
 onMounted(() => createPlayer())
@@ -131,12 +142,14 @@ watch(() => props.videoId, (newId, oldId) => {
     if (!props.isPlaying) player.pauseVideo()
     return
   }
-  createPlayer()
+  // Player ainda não está pronto — não recriar, só aguardar
+  // onMounted/playlistId watcher já chamaram createPlayer()
 })
 
 watch(() => props.videoIndex, (idx) => {
   if (player && isReady) {
     if (props.playlistId) player.playVideoAt(idx)
+    if (props.isPlaying) player.playVideo()
   }
 })
 
@@ -168,7 +181,6 @@ onUnmounted(() => {
 
 <style scoped>
 .yt-frame {
-  width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none;
-  position: fixed; top: -10px; left: -10px;
+  width: 200px; height: 200px;
 }
 </style>

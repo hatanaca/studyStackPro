@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
-import { youtubeApi, type YouTubePlaylistItem, type YouTubeVideoItem } from '@/api/modules/youtube.api'
+import { youtubeApi, type YouTubePlaylistItem, type YouTubeSearchItem } from '@/api/modules/youtube.api'
 
 type PlayerMode = 'playlists' | 'search' | 'favorites'
 
@@ -9,7 +9,7 @@ export interface TrackInfo {
 }
 interface FavoriteEntry { playlistId: string; title: string; thumbnail: string }
 interface PlayerState {
-  playlist: YouTubePlaylistItem | null; videoIndex: number; isPlaying: boolean; isExpanded: boolean
+  playlist: YouTubePlaylistItem | null; videoIndex: number; isPlaying: boolean; isExpanded: boolean; mode: PlayerMode; searchResults: YouTubeSearchItem[];
 }
 
 const STORAGE_KEY = 'studytrack_miniplayer'
@@ -22,7 +22,7 @@ function saveFavorites(list: FavoriteEntry[]) { try { localStorage.setItem(FAVOR
 
 function loadState(): PlayerState {
   try { const r = localStorage.getItem(STORAGE_KEY); if (r) return JSON.parse(r) } catch {}
-  return { playlist: null, videoIndex: 0, isPlaying: false, isExpanded: false }
+  return { playlist: null, videoIndex: 0, isPlaying: false, isExpanded: false, mode: 'search', searchResults: [] }
 }
 function saveState(s: PlayerState) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)) } catch {} }
 
@@ -32,19 +32,19 @@ export const usePlayerStore = defineStore('player', () => {
   const playlistError = ref<string | null>(null)
 
   const searchQuery = ref('')
-  const searchResults = ref<YouTubeVideoItem[]>([])
   const searching = ref(false)
   const searchError = ref<string | null>(null)
   const searchNextPageToken = ref<string | null>(null)
 
   const favorites = ref<FavoriteEntry[]>(loadFavorites())
 
-  const mode = ref<PlayerMode>('search')
   const saved = loadState()
+  const mode = ref<PlayerMode>((saved as any).mode ?? 'search')
   const selectedPlaylist = ref<YouTubePlaylistItem | null>(saved.playlist)
   const videoIndex = ref(saved.videoIndex)
   const isPlaying = ref(saved.isPlaying)
   const isExpanded = ref(saved.isExpanded)
+  const searchResults = ref<YouTubeSearchItem[]>((saved as any).searchResults ?? [])
 
   // Player controls state
   const isShuffled = ref(false)
@@ -96,7 +96,7 @@ export const usePlayerStore = defineStore('player', () => {
   })
   const hasContent = computed(() => !!currentPlaylistId.value || searchResults.value.length > 0)
 
-  function persist() { saveState({ playlist: selectedPlaylist.value, videoIndex: videoIndex.value, isPlaying: isPlaying.value, isExpanded: isExpanded.value }) }
+  function persist() { saveState({ playlist: selectedPlaylist.value, videoIndex: videoIndex.value, isPlaying: isPlaying.value, isExpanded: isExpanded.value, mode: mode.value, searchResults: searchResults.value }) }
 
   // --- Playlists ---
   async function fetchPlaylists() {
@@ -123,7 +123,7 @@ export const usePlayerStore = defineStore('player', () => {
       if (!searchResults.value.length) searchError.value = 'Nenhum resultado.'
     } catch (e: any) {
       searchError.value = e?.response?.data?.error?.message ?? 'Falha ao buscar'
-    } finally { searching.value = false }
+    } finally { searching.value = false; persist() }
   }
   function playSearchResult(i: number) {
     if (i >= 0 && i < searchResults.value.length) { videoIndex.value = i; isPlaying.value = true; isExpanded.value = true; persist() }
@@ -137,7 +137,7 @@ export const usePlayerStore = defineStore('player', () => {
       favorites.value.push({
         playlistId: selectedPlaylist.value.id,
         title: selectedPlaylist.value.snippet?.title ?? 'Sem título',
-        thumbnail: selectedPlaylist.value.snippet?.thumbnails?.default?.url ?? '',
+        thumbnail: selectedPlaylist.value.snippet?.thumbnails?.medium?.url ?? '',
       })
       saveFavorites(favorites.value)
     }
@@ -153,27 +153,43 @@ export const usePlayerStore = defineStore('player', () => {
   }
   function isFavorite(playlistId: string) { return favorites.value.some(f => f.playlistId === playlistId) }
 
+  // Shuffle history for search mode
+  let shuffleHistory: number[] = []
+
   // --- Controls ---
   function switchMode(m: PlayerMode) { mode.value = m; videoIndex.value = 0; persist() }
   function nextVideo() {
     if (mode.value === 'search') {
-      videoIndex.value = videoIndex.value < searchResults.value.length - 1 ? videoIndex.value + 1 : 0
+      if (isShuffled.value) {
+        shuffleHistory.push(videoIndex.value)
+        let next: number
+        const len = searchResults.value.length
+        do { next = Math.floor(Math.random() * len) }
+        while (next === videoIndex.value && len > 1)
+        videoIndex.value = next
+      } else {
+        videoIndex.value = videoIndex.value < searchResults.value.length - 1 ? videoIndex.value + 1 : 0
+      }
     } else {
       videoIndex.value++
     }
+    isPlaying.value = true
     persist()
   }
   function prevVideo() {
-    if (videoIndex.value > 0) {
+    if (isShuffled.value && shuffleHistory.length > 0) {
+      videoIndex.value = shuffleHistory.pop()!
+    } else if (videoIndex.value > 0) {
       videoIndex.value--
     } else if (mode.value === 'search') {
       videoIndex.value = searchResults.value.length - 1
     }
+    isPlaying.value = true
     persist()
   }
   function togglePlay() { isPlaying.value = !isPlaying.value; persist() }
   function toggleExpand() { isExpanded.value = !isExpanded.value; persist() }
-  function toggleShuffle() { isShuffled.value = !isShuffled.value }
+  function toggleShuffle() { isShuffled.value = !isShuffled.value; if (!isShuffled.value) shuffleHistory = [] }
   function cycleRepeat() { repeatMode.value = repeatMode.value === 'none' ? 'playlist' : repeatMode.value === 'playlist' ? 'single' : 'none' }
   function setVolume(v: number) { volume.value = Math.max(0, Math.min(100, v)) }
   function clearPlaylist() { selectedPlaylist.value = null; videoIndex.value = 0; isPlaying.value = false; persist() }

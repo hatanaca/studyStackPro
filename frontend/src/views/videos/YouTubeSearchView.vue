@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { useYouTubeStore } from '@/stores/youtube.store'
 
 const store = useYouTubeStore()
@@ -176,12 +176,12 @@ onUnmounted(() => {
             :key="item.id.videoId"
             class="youtube-card"
             :class="{ 'youtube-card--active': store.selectedVideoId === item.id.videoId }"
-            @click="selectVideo(item.id.videoId)"
-            @keydown.enter="selectVideo(item.id.videoId)"
-            @keydown.space.prevent="selectVideo(item.id.videoId)"
             tabindex="0"
             role="button"
             :aria-label="`Assistir ${item.snippet.title}`"
+            @click="selectVideo(item.id.videoId)"
+            @keydown.enter="selectVideo(item.id.videoId)"
+            @keydown.space.prevent="selectVideo(item.id.videoId)"
           >
             <div class="youtube-card__thumb">
               <img

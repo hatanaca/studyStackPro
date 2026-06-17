@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, reactive, onMounted, onUnmounted, watch } from 'vue'
+import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { usePlayerStore } from '@/stores/player.store'
 import { useAuthStore } from '@/stores/auth.store'
 import YouTubeFrame from '@/components/player/YouTubeFrame.vue'
@@ -50,12 +50,10 @@ function onDragEnd() {
   document.removeEventListener('touchmove', onDragMove); document.removeEventListener('touchend', onDragEnd)
 }
 
-onMounted(() => { if (hasGoogleAccount.value) player.fetchPlaylists() })
-watch(hasGoogleAccount, (v) => { if (v) player.fetchPlaylists() })
-onUnmounted(() => {
-  document.removeEventListener('mousemove', onDragMove); document.removeEventListener('mouseup', onDragEnd)
-  document.removeEventListener('touchmove', onDragMove); document.removeEventListener('touchend', onDragEnd)
+onMounted(() => {
+  if (hasGoogleAccount.value) player.fetchPlaylists()
 })
+watch(hasGoogleAccount, (v) => { if (v) player.fetchPlaylists() })
 
 function handleSearch() { if (searchInput.value.trim()) { player.searchVideos(searchInput.value); player.switchMode('search') } }
 function onTimeUpdate(time: number, dur: number) {
@@ -75,34 +73,58 @@ function onSeekChange(e: Event) {
   setTimeout(() => { seekPercent.value = -1 }, 500)
 }
 
+function onPlayerStateChange(s: number) {
+  if (s === 1) player.isPlaying = true
+  else if (s === 2) player.isPlaying = false
+  // Ignora -1 (unstarted), 3 (buffering), 5 (cued)
+}
+
 function formatTime(sec: number) {
   if (!isFinite(sec) || sec < 0) return '0:00'
   const m = Math.floor(sec / 60), s = Math.floor(sec % 60)
   return `${m}:${s.toString().padStart(2, '0')}`
 }
+
 </script>
 
 <template>
-  <aside ref="containerRef" class="mini-player" :class="{ 'mini-player--expanded': player.isExpanded, 'mini-player--dragging': dragging }" :style="{ left: pos.x + 'px', top: pos.y + 'px' }">
+  <aside ref="containerRef" class="mini-player" :class="{ 'mini-player--expanded': player.isExpanded, 'mini-player--dragging': dragging }" :style="player.isExpanded ? { left: pos.x + 'px', top: pos.y + 'px' } : undefined">
     <!-- Iframe invisível -->
+    <div class="yt-player-wrapper">
     <YouTubeFrame
       v-if="player.currentPlaylistId || player.currentVideoId"
       :playlist-id="player.currentPlaylistId" :video-id="player.currentVideoId"
       :video-index="player.videoIndex" :is-playing="player.isPlaying"
       :is-shuffled="player.isShuffled" :repeat-mode="player.repeatMode"
       :volume="player.volume" :seek-percent="seekPercent"
-      @state-change="(s) => player.isPlaying = (s === 1)"
+      @state-change="onPlayerStateChange"
       @ended="player.nextVideo()"
       @time-update="onTimeUpdate"
     />
+    </div>
 
     <!-- Barra colapsada -->
-    <button v-if="!player.isExpanded" class="mini-player__collapse-bar" @mousedown="onDragStart" @touchstart="onDragStart" @click="player.toggleExpand()">
+    <div v-if="!player.isExpanded" class="mini-player__collapse-bar">
       <div v-if="player.currentTrack?.thumbnail" class="mini-player__mini-thumb" :style="{ backgroundImage: `url(${player.currentTrack.thumbnail})` }" />
       <svg v-else class="mini-player__drag-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>
-      <span class="mini-player__title-label">{{ player.currentTrack?.title || playlistTitle }}</span>
-      <span v-if="player.isPlaying" class="mini-player__playing-dot" />
-    </button>
+      <span class="mini-player__title-label" @click="player.toggleExpand()">{{ player.currentTrack?.title || playlistTitle }}</span>
+      <span v-if="player.isPlaying && !player.currentTrack" class="mini-player__playing-dot" />
+      <div v-if="player.hasContent" class="mini-player__collapse-controls">
+        <button class="mini-player__btn-icon" aria-label="Anterior" @click.stop="player.prevVideo()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+        </button>
+        <button class="mini-player__btn-icon" aria-label="Play/Pause" @click.stop="player.togglePlay()">
+          <svg v-if="!player.isPlaying" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        </button>
+        <button class="mini-player__btn-icon" aria-label="Próximo" @click.stop="player.nextVideo()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+        </button>
+      </div>
+      <button class="mini-player__btn-icon" aria-label="Expandir" title="Expandir" @click.stop="player.toggleExpand()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+    </div>
 
     <!-- Painel expandido -->
     <div v-else class="mini-player__panel">
@@ -127,7 +149,7 @@ function formatTime(sec: number) {
       </div>
 
       <!-- Info da faixa -->
-      <div class="mini-player__track-info" v-if="player.currentTrack">
+      <div v-if="player.currentTrack" class="mini-player__track-info">
         <p class="mini-player__track-title">{{ player.currentTrack.title }}</p>
         <p v-if="player.currentTrack.artist" class="mini-player__track-artist">{{ player.currentTrack.artist }}</p>
       </div>
@@ -140,7 +162,7 @@ function formatTime(sec: number) {
       </div>
 
       <!-- Controles principais -->
-      <div class="mini-player__controls" v-if="player.hasContent">
+      <div v-if="player.hasContent" class="mini-player__controls">
         <!-- Shuffle -->
         <button class="mini-player__ctrl-btn" :class="{ 'mini-player__ctrl-btn--active': player.isShuffled }" aria-label="Aleatório" @click="player.toggleShuffle()">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
@@ -200,13 +222,13 @@ function formatTime(sec: number) {
       <div v-if="player.mode === 'search'" class="mini-player__section">
         <div class="mini-player__search-bar">
           <input v-model="searchInput" class="mini-player__input" placeholder="Buscar música..." @keyup.enter="handleSearch" @mousedown.stop />
-          <button class="mini-player__btn-set" @click="handleSearch" :disabled="player.searching">{{ player.searching ? '...' : 'Buscar' }}</button>
+          <button class="mini-player__btn-set" :disabled="player.searching" @click="handleSearch">{{ player.searching ? '...' : 'Buscar' }}</button>
         </div>
         <div v-if="player.searchError" class="mini-player__msg">{{ player.searchError }}</div>
         <div v-if="player.searching" class="mini-player__msg">Buscando...</div>
         <div v-if="player.searchResults.length" class="mini-player__search-results">
           <button v-for="(item, i) in player.searchResults" :key="item.id?.videoId || i" class="mini-player__search-item" :class="{ 'mini-player__search-item--active': i === player.videoIndex && player.isPlaying }" @click="player.playSearchResult(i)">
-            <img v-if="item.snippet?.thumbnails?.default?.url" :src="item.snippet.thumbnails.default.url" class="mini-player__search-thumb" alt="" />
+            <img v-if="item.snippet?.thumbnails?.medium?.url" :src="item.snippet.thumbnails.medium.url" class="mini-player__search-thumb" alt="" />
             <span class="mini-player__search-title">{{ item.snippet?.title }}</span>
           </button>
         </div>
@@ -230,85 +252,106 @@ function formatTime(sec: number) {
 </template>
 
 <style scoped>
-.mini-player { position: fixed; z-index: 9999; user-select: none; font-family: system-ui, sans-serif; }
+/* ─── Esquema de cores próprio (escuro/indigo) ─── */
+.mini-player {
+  --p-bg: #1a1a2e;
+  --p-bg-card: #16213e;
+  --p-bg-hover: #1f2b4f;
+  --p-border: #2a3a5c;
+  --p-text: #e8e8f0;
+  --p-text-muted: #8a8aaa;
+  --p-primary: #6366f1;
+  --p-primary-dim: rgba(99,102,241,.15);
+  --p-radius: 8px;
+  --p-radius-sm: 4px;
+
+  position: fixed; z-index: 9999; user-select: none;
+  font-family: system-ui, sans-serif;
+  color-scheme: dark;
+}
+/* Recolhido: barra fixa no topo */
+.mini-player:not(.mini-player--expanded) { top: 0; left: 0; right: 0; }
+/* Expandido: posicionado via drag (inline left/top) */
+.mini-player--expanded { width: auto; }
 .mini-player--dragging { cursor: grabbing; opacity: 0.95; }
 
 .mini-player__collapse-bar {
-  display: flex; align-items: center; gap: 8px; padding: 6px 12px;
-  background: var(--color-bg-card); border: 1px solid var(--color-border);
-  border-radius: 20px; box-shadow: var(--shadow-lg); color: var(--color-text);
-  cursor: grab; font-size: var(--text-xs); border: 0; text-align: left; font-family: inherit;
-  transition: box-shadow .15s;
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 16px;
+  background: var(--p-bg-card); color: var(--p-text);
+  font-size: 11px; border: 0; border-bottom: 1px solid var(--p-border);
+  font-family: inherit;
 }
-.mini-player__collapse-bar:hover { box-shadow: var(--shadow-xl); }
-.mini-player__mini-thumb { width: 24px; height: 24px; border-radius: var(--radius-xs); background-size: cover; background-position: center; flex-shrink: 0; }
-.mini-player__playing-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--color-primary); animation: pulse-dot 1.2s ease-in-out infinite; flex-shrink: 0; }
-.mini-player__title-label { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mini-player__drag-icon { opacity: 0.3; flex-shrink: 0; }
+.mini-player__collapse-controls {
+  display: flex; align-items: center; gap: 2px; margin-left: auto;
+}
+.mini-player__mini-thumb { width: 24px; height: 24px; border-radius: var(--p-radius-sm); background-size: cover; background-position: center; flex-shrink: 0; }
+.mini-player__playing-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--p-primary); animation: pulse-dot 1.2s ease-in-out infinite; flex-shrink: 0; }
+.mini-player__title-label { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--p-text); cursor: pointer; flex-shrink: 1; }
+.mini-player__drag-icon { opacity: 0.3; flex-shrink: 0; color: var(--p-text-muted); }
 
 .mini-player__panel {
   width: 280px; max-height: 85vh; display: flex; flex-direction: column;
-  background: var(--color-bg-card); border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); overflow: hidden;
+  background: var(--p-bg-card); border: 1px solid var(--p-border);
+  border-radius: var(--p-radius); box-shadow: 0 10px 40px rgba(0,0,0,.5); overflow: hidden;
 }
 .mini-player__handle {
   display: flex; align-items: center; gap: 6px; padding: 6px 12px;
-  border-bottom: 1px solid var(--color-border); cursor: grab; background: var(--color-bg-card);
+  border-bottom: 1px solid var(--p-border); cursor: grab; background: var(--p-bg-card);
 }
-.mini-player__header-title { flex: 1; font-size: 11px; font-weight: 600; color: var(--color-text-muted); }
+.mini-player__header-title { flex: 1; font-size: 11px; font-weight: 600; color: var(--p-text-muted); }
 
-.mini-player__album { width: 100%; aspect-ratio: 1; background: #111; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.mini-player__album { width: 100%; aspect-ratio: 1; background: var(--p-bg); display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .mini-player__album-art { width: 100%; height: 100%; background-size: cover; background-position: center; transition: transform .4s; }
 .mini-player__album-art--playing { animation: album-pulse 5s ease-in-out infinite; }
-.mini-player__album-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #444; background: #111; }
+.mini-player__album-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #555; background: var(--p-bg); }
 
 .mini-player__track-info { padding: 10px 12px 4px; text-align: center; }
-.mini-player__track-title { font-size: var(--text-sm); font-weight: 600; color: var(--color-text); margin: 0 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mini-player__track-artist { font-size: 11px; color: var(--color-text-muted); margin: 0; }
+.mini-player__track-title { font-size: 13px; font-weight: 600; color: var(--p-text); margin: 0 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-player__track-artist { font-size: 11px; color: var(--p-text-muted); margin: 0; }
 
 /* Progress */
 .mini-player__progress-wrap { display: flex; align-items: center; gap: 6px; padding: 4px 12px; }
-.mini-player__time { font-size: 10px; color: var(--color-text-muted); min-width: 32px; font-variant-numeric: tabular-nums; }
-.mini-player__progress { flex: 1; height: 4px; -webkit-appearance: none; appearance: none; background: var(--color-border); border-radius: 2px; outline: none; cursor: pointer; }
-.mini-player__progress::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--color-primary); cursor: pointer; }
-.mini-player__progress::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--color-primary); cursor: pointer; border: none; }
+.mini-player__time { font-size: 10px; color: var(--p-text-muted); min-width: 32px; font-variant-numeric: tabular-nums; }
+.mini-player__progress { flex: 1; height: 4px; -webkit-appearance: none; appearance: none; background: var(--p-border); border-radius: 2px; outline: none; cursor: pointer; }
+.mini-player__progress::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--p-primary); cursor: pointer; }
+.mini-player__progress::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--p-primary); cursor: pointer; border: none; }
 
 /* Controls */
 .mini-player__controls { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 8px 12px; }
-.mini-player__btn-icon { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 0; background: transparent; color: var(--color-text-muted); cursor: pointer; border-radius: 50%; transition: background .15s, color .15s; }
-.mini-player__btn-icon:hover { background: var(--color-bg); color: var(--color-text); }
-.mini-player__btn-play { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 0; background: var(--color-primary); color: #fff; cursor: pointer; border-radius: 50%; transition: transform .15s; }
+.mini-player__btn-icon { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 0; background: transparent; color: var(--p-text-muted); cursor: pointer; border-radius: 50%; transition: background .15s, color .15s; }
+.mini-player__btn-icon:hover { background: var(--p-bg-hover); color: var(--p-text); }
+.mini-player__btn-play { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 0; background: var(--p-primary); color: #fff; cursor: pointer; border-radius: 50%; transition: transform .15s; }
 .mini-player__btn-play:hover { transform: scale(1.1); }
-.mini-player__ctrl-btn { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 0; background: transparent; color: var(--color-text-muted); cursor: pointer; border-radius: 50%; transition: color .15s; }
-.mini-player__ctrl-btn:hover { color: var(--color-text); }
-.mini-player__ctrl-btn--active { color: var(--color-primary); }
+.mini-player__ctrl-btn { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 0; background: transparent; color: var(--p-text-muted); cursor: pointer; border-radius: 50%; transition: color .15s; }
+.mini-player__ctrl-btn:hover { color: var(--p-text); }
+.mini-player__ctrl-btn--active { color: var(--p-primary); }
 
 .mini-player__volume-wrap { display: flex; align-items: center; gap: 4px; }
-.mini-player__volume-slider { width: 60px; height: 4px; -webkit-appearance: none; appearance: none; background: var(--color-border); border-radius: 2px; outline: none; cursor: pointer; }
-.mini-player__volume-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%; background: var(--color-text); }
-.mini-player__volume-slider::-moz-range-thumb { width: 10px; height: 10px; border-radius: 50%; background: var(--color-text); border: none; }
+.mini-player__volume-slider { width: 60px; height: 4px; -webkit-appearance: none; appearance: none; background: var(--p-border); border-radius: 2px; outline: none; cursor: pointer; }
+.mini-player__volume-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%; background: var(--p-text); }
+.mini-player__volume-slider::-moz-range-thumb { width: 10px; height: 10px; border-radius: 50%; background: var(--p-text); border: none; }
 
 /* Tabs */
-.mini-player__tabs { display: flex; border-top: 1px solid var(--color-border); }
-.mini-player__tab { flex: 1; display: flex; align-items: center; justify-content: center; padding: 7px 0; border: 0; background: transparent; color: var(--color-text-muted); cursor: pointer; font-size: 10px; font-weight: 500; border-bottom: 2px solid transparent; transition: color .15s; font-family: inherit; }
-.mini-player__tab--active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.mini-player__tabs { display: flex; border-top: 1px solid var(--p-border); }
+.mini-player__tab { flex: 1; display: flex; align-items: center; justify-content: center; padding: 7px 0; border: 0; background: transparent; color: var(--p-text-muted); cursor: pointer; font-size: 10px; font-weight: 500; border-bottom: 2px solid transparent; transition: color .15s; font-family: inherit; }
+.mini-player__tab--active { color: var(--p-primary); border-bottom-color: var(--p-primary); }
 
 .mini-player__section { padding: 8px 12px; overflow-y: auto; max-height: 150px; }
-.mini-player__select { width: 100%; padding: 5px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); color: var(--color-text); font-size: 11px; }
-.mini-player__msg { font-size: 11px; color: var(--color-text-muted); text-align: center; padding: 10px 0; }
-.mini-player__link { color: var(--color-primary); text-decoration: underline; }
+.mini-player__select { width: 100%; padding: 5px 8px; border: 1px solid var(--p-border); border-radius: var(--p-radius-sm); background: var(--p-bg); color: var(--p-text); font-size: 11px; }
+.mini-player__msg { font-size: 11px; color: var(--p-text-muted); text-align: center; padding: 10px 0; }
+.mini-player__link { color: var(--p-primary); text-decoration: underline; }
 
 .mini-player__search-bar { display: flex; gap: 4px; margin-bottom: 6px; }
-.mini-player__input { flex: 1; padding: 5px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); color: var(--color-text); font-size: 11px; outline: none; }
-.mini-player__input:focus { border-color: var(--color-primary); }
-.mini-player__btn-set { padding: 5px 10px; border: 0; border-radius: var(--radius-md); background: var(--color-primary); color: #fff; cursor: pointer; font-size: 11px; font-weight: 600; }
+.mini-player__input { flex: 1; padding: 5px 8px; border: 1px solid var(--p-border); border-radius: var(--p-radius-sm); background: var(--p-bg); color: var(--p-text); font-size: 11px; outline: none; }
+.mini-player__input:focus { border-color: var(--p-primary); }
+.mini-player__btn-set { padding: 5px 10px; border: 0; border-radius: var(--p-radius-sm); background: var(--p-primary); color: #fff; cursor: pointer; font-size: 11px; font-weight: 600; }
 .mini-player__btn-set:disabled { opacity: 0.6; cursor: default; }
 
 .mini-player__search-results { display: flex; flex-direction: column; gap: 2px; }
-.mini-player__search-item { display: flex; align-items: center; gap: 6px; padding: 4px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text); cursor: pointer; text-align: left; font-size: 11px; transition: background .1s; font-family: inherit; width: 100%; }
-.mini-player__search-item:hover { background: var(--color-bg); }
-.mini-player__search-item--active { background: color-mix(in srgb, var(--color-primary) 15%, transparent); color: var(--color-primary); }
-.mini-player__search-thumb { width: 44px; height: 30px; object-fit: cover; border-radius: var(--radius-xs); flex-shrink: 0; }
+.mini-player__search-item { display: flex; align-items: center; gap: 6px; padding: 4px; border: 0; border-radius: var(--p-radius-sm); background: transparent; color: var(--p-text); cursor: pointer; text-align: left; font-size: 11px; transition: background .1s; font-family: inherit; width: 100%; }
+.mini-player__search-item:hover { background: var(--p-bg-hover); }
+.mini-player__search-item--active { background: var(--p-primary-dim); color: var(--p-primary); }
+.mini-player__search-thumb { width: 44px; height: 30px; object-fit: cover; border-radius: var(--p-radius-sm); flex-shrink: 0; }
 .mini-player__search-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini-player__remove-fav { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 50%; flex-shrink: 0; }
 .mini-player__remove-fav:hover { background: rgba(231,76,60,.1); }
@@ -317,4 +360,5 @@ function formatTime(sec: number) {
 @keyframes album-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
 
 @media (max-width: 768px) { .mini-player__panel { width: 260px; } }
+.yt-player-wrapper { position: fixed; top: -9999px; left: -9999px; width: 200px; height: 200px; pointer-events: none; }
 </style>
