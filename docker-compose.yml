@@ -16,7 +16,7 @@ services:
     container_name: nginx
     build: ./docker/nginx
     ports:
-      - "80:80"
+      - "8080:80"
       - "443:443"
     volumes:
       - ./backend:/var/www/html
@@ -227,7 +227,7 @@ services:
       - app
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:5173 || exit 1"]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:5173', r => { process.exit(r.statusCode === 200 ? 0 : 1) })\""]
       interval: 15s
       timeout: 5s
       retries: 5

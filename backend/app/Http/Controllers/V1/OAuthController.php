@@ -28,9 +28,20 @@ class OAuthController extends Controller
             abort(400, 'Provider inválido.');
         }
 
-        return Socialite::driver($provider)
-            ->stateless()
-            ->redirect();
+        $driver = Socialite::driver($provider)->stateless();
+
+        // Escopos YouTube para acessar playlists e refresh token offline.
+        // access_type=offline → recebe refresh_token.
+        // prompt=consent → força re-autorização com novos escopos.
+        if ($provider === 'google') {
+            $driver->scopes(['https://www.googleapis.com/auth/youtube.readonly']);
+            $driver->with([
+                'access_type' => 'offline',
+                'prompt'      => 'consent',
+            ]);
+        }
+
+        return $driver->redirect();
     }
 
     /**

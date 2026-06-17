@@ -52,6 +52,16 @@ class SocialAuthService
             ]);
         }
 
+        if ($provider === 'google') {
+            $user->update([
+                'google_token'            => $socialUser->token,
+                'google_refresh_token'    => $socialUser->refreshToken,
+                'google_token_expires_at' => $socialUser->expiresIn
+                    ? now()->addSeconds($socialUser->expiresIn)
+                    : null,
+            ]);
+        }
+
         return $user->fresh();
     }
 }

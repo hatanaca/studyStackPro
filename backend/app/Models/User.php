@@ -37,6 +37,9 @@ class User extends Authenticatable
         'discord_token',
         'discord_refresh_token',
         'discord_token_expires_at',
+        'google_token',
+        'google_refresh_token',
+        'google_token_expires_at',
     ];
 
     /** Campos nunca expostos em JSON (segurança) */
@@ -45,6 +48,8 @@ class User extends Authenticatable
         'remember_token',
         'discord_token',
         'discord_refresh_token',
+        'google_token',
+        'google_refresh_token',
     ];
 
     /** Casts de atributos (tipos e mutators) */
@@ -54,6 +59,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'discord_token_expires_at' => 'datetime',
+            'google_token_expires_at' => 'datetime',
         ];
     }
 

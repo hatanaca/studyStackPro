@@ -14,35 +14,23 @@ return new class extends Migration
         });
 
         DB::unprepared(<<<'SQL'
-            CREATE EXTENSION IF NOT EXISTS pllua;
-
             CREATE OR REPLACE FUNCTION public.calculate_study_session_productivity_score()
             RETURNS TRIGGER AS $$
-                if not new then
-                    return
-                end
-
-                local ok = pcall(function()
-                    local new_min = tonumber(new.duration_min) or 0
-                    local weight = 1.0
-
-                    if new_min < 15 then
-                        weight = 0.5
-                    elseif new_min >= 90 then
-                        weight = 1.3
-                    elseif new_min >= 45 then
-                        weight = 1.1
-                    end
-
-                    new.productivity_score = math.floor(new_min * weight)
-                end)
-
-                if not ok then
-                    new.productivity_score = tonumber(new.productivity_score) or 0
-                end
-
-                return new
-            $$ LANGUAGE pllua;
+            BEGIN
+                IF NEW.duration_min IS NULL THEN
+                    NEW.productivity_score := 0;
+                ELSIF NEW.duration_min < 15 THEN
+                    NEW.productivity_score := FLOOR(NEW.duration_min * 0.5)::integer;
+                ELSIF NEW.duration_min >= 90 THEN
+                    NEW.productivity_score := FLOOR(NEW.duration_min * 1.3)::integer;
+                ELSIF NEW.duration_min >= 45 THEN
+                    NEW.productivity_score := FLOOR(NEW.duration_min * 1.1)::integer;
+                ELSE
+                    NEW.productivity_score := NEW.duration_min;
+                END IF;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
 
             DROP TRIGGER IF EXISTS trg_study_session_productivity_score ON public.study_sessions;
 

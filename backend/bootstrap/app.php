@@ -24,6 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
+    ->withProviders([
+        \SocialiteProviders\Manager\ServiceProvider::class,
+    ])
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'throttle.sliding' => \App\Http\Middleware\SlidingWindowRateLimit::class,

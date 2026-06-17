@@ -88,4 +88,37 @@ class YouTubeController extends Controller
             ], 502);
         }
     }
+
+    /**
+     * GET /api/v1/youtube/playlists
+     *
+     * Busca playlists do usuário autenticado via OAuth Google.
+     */
+    public function playlists(): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (! $user || ! $user->google_token) {
+            return response()->json([
+                'success' => false,
+                'error'   => ['message' => 'Conta Google não vinculada. Faça login com Google.'],
+            ], 401);
+        }
+
+        try {
+            $result = $this->youtube->playlists($user->google_token);
+
+            return response()->json([
+                'success' => true,
+                'data'    => $result,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('YouTube playlists error', ['message' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'error'   => ['message' => 'Falha ao buscar playlists. Token pode ter expirado. Faça login novamente.'],
+            ], 502);
+        }
+    }
 }

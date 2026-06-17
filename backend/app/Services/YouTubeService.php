@@ -126,6 +126,46 @@ class YouTubeService
     }
 
     /**
+     * Busca playlists do usuário autenticado via OAuth Google.
+     *
+     * @param string $accessToken Token OAuth Google do usuário.
+     * @return array{items: array}
+     *
+     * @throws RequestException|ConnectionException
+     */
+    public function playlists(string $accessToken): array
+    {
+        $params = [
+            'part'       => 'snippet',
+            'mine'       => 'true',
+            'maxResults' => 50,
+        ];
+
+        $response = Http::timeout(10)
+            ->retry(2, 200)
+            ->withToken($accessToken)
+            ->get(self::BASE_URL . '/playlists', $params);
+
+        if ($response->failed()) {
+            Log::warning('YouTube playlists failed', [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+            ]);
+            throw new RequestException($response);
+        }
+
+        $data = $response->json();
+
+        Log::info('YouTube playlists', [
+            'totalResults' => $data['pageInfo']['totalResults'] ?? 0,
+        ]);
+
+        return [
+            'items' => $data['items'] ?? [],
+        ];
+    }
+
+    /**
      * Sanitiza e serializa a chave de cache.
      */
     private function cacheKey(string $suffix): string

@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import ActiveSessionBanner from '@/features/sessions/components/ActiveSessionBanner.vue'
+import MiniPlayer from '@/components/player/MiniPlayer.vue'
 import { clearMeasureCache } from '@/composables/useTextMeasure'
 import { invalidateChartThemeCache } from '@/composables/useApexChartTheme'
 import { connectWebSocket, disconnectWebSocket } from '@/composables/useWebSocket'
@@ -120,6 +121,7 @@ watch(
       </main>
     </div>
   </div>
+  <MiniPlayer />
 </template>
 
 <style scoped>

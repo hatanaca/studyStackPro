@@ -44,6 +44,22 @@ export interface YouTubeVideosResult {
   items: YouTubeVideoItem[]
 }
 
+/** Item de playlist (simplificado). */
+export interface YouTubePlaylistItem {
+  id: string
+  snippet: {
+    title: string
+    description: string
+    thumbnails: { medium: { url: string }; high: { url: string } }
+    channelTitle: string
+    publishedAt: string
+  }
+}
+
+export interface YouTubePlaylistsResult {
+  items: YouTubePlaylistItem[]
+}
+
 export const youtubeApi = {
   search: (q: string, pageToken = '', maxResults = 20) =>
     apiClient.get<ApiResponse<YouTubeSearchResult>>(ENDPOINTS.youtube.search, {
@@ -53,4 +69,6 @@ export const youtubeApi = {
     apiClient.get<ApiResponse<YouTubeVideosResult>>(ENDPOINTS.youtube.videos, {
       params: { ids },
     }),
+  playlists: () =>
+    apiClient.get<ApiResponse<YouTubePlaylistsResult>>(ENDPOINTS.youtube.playlists),
 }

@@ -42,5 +42,6 @@ export const ENDPOINTS = {
   youtube: {
     search: '/youtube/search',
     videos: '/youtube/videos',
+    playlists: '/youtube/playlists',
   },
 } as const

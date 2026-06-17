@@ -18,15 +18,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
     Route::post('auth/login', [\App\Http\Controllers\V1\AuthController::class, 'login'])
         ->middleware('throttle:login');
 
-    // OAuth Routes (sem auth - redirecionam para o provider)
-    Route::prefix('auth')->name('auth.')->group(function () {
-        Route::get('/{provider}', [\App\Http\Controllers\V1\OAuthController::class, 'redirect'])
-            ->where('provider', 'google|discord')
-            ->name('oauth.redirect');
-        Route::get('/{provider}/callback', [\App\Http\Controllers\V1\OAuthController::class, 'callback'])
-            ->where('provider', 'google|discord')
-            ->name('oauth.callback');
-    });
+    // OAuth Routes movidas para web.php — precisam de sessão web completa
+    // pois o callback do provider (Google/Discord) não passa pelo statefulApi.
 
     Route::middleware(['auth:sanctum'])->group(function () {
         // User info endpoints
@@ -42,6 +35,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
                 ->name('youtube.search');
             Route::get('youtube/videos', [\App\Http\Controllers\V1\YouTubeController::class, 'videos'])
                 ->name('youtube.videos');
+            Route::get('youtube/playlists', [\App\Http\Controllers\V1\YouTubeController::class, 'playlists'])
+                ->name('youtube.playlists');
         });
         Route::middleware('throttle:search')->group(function () {
             Route::get('technologies/search', [\App\Http\Controllers\V1\TechnologyController::class, 'search'])

@@ -4,6 +4,9 @@ export interface User {
   name: string
   email: string
   timezone: string
+  locale?: string
+  google_id?: string | null
+  discord_id?: string | null
   avatar_url?: string | null
   created_at?: string
   updated_at?: string
