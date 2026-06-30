@@ -2,10 +2,13 @@
 import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { usePlayerStore } from '@/stores/player.store'
 import { useAuthStore } from '@/stores/auth.store'
+import { useUiStore } from '@/stores/ui.store'
 import YouTubeFrame from '@/components/player/YouTubeFrame.vue'
+import AudioVisualizer from '@/components/player/AudioVisualizer.vue'
 
 const player = usePlayerStore()
 const auth = useAuthStore()
+const uiStore = useUiStore()
 
 const hasGoogleAccount = computed(() => !!auth.user?.google_id)
 const searchInput = ref('')
@@ -14,6 +17,8 @@ const seekPercent = ref(-1)
 const isSeeking = ref(false)
 
 const playlistTitle = computed(() => player.selectedPlaylist?.snippet?.title ?? 'Selecionar playlist')
+
+const sidebarLeft = computed(() => uiStore.sidebarCollapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width)')
 
 // --- Drag ---
 const STORAGE_POS_KEY = 'studytrack_miniplayer_pos'
@@ -27,7 +32,11 @@ function clampPos() {
   pos.x = Math.max(0, Math.min(pos.x, w - pw)); pos.y = Math.max(0, Math.min(pos.y, h - ph))
 }
 function loadPos() {
-  try { const r = localStorage.getItem(STORAGE_POS_KEY); pos.x = r ? JSON.parse(r).x ?? 16 : window.innerWidth - 300; pos.y = r ? JSON.parse(r).y ?? window.innerHeight - 250 : window.innerHeight - 250 } catch { pos.x = window.innerWidth - 300; pos.y = window.innerHeight - 250 }
+  try {
+    const r = localStorage.getItem(STORAGE_POS_KEY)
+    if (r) { const p = JSON.parse(r); pos.x = p.x ?? 16; pos.y = p.y ?? window.innerHeight - 60 }
+    else { pos.x = window.innerWidth - 350; pos.y = window.innerHeight - 60 }
+  } catch { pos.x = window.innerWidth - 350; pos.y = window.innerHeight - 60 }
 }
 function savePos() { try { localStorage.setItem(STORAGE_POS_KEY, JSON.stringify({ x: pos.x, y: pos.y })) } catch {} }
 loadPos(); clampPos()
@@ -88,7 +97,7 @@ function formatTime(sec: number) {
 </script>
 
 <template>
-  <aside ref="containerRef" class="mini-player" :class="{ 'mini-player--expanded': player.isExpanded, 'mini-player--dragging': dragging }" :style="player.isExpanded ? { left: pos.x + 'px', top: pos.y + 'px' } : undefined">
+  <aside ref="containerRef" class="mini-player" :class="{ 'mini-player--expanded': player.isExpanded, 'mini-player--dragging': dragging }" :style="{ left: pos.x + 'px', top: pos.y + 'px' }">
     <!-- Iframe invisível -->
     <div class="yt-player-wrapper">
     <YouTubeFrame
@@ -104,31 +113,34 @@ function formatTime(sec: number) {
     </div>
 
     <!-- Barra colapsada -->
-    <div v-if="!player.isExpanded" class="mini-player__collapse-bar">
+    <div v-if="!player.isExpanded" class="mini-player__collapse-bar" @mousedown="onDragStart" @touchstart="onDragStart" @dblclick.stop="player.toggleExpand()">
+      <div class="mini-player__collapse-grip" @mousedown.stop @touchstart.stop>
+        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>
+      </div>
       <div v-if="player.currentTrack?.thumbnail" class="mini-player__mini-thumb" :style="{ backgroundImage: `url(${player.currentTrack.thumbnail})` }" />
-      <svg v-else class="mini-player__drag-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>
-      <span class="mini-player__title-label" @click="player.toggleExpand()">{{ player.currentTrack?.title || playlistTitle }}</span>
+      <span class="mini-player__title-label">{{ player.currentTrack?.title || playlistTitle }}</span>
+      <AudioVisualizer v-if="player.hasContent" :is-playing="player.isPlaying" />
       <span v-if="player.isPlaying && !player.currentTrack" class="mini-player__playing-dot" />
       <div v-if="player.hasContent" class="mini-player__collapse-controls">
         <button class="mini-player__btn-icon" aria-label="Anterior" @click.stop="player.prevVideo()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
         </button>
         <button class="mini-player__btn-icon" aria-label="Play/Pause" @click.stop="player.togglePlay()">
-          <svg v-if="!player.isPlaying" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          <svg v-else xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          <svg v-if="!player.isPlaying" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
         </button>
         <button class="mini-player__btn-icon" aria-label="Próximo" @click.stop="player.nextVideo()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
         </button>
       </div>
       <button class="mini-player__btn-icon" aria-label="Expandir" title="Expandir" @click.stop="player.toggleExpand()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
     </div>
 
     <!-- Painel expandido -->
     <div v-else class="mini-player__panel">
-      <div class="mini-player__handle" @mousedown="onDragStart" @touchstart="onDragStart">
+      <div class="mini-player__handle" @mousedown="onDragStart" @touchstart="onDragStart" @dblclick.stop="player.toggleExpand()">
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" class="mini-player__drag-icon"><circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>
         <span class="mini-player__header-title">{{ player.mode === 'search' ? 'Busca' : player.mode === 'favorites' ? 'Favoritos' : 'Playlists' }}</span>
         <button v-if="player.mode === 'playlists' && player.selectedPlaylist" class="mini-player__btn-icon" :title="player.isFavorite(player.selectedPlaylist.id) ? 'Salvo' : 'Salvar playlist'" @click.stop="player.addToFavorites()">
@@ -252,112 +264,144 @@ function formatTime(sec: number) {
 </template>
 
 <style scoped>
-/* ─── Esquema de cores próprio (escuro/indigo) ─── */
+/* ─── Paleta refinada (dark glassmorphism) ─── */
 .mini-player {
-  --p-bg: #1a1a2e;
-  --p-bg-card: #16213e;
-  --p-bg-hover: #1f2b4f;
-  --p-border: #2a3a5c;
-  --p-text: #e8e8f0;
-  --p-text-muted: #8a8aaa;
-  --p-primary: #6366f1;
-  --p-primary-dim: rgba(99,102,241,.15);
-  --p-radius: 8px;
-  --p-radius-sm: 4px;
+  --p-bg: #0c0f1a;
+  --p-bg-card: rgba(15, 20, 35, 0.92);
+  --p-bg-elevated: rgba(22, 28, 48, 0.95);
+  --p-bg-hover: rgba(30, 40, 65, 0.8);
+  --p-bg-active: rgba(40, 52, 80, 0.7);
+  --p-border: rgba(99, 102, 241, 0.12);
+  --p-border-hover: rgba(99, 102, 241, 0.25);
+  --p-text: #e8ecf4;
+  --p-text-secondary: #a0aec0;
+  --p-text-muted: #5a6580;
+  --p-primary: #818cf8;
+  --p-primary-hover: #a5b4fc;
+  --p-primary-dim: rgba(129, 140, 248, 0.12);
+  --p-primary-glow: rgba(129, 140, 248, 0.25);
+  --p-accent: #c084fc;
+  --p-radius: 12px;
+  --p-radius-sm: 6px;
+  --p-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(99, 102, 241, 0.08);
+  --p-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(99, 102, 241, 0.15);
 
   position: fixed; z-index: 9999; user-select: none;
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-sans, system-ui, sans-serif);
   color-scheme: dark;
 }
-/* Recolhido: barra fixa no topo */
-.mini-player:not(.mini-player--expanded) { top: 0; left: 0; right: 0; }
-/* Expandido: posicionado via drag (inline left/top) */
+/* Recolhido: barra compacta flutuante */
+.mini-player:not(.mini-player--expanded) { width: auto; }
+/* Expandido: painel posicionado via drag */
 .mini-player--expanded { width: auto; }
 .mini-player--dragging { cursor: grabbing; opacity: 0.95; }
 
 .mini-player__collapse-bar {
-  display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 16px;
+  display: flex; align-items: center; gap: 6px; padding: 5px 10px;
   background: var(--p-bg-card); color: var(--p-text);
-  font-size: 11px; border: 0; border-bottom: 1px solid var(--p-border);
-  font-family: inherit;
+  font-size: 11px; border: 1px solid var(--p-border);
+  border-radius: 999px; box-shadow: var(--p-shadow);
+  font-family: inherit; cursor: grab; max-width: 340px;
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  transition: border-color .2s, box-shadow .2s;
 }
+.mini-player__collapse-bar:hover {
+  border-color: var(--p-border-hover); box-shadow: var(--p-shadow-hover);
+}
+.mini-player__collapse-bar:active { cursor: grabbing; }
+.mini-player__collapse-grip {
+  display: flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; flex-shrink: 0; cursor: grab;
+  color: var(--p-text-muted); opacity: 0.5; transition: opacity .2s, color .2s;
+}
+.mini-player__collapse-bar:hover .mini-player__collapse-grip { opacity: 0.8; color: var(--p-text-secondary); }
 .mini-player__collapse-controls {
-  display: flex; align-items: center; gap: 2px; margin-left: auto;
+  display: flex; align-items: center; gap: 1px; flex-shrink: 0;
 }
-.mini-player__mini-thumb { width: 24px; height: 24px; border-radius: var(--p-radius-sm); background-size: cover; background-position: center; flex-shrink: 0; }
-.mini-player__playing-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--p-primary); animation: pulse-dot 1.2s ease-in-out infinite; flex-shrink: 0; }
-.mini-player__title-label { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--p-text); cursor: pointer; flex-shrink: 1; }
-.mini-player__drag-icon { opacity: 0.3; flex-shrink: 0; color: var(--p-text-muted); }
+.mini-player__mini-thumb { width: 22px; height: 22px; border-radius: 50%; background-size: cover; background-position: center; flex-shrink: 0; cursor: pointer; box-shadow: 0 0 0 1.5px rgba(129, 140, 248, 0.3); transition: box-shadow .2s; }
+.mini-player__mini-thumb:hover { box-shadow: 0 0 0 1.5px var(--p-primary); }
+.mini-player__playing-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--p-primary); box-shadow: 0 0 6px var(--p-primary-glow); animation: pulse-dot 1.2s ease-in-out infinite; flex-shrink: 0; }
+.mini-player__title-label { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--p-text); cursor: pointer; flex-shrink: 1; transition: color .15s; }
+.mini-player__title-label:hover { color: var(--p-primary-hover); }
 
 .mini-player__panel {
   width: 280px; max-height: 85vh; display: flex; flex-direction: column;
   background: var(--p-bg-card); border: 1px solid var(--p-border);
-  border-radius: var(--p-radius); box-shadow: 0 10px 40px rgba(0,0,0,.5); overflow: hidden;
+  border-radius: var(--p-radius); box-shadow: var(--p-shadow); overflow: hidden;
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
 }
 .mini-player__handle {
-  display: flex; align-items: center; gap: 6px; padding: 6px 12px;
-  border-bottom: 1px solid var(--p-border); cursor: grab; background: var(--p-bg-card);
+  display: flex; align-items: center; gap: 6px; padding: 8px 12px;
+  border-bottom: 1px solid var(--p-border); cursor: grab;
+  background: var(--p-bg-elevated);
 }
-.mini-player__header-title { flex: 1; font-size: 11px; font-weight: 600; color: var(--p-text-muted); }
+.mini-player__header-title { flex: 1; font-size: 11px; font-weight: 600; color: var(--p-text-muted); letter-spacing: 0.03em; text-transform: uppercase; }
 
 .mini-player__album { width: 100%; aspect-ratio: 1; background: var(--p-bg); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.mini-player__album-art { width: 100%; height: 100%; background-size: cover; background-position: center; transition: transform .4s; }
-.mini-player__album-art--playing { animation: album-pulse 5s ease-in-out infinite; }
-.mini-player__album-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #555; background: var(--p-bg); }
+.mini-player__album-art { width: 100%; height: 100%; background-size: cover; background-position: center; transition: transform .6s var(--ease-out-expo, cubic-bezier(0.16,1,0.3,1)); }
+.mini-player__album-art--playing { animation: album-spin 20s linear infinite; }
+.mini-player__album-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--p-text-muted); background: var(--p-bg); }
 
-.mini-player__track-info { padding: 10px 12px 4px; text-align: center; }
-.mini-player__track-title { font-size: 13px; font-weight: 600; color: var(--p-text); margin: 0 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mini-player__track-artist { font-size: 11px; color: var(--p-text-muted); margin: 0; }
+.mini-player__track-info { padding: 12px 14px 4px; text-align: center; }
+.mini-player__track-title { font-size: 13px; font-weight: 600; color: var(--p-text); margin: 0 0 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-player__track-artist { font-size: 11px; color: var(--p-text-secondary); margin: 0; }
 
 /* Progress */
-.mini-player__progress-wrap { display: flex; align-items: center; gap: 6px; padding: 4px 12px; }
+.mini-player__progress-wrap { display: flex; align-items: center; gap: 8px; padding: 6px 14px; }
 .mini-player__time { font-size: 10px; color: var(--p-text-muted); min-width: 32px; font-variant-numeric: tabular-nums; }
-.mini-player__progress { flex: 1; height: 4px; -webkit-appearance: none; appearance: none; background: var(--p-border); border-radius: 2px; outline: none; cursor: pointer; }
-.mini-player__progress::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--p-primary); cursor: pointer; }
-.mini-player__progress::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--p-primary); cursor: pointer; border: none; }
+.mini-player__progress { flex: 1; height: 4px; -webkit-appearance: none; appearance: none; background: rgba(99, 102, 241, 0.15); border-radius: 2px; outline: none; cursor: pointer; transition: height .15s; }
+.mini-player__progress:hover { height: 6px; }
+.mini-player__progress::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--p-primary); cursor: pointer; box-shadow: 0 0 8px var(--p-primary-glow); transition: transform .15s, box-shadow .15s; }
+.mini-player__progress::-webkit-slider-thumb:hover { transform: scale(1.2); box-shadow: 0 0 12px var(--p-primary-glow); }
+.mini-player__progress::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--p-primary); cursor: pointer; border: none; box-shadow: 0 0 8px var(--p-primary-glow); }
 
 /* Controls */
-.mini-player__controls { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 8px 12px; }
-.mini-player__btn-icon { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 0; background: transparent; color: var(--p-text-muted); cursor: pointer; border-radius: 50%; transition: background .15s, color .15s; }
-.mini-player__btn-icon:hover { background: var(--p-bg-hover); color: var(--p-text); }
-.mini-player__btn-play { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 0; background: var(--p-primary); color: #fff; cursor: pointer; border-radius: 50%; transition: transform .15s; }
-.mini-player__btn-play:hover { transform: scale(1.1); }
-.mini-player__ctrl-btn { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 0; background: transparent; color: var(--p-text-muted); cursor: pointer; border-radius: 50%; transition: color .15s; }
-.mini-player__ctrl-btn:hover { color: var(--p-text); }
+.mini-player__controls { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 8px 14px; }
+.mini-player__btn-icon { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; background: transparent; color: var(--p-text-secondary); cursor: pointer; border-radius: 50%; transition: background .2s, color .2s, transform .15s; }
+.mini-player__btn-icon:hover { background: var(--p-bg-hover); color: var(--p-text); transform: scale(1.08); }
+.mini-player__btn-play { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border: 0; background: linear-gradient(135deg, var(--p-primary), var(--p-accent)); color: #fff; cursor: pointer; border-radius: 50%; transition: transform .2s, box-shadow .2s; box-shadow: 0 4px 16px var(--p-primary-glow); }
+.mini-player__btn-play:hover { transform: scale(1.1); box-shadow: 0 6px 24px var(--p-primary-glow); }
+.mini-player__ctrl-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 0; background: transparent; color: var(--p-text-muted); cursor: pointer; border-radius: 50%; transition: color .2s, transform .15s; }
+.mini-player__ctrl-btn:hover { color: var(--p-text); transform: scale(1.1); }
 .mini-player__ctrl-btn--active { color: var(--p-primary); }
 
-.mini-player__volume-wrap { display: flex; align-items: center; gap: 4px; }
-.mini-player__volume-slider { width: 60px; height: 4px; -webkit-appearance: none; appearance: none; background: var(--p-border); border-radius: 2px; outline: none; cursor: pointer; }
-.mini-player__volume-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%; background: var(--p-text); }
-.mini-player__volume-slider::-moz-range-thumb { width: 10px; height: 10px; border-radius: 50%; background: var(--p-text); border: none; }
+.mini-player__volume-wrap { display: flex; align-items: center; gap: 6px; }
+.mini-player__volume-slider { width: 60px; height: 4px; -webkit-appearance: none; appearance: none; background: rgba(99, 102, 241, 0.15); border-radius: 2px; outline: none; cursor: pointer; }
+.mini-player__volume-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--p-text-secondary); cursor: pointer; transition: background .15s; }
+.mini-player__volume-slider::-webkit-slider-thumb:hover { background: var(--p-primary); }
+.mini-player__volume-slider::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--p-text-secondary); border: none; }
 
 /* Tabs */
-.mini-player__tabs { display: flex; border-top: 1px solid var(--p-border); }
-.mini-player__tab { flex: 1; display: flex; align-items: center; justify-content: center; padding: 7px 0; border: 0; background: transparent; color: var(--p-text-muted); cursor: pointer; font-size: 10px; font-weight: 500; border-bottom: 2px solid transparent; transition: color .15s; font-family: inherit; }
+.mini-player__tabs { display: flex; border-top: 1px solid var(--p-border); background: var(--p-bg-elevated); }
+.mini-player__tab { flex: 1; display: flex; align-items: center; justify-content: center; padding: 8px 0; border: 0; background: transparent; color: var(--p-text-muted); cursor: pointer; font-size: 10px; font-weight: 600; border-bottom: 2px solid transparent; transition: color .2s, border-color .2s; font-family: inherit; letter-spacing: 0.03em; }
+.mini-player__tab:hover { color: var(--p-text-secondary); }
 .mini-player__tab--active { color: var(--p-primary); border-bottom-color: var(--p-primary); }
 
-.mini-player__section { padding: 8px 12px; overflow-y: auto; max-height: 150px; }
-.mini-player__select { width: 100%; padding: 5px 8px; border: 1px solid var(--p-border); border-radius: var(--p-radius-sm); background: var(--p-bg); color: var(--p-text); font-size: 11px; }
-.mini-player__msg { font-size: 11px; color: var(--p-text-muted); text-align: center; padding: 10px 0; }
-.mini-player__link { color: var(--p-primary); text-decoration: underline; }
+.mini-player__section { padding: 10px 12px; overflow-y: auto; max-height: 150px; }
+.mini-player__select { width: 100%; padding: 6px 10px; border: 1px solid var(--p-border); border-radius: var(--p-radius-sm); background: var(--p-bg); color: var(--p-text); font-size: 11px; transition: border-color .2s; }
+.mini-player__select:focus { border-color: var(--p-primary); outline: none; }
+.mini-player__msg { font-size: 11px; color: var(--p-text-muted); text-align: center; padding: 12px 0; }
+.mini-player__link { color: var(--p-primary); text-decoration: none; transition: color .15s; }
+.mini-player__link:hover { color: var(--p-primary-hover); text-decoration: underline; }
 
-.mini-player__search-bar { display: flex; gap: 4px; margin-bottom: 6px; }
-.mini-player__input { flex: 1; padding: 5px 8px; border: 1px solid var(--p-border); border-radius: var(--p-radius-sm); background: var(--p-bg); color: var(--p-text); font-size: 11px; outline: none; }
-.mini-player__input:focus { border-color: var(--p-primary); }
-.mini-player__btn-set { padding: 5px 10px; border: 0; border-radius: var(--p-radius-sm); background: var(--p-primary); color: #fff; cursor: pointer; font-size: 11px; font-weight: 600; }
-.mini-player__btn-set:disabled { opacity: 0.6; cursor: default; }
+.mini-player__search-bar { display: flex; gap: 6px; margin-bottom: 8px; }
+.mini-player__input { flex: 1; padding: 6px 10px; border: 1px solid var(--p-border); border-radius: var(--p-radius-sm); background: var(--p-bg); color: var(--p-text); font-size: 11px; outline: none; transition: border-color .2s, box-shadow .2s; }
+.mini-player__input:focus { border-color: var(--p-primary); box-shadow: 0 0 0 2px var(--p-primary-dim); }
+.mini-player__btn-set { padding: 6px 12px; border: 0; border-radius: var(--p-radius-sm); background: linear-gradient(135deg, var(--p-primary), var(--p-accent)); color: #fff; cursor: pointer; font-size: 11px; font-weight: 600; transition: opacity .2s, transform .15s; }
+.mini-player__btn-set:hover { transform: translateY(-1px); }
+.mini-player__btn-set:disabled { opacity: 0.5; cursor: default; transform: none; }
 
 .mini-player__search-results { display: flex; flex-direction: column; gap: 2px; }
-.mini-player__search-item { display: flex; align-items: center; gap: 6px; padding: 4px; border: 0; border-radius: var(--p-radius-sm); background: transparent; color: var(--p-text); cursor: pointer; text-align: left; font-size: 11px; transition: background .1s; font-family: inherit; width: 100%; }
+.mini-player__search-item { display: flex; align-items: center; gap: 8px; padding: 6px; border: 0; border-radius: var(--p-radius-sm); background: transparent; color: var(--p-text); cursor: pointer; text-align: left; font-size: 11px; transition: background .15s; font-family: inherit; width: 100%; }
 .mini-player__search-item:hover { background: var(--p-bg-hover); }
 .mini-player__search-item--active { background: var(--p-primary-dim); color: var(--p-primary); }
 .mini-player__search-thumb { width: 44px; height: 30px; object-fit: cover; border-radius: var(--p-radius-sm); flex-shrink: 0; }
 .mini-player__search-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mini-player__remove-fav { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 50%; flex-shrink: 0; }
-.mini-player__remove-fav:hover { background: rgba(231,76,60,.1); }
+.mini-player__remove-fav { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 50%; flex-shrink: 0; transition: background .15s; }
+.mini-player__remove-fav:hover { background: rgba(239, 68, 68, 0.15); }
 
-@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.3} }
-@keyframes album-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
+@keyframes pulse-dot { 0%,100%{opacity:1;box-shadow:0 0 6px var(--p-primary-glow)} 50%{opacity:.4;box-shadow:0 0 2px var(--p-primary-glow)} }
+@keyframes album-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 
 @media (max-width: 768px) { .mini-player__panel { width: 260px; } }
 .yt-player-wrapper { position: fixed; top: -9999px; left: -9999px; width: 200px; height: 200px; pointer-events: none; }

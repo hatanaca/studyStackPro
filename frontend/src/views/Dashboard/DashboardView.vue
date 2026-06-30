@@ -131,7 +131,11 @@ watch(
   () => analyticsStore.selectedPeriod,
   async (period) => {
     if (period === '90d' && !analyticsStore.timeSeriesData['90d']?.length) {
-      await analyticsStore.fetchTimeSeries('90d')
+      try {
+        await analyticsStore.fetchTimeSeries('90d')
+      } catch {
+        // erro de rede/timeout — dados ficam vazios e widget mostra skeleton
+      }
     }
   }
 )

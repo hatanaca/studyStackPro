@@ -34,3 +34,11 @@ export function prefetchSettingsView() {
 export function prefetchProfileView() {
   void import('@/views/profile/ProfileView.vue')
 }
+
+export function prefetchCanvasView() {
+  void import('@/views/canvas/CanvasView.vue')
+}
+
+export function prefetchGraficosView() {
+  void import('@/views/graficos/GraficosView.vue')
+}

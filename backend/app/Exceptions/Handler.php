@@ -69,7 +69,7 @@ class Handler extends ExceptionHandler
                 ], 429),
                 default => response()->json([
                     'success' => false,
-                    'error' => ['code' => 'INTERNAL_ERROR', 'message' => config('app.debug') ? $e->getMessage() : 'Erro interno.'],
+                    'error' => ['code' => 'INTERNAL_ERROR', 'message' => config('app.debug') && app()->isLocal() ? $e->getMessage() : 'Erro interno.'],
                 ], 500),
             };
         }

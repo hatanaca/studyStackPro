@@ -22,7 +22,7 @@ COPY backend/ ./
 RUN composer dump-autoload --optimize --no-dev
 
 # Stage 2: Runtime
-FROM php:8.3-fpm-alpine
+FROM php:8.4-fpm-alpine
 
 RUN apk upgrade --no-cache
 

@@ -12,8 +12,9 @@ import { sessionsRoutes } from './routes/sessions.routes'
 import { technologiesRoutes } from './routes/technologies.routes'
 import { goalsRoutes } from './routes/goals.routes'
 import { settingsRoutes, legacySettingsRedirects } from './routes/settings.routes'
-import { youtubeRoutes } from './routes/youtube.routes'
 import { studyPathRoutes } from './routes/study-path.routes'
+import { canvasRoutes } from './routes/canvas.routes'
+import { reportsRoutes } from './routes/reports.routes'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,8 +35,9 @@ const router = createRouter({
         ...sessionsRoutes,
         ...technologiesRoutes,
         ...goalsRoutes,
-        ...youtubeRoutes,
         ...studyPathRoutes,
+        ...canvasRoutes,
+        ...reportsRoutes,
         ...settingsRoutes,
         ...legacySettingsRedirects,
         ...profileRoutes,

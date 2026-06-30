@@ -20,7 +20,11 @@ const { fetchDashboard } = useDashboard()
 const activeTab = ref('overview')
 
 async function handleRefresh() {
-  await fetchDashboard(true)
+  try {
+    await fetchDashboard(true)
+  } catch {
+    // erro de rede/timeout — dados mantêm estado anterior
+  }
 }
 
 const tabs = [

@@ -56,7 +56,7 @@ class AppServiceProvider extends ServiceProvider
 
         if (class_exists(\Laravel\Horizon\Horizon::class)) {
             \Laravel\Horizon\Horizon::auth(function ($request) {
-                $allowedIps = array_filter(array_map('trim', explode(',', (string) env('HORIZON_ALLOWED_IPS', ''))));
+                $allowedIps = array_filter(array_map('trim', explode(',', (string) config('app.horizon_allowed_ips', ''))));
                 if ($allowedIps !== [] && ! in_array($request->ip(), $allowedIps, true)) {
                     return false;
                 }

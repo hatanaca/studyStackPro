@@ -166,9 +166,6 @@ watch(
   z-index: 1;
 }
 .app-layout__content {
-  max-width: var(--page-max-width);
-  margin-left: auto;
-  margin-right: auto;
   width: 100%;
   padding-block: var(--page-content-padding-block);
 }

@@ -118,11 +118,13 @@ export const useAuthStore = defineStore('auth', () => {
 
   function registerOnlineRecovery() {
     if (onlineHandler) return
-    onlineHandler = () => {
+    onlineHandler = async () => {
       if (!sessionValidated.value) {
-        fetchMe().catch(() => {
-          /* retry silencioso */
-        })
+        try {
+          await fetchMe()
+        } catch {
+          /* sessão expirada — mantém estado não autenticado */
+        }
       }
       window.removeEventListener('online', onlineHandler!)
       onlineHandler = null

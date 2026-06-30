@@ -320,6 +320,59 @@ function handleLogout() {
         <span class="app-sidebar__link-text">Tecnologias</span>
       </RouterLink>
       <RouterLink
+        to="/canvas"
+        class="app-sidebar__link"
+        :class="{ active: route.path.startsWith('/canvas') }"
+        title="Canvas"
+        aria-label="Ir para Canvas"
+      >
+        <span class="app-sidebar__icon" aria-hidden="true">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+            <path d="M3 9h18" />
+            <path d="M9 21V9" />
+          </svg>
+        </span>
+        <span class="app-sidebar__link-text">Canvas</span>
+      </RouterLink>
+      <RouterLink
+        to="/graficos"
+        class="app-sidebar__link"
+        :class="{ active: route.path.startsWith('/graficos') }"
+        title="Gráficos"
+        aria-label="Ir para Gráficos"
+      >
+        <span class="app-sidebar__icon" aria-hidden="true">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M3 3v18h18" />
+            <path d="M18 17V9" />
+            <path d="M13 17V5" />
+            <path d="M8 17v-3" />
+          </svg>
+        </span>
+        <span class="app-sidebar__link-text">Gráficos</span>
+      </RouterLink>
+      <RouterLink
         to="/settings"
         class="app-sidebar__link"
         :class="{ active: route.path.startsWith('/settings') }"

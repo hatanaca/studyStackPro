@@ -45,10 +45,17 @@ class StudySessionServiceTest extends TestCase
 
     public function test_list_for_user_returns_paginated_sessions(): void
     {
-        StudySession::factory()->count(3)->create([
-            'user_id' => $this->user->id,
-            'technology_id' => $this->technology->id,
-        ]);
+        for ($i = 0; $i < 3; $i++) {
+            StudySession::forceCreate([
+                'user_id' => $this->user->id,
+                'technology_id' => $this->technology->id,
+                'started_at' => now()->subDays(10 + $i),
+                'ended_at' => now()->subDays(10 + $i)->addHour(),
+                'notes' => null,
+                'mood' => null,
+                'focus_score' => null,
+            ]);
+        }
 
         $filter = new StudySessionFilterDTO(perPage: 2);
         $result = $this->service->listForUser($this->user->id, $filter);
@@ -67,13 +74,32 @@ class StudySessionServiceTest extends TestCase
             'color' => '#FF2D20',
             'is_active' => true,
         ]);
-        StudySession::factory()->create([
+        StudySession::forceCreate([
             'user_id' => $this->user->id,
             'technology_id' => $this->technology->id,
+            'started_at' => now()->subDays(10),
+            'ended_at' => now()->subDays(10)->addHour(),
+            'notes' => null,
+            'mood' => null,
+            'focus_score' => null,
         ]);
-        StudySession::factory()->count(2)->create([
+        StudySession::forceCreate([
             'user_id' => $this->user->id,
             'technology_id' => $tech2->id,
+            'started_at' => now()->subDays(5),
+            'ended_at' => now()->subDays(5)->addHour(),
+            'notes' => null,
+            'mood' => null,
+            'focus_score' => null,
+        ]);
+        StudySession::forceCreate([
+            'user_id' => $this->user->id,
+            'technology_id' => $tech2->id,
+            'started_at' => now()->subDays(3),
+            'ended_at' => now()->subDays(3)->addHour(),
+            'notes' => null,
+            'mood' => null,
+            'focus_score' => null,
         ]);
 
         $filter = new StudySessionFilterDTO(technologyId: $tech2->id);

@@ -25,3 +25,34 @@ export interface LineChartData {
   labels: string[]
   datasets: ChartDataset[]
 }
+
+export interface DateRange {
+  start: string
+  end: string
+}
+
+export interface KpiCard {
+  label: string
+  value: string | number
+  color: string
+  sparkline?: number[]
+}
+
+export interface TreemapDataPoint {
+  x: string
+  y: number
+  color?: string
+}
+
+export interface RadarChartData {
+  labels: string[]
+  series: Array<{
+    name: string
+    data: number[]
+  }>
+}
+
+export interface FunnelDataPoint {
+  label: string
+  value: number
+}

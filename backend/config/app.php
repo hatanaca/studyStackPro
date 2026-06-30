@@ -17,6 +17,8 @@ return [
         'driver' => 'file',
     ],
     'horizon_admin_emails' => env('HORIZON_ADMIN_EMAILS', ''),
+    'horizon_allowed_ips' => env('HORIZON_ALLOWED_IPS', ''),
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
     'providers' => [
         Illuminate\Auth\AuthServiceProvider::class,
         Illuminate\Broadcasting\BroadcastServiceProvider::class,

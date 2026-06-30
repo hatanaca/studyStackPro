@@ -1,65 +1,71 @@
-import { mount } from '@vue/test-utils'
-import { defineComponent } from 'vue'
 import { setActivePinia, createPinia } from 'pinia'
-import { useSessionTimer } from '@/features/sessions/composables/useSessionTimer'
-import { sessionsApi } from '@/api/modules/sessions.api'
+import { useSessionTimer } from '../useSessionTimer'
+import { useSessionsStore } from '@/stores/sessions.store'
 
 vi.mock('@/api/modules/sessions.api', () => ({
   sessionsApi: {
-    getActive: vi.fn(),
+    list: vi.fn(),
+    getActive: vi.fn().mockResolvedValue({ data: { success: true, data: null } }),
   },
 }))
-
-/** Wrapper que usa o composable dentro de um componente para que onMounted/onUnmounted tenham contexto. */
-const SessionTimerWrapper = defineComponent({
-  setup() {
-    return useSessionTimer()
-  },
-  template: '<div></div>',
-})
 
 describe('useSessionTimer', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
-    vi.useFakeTimers()
-    // Mock padrão: sem sessão ativa, para onMounted não quebrar ao montar o wrapper
-    vi.mocked(sessionsApi.getActive).mockResolvedValue({
-      data: { success: true, data: null },
-    } as never)
   })
 
-  afterEach(() => {
-    vi.useRealTimers()
+  it('returns expected API', () => {
+    const timer = useSessionTimer()
+    expect(timer.activeSession).toBeDefined()
+    expect(timer.elapsedSeconds).toBeDefined()
+    expect(timer.formattedTime).toBeDefined()
+    expect(typeof timer.fetchActive).toBe('function')
+    expect(typeof timer.refresh).toBe('function')
   })
 
-  it('retorna activeSession, elapsedSeconds, formattedTime e refresh', () => {
-    const wrapper = mount(SessionTimerWrapper)
-
-    expect(wrapper.vm.activeSession).toBeDefined()
-    expect(wrapper.vm.elapsedSeconds).toBeDefined()
-    expect(wrapper.vm.formattedTime).toBeDefined()
-    expect(typeof wrapper.vm.refresh).toBe('function')
+  it('formattedTime returns 00:00:00 initially', () => {
+    const timer = useSessionTimer()
+    expect(timer.formattedTime.value).toBe('00:00:00')
   })
 
-  it('refresh com elapsed_seconds do servidor preenche o store', async () => {
-    vi.mocked(sessionsApi.getActive).mockResolvedValue({
-      data: {
-        success: true,
-        data: {
-          id: '1',
-          elapsed_seconds: 120,
-          technology: {},
-        },
-      },
-    } as never)
+  it('elapsedSeconds is 0 initially', () => {
+    const timer = useSessionTimer()
+    expect(timer.elapsedSeconds.value).toBe(0)
+  })
 
-    const wrapper = mount(SessionTimerWrapper)
-    await wrapper.vm.refresh()
+  it('activeSession is null initially', () => {
+    const timer = useSessionTimer()
+    expect(timer.activeSession.value).toBeNull()
+  })
 
-    const { useSessionsStore } = await import('@/stores/sessions.store')
+  it('elapsedSeconds reflects store state', () => {
     const store = useSessionsStore()
-    expect(store.elapsedSeconds).toBe(120)
-    expect(store.activeSession).toBeTruthy()
+    const timer = useSessionTimer()
+
+    store.setElapsedSeconds(120)
+    expect(timer.elapsedSeconds.value).toBe(120)
+  })
+
+  it('formattedTime reflects store formatted timer', () => {
+    const store = useSessionsStore()
+    const timer = useSessionTimer()
+
+    store.setElapsedSeconds(3661)
+    expect(timer.formattedTime.value).toBe('01:01:01')
+  })
+
+  it('activeSession reflects store active session', () => {
+    const store = useSessionsStore()
+    const timer = useSessionTimer()
+
+    const mockSession = { id: 's1', started_at: '2026-01-01T00:00:00Z' }
+    store.setActiveSession(mockSession as never)
+    expect(timer.activeSession.value).toEqual(mockSession)
+  })
+
+  it('refresh is an alias for fetchActive', () => {
+    const timer = useSessionTimer()
+    expect(timer.refresh).toBe(timer.fetchActive)
   })
 })

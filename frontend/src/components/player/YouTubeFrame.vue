@@ -1,7 +1,6 @@
 <script setup lang="ts">
 /**
  * Player YouTube usando a IFrame API oficial (YT.Player).
- * Muito mais confiável que postMessage manual.
  */
 import { watch, onMounted, onUnmounted } from 'vue'
 
@@ -28,28 +27,33 @@ let player: YT.Player | null = null
 let timeInterval: ReturnType<typeof setInterval> | null = null
 let isReady = false
 let isCreating = false
-let apiLoaded = false
+let destroyed = false
+let apiLoadRetries = 0
+const MAX_API_RETRIES = 15
 
 function loadYT(cb: () => void) {
+  if (destroyed) return
   if ((window as any).YT?.Player) { cb(); return }
-  if (apiLoaded) { setTimeout(() => loadYT(cb), 200); return }
-  apiLoaded = true
+
+  // Limitar retries para evitar loop infinito
+  if (apiLoadRetries >= MAX_API_RETRIES) return
+  apiLoadRetries++
+
   const tag = document.createElement('script')
   tag.src = 'https://www.youtube.com/iframe_api'
   const first = document.getElementsByTagName('script')[0]
   first?.parentNode?.insertBefore(tag, first)
   ;(window as any).onYouTubeIframeAPIReady = () => {
-    setTimeout(cb, 100)
+    if (!destroyed) cb()
   }
-  // Fallback: tenta mesmo sem callback
+  // Fallback com limite
   setTimeout(() => {
-    if ((window as any).YT?.Player) cb()
-  }, 4000)
+    if (!destroyed && (window as any).YT?.Player) cb()
+  }, 5000)
 }
 
 function createPlayer() {
-  if (isCreating) return
-  if (player) { player.destroy(); player = null }
+  if (isCreating || destroyed) return
   if (!props.playlistId && !props.videoId) return
 
   isCreating = true
@@ -69,6 +73,7 @@ function createPlayer() {
     },
     events: {
       onReady: () => {
+        if (destroyed) return
         isReady = true
         isCreating = false
         player?.setShuffle(props.isShuffled)
@@ -79,6 +84,7 @@ function createPlayer() {
         if (props.isPlaying) player?.playVideo()
       },
       onStateChange: (e: YT.OnStateChangeEvent) => {
+        if (destroyed) return
         emit('stateChange', e.data)
         if (e.data === 0) {
           if (props.repeatMode === 'single') {
@@ -90,9 +96,8 @@ function createPlayer() {
         }
       },
       onError: () => {
+        if (destroyed) return
         isCreating = false
-        // Tentar novamente após erro
-        setTimeout(() => { if (!isReady) { isReady = true; emit('ready') } }, 2000)
       },
     },
   }
@@ -103,6 +108,10 @@ function createPlayer() {
   }
 
   loadYT(() => {
+    if (destroyed) return
+    // Destruir player anterior antes de criar novo
+    if (player) { player.destroy(); player = null }
+
     if (props.playlistId) {
       player = new YT.Player(containerId, config)
     } else if (props.videoId) {
@@ -114,7 +123,7 @@ function createPlayer() {
 function startTimePoll() {
   if (timeInterval) clearInterval(timeInterval)
   timeInterval = setInterval(() => {
-    if (player && isReady) {
+    if (player && isReady && !destroyed) {
       const t = player.getCurrentTime()
       const d = player.getDuration()
       if (typeof t === 'number' && typeof d === 'number' && d > 0) {
@@ -132,29 +141,28 @@ function updateRepeat() {
 onMounted(() => createPlayer())
 
 // Reage a mudanças de props
-watch(() => props.playlistId, () => createPlayer())
+watch(() => props.playlistId, (newVal, oldVal) => {
+  if (newVal !== oldVal) createPlayer()
+})
 
 watch(() => props.videoId, (newId, oldId) => {
-  if (!newId) return
+  if (!newId || destroyed) return
   if (player && isReady && newId !== oldId) {
-    // Troca de vídeo sem recriar o player — muito mais rápido
     player.loadVideoById(newId)
     if (!props.isPlaying) player.pauseVideo()
     return
   }
-  // Player ainda não está pronto — não recriar, só aguardar
-  // onMounted/playlistId watcher já chamaram createPlayer()
 })
 
 watch(() => props.videoIndex, (idx) => {
-  if (player && isReady) {
+  if (player && isReady && !destroyed) {
     if (props.playlistId) player.playVideoAt(idx)
     if (props.isPlaying) player.playVideo()
   }
 })
 
 watch(() => props.isPlaying, (p) => {
-  if (!player || !isReady) return
+  if (!player || !isReady || destroyed) return
   if (p) player.playVideo()
   else player.pauseVideo()
 })
@@ -169,8 +177,9 @@ watch(() => props.seekPercent, (v) => {
 })
 
 onUnmounted(() => {
+  destroyed = true
   if (timeInterval) clearInterval(timeInterval)
-  player?.destroy()
+  try { player?.destroy() } catch {}
   player = null
 })
 </script>

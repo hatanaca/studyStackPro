@@ -30,7 +30,7 @@ class UserContractTest extends TestCase
             ->assertJson(['success' => true]);
 
         $data = $response->json('data');
-        $expectedKeys = ['id', 'name', 'email', 'timezone', 'locale', 'created_at', 'updated_at'];
+        $expectedKeys = ['id', 'name', 'email', 'timezone', 'locale', 'avatar_url', 'created_at', 'updated_at'];
 
         foreach ($expectedKeys as $key) {
             $this->assertArrayHasKey($key, $data, "Missing key: {$key}");

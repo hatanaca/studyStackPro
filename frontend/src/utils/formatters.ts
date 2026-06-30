@@ -14,6 +14,15 @@ export function formatHours(minutes: number): string {
   return `${h}h`
 }
 
+/** Label para KPIs: horas (já em horas) → "12h 30min" */
+export function formatHoursLabel(hours: number): string {
+  if (hours <= 0) return '0h'
+  const h = Math.floor(hours)
+  const m = Math.round((hours - h) * 60)
+  if (m === 0) return `${h}h`
+  return `${h}h ${m}min`
+}
+
 /** Label para eixo Y e tooltip de gráficos: minutos → "1h", "2h", "1h 30min" */
 export function formatMinutesToHoursLabel(minutes: number): string {
   if (minutes <= 0) return '0h'

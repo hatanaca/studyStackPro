@@ -1,80 +1,109 @@
 import { usePagination } from '../usePagination'
 
 describe('usePagination', () => {
-  beforeEach(() => {
-    // Cada teste usa uma nova instância via usePagination()
+  it('initializes with default values', () => {
+    const p = usePagination()
+    expect(p.currentPage.value).toBe(1)
+    expect(p.perPage.value).toBe(15)
+    expect(p.total.value).toBe(0)
+    expect(p.lastPage.value).toBe(1)
+    expect(p.hasNextPage.value).toBe(false)
+    expect(p.hasPrevPage.value).toBe(false)
   })
 
-  it('retorna valores iniciais corretos', () => {
-    const { currentPage, lastPage, total, perPage, hasNextPage, hasPrevPage } = usePagination(10)
-
-    expect(currentPage.value).toBe(1)
-    expect(lastPage.value).toBe(1)
-    expect(total.value).toBe(0)
-    expect(perPage.value).toBe(10)
-    expect(hasNextPage.value).toBe(false)
-    expect(hasPrevPage.value).toBe(false)
+  it('initializes with custom perPage', () => {
+    const p = usePagination(25)
+    expect(p.perPage.value).toBe(25)
   })
 
-  it('setMeta atualiza o estado', () => {
-    const { setMeta, currentPage, lastPage, total, perPage } = usePagination()
+  it('setMeta updates all values', () => {
+    const p = usePagination()
+    p.setMeta({ current_page: 3, last_page: 10, per_page: 20, total: 200 })
 
-    setMeta({
+    expect(p.currentPage.value).toBe(3)
+    expect(p.lastPage.value).toBe(10)
+    expect(p.perPage.value).toBe(20)
+    expect(p.total.value).toBe(200)
+  })
+
+  it('meta computed returns correct structure', () => {
+    const p = usePagination()
+    p.setMeta({ current_page: 2, last_page: 5, per_page: 10, total: 50 })
+
+    expect(p.meta.value).toEqual({
       current_page: 2,
       last_page: 5,
-      per_page: 15,
-      total: 72,
+      per_page: 10,
+      total: 50,
     })
-
-    expect(currentPage.value).toBe(2)
-    expect(lastPage.value).toBe(5)
-    expect(perPage.value).toBe(15)
-    expect(total.value).toBe(72)
   })
 
-  it('nextPage incrementa currentPage quando há próxima página', () => {
-    const { setMeta, nextPage, currentPage } = usePagination()
-    setMeta({ current_page: 1, last_page: 3, per_page: 15, total: 45 })
+  it('nextPage advances when has next', () => {
+    const p = usePagination()
+    p.setMeta({ current_page: 1, last_page: 5, per_page: 15, total: 75 })
 
-    nextPage()
-    expect(currentPage.value).toBe(2)
-    nextPage()
-    expect(currentPage.value).toBe(3)
-    nextPage()
-    expect(currentPage.value).toBe(3)
+    p.nextPage()
+    expect(p.currentPage.value).toBe(2)
+    expect(p.hasNextPage.value).toBe(true)
   })
 
-  it('prevPage decrementa currentPage quando há página anterior', () => {
-    const { setMeta, prevPage, currentPage } = usePagination()
-    setMeta({ current_page: 3, last_page: 3, per_page: 15, total: 45 })
+  it('nextPage does not go beyond last page', () => {
+    const p = usePagination()
+    p.setMeta({ current_page: 5, last_page: 5, per_page: 15, total: 75 })
 
-    prevPage()
-    expect(currentPage.value).toBe(2)
-    prevPage()
-    expect(currentPage.value).toBe(1)
-    prevPage()
-    expect(currentPage.value).toBe(1)
+    p.nextPage()
+    expect(p.currentPage.value).toBe(5)
+    expect(p.hasNextPage.value).toBe(false)
   })
 
-  it('goToPage limita ao range válido', () => {
-    const { setMeta, goToPage, currentPage } = usePagination()
-    setMeta({ current_page: 1, last_page: 5, per_page: 10, total: 50 })
+  it('prevPage goes back when has prev', () => {
+    const p = usePagination()
+    p.setMeta({ current_page: 3, last_page: 5, per_page: 15, total: 75 })
 
-    goToPage(3)
-    expect(currentPage.value).toBe(3)
-    goToPage(0)
-    expect(currentPage.value).toBe(1)
-    goToPage(10)
-    expect(currentPage.value).toBe(5)
+    p.prevPage()
+    expect(p.currentPage.value).toBe(2)
+    expect(p.hasPrevPage.value).toBe(true)
   })
 
-  it('reset volta ao estado inicial', () => {
-    const { setMeta, reset, currentPage, lastPage, total } = usePagination()
-    setMeta({ current_page: 3, last_page: 5, per_page: 10, total: 50 })
+  it('prevPage does not go below 1', () => {
+    const p = usePagination()
+    p.setMeta({ current_page: 1, last_page: 5, per_page: 15, total: 75 })
 
-    reset()
-    expect(currentPage.value).toBe(1)
-    expect(lastPage.value).toBe(1)
-    expect(total.value).toBe(0)
+    p.prevPage()
+    expect(p.currentPage.value).toBe(1)
+    expect(p.hasPrevPage.value).toBe(false)
+  })
+
+  it('goToPage clamps between 1 and lastPage', () => {
+    const p = usePagination()
+    p.setMeta({ current_page: 1, last_page: 5, per_page: 15, total: 75 })
+
+    p.goToPage(10)
+    expect(p.currentPage.value).toBe(5)
+
+    p.goToPage(-3)
+    expect(p.currentPage.value).toBe(1)
+  })
+
+  it('reset resets to initial state', () => {
+    const p = usePagination()
+    p.setMeta({ current_page: 3, last_page: 5, per_page: 15, total: 75 })
+
+    p.reset()
+    expect(p.currentPage.value).toBe(1)
+    expect(p.total.value).toBe(0)
+    expect(p.lastPage.value).toBe(1)
+  })
+
+  it('hasNextPage and hasPrevPage compute correctly', () => {
+    const p = usePagination()
+    p.setMeta({ current_page: 1, last_page: 1, per_page: 15, total: 0 })
+
+    expect(p.hasNextPage.value).toBe(false)
+    expect(p.hasPrevPage.value).toBe(false)
+
+    p.setMeta({ current_page: 2, last_page: 5, per_page: 15, total: 75 })
+    expect(p.hasNextPage.value).toBe(true)
+    expect(p.hasPrevPage.value).toBe(true)
   })
 })

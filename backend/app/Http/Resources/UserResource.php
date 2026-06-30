@@ -20,8 +20,6 @@ class UserResource extends JsonResource
             'email' => $user->email,
             'timezone' => $user->timezone,
             'locale' => $user->locale,
-            'google_id' => $user->google_id,
-            'discord_id' => $user->discord_id,
             'avatar_url' => $user->avatar_url,
             'created_at' => $user->created_at?->toIso8601String(),
             'updated_at' => $user->updated_at?->toIso8601String(),

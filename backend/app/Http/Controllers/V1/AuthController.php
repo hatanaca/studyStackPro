@@ -156,7 +156,7 @@ class AuthController extends Controller
      */
     public function revokeAllTokens(Request $request): JsonResponse
     {
-        $count = $this->tokenService->revokeMany($request->user()->tokens()->get());
+        $count = $this->tokenService->revokeMany($request->user()->tokens()->cursor());
 
         return $this->success(
             ['revoked_count' => $count],
