@@ -52,7 +52,7 @@ jobs:
 
       - name: Copy env
         working-directory: backend
-        run: cp .env.example .env && php artisan key:generate
+        run: mkdir -p bootstrap/cache && cp .env.example .env && php artisan key:generate
 
       - name: Run migrations
         working-directory: backend
