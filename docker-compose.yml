@@ -31,7 +31,7 @@ services:
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-<REMOVED>}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}
       REDIS_DATABASE: ${CACHE_DATABASE:-1}
       REDIS_PREFIX: ${REDIS_PREFIX:-studytrackpro_database_}
       SESSION_COOKIE_NAME: ${SESSION_COOKIE:-studytrack_session}
@@ -66,7 +66,7 @@ services:
       DB_PORT: 5432
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-<REMOVED>}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}
       # Load from .env in production:
       # - REDIS_PASSWORD (from .env.production)
       # - DB_PASSWORD (from .env.production)
@@ -106,7 +106,7 @@ services:
       DB_HOST: postgres
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-<REMOVED>}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}
     depends_on:
       postgres:
         condition: service_healthy
@@ -144,7 +144,7 @@ services:
       DB_HOST: postgres
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-<REMOVED>}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}
     depends_on:
       postgres:
         condition: service_healthy
@@ -182,7 +182,7 @@ services:
       DB_HOST: postgres
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-<REMOVED>}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}
     depends_on:
       postgres:
         condition: service_healthy
@@ -247,7 +247,7 @@ services:
     environment:
       POSTGRES_DB: studytrack
       POSTGRES_USER: studytrack
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       # Host: PHPUnit e artisan no Windows/macOS/Linux usam 127.0.0.1 (phpunit.xml)
@@ -278,7 +278,7 @@ services:
     image: redis:alpine
     entrypoint: ["sh", "/usr/local/bin/docker-entrypoint.sh"]
     environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-<REMOVED>}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}
     ports:
       - "${REDIS_PUBLISH_PORT:-6379}:6379"
     volumes:

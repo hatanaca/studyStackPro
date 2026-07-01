@@ -6,8 +6,8 @@ services:
     # Versão fixa (evita :latest). 9.14.x inclui cadeia Python mais recente (ex. authlib ≥ 1.6.9 para CVE-2026-27962).
     image: dpage/pgadmin4:9.14.0
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@studytrack.dev
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@studytrack.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?Defina PGADMIN_PASSWORD no .env}
     ports:
       - "5050:80"
     depends_on:

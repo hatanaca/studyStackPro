@@ -119,7 +119,7 @@ Configuração crítica: banco PostgreSQL dedicado para testes, Redis separado, 
 |                                                                                |
 | <env name="DB_USERNAME" value="studytrack" />                                  |
 |                                                                                |
-| <env name="DB_PASSWORD" value="secret" />                                      |
+| <env name="DB_PASSWORD" value="" />                                            |
 |                                                                                |
 | <!-- Redis de TESTE (DB 15 — nunca usado em dev) -->                           |
 |                                                                                |
@@ -1507,7 +1507,7 @@ Factories bem definidas são tão importantes quanto os testes. Precisam suporta
 |                                                                          |
 | POSTGRES_USER: studytrack                                                |
 |                                                                          |
-| POSTGRES_PASSWORD: secret                                                |
+| POSTGRES_PASSWORD: <YOUR_DB_PASSWORD>                                   |
 |                                                                          |
 | ports: ['5432:5432']                                                     |
 |                                                                          |
@@ -1571,7 +1571,7 @@ Factories bem definidas são tão importantes quanto os testes. Precisam suporta
 |                                                                          |
 | DB_USERNAME: studytrack                                                  |
 |                                                                          |
-| DB_PASSWORD: secret                                                      |
+| DB_PASSWORD: <YOUR_DB_PASSWORD>                                         |
 |                                                                          |
 | - name: Laravel Pint (code style)                                        |
 |                                                                          |

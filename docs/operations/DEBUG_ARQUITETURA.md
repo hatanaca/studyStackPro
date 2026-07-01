@@ -69,11 +69,11 @@ docker compose logs reverb --tail=50
 docker compose logs horizon --tail=50
 
 # Testar conectividade Redis (com senha)
-docker compose exec redis redis-cli -a <REMOVED> ping
+docker compose exec redis redis-cli -a "$REDIS_PASSWORD" ping
 # Esperado: PONG
 
 # Filas: o nome da chave no Redis depende de REDIS_PREFIX (ex.: studytrackpro_database_)
-docker compose exec redis redis-cli -a <REMOVED> KEYS "*queues*metrics*"
+docker compose exec redis redis-cli -a "$REDIS_PASSWORD" KEYS "*queues*metrics*"
 # Ou via Artisan (recomendado)
 docker compose exec php-fpm php artisan queue:monitor metrics --max=1000
 ```
@@ -181,7 +181,7 @@ docker compose exec php-fpm php artisan queue:failed
 docker compose exec php-fpm php artisan queue:retry all
 
 # Monitorar jobs em tempo real
-docker compose exec redis redis-cli -a <REMOVED> MONITOR
+docker compose exec redis redis-cli -a "$REDIS_PASSWORD" MONITOR
 # Filtrar: ^"LPUSH\|RPOP"
 ```
 
@@ -197,11 +197,11 @@ docker compose exec redis redis-cli -a <REMOVED> MONITOR
 
 ```bash
 # Listar chaves de cache (prefixo vem de REDIS_PREFIX no .env)
-docker compose exec redis redis-cli -a <REMOVED> \
+docker compose exec redis redis-cli -a "$REDIS_PASSWORD" \
   KEYS "*analytics*"
 
 # Verificar TTL de uma chave (substitua pelo nome real retornado em KEYS)
-docker compose exec redis redis-cli -a <REMOVED> \
+docker compose exec redis redis-cli -a "$REDIS_PASSWORD" \
   TTL "<chave>"
 
 # Limpar cache manualmente (em dev)
@@ -345,7 +345,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" \
 
 | Variável | `backend/.env` | `frontend/.env` | `docker-compose.yml` | Observação |
 |---|---|---|---|---|
-| `REDIS_PASSWORD` | `<REMOVED>` | — | — | Deve ser igual ao `requirepass` no `redis.conf` |
+| `REDIS_PASSWORD` | `<YOUR_REDIS_PASSWORD>` | — | — | Deve ser igual ao `requirepass` no `redis.conf` |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | — | — | Em produção: URL real do frontend |
 | `REVERB_APP_KEY` | `local-key` | — | — | Deve ser igual a `VITE_REVERB_APP_KEY` |
 | `VITE_REVERB_APP_KEY` | — | `local-key` | — | Deve ser igual a `REVERB_APP_KEY` |
