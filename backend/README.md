@@ -1,6 +1,6 @@
 # StudyTrack Pro – Backend
 
-API REST do **StudyTrack Pro** construída com Laravel 11, PostgreSQL e Redis.
+API REST do **StudyTrack Pro** construída com Laravel 12, PostgreSQL e Redis.
 
 ---
 
@@ -8,7 +8,7 @@ API REST do **StudyTrack Pro** construída com Laravel 11, PostgreSQL e Redis.
 
 | Componente | Tecnologia |
 |------------|------------|
-| Framework | Laravel 11 |
+| Framework | Laravel 12 |
 | PHP | 8.2+ |
 | Banco de dados | PostgreSQL 16 |
 | Cache / Filas | Redis 7 |

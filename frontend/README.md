@@ -8,9 +8,9 @@ Interface Vue 3 + TypeScript do **StudyTrack Pro** para acompanhamento de sessõ
 
 | Tecnologia | Uso |
 |------------|-----|
-| **Vue 3** | Composition API, `<script setup>` |
+| **Vue 3.5** | Composition API, `<script setup>` |
 | **TypeScript 5.4** | Tipagem estática |
-| **Vite 5** | Build e dev server |
+| **Vite 6** | Build e dev server |
 | **Pinia** | Estado global (auth, sessions, analytics, technologies, ui) |
 | **Vue Router** | Rotas, guards de autenticação |
 | **TanStack Query** | Cache de dados da API (dashboard) |

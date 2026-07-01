@@ -5,8 +5,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Vue-3.4-4FC08D?logo=vue.js" alt="Vue 3" />
-  <img src="https://img.shields.io/badge/Laravel-11-FF2D20?logo=laravel" alt="Laravel 11" />
+  <img src="https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vue.js" alt="Vue 3" />
+  <img src="https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel" alt="Laravel 12" />
   <img src="https://img.shields.io/badge/TypeScript-5.4-3178C6?logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker" alt="Docker" />
@@ -53,10 +53,10 @@
 
 | Camada | Tecnologia | Motivação |
 |--------|------------|-----------|
-| **Frontend** | Vue 3, TypeScript 5.4, Vite 5 | SPA reativa, tipagem estática, DX moderna |
+| **Frontend** | Vue 3.5, TypeScript 5.4, Vite 6 | SPA reativa, tipagem estática, DX moderna |
 | **Estado** | Pinia, TanStack Query | Store reativa e cache de dados da API |
 | **UI** | PrimeVue, ApexCharts | Componentes prontos, gráficos profissionais |
-| **Backend** | Laravel 11, PHP 8.2 | API REST, filas, broadcasting, ecosystem maduro |
+| **Backend** | Laravel 12, PHP 8.2 | API REST, filas, broadcasting, ecosystem maduro |
 | **Auth** | Laravel Sanctum | Tokens API stateless |
 | **Banco** | PostgreSQL 16 | ACID, JSON, schemas (`public` + `analytics`); extensões incl. `pllua` onde aplicável |
 | **Cache/Filas** | Redis 7 | Cache com tags, filas, scripts Lua (dedup, sliding window, streak), Reverb |
@@ -146,7 +146,7 @@ Consulte os READMEs em [backend/README.md](backend/README.md) e [frontend/README
 
 ```
 studyTrackPro/
-├── backend/              # Laravel 11 API
+├── backend/              # Laravel 12 API
 │   ├── app/
 │   │   ├── Events/
 │   │   ├── Jobs/
