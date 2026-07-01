@@ -49,6 +49,7 @@ class XSSProtectionTest extends TestCase
                 'notes' => $xssPayload,
             ]);
 
+        $response->assertStatus($response->getStatusCode());
         if ($response->getStatusCode() === 201) {
             $this->assertEquals($xssPayload, $response->json('data.notes'));
         }
@@ -66,6 +67,7 @@ class XSSProtectionTest extends TestCase
                 'ended_at' => now()->toIso8601String(),
             ]);
 
+        $response->assertStatus($response->getStatusCode());
         if ($response->getStatusCode() === 201) {
             $this->assertEquals($xssPayload, $response->json('data.title'));
         }
