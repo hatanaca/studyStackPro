@@ -48,7 +48,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: backend
-        run: composer install --no-interaction --prefer-dist
+        run: mkdir -p bootstrap/cache && composer install --no-interaction --prefer-dist
 
       - name: Copy env
         working-directory: backend
