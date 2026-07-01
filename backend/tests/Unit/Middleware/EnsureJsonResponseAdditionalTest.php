@@ -6,7 +6,7 @@ use App\Http\Middleware\EnsureJsonResponse;
 use Illuminate\Http\Request;
 use Tests\TestCase;
 
-class EnsureJsonResponseTest extends TestCase
+class EnsureJsonResponseAdditionalTest extends TestCase
 {
     public function test_adds_accept_json_header(): void
     {
