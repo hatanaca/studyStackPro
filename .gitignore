@@ -11,6 +11,7 @@ backend/.env.production
 backend/.env.staging
 backend/.env.testing
 backend/.env.*
+backend/.env.check
 
 # === BUILD / DIST ===
 frontend/dist/
