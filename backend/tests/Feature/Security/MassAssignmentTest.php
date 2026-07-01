@@ -63,7 +63,7 @@ class MassAssignmentTest extends TestCase
                 'ended_at' => now()->toIso8601String(),
             ]);
 
-        $response->assertStatus($response->getStatusCode());
+        $this->assertContains($response->getStatusCode(), [201, 422, 403, 404]);
         if ($response->getStatusCode() === 201) {
             $this->assertEquals($user->id, $response->json('data.user_id'));
         }

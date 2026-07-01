@@ -46,6 +46,10 @@ jobs:
           extensions: pdo_pgsql, redis, intl, zip
           coverage: pcov
 
+      - name: Create cache directory
+        working-directory: backend
+        run: mkdir -p bootstrap/cache
+
       - name: Install dependencies
         working-directory: backend
         run: mkdir -p bootstrap/cache && composer install --no-interaction --prefer-dist
