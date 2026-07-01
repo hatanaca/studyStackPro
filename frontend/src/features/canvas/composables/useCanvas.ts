@@ -78,11 +78,11 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
 
     const c = _canvas
 
-    c.on('selection:created', (e) => {
+    c.on('selection:created', (e: any) => {
       const obj = e.selected?.[0]
       if (obj) store.setSelectedObject(obj.toJSON())
     })
-    c.on('selection:updated', (e) => {
+    c.on('selection:updated', (e: any) => {
       const obj = e.selected?.[0]
       if (obj) store.setSelectedObject(obj.toJSON())
     })
@@ -155,7 +155,7 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
     _canvas.selection = true
     _canvas.defaultCursor = 'default'
     _canvas.hoverCursor = 'default'
-    _canvas.forEachObject((obj) => { obj.selectable = true; obj.evented = true })
+    _canvas.forEachObject((obj: any) => { obj.selectable = true; obj.evented = true })
     if (_canvas.freeDrawingBrush) {
       try { _canvas.freeDrawingBrush = null as any } catch { _canvas.freeDrawingBrush = undefined as any }
     }
@@ -271,7 +271,7 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
    */
   function addImageFromURL(url: string) {
     if (!_canvas || !url) return
-    FabricImage.fromURL(url, { crossOrigin: 'anonymous' }).then((img) => {
+    FabricImage.fromURL(url, { crossOrigin: 'anonymous' }).then((img: any) => {
       const cw = _canvas!.width || 800, ch = _canvas!.height || 600
       const scale = Math.min((cw * 0.8) / (img.width || 1), (ch * 0.8) / (img.height || 1), 1)
       img.scale(scale)
@@ -290,7 +290,7 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
    */
   function deleteSelected() {
     if (!_canvas) return
-    _canvas.getActiveObjects().forEach((obj) => _canvas!.remove(obj))
+    _canvas.getActiveObjects().forEach((obj: any) => _canvas!.remove(obj))
     _canvas.discardActiveObject()
     _canvas.renderAll()
     saveHistory()
@@ -314,7 +314,7 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
   function zoomIn() {
     if (!_canvas) return
     const z = Math.min(5, _canvas.getZoom() * 1.1)
-    _canvas.zoomToPoint({ x: (_canvas.width || 0) / 2, y: (_canvas.height || 0) / 2 }, z)
+    _canvas.zoomToPoint({ x: (_canvas.width || 0) / 2, y: (_canvas.height || 0) / 2 } as any, z)
     store.setZoom(Math.round(z * 100))
   }
 
@@ -324,7 +324,7 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
   function zoomOut() {
     if (!_canvas) return
     const z = Math.max(0.1, _canvas.getZoom() * 0.9)
-    _canvas.zoomToPoint({ x: (_canvas.width || 0) / 2, y: (_canvas.height || 0) / 2 }, z)
+    _canvas.zoomToPoint({ x: (_canvas.width || 0) / 2, y: (_canvas.height || 0) / 2 } as any, z)
     store.setZoom(Math.round(z * 100))
   }
 
@@ -369,7 +369,7 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
    * @param opts - Opções de exportação: formato (png/jpeg), qualidade e multiplicador de resolução
    * @returns String Data URL da imagem, ou string vazia se o canvas não estiver disponível
    */
-  function toDataURL(opts?: { format?: string; quality?: number; multiplier?: number }) { return _canvas?.toDataURL(opts) || '' }
+  function toDataURL(opts?: { format?: string; quality?: number; multiplier?: number }) { return _canvas?.toDataURL(opts as any) || '' }
 
   /**
    * @description Exporta o canvas como SVG (Scalable Vector Graphics).
@@ -471,18 +471,18 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
     if (!_canvas) return
     const objects = _canvas.getObjects(), nodes: any[] = [], edges: any[] = []
     const centers = new Map<string, { x: number; y: number }>()
-    objects.forEach((obj, i) => {
+    objects.forEach((obj: any, i: number) => {
       if (obj.type === 'rect') {
         const id = `node-${i}`, x = obj.left || 0, y = obj.top || 0
         centers.set(id, { x: x + 90, y: y + 30 })
-        const txt = objects.find((o) => (o.type === 'i-text' || o.type === 'text') && Math.abs((o.left || 0) - (x + 10)) < 20 && Math.abs((o.top || 0) - (y + 20)) < 20)
-        nodes.push({ id, type: 'default', position: { x, y }, data: { label: txt ? (txt as any).text : 'Nó' } })
+        const txt = objects.find((o: any) => (o.type === 'i-text' || o.type === 'text') && Math.abs((o.left || 0) - (x + 10)) < 20 && Math.abs((o.top || 0) - (y + 20)) < 20) as any
+        nodes.push({ id, type: 'default', position: { x, y }, data: { label: txt?.text ?? 'Nó' } })
       }
     })
-    objects.forEach((obj, i) => {
-      if (obj.type === 'line' && obj.points?.length >= 4) {
+    objects.forEach((obj: any, i: number) => {
+      if (obj.type === 'line' && (obj.points?.length ?? 0) >= 4) {
         let fromId = '', toId = ''
-        centers.forEach((ct, id) => {
+        centers.forEach((ct: { x: number; y: number }, id: string) => {
           if (Math.abs(obj.points![0] - ct.x) < 5 && Math.abs(obj.points![1] - ct.y) < 5) fromId = id
           if (Math.abs(obj.points![2] - ct.x) < 5 && Math.abs(obj.points![3] - ct.y) < 5) toId = id
         })

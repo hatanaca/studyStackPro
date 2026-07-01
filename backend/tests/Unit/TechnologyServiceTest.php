@@ -4,7 +4,6 @@ namespace Tests\Unit;
 
 use App\Models\Technology;
 use App\Models\User;
-use App\Modules\Technologies\DTOs\TechnologyDTO;
 use App\Modules\Technologies\Services\TechnologyService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;

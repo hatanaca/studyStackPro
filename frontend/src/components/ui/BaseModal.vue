@@ -7,7 +7,7 @@ const props = defineProps<{
   title?: string
 }>()
 
-const uid = Math.random().toString(36).slice(2, 8)
+const uid = crypto.randomUUID().slice(0, 8)
 const modalTitleId = `base-modal-title-${uid}`
 const emit = defineEmits<{
   close: []

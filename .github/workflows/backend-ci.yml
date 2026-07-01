@@ -1,5 +1,8 @@
 name: Backend CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main, develop]
@@ -43,24 +46,44 @@ jobs:
           extensions: pdo_pgsql, redis, intl, zip
           coverage: pcov
 
+      - name: Create cache directory
+        working-directory: backend
+        run: mkdir -p bootstrap/cache
+
       - name: Install dependencies
         working-directory: backend
-        run: composer install --no-interaction --prefer-dist
+        run: mkdir -p bootstrap/cache && composer install --no-interaction --prefer-dist
 
-      - name: Copy env
+      - name: Create env file
         working-directory: backend
-        run: cp .env.example .env && php artisan key:generate
+        run: |
+          printf '%s\n' \
+            "APP_NAME=StudyTrackPro" \
+            "APP_ENV=testing" \
+            "APP_KEY=" \
+            "APP_DEBUG=true" \
+            "APP_URL=http://localhost" \
+            "DB_CONNECTION=pgsql" \
+            "DB_HOST=127.0.0.1" \
+            "DB_PORT=5432" \
+            "DB_DATABASE=studytrack_test" \
+            "DB_USERNAME=postgres" \
+            "REDIS_HOST=127.0.0.1" \
+            "REDIS_PORT=6379" \
+            "REDIS_PASSWORD=" \
+            "CACHE_STORE=redis" \
+            "CACHE_DATABASE=1" \
+            "QUEUE_CONNECTION=redis" \
+            "SESSION_DRIVER=redis" \
+            "REVERB_APP_ID=local" \
+            "REVERB_APP_KEY=local-key" \
+            "REVERB_APP_SECRET=local-secret" \
+            "CORS_ALLOWED_ORIGINS=http://localhost:5173" \
+            > .env
 
-      - name: Run migrations
+      - name: Generate app key
         working-directory: backend
-        run: php artisan migrate --force
-        env:
-          DB_CONNECTION: pgsql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 5432
-          DB_DATABASE: studytrack_test
-          DB_USERNAME: postgres
-          DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+        run: php artisan key:generate
 
       - name: Run tests with coverage
         working-directory: backend

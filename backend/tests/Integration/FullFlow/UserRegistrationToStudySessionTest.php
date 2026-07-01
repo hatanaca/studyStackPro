@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Modules\Analytics\Aggregators\MetricsAggregator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;

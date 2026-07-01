@@ -16,12 +16,10 @@ class SocialAuthService
 {
     /**
      * Processa o callback OAuth: cria ou atualiza o usuário.
-     *
-     * @return User
      */
     public function handleOAuthUser(SocialiteUser $socialUser, string $provider): User
     {
-        $providerId = $provider . '_id';
+        $providerId = $provider.'_id';
 
         $user = User::where($providerId, $socialUser->getId())
             ->orWhere('email', $socialUser->getEmail())
@@ -29,23 +27,23 @@ class SocialAuthService
 
         if (! $user) {
             $user = User::create([
-                'name'       => $socialUser->getName() ?? $socialUser->getNickname() ?? 'User',
-                'email'      => $socialUser->getEmail(),
-                $providerId  => $socialUser->getId(),
+                'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'User',
+                'email' => $socialUser->getEmail(),
+                $providerId => $socialUser->getId(),
                 'avatar_url' => $socialUser->getAvatar(),
-                'password'   => bcrypt(Str::random(32)),
+                'password' => bcrypt(Str::random(32)),
             ]);
         } else {
             $user->update([
-                $providerId  => $socialUser->getId(),
+                $providerId => $socialUser->getId(),
                 'avatar_url' => $socialUser->getAvatar() ?? $user->avatar_url,
             ]);
         }
 
         if ($provider === 'discord') {
             $user->update([
-                'discord_token'            => $socialUser->token,
-                'discord_refresh_token'    => $socialUser->refreshToken,
+                'discord_token' => $socialUser->token,
+                'discord_refresh_token' => $socialUser->refreshToken,
                 'discord_token_expires_at' => $socialUser->expiresIn
                     ? now()->addSeconds($socialUser->expiresIn)
                     : null,
@@ -54,8 +52,8 @@ class SocialAuthService
 
         if ($provider === 'google') {
             $user->update([
-                'google_token'            => $socialUser->token,
-                'google_refresh_token'    => $socialUser->refreshToken,
+                'google_token' => $socialUser->token,
+                'google_refresh_token' => $socialUser->refreshToken,
                 'google_token_expires_at' => $socialUser->expiresIn
                     ? now()->addSeconds($socialUser->expiresIn)
                     : null,

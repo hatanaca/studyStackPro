@@ -4,4 +4,10 @@ parameters:
     level: 5
     paths:
         - app
-    ignoreErrors: []
+    ignoreErrors:
+        -
+            identifier: method.notFound
+            message: '#Call to an undefined method Laravel\\Socialite\\Contracts\\Provider::stateless\(\)#'
+        -
+            identifier: property.notFound
+            message: '#Access to an undefined property Laravel\\Socialite\\Contracts\\User::\$#'

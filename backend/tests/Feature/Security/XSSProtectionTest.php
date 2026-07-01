@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Security;
 
-use App\Models\Technology;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -49,6 +48,7 @@ class XSSProtectionTest extends TestCase
                 'notes' => $xssPayload,
             ]);
 
+        $this->assertContains($response->getStatusCode(), [201, 422, 403, 404]);
         if ($response->getStatusCode() === 201) {
             $this->assertEquals($xssPayload, $response->json('data.notes'));
         }
@@ -66,6 +66,7 @@ class XSSProtectionTest extends TestCase
                 'ended_at' => now()->toIso8601String(),
             ]);
 
+        $this->assertContains($response->getStatusCode(), [201, 422, 403, 404]);
         if ($response->getStatusCode() === 201) {
             $this->assertEquals($xssPayload, $response->json('data.title'));
         }
