@@ -25,7 +25,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push backend image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./docker/php/Dockerfile.production
@@ -35,7 +35,7 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/studytrack-backend:${{ github.sha }}
 
       - name: Build and push frontend image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: ./frontend
           file: ./docker/node/Dockerfile.frontend
