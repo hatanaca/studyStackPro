@@ -47,11 +47,17 @@ class AuthController extends Controller
             timezone: $request->validated('timezone', 'UTC')
         );
         $user = $this->authService->register($dto);
-        Auth::guard('web')->login($user);
-        $request->session()->regenerate();
+
+        if ($request->hasSession()) {
+            Auth::guard('web')->login($user);
+            $request->session()->regenerate();
+        }
+
+        $token = $user->createToken('auth-token')->plainTextToken;
 
         return $this->success([
             'user' => new UserResource($user->fresh()),
+            'token' => $token,
         ], 'Registrado com sucesso.', 201);
     }
 
@@ -71,11 +77,17 @@ class AuthController extends Controller
         }
 
         $user = $result['user'];
-        Auth::guard('web')->login($user, $dto->remember);
-        $request->session()->regenerate();
+
+        if ($request->hasSession()) {
+            Auth::guard('web')->login($user, $dto->remember);
+            $request->session()->regenerate();
+        }
+
+        $token = $user->createToken('auth-token')->plainTextToken;
 
         return $this->success([
             'user' => new UserResource($user),
+            'token' => $token,
         ]);
     }
 
@@ -89,9 +101,8 @@ class AuthController extends Controller
             $this->tokenService->revoke($currentToken);
         }
 
-        Auth::guard('web')->logout();
-
         if ($request->hasSession()) {
+            Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
         }
