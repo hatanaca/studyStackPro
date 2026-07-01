@@ -52,7 +52,18 @@ jobs:
 
       - name: Copy env
         working-directory: backend
-        run: mkdir -p bootstrap/cache && cp .env.example .env && php artisan key:generate
+        run: cp .env.example .env
+
+      - name: Generate app key
+        working-directory: backend
+        run: php artisan key:generate
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: studytrack_test
+          DB_USERNAME: postgres
+          DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
 
       - name: Run migrations
         working-directory: backend
