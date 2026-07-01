@@ -19,13 +19,13 @@ class HasApiResponseTest extends TestCase
         {
             use \App\Traits\HasApiResponse;
 
-            public function test_success(): JsonResponse
+            public function doSuccess(): JsonResponse
             {
                 return $this->success(['key' => 'value'], 'OK', 200);
             }
         };
 
-        $response = $controller->testSuccess();
+        $response = $controller->doSuccess();
         $data = $this->decodeJson($response);
 
         $this->assertEquals(200, $response->getStatusCode());
@@ -40,13 +40,13 @@ class HasApiResponseTest extends TestCase
         {
             use \App\Traits\HasApiResponse;
 
-            public function test_created(): JsonResponse
+            public function doCreated(): JsonResponse
             {
                 return $this->success(['id' => 1], 'Created', 201);
             }
         };
 
-        $response = $controller->testCreated();
+        $response = $controller->doCreated();
         $data = $this->decodeJson($response);
 
         $this->assertEquals(201, $response->getStatusCode());
@@ -59,13 +59,13 @@ class HasApiResponseTest extends TestCase
         {
             use \App\Traits\HasApiResponse;
 
-            public function test_error(): JsonResponse
+            public function doError(): JsonResponse
             {
                 return $this->error('Not found', 'NOT_FOUND', null, 404);
             }
         };
 
-        $response = $controller->testError();
+        $response = $controller->doError();
         $data = $this->decodeJson($response);
 
         $this->assertEquals(404, $response->getStatusCode());
@@ -80,13 +80,13 @@ class HasApiResponseTest extends TestCase
         {
             use \App\Traits\HasApiResponse;
 
-            public function test_error_with_details(): JsonResponse
+            public function doErrorWithDetails(): JsonResponse
             {
                 return $this->error('Validation failed', 'VALIDATION_ERROR', ['field' => ['error msg']], 422);
             }
         };
 
-        $response = $controller->testErrorWithDetails();
+        $response = $controller->doErrorWithDetails();
         $data = $this->decodeJson($response);
 
         $this->assertEquals(422, $response->getStatusCode());
