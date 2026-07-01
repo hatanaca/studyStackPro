@@ -20,7 +20,7 @@ class RestrictHorizonToIps
 
         $clientIp = $request->ip();
 
-        if (!in_array($clientIp, $allowedIps, true)) {
+        if (! in_array($clientIp, $allowedIps, true)) {
             abort(403, ' Horizon access denied.');
         }
 

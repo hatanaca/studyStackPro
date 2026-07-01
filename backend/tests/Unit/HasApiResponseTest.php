@@ -22,7 +22,7 @@ class HasApiResponseTest extends TestCase
         {
             use \App\Traits\HasApiResponse;
 
-            public function testSuccess(): JsonResponse
+            public function test_success(): JsonResponse
             {
                 return $this->success(['key' => 'value'], 'OK', 200);
             }
@@ -43,7 +43,7 @@ class HasApiResponseTest extends TestCase
         {
             use \App\Traits\HasApiResponse;
 
-            public function testCreated(): JsonResponse
+            public function test_created(): JsonResponse
             {
                 return $this->success(['id' => 1], 'Created', 201);
             }
@@ -62,7 +62,7 @@ class HasApiResponseTest extends TestCase
         {
             use \App\Traits\HasApiResponse;
 
-            public function testError(): JsonResponse
+            public function test_error(): JsonResponse
             {
                 return $this->error('Not found', 'NOT_FOUND', null, 404);
             }
@@ -83,7 +83,7 @@ class HasApiResponseTest extends TestCase
         {
             use \App\Traits\HasApiResponse;
 
-            public function testErrorWithDetails(): JsonResponse
+            public function test_error_with_details(): JsonResponse
             {
                 return $this->error('Validation failed', 'VALIDATION_ERROR', ['field' => ['error msg']], 422);
             }

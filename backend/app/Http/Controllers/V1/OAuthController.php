@@ -37,7 +37,7 @@ class OAuthController extends Controller
             $driver->scopes(['https://www.googleapis.com/auth/youtube.readonly']);
             $driver->with([
                 'access_type' => 'offline',
-                'prompt'      => 'consent',
+                'prompt' => 'consent',
             ]);
         }
 
@@ -58,7 +58,7 @@ class OAuthController extends Controller
         try {
             $socialUser = Socialite::driver($provider)->stateless()->user();
         } catch (\Exception) {
-            return redirect($frontendUrl . '/login?error=oauth_failed');
+            return redirect($frontendUrl.'/login?error=oauth_failed');
         }
 
         $user = $this->socialAuthService->handleOAuthUser($socialUser, $provider);
@@ -68,6 +68,6 @@ class OAuthController extends Controller
         $request->session()->regenerate();
 
         // Redireciona para o frontend — o cookie de sessão já está definido no domínio da API
-        return redirect($frontendUrl . '/auth/callback?status=ok');
+        return redirect($frontendUrl.'/auth/callback?status=ok');
     }
 }

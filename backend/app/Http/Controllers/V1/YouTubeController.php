@@ -24,8 +24,8 @@ class YouTubeController extends Controller
     public function search(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'q'          => 'required|string|max:200',
-            'pageToken'  => 'string|nullable',
+            'q' => 'required|string|max:200',
+            'pageToken' => 'string|nullable',
             'maxResults' => 'integer|min:1|max:50|nullable',
         ]);
 
@@ -38,14 +38,14 @@ class YouTubeController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data'    => $result,
+                'data' => $result,
             ]);
         } catch (\Exception $e) {
             Log::error('YouTube search error', ['message' => $e->getMessage()]);
 
             return response()->json([
                 'success' => false,
-                'error'   => ['message' => 'Falha ao buscar vídeos. Tente novamente.'],
+                'error' => ['message' => 'Falha ao buscar vídeos. Tente novamente.'],
             ], 502);
         }
     }
@@ -68,7 +68,7 @@ class YouTubeController extends Controller
         if (empty($ids)) {
             return response()->json([
                 'success' => false,
-                'error'   => ['message' => 'Informe ao menos um ID de vídeo.'],
+                'error' => ['message' => 'Informe ao menos um ID de vídeo.'],
             ], 422);
         }
 
@@ -77,14 +77,14 @@ class YouTubeController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data'    => $result,
+                'data' => $result,
             ]);
         } catch (\Exception $e) {
             Log::error('YouTube videos error', ['message' => $e->getMessage()]);
 
             return response()->json([
                 'success' => false,
-                'error'   => ['message' => 'Falha ao buscar detalhes dos vídeos.'],
+                'error' => ['message' => 'Falha ao buscar detalhes dos vídeos.'],
             ], 502);
         }
     }
@@ -101,7 +101,7 @@ class YouTubeController extends Controller
         if (! $user || ! $user->google_token) {
             return response()->json([
                 'success' => false,
-                'error'   => ['message' => 'Conta Google não vinculada. Faça login com Google.'],
+                'error' => ['message' => 'Conta Google não vinculada. Faça login com Google.'],
             ], 401);
         }
 
@@ -110,14 +110,14 @@ class YouTubeController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data'    => $result,
+                'data' => $result,
             ]);
         } catch (\Exception $e) {
             Log::error('YouTube playlists error', ['message' => $e->getMessage()]);
 
             return response()->json([
                 'success' => false,
-                'error'   => ['message' => 'Falha ao buscar playlists. Token pode ter expirado. Faça login novamente.'],
+                'error' => ['message' => 'Falha ao buscar playlists. Token pode ter expirado. Faça login novamente.'],
             ], 502);
         }
     }
