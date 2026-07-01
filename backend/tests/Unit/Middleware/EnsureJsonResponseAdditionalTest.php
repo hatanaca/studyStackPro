@@ -10,7 +10,7 @@ class EnsureJsonResponseAdditionalTest extends TestCase
 {
     public function test_adds_accept_json_header(): void
     {
-        $middleware = new EnsureJsonResponse();
+        $middleware = new EnsureJsonResponse;
 
         $request = Request::create('/api/v1/test', 'GET');
         $request->headers->set('Accept', 'application/json');
@@ -22,7 +22,7 @@ class EnsureJsonResponseAdditionalTest extends TestCase
 
     public function test_json_content_type_is_set(): void
     {
-        $middleware = new EnsureJsonResponse();
+        $middleware = new EnsureJsonResponse;
 
         $request = Request::create('/api/v1/test', 'GET');
         $request->headers->set('Accept', 'application/json');
