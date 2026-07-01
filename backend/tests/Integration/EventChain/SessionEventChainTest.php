@@ -10,7 +10,6 @@ use App\Models\Technology;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class SessionEventChainTest extends TestCase

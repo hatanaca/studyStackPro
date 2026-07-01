@@ -2,10 +2,8 @@
 
 namespace Tests\Integration\Cache;
 
-use App\Models\StudySession;
 use App\Models\Technology;
 use App\Models\User;
-use App\Modules\Analytics\Services\AnalyticsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;

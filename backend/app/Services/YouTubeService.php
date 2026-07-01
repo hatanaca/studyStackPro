@@ -31,9 +31,9 @@ class YouTubeService
     /**
      * Busca vídeos no YouTube.
      *
-     * @param string $query       Termo de busca.
-     * @param string $pageToken   Token para paginação.
-     * @param int    $maxResults  Resultados por página (máx 50).
+     * @param  string  $query  Termo de busca.
+     * @param  string  $pageToken  Token para paginação.
+     * @param  int  $maxResults  Resultados por página (máx 50).
      * @return array{items: array, nextPageToken: string|null, prevPageToken: string|null, totalResults: int}
      *
      * @throws RequestException|ConnectionException
@@ -43,12 +43,12 @@ class YouTubeService
         $maxResults = min(max($maxResults, 1), 50);
 
         $params = [
-            'part'       => 'snippet',
-            'type'       => 'video',
+            'part' => 'snippet',
+            'type' => 'video',
             'videoEmbeddable' => 'true',
             'maxResults' => $maxResults,
-            'q'          => $query,
-            'key'        => $this->apiKey,
+            'q' => $query,
+            'key' => $this->apiKey,
         ];
 
         if ($pageToken) {
@@ -60,12 +60,12 @@ class YouTubeService
         return $this->cached($cacheKey, function () use ($params) {
             $response = Http::timeout(10)
                 ->retry(2, 200)
-                ->get(self::BASE_URL . '/search', $params);
+                ->get(self::BASE_URL.'/search', $params);
 
             if ($response->failed()) {
                 Log::warning('YouTube search failed', [
                     'status' => $response->status(),
-                    'body'   => $response->body(),
+                    'body' => $response->body(),
                 ]);
                 throw new RequestException($response);
             }
@@ -73,15 +73,15 @@ class YouTubeService
             $data = $response->json();
 
             Log::info('YouTube search', [
-                'query'        => $params['q'],
+                'query' => $params['q'],
                 'totalResults' => $data['pageInfo']['totalResults'] ?? 0,
             ]);
 
             return [
-                'items'         => $data['items'] ?? [],
+                'items' => $data['items'] ?? [],
                 'nextPageToken' => $data['nextPageToken'] ?? null,
                 'prevPageToken' => $data['prevPageToken'] ?? null,
-                'totalResults'  => $data['pageInfo']['totalResults'] ?? 0,
+                'totalResults' => $data['pageInfo']['totalResults'] ?? 0,
             ];
         });
     }
@@ -89,7 +89,7 @@ class YouTubeService
     /**
      * Obtém detalhes de vídeos específicos (duração, estatísticas, etc.).
      *
-     * @param string[]|string $ids ID(s) do vídeo.
+     * @param  string[]|string  $ids  ID(s) do vídeo.
      * @return array{items: array}
      *
      * @throws RequestException|ConnectionException
@@ -99,8 +99,8 @@ class YouTubeService
         $idList = is_array($ids) ? implode(',', $ids) : $ids;
         $params = [
             'part' => 'snippet,contentDetails,statistics',
-            'id'   => $idList,
-            'key'  => $this->apiKey,
+            'id' => $idList,
+            'key' => $this->apiKey,
         ];
 
         $cacheKey = $this->cacheKey("videos:{$idList}");
@@ -108,7 +108,7 @@ class YouTubeService
         return $this->cached($cacheKey, function () use ($params) {
             $response = Http::timeout(10)
                 ->retry(2, 200)
-                ->get(self::BASE_URL . '/videos', $params);
+                ->get(self::BASE_URL.'/videos', $params);
 
             if ($response->failed()) {
                 Log::warning('YouTube videos failed', [
@@ -128,7 +128,7 @@ class YouTubeService
     /**
      * Busca playlists do usuário autenticado via OAuth Google.
      *
-     * @param string $accessToken Token OAuth Google do usuário.
+     * @param  string  $accessToken  Token OAuth Google do usuário.
      * @return array{items: array}
      *
      * @throws RequestException|ConnectionException
@@ -136,20 +136,20 @@ class YouTubeService
     public function playlists(string $accessToken): array
     {
         $params = [
-            'part'       => 'snippet',
-            'mine'       => 'true',
+            'part' => 'snippet',
+            'mine' => 'true',
             'maxResults' => 50,
         ];
 
         $response = Http::timeout(10)
             ->retry(2, 200)
             ->withToken($accessToken)
-            ->get(self::BASE_URL . '/playlists', $params);
+            ->get(self::BASE_URL.'/playlists', $params);
 
         if ($response->failed()) {
             Log::warning('YouTube playlists failed', [
                 'status' => $response->status(),
-                'body'   => $response->body(),
+                'body' => $response->body(),
             ]);
             throw new RequestException($response);
         }
@@ -171,6 +171,7 @@ class YouTubeService
     private function cacheKey(string $suffix): string
     {
         $prefix = $this->cacheKey ?? 'youtube';
+
         return "{$prefix}:{$suffix}";
     }
 

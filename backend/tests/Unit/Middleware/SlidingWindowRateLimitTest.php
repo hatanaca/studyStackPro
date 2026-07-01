@@ -6,8 +6,8 @@ use App\Http\Middleware\SlidingWindowRateLimit;
 use App\Models\User;
 use App\Services\RedisLuaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Tests\TestCase;
 
 class SlidingWindowRateLimitTest extends TestCase
@@ -129,6 +129,7 @@ class SlidingWindowRateLimitTest extends TestCase
             ->once()
             ->andReturnUsing(function ($script, $keys, $args) {
                 $this->assertStringContainsString($args[0], $keys[0]);
+
                 return [1, 0];
             });
 
