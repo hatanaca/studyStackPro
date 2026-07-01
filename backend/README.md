@@ -1,24 +1,85 @@
-# StudyTrack Pro – Backend
+<p align="center">
+  <h1 align="center">🔧 StudyTrack Pro — Backend</h1>
+  <p align="center">
+    <em>API REST construída com Laravel 12, PostgreSQL e Redis</em>
+  </p>
+</p>
 
-API REST do **StudyTrack Pro** construída com Laravel 12, PostgreSQL e Redis.
+<p align="center">
+  <img src="https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12" />
+  <img src="https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white" alt="PHP 8.2" />
+  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL 16" />
+  <img src="https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white" alt="Redis 7" />
+</p>
+
+<p align="center">
+  <a href="#stack">Stack</a> •
+  <a href="#api-v1">API</a> •
+  <a href="#arquitetura">Arquitetura</a> •
+  <a href="#instalação">Instalação</a> •
+  <a href="#testes">Testes</a>
+</p>
 
 ---
 
 ## Stack
 
-| Componente | Tecnologia |
-|------------|------------|
-| Framework | Laravel 12 |
-| PHP | 8.2+ |
-| Banco de dados | PostgreSQL 16 |
-| Cache / Filas | Redis 7 |
-| Autenticação | Laravel Sanctum |
-| WebSocket | Laravel Reverb |
-| Filas | Laravel Horizon |
+| Componente | Tecnologia | Versão |
+|------------|------------|--------|
+| Framework | Laravel | 12.x |
+| PHP | PHP | 8.2+ |
+| Banco de dados | PostgreSQL | 16 |
+| Cache / Filas | Redis | 7 |
+| Autenticação | Laravel Sanctum | 4.x |
+| WebSocket | Laravel Reverb | 1.x |
+| Filas | Laravel Horizon | 5.x |
+| Análise estática | Larastan | 3.x |
+| Code style | Laravel Pint | 1.x |
 
 ---
 
-## Estrutura do código
+## Arquitetura
+
+```mermaid
+graph TB
+    subgraph HTTP["HTTP Layer"]
+        A[Routes] --> B[Controllers]
+        B --> C[Form Requests]
+    end
+
+    subgraph Business["Business Layer"]
+        B --> D[Services]
+        D --> E[Repositories]
+        E --> F[Eloquent Models]
+    end
+
+    subgraph Events["Event Layer"]
+        D --> G[Events]
+        G --> H[Listeners]
+        H --> I[Jobs - Horizon]
+        H --> J[Broadcast - Reverb]
+    end
+
+    subgraph Data["Data Layer"]
+        F --> K[(PostgreSQL)]
+        I --> L[(Redis Cache)]
+    end
+```
+
+### Convenções
+
+| Camada | Responsabilidade |
+|--------|------------------|
+| **Controllers** | Thin: delegam para Services, usam Form Requests e Resources |
+| **Services** | Regras de negócio; acessam dados via Repositories |
+| **Repositories** | Abstraem Eloquent. Implementam contratos em `Contracts/` |
+| **DTOs** | `readonly` e transportam dados validados entre camadas |
+| **Events** | No passado: Created, Updated, Deleted |
+| **Listeners** | Rápidos: invalidam cache, disparam jobs |
+
+---
+
+## Estrutura
 
 ```
 app/
@@ -55,105 +116,105 @@ routes/
 
 ---
 
-## Convenções
-
-- **Controllers** são thin: delegam para Services, usam Form Requests e Resources.
-- **Services** contêm regras de negócio; acessam dados via Repositories (interfaces).
-- **Repositories** abstraem Eloquent. Implementam contratos em `Contracts/`.
-- **DTOs** são `readonly` e transportam dados validados entre camadas.
-- **Events** no passado (Created, Updated, Deleted).
-- **Listeners** rápidos: invalidam cache, disparam jobs. Evite lógica pesada.
-- **Cache** usa tags: `['analytics', "user:{$id}"]` para flush por usuário.
-
----
-
 ## API v1
 
-Todos os endpoints abaixo usam o prefixo **`/api/v1`** (exceto health da API, ver fim da seção).
+> Todos os endpoints usam o prefixo **`/api/v1`**
 
 ### Autenticação
+
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| POST | `/api/v1/auth/register` | Registro |
-| POST | `/api/v1/auth/login` | Login |
-| POST | `/api/v1/auth/logout` | Logout |
-| GET | `/api/v1/auth/me` | Usuário atual |
-| PUT | `/api/v1/auth/me` | Atualizar perfil |
-| POST | `/api/v1/auth/change-password` | Trocar senha |
-| GET | `/api/v1/auth/tokens` | Listar tokens |
-| DELETE | `/api/v1/auth/tokens` | Revogar todos |
+| <span style="color:green">POST</span> | `/api/v1/auth/register` | Registro |
+| <span style="color:green">POST</span> | `/api/v1/auth/login` | Login |
+| <span style="color:green">POST</span> | `/api/v1/auth/logout` | Logout |
+| <span style="color:blue">GET</span> | `/api/v1/auth/me` | Usuário atual |
+| <span style="color:orange">PUT</span> | `/api/v1/auth/me` | Atualizar perfil |
+| <span style="color:green">POST</span> | `/api/v1/auth/change-password` | Trocar senha |
+| <span style="color:blue">GET</span> | `/api/v1/auth/tokens` | Listar tokens |
+| <span style="color:red">DELETE</span> | `/api/v1/auth/tokens` | Revogar todos |
 
 ### Tecnologias
+
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| GET | `/api/v1/technologies` | Listar |
-| GET | `/api/v1/technologies/search?q=` | Buscar (autocomplete) |
-| GET | `/api/v1/technologies/{id}` | Detalhar |
-| POST | `/api/v1/technologies` | Criar |
-| PUT | `/api/v1/technologies/{id}` | Atualizar |
-| DELETE | `/api/v1/technologies/{id}` | Desativar |
+| <span style="color:blue">GET</span> | `/api/v1/technologies` | Listar |
+| <span style="color:blue">GET</span> | `/api/v1/technologies/search?q=` | Buscar (autocomplete) |
+| <span style="color:blue">GET</span> | `/api/v1/technologies/{id}` | Detalhar |
+| <span style="color:green">POST</span> | `/api/v1/technologies` | Criar |
+| <span style="color:orange">PUT</span> | `/api/v1/technologies/{id}` | Atualizar |
+| <span style="color:red">DELETE</span> | `/api/v1/technologies/{id}` | Desativar |
 
 ### Sessões
+
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| GET | `/api/v1/study-sessions` | Listar (filtros, paginação) |
-| GET | `/api/v1/study-sessions/active` | Sessão ativa |
-| GET | `/api/v1/study-sessions/{id}` | Detalhar |
-| POST | `/api/v1/study-sessions` | Criar (log manual) |
-| POST | `/api/v1/study-sessions/start` | Iniciar sessão |
-| PATCH | `/api/v1/study-sessions/{id}/end` | Encerrar sessão |
-| PUT/PATCH | `/api/v1/study-sessions/{id}` | Atualizar |
-| DELETE | `/api/v1/study-sessions/{id}` | Deletar |
+| <span style="color:blue">GET</span> | `/api/v1/study-sessions` | Listar (filtros, paginação) |
+| <span style="color:blue">GET</span> | `/api/v1/study-sessions/active` | Sessão ativa |
+| <span style="color:blue">GET</span> | `/api/v1/study-sessions/{id}` | Detalhar |
+| <span style="color:green">POST</span> | `/api/v1/study-sessions` | Criar (log manual) |
+| <span style="color:green">POST</span> | `/api/v1/study-sessions/start` | Iniciar sessão |
+| <span style="color:orange">PATCH</span> | `/api/v1/study-sessions/{id}/end` | Encerrar sessão |
+| <span style="color:orange">PUT</span> | `/api/v1/study-sessions/{id}` | Atualizar |
+| <span style="color:red">DELETE</span> | `/api/v1/study-sessions/{id}` | Deletar |
 
 ### Analytics
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| GET | `/api/v1/analytics/dashboard` | Payload completo |
-| GET | `/api/v1/analytics/user-metrics` | Métricas do usuário |
-| GET | `/api/v1/analytics/tech-stats` | Por tecnologia |
-| GET | `/api/v1/analytics/time-series?days=` | Séries temporais |
-| GET | `/api/v1/analytics/weekly` | Comparação semanal |
-| GET | `/api/v1/analytics/heatmap?year=` | Heatmap |
-| POST | `/api/v1/analytics/recalculate` | Disparar recálculo |
-| GET | `/api/v1/analytics/export?start=&end=` | Exportar JSON |
-
-### Health e probes
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| GET | `/api/health` | Health JSON da aplicação (DB, Redis, fila, WebSocket) — `routes/api.php` |
-| GET | `/health` | Mesmo controller via `routes/web.php` (útil na raiz da app) |
-| GET | `/up` | Health mínimo do Laravel 11 (`bootstrap/app.php`) |
+| <span style="color:blue">GET</span> | `/api/v1/analytics/dashboard` | Payload completo |
+| <span style="color:blue">GET</span> | `/api/v1/analytics/user-metrics` | Métricas do usuário |
+| <span style="color:blue">GET</span> | `/api/v1/analytics/tech-stats` | Por tecnologia |
+| <span style="color:blue">GET</span> | `/api/v1/analytics/time-series?days=` | Séries temporais |
+| <span style="color:blue">GET</span> | `/api/v1/analytics/weekly` | Comparação semanal |
+| <span style="color:blue">GET</span> | `/api/v1/analytics/heatmap?year=` | Heatmap |
+| <span style="color:green">POST</span> | `/api/v1/analytics/recalculate` | Disparar recálculo |
+| <span style="color:blue">GET</span> | `/api/v1/analytics/export?start=&end=` | Exportar JSON |
+
+### Health
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| <span style="color:blue">GET</span> | `/api/health` | Health JSON (DB, Redis, fila, WebSocket) |
+| <span style="color:blue">GET</span> | `/health` | Mesmo controller via web |
+| <span style="color:blue">GET</span> | `/up` | Health mínimo do Laravel |
 
 ---
 
-## Rate limiting
+## Rate Limiting
 
-Definido em `app/Providers/AppServiceProvider.php` e aplicado em `routes/api.php`.
+| Limiter | Limite | Escopo |
+|---------|--------|--------|
+| `login` | 3/min | por IP |
+| `register` | 5/min | por IP |
+| `search` | 120/min | por usuário |
+| `sensitive` | 5/min | por usuário |
+| `recalculate` | 2/min | por usuário |
+| `export` | 30/min | por usuário |
+| `health` | 300/min | por IP |
+| Leitura autenticada | 60/min | por usuário |
+| Escrita autenticada | 30/min | por usuário |
 
-| Nome do limiter | Limite |
-|-----------------|--------|
-| `login` | 3/min por IP |
-| `register` | 5/min por IP |
-| `search` | 120/min por usuário (ou IP) |
-| `sensitive` (ex.: change-password) | 5/min por usuário (ou IP) |
-| `recalculate` | 2/min por usuário (ou IP) |
-| `export` | 30/min por usuário (ou IP) |
-| `health` | 300/min por IP |
+> Rotas de sessão usam `throttle.sliding` (janela deslizante via Redis Lua).
 
-Grupos adicionais em `api.php`:
+---
 
-- leituras autenticadas: `throttle:60,1` (60/min);
-- escrita genérica autenticada: `throttle:30,1` (30/min);
-- rotas de mutação de sessão: middleware `throttle.sliding` (janela deslizante via Redis Lua; limites por rota no próprio `api.php`).
+## Cache
+
+```php
+Cache::tags(['analytics', "user:{$id}"])
+```
+
+| Chave | TTL |_FLUSH |
+|-------|-----|--------|
+| Dashboard | 5min | por usuário |
+| Heatmap | 1h | por usuário |
+| Export | Sem cache | — |
 
 ---
 
 ## Instalação
 
-### Com Docker (recomendado)
-
-Do diretório raiz do projeto:
+### Docker (recomendado)
 
 ```bash
 make dev
@@ -168,38 +229,59 @@ php artisan migrate:fresh --seed
 composer install
 cp .env.example .env
 php artisan key:generate
-```
-
-Configure `.env` com PostgreSQL e Redis. Depois:
-
-```bash
 php artisan migrate:fresh --seed
-php artisan reverb:start   # Em outro terminal
-php artisan horizon       # Em outro terminal
+php artisan reverb:start   # Terminal 2
+php artisan horizon        # Terminal 3
 ```
 
 ---
 
-## Comandos úteis
+## Testes
 
 ```bash
-php artisan migrate              # Rodar migrations
-php artisan migrate:fresh --seed # Reset + seed
-php artisan horizon              # Iniciar Horizon
-php artisan reverb:start         # Iniciar Reverb
-php artisan test                 # PHPUnit
-./vendor/bin/pint                # Formatação (Pint)
+# Rodar todos
+php artisan test
+
+# Com cobertura
+php artisan test --coverage
+
+# PHPUnit diretamente
+./vendor/bin/phpunit
+
+# Code style
+./vendor/bin/pint
+
+# Análise estática
+./vendor/bin/phpstan analyse
 ```
+
+### Cobertura por Módulo
+
+| Módulo | Testes | Cobertura |
+|--------|--------|-----------|
+| Auth | Feature + Unit | Alta |
+| StudySessions | Feature + Unit | Alta |
+| Technologies | Feature + Unit | Média |
+| Analytics | Feature + Unit | Média |
+| Security | Feature | Alta |
 
 ---
 
-## Variáveis de ambiente
+## Variáveis de Ambiente
 
-Veja `backend/.env.example`. Principais:
+| Variável | Descrição |
+|----------|-----------|
+| `APP_KEY` | Gerar com `php artisan key:generate` |
+| `DB_*` | Conexão PostgreSQL |
+| `REDIS_*` | Cache, filas, Reverb |
+| `REVERB_*` | WebSocket |
+| `CORS_ALLOWED_ORIGINS` | Origens do frontend (produção) |
+| `HORIZON_ADMIN_EMAILS` | Emails autorizados em `/horizon` |
 
-- `APP_KEY` — gerar com `php artisan key:generate`
-- `DB_*` — conexão PostgreSQL
-- `REDIS_*` — cache, filas, Reverb
-- `REVERB_*` — WebSocket
-- `CORS_ALLOWED_ORIGINS` — origens do frontend (produção)
-- `HORIZON_ADMIN_EMAILS` — emails autorizados em `/horizon`
+> Veja `backend/.env.example` para todas as variáveis.
+
+---
+
+<p align="center">
+  <a href="../README.md">← Voltar ao README principal</a>
+</p>

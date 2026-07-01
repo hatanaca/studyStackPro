@@ -46,8 +46,14 @@ anotacoes.md
 # === IDE / EDITOR ===
 .vscode/
 .idea/
+.cursor/
+.mimocode/
+.openclaude/
 **/.cursor/*.log
 
 # === OS ===
 .DS_Store
 Thumbs.db
+
+# === RELATÓRIOS ===
+vulnerability_scan_report.md

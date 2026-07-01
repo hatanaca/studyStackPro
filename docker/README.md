@@ -1,28 +1,100 @@
-# Docker – StudyTrack Pro
+<p align="center">
+  <h1 align="center">🐳 StudyTrack Pro — Docker</h1>
+  <p align="center">
+    <em>Infraestrutura containerizada com OpenResty, PHP-FPM, PostgreSQL e Redis</em>
+  </p>
+</p>
 
-Configuração Docker para o StudyTrack Pro. O proxy HTTP é **OpenResty** (Nginx + Lua), não a imagem `nginx` oficial.
+<p align="center">
+  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/OpenResty-Nginx-009639?logo=nginx&logoColor=white" alt="OpenResty" />
+  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL 16" />
+  <img src="https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white" alt="Redis 7" />
+</p>
+
+<p align="center">
+  <a href="#serviços">Serviços</a> •
+  <a href="#arquitetura">Arquitetura</a> •
+  <a href="#comandos">Comandos</a> •
+  <a href="#troubleshooting">Troubleshooting</a>
+</p>
 
 ---
 
-## Serviços (`docker-compose.yml`)
+## Serviços
 
-| Serviço | Imagem / build | Porta no host | Descrição |
-|---------|----------------|---------------|-----------|
-| **nginx** | `build: ./docker/nginx` (OpenResty) | 80, 443 | Proxy: API Laravel, SPA estática, WebSocket `/app/`, Horizon |
-| **php-fpm** | `build: ./docker/php` | (interna) | Laravel (API); `frontend/dist` montado em `public/frontend` |
-| **reverb** | `Dockerfile.cli` | *(não publicada)* | WebSocket na rede interna na porta **8080**; o browser usa **`ws://localhost/app/`** via Nginx na **80** |
-| **horizon** | `Dockerfile.cli` | (interna) | Workers das filas (`metrics`, `default`, `scheduler`) |
-| **scheduler** | `Dockerfile.cli` | (interna) | `php artisan schedule:work` |
-| **node** | `build` (contexto `frontend/`) | **5173** | Vite dev (`npm run dev`); env injeta `VITE_REVERB_PORT=80` para Echo via Nginx |
-| **postgres** | `build: ./docker/postgres` | **5432** (configurável) | PostgreSQL 16 com extensões do projeto (ex.: `pllua`); volume `postgres_pllua_data` |
-| **redis** | `redis:7-alpine` | **6379** (configurável) | Cache, filas, sessões; `requirepass` via `redis.conf` |
+### Principais (`docker-compose.yml`)
+
+| Serviço | Imagem | Porta | Descrição |
+|---------|--------|-------|-----------|
+| **nginx** | OpenResty | 80, 443 | Proxy: API, SPA, WebSocket, Horizon |
+| **php-fpm** | PHP 8.2-FPM | interna | Laravel API |
+| **reverb** | Laravel CLI | 8080 (interna) | WebSocket server |
+| **horizon** | Laravel CLI | interna | Workers de filas |
+| **scheduler** | Laravel CLI | interna | `schedule:work` |
+| **node** | Node.js | 5173 | Vite dev server |
+| **postgres** | PostgreSQL 16 | 5432 | Banco de dados |
+| **redis** | Redis 7 | 6379 | Cache e filas |
 
 ### Extras (`docker-compose.dev.yml`)
 
 | Serviço | Porta | Descrição |
 |---------|-------|-----------|
 | **pgadmin** | 5050 | Interface web para PostgreSQL |
-| **mailpit** | 8025 | Captura de e-mails (desenvolvimento) |
+| **mailpit** | 8025 | Captura de emails (dev) |
+
+---
+
+## Arquitetura
+
+```mermaid
+graph TB
+    subgraph External["Externo"]
+        Browser[Browser]
+    end
+
+    subgraph Proxy["Proxy - OpenResty :80"]
+        N[nginx]
+    end
+
+    subgraph Backend["Backend"]
+        PHP[php-fpm]
+        Reverb[reverb :8080]
+        Horizon[horizon]
+        Scheduler[scheduler]
+    end
+
+    subgraph Frontend["Frontend"]
+        Vite[node :5173]
+    end
+
+    subgraph Data["Dados"]
+        PG[(PostgreSQL :5432)]
+        Redis[(Redis :6379)]
+    end
+
+    Browser --> N
+    N -->|/api/*| PHP
+    N -->|/app/*| Reverb
+    N -->|/*| Vite
+    PHP --> PG
+    PHP --> Redis
+    Horizon --> Redis
+    Reverb --> Redis
+```
+
+---
+
+## Rotas no Proxy
+
+| Rota | Destino | Descrição |
+|------|---------|-----------|
+| `/api/*` | Laravel (php-fpm) | API REST |
+| `/app/*` | Reverb (upgrade WS) | WebSocket |
+| `/horizon` | Laravel | Dashboard de filas |
+| `/health` | Laravel | Health check |
+| `/nginx-health` | OpenResty | Probe do container |
+| `/*` | SPA (frontend/dist) | Arquivos estáticos |
 
 ---
 
@@ -31,10 +103,10 @@ Configuração Docker para o StudyTrack Pro. O proxy HTTP é **OpenResty** (Ngin
 ```
 docker/
 ├── nginx/
-│   ├── Dockerfile              # openresty/openresty (imagem base)
-│   ├── nginx.conf              # Configuração principal OpenResty
+│   ├── Dockerfile              # openresty/openresty
+│   ├── nginx.conf              # Configuração principal
 │   └── conf.d/
-│       └── studytrack.conf     # Rotas, Lua na borda, proxy para PHP e Reverb
+│       └── studytrack.conf     # Rotas e Lua na borda
 ├── php/
 │   ├── Dockerfile              # php-fpm
 │   ├── Dockerfile.cli          # Horizon, Reverb, scheduler
@@ -44,7 +116,7 @@ docker/
 │   └── Dockerfile.frontend     # Node para Vite
 ├── postgres/
 │   ├── Dockerfile              # Postgres 16 + extensões
-│   └── init/                   # Scripts SQL (extensions, schema analytics)
+│   └── init/                   # Scripts SQL init
 └── redis/
     ├── redis.conf
     └── docker-entrypoint.sh
@@ -52,44 +124,123 @@ docker/
 
 ---
 
-## Rotas no proxy (resumo)
-
-- `/api/*` → Laravel (`index.php`) — inclui `/api/v1/*`, `/api/health`, `/api/broadcasting/auth`
-- `/app/*` → upgrade WebSocket → container **reverb:8080**
-- `/horizon` → Laravel (dashboard Horizon; auth por utilizador + `HORIZON_ADMIN_EMAILS`)
-- `/health` (web Laravel) e `/api/health` — health da aplicação; `/nginx-health` — probe do container OpenResty
-- `/up` — health mínimo do Laravel (bootstrap)
-- `/*` → SPA em `frontend/dist` (ficheiros estáticos)
-
-Headers de segurança e lógica Lua na borda: ver `conf.d/studytrack.conf` e [docs/technical/DOCUMENTACAO_TECNICA_LUA.md](../docs/technical/DOCUMENTACAO_TECNICA_LUA.md).
-
----
-
 ## Comandos
 
 ```bash
 # A partir da raiz do repositório
-make dev       # docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
-make stop      # docker compose ... down
-make build     # docker compose build
-make shell-php # docker compose exec php-fpm sh
-make shell-vue # docker compose exec node sh
-make logs      # docker compose logs -f
+make dev           # docker compose up -d (dev)
+make stop          # docker compose down
+make build         # docker compose build
+make shell-php     # Shell no container PHP
+make shell-vue     # Shell no container Node
+make logs          # Logs de todos os containers
+make migrate       # Rodar migrations
+make fresh         # migrate:fresh --seed
+make test          # Testes backend + frontend
+```
+
+### Comandos Docker Diretos
+
+```bash
+# Listar containers
+docker compose ps
+
+# Logs de um serviço específico
+docker compose logs -f php-fpm
+docker compose logs -f nginx
+
+# Reiniciar um serviço
+docker compose restart php-fpm
+
+# Acessar container
+docker compose exec php-fpm sh
+docker compose exec postgres psql -U studytrack -d studytrack
 ```
 
 ---
 
-## Variáveis relevantes
+## Variáveis de Ambiente
 
-- **`DB_PASSWORD` / `POSTGRES_*`** — definidas no compose e no `backend/.env`
-- **`REDIS_PASSWORD`** — alinhada entre `backend/.env` e `docker/redis/redis.conf`
-- **No serviço `node` (Vite no Docker):** `VITE_REVERB_HOST=localhost`, `VITE_REVERB_PORT=80`, `VITE_REVERB_SCHEME=http` — o Echo fala com o Reverb **através do Nginx** na porta 80, não diretamente na 8080 do container Reverb
-- **No browser com Vite só no host** (`npm run dev` fora do Docker): usar `frontend/.env` (ex.: `VITE_REVERB_PORT=8080` **só** se publicar a porta 8080 do Reverb no host; caso contrário prefira `80` + mesmo host da API)
+| Variável | Serviço | Descrição |
+|----------|---------|-----------|
+| `DB_PASSWORD` | postgres, php-fpm | Senha do PostgreSQL |
+| `POSTGRES_*` | postgres | Configuração do banco |
+| `REDIS_PASSWORD` | redis, php-fpm | Senha do Redis |
+| `VITE_REVERB_HOST` | node | Host do Reverb |
+| `VITE_REVERB_PORT` | node | Porta do Reverb |
+| `VITE_REVERB_SCHEME` | node | http ou https |
+
+> ⚠️ No Docker, o Echo fala com Reverb **através do Nginx** (porta 80), não diretamente (8080).
+
+---
+
+## Troubleshooting
+
+### Porta já em uso
+
+```bash
+# Verificar o que está usando a porta
+lsof -i :80
+lsof -i :5432
+lsof -i :6379
+
+# Matar o processo ou mudar a porta no docker-compose.yml
+```
+
+### Permissões de volume
+
+```bash
+# Corrigir permissões do PostgreSQL
+sudo chown -R 1000:1000 docker/postgres/
+
+# Corrigir permissões do storage
+sudo chown -R 33:33 backend/storage/
+```
+
+### Container não inicia
+
+```bash
+# Verificar logs
+docker compose logs php-fpm
+docker compose logs nginx
+
+# Verificar se o .env existe
+ls -la backend/.env
+```
+
+### Redis connection refused
+
+```bash
+# Verificar se o Redis está rodando
+docker compose ps redis
+
+# Testar conexão
+docker compose exec redis redis-cli ping
+```
+
+### PostgreSQL não aceita conexões
+
+```bash
+# Verificar status
+docker compose logs postgres
+
+# Testar conexão
+docker compose exec postgres psql -U studytrack -d studytrack -c "SELECT 1"
+```
 
 ---
 
 ## Produção
 
-- Imagens e tags estáveis; secrets via orchestrator, não valores no Git
-- TLS no proxy (443) e `APP_URL` / `REVERB_SCHEME` em HTTPS/WSS
-- Consulte [docs/operations/DEPLOY_SECURITY_PASSO_A_PASSO.md](../docs/operations/DEPLOY_SECURITY_PASSO_A_PASSO.md)
+- Imagens e tags estáveis
+- Secrets via orchestrator (não no Git)
+- TLS no proxy (443)
+- `APP_URL` e `REVERB_SCHEME` em HTTPS/WSS
+
+> Ver [docs/operations/DEPLOY_SECURITY_PASSO_A_PASSO.md](../docs/operations/DEPLOY_SECURITY_PASSO_A_PASSO.md)
+
+---
+
+<p align="center">
+  <a href="../README.md">← Voltar ao README principal</a>
+</p>
