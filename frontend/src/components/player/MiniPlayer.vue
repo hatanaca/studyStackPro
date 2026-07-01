@@ -2,13 +2,11 @@
 import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { usePlayerStore } from '@/stores/player.store'
 import { useAuthStore } from '@/stores/auth.store'
-import { useUiStore } from '@/stores/ui.store'
 import YouTubeFrame from '@/components/player/YouTubeFrame.vue'
 import AudioVisualizer from '@/components/player/AudioVisualizer.vue'
 
 const player = usePlayerStore()
 const auth = useAuthStore()
-const uiStore = useUiStore()
 
 const hasGoogleAccount = computed(() => !!auth.user?.google_id)
 const searchInput = ref('')
@@ -17,8 +15,6 @@ const seekPercent = ref(-1)
 const isSeeking = ref(false)
 
 const playlistTitle = computed(() => player.selectedPlaylist?.snippet?.title ?? 'Selecionar playlist')
-
-const sidebarLeft = computed(() => uiStore.sidebarCollapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width)')
 
 // --- Drag ---
 const STORAGE_POS_KEY = 'studytrack_miniplayer_pos'
