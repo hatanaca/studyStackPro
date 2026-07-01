@@ -46,3 +46,5 @@ WORKDIR /var/www/html
 COPY --from=builder /app /var/www/html
 
 RUN chown -R www-data:www-data /var/www/html
+
+USER www-data

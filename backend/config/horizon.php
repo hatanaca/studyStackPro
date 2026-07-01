@@ -6,7 +6,7 @@ return [
     'use' => env('HORIZON_REDIS_CONNECTION', 'horizon'),
     'path' => env('HORIZON_PATH', 'horizon'),
     'prefix' => env('HORIZON_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_horizon:'),
-    'middleware' => ['web'],
+    'middleware' => ['web', \App\Http\Middleware\RestrictHorizonToIps::class],
     'waits' => [
         'redis:default' => 60,
         'redis:metrics' => 60,
