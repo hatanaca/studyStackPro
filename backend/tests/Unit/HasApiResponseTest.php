@@ -3,14 +3,11 @@
 namespace Tests\Unit;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\JsonResponse;
 use Tests\TestCase;
 
 class HasApiResponseTest extends TestCase
 {
-    use RefreshDatabase;
-
     private function decodeJson(JsonResponse $response): array
     {
         return json_decode($response->getContent(), true) ?? [];

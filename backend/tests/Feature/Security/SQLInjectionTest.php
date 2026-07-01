@@ -75,11 +75,10 @@ class SQLInjectionTest extends TestCase
                 'ended_at' => now()->toIso8601String(),
             ]);
 
-        if ($response->getStatusCode() === 201 || $response->getStatusCode() === 403) {
-            $admin = User::where('email', 'test@test.com')->first();
-            if ($admin) {
-                $this->assertFalse((bool) ($admin->is_admin ?? false));
-            }
+        $this->assertContains($response->getStatusCode(), [201, 422, 403, 404]);
+        $admin = User::where('email', 'test@test.com')->first();
+        if ($admin) {
+            $this->assertFalse((bool) ($admin->is_admin ?? false));
         }
     }
 
