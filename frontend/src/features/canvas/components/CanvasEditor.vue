@@ -171,9 +171,9 @@ function onKeydown(e: KeyboardEvent) {
   if (target.isContentEditable) return
 
   // Check if Fabric canvas has an active text object being edited
-  const canvas = (window as any).__fabricCanvas
-  if (canvas) {
-    const active = canvas.value?.getActiveObject()
+  const fabricCanvas = (window as any).__fabricCanvas
+  if (fabricCanvas) {
+    const active = fabricCanvas.getActiveObject?.() ?? fabricCanvas.value?.getActiveObject()
     if (active && typeof active.isEditing === 'function' && active.isEditing()) return
   }
 
