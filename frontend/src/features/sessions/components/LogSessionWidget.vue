@@ -78,4 +78,13 @@ function onSuccess(payload: SessionSavedPayload) {
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-tight);
 }
+
+@media (max-width: 640px) {
+  .log-session-widget {
+    padding: var(--spacing-md);
+  }
+  .log-session-widget :deep(.p-button) {
+    width: 100%;
+  }
+}
 </style>

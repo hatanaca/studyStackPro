@@ -62,21 +62,21 @@ defineProps<{
   gap: var(--spacing-2xs);
   padding: var(--spacing-lg) var(--spacing-md);
   background: linear-gradient(135deg,
-    rgba(8, 8, 14, 0.95) 0%,
-    rgba(12, 10, 20, 0.85) 100%
+    color-mix(in srgb, var(--color-bg-card) 95%, transparent) 0%,
+    color-mix(in srgb, var(--color-bg-soft) 85%, transparent) 100%
   );
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(139, 92, 246, 0.08);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 8%, transparent);
   border-radius: var(--radius-xl);
   overflow: hidden;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .kpi__card:hover {
-  border-color: rgba(139, 92, 246, 0.2);
+  border-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
   box-shadow:
-    0 0 0 1px rgba(139, 92, 246, 0.05),
-    0 4px 20px rgba(139, 92, 246, 0.1);
+    0 0 0 1px color-mix(in srgb, var(--color-primary) 5%, transparent),
+    0 4px 20px color-mix(in srgb, var(--color-primary) 10%, transparent);
   transform: translateY(-3px) scale(1.02);
 }
 .kpi__glow {

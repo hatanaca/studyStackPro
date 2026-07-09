@@ -155,4 +155,24 @@ async function endSession() {
   opacity: 0.7;
   cursor: not-allowed;
 }
+
+@media (max-width: 640px) {
+  .session-focus {
+    padding: var(--spacing-md);
+    min-height: calc(100dvh - var(--header-height) - 64px - var(--spacing-md) * 2);
+  }
+  .session-focus__card {
+    padding: var(--spacing-xl) var(--spacing-lg);
+  }
+  .session-focus__timer {
+    font-size: clamp(2rem, 12vw, 3.5rem);
+  }
+  .session-focus__actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .session-focus__btn {
+    width: 100%;
+  }
+}
 </style>

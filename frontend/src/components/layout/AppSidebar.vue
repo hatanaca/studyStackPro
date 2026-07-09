@@ -240,24 +240,12 @@ function handleLogout() {
         @mouseenter="prefetchDashboardView"
       >
         <span class="app-sidebar__icon" aria-hidden="true">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect width="7" height="9" x="3" y="3" rx="1" />
-            <rect width="7" height="5" x="14" y="3" rx="1" />
-            <rect width="7" height="9" x="14" y="12" rx="1" />
-            <rect width="7" height="5" x="3" y="16" rx="1" />
-          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
         </span>
-        <span class="app-sidebar__link-text">Dashboard</span>
+        <span class="app-sidebar__link-content">
+          <span class="app-sidebar__link-text">Dashboard</span>
+          <span class="app-sidebar__link-route">/</span>
+        </span>
       </RouterLink>
       <RouterLink
         :to="{ name: 'sessions' }"
@@ -268,24 +256,12 @@ function handleLogout() {
         @mouseenter="prefetchSessionsView"
       >
         <span class="app-sidebar__icon" aria-hidden="true">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-            <path d="M8 7h8" />
-            <path d="M8 11h8" />
-          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </span>
-        <span class="app-sidebar__link-text">Sessões</span>
+        <span class="app-sidebar__link-content">
+          <span class="app-sidebar__link-text">Sessões</span>
+          <span class="app-sidebar__link-route">/sessions</span>
+        </span>
       </RouterLink>
       <RouterLink
         to="/technologies"
@@ -296,28 +272,12 @@ function handleLogout() {
         @mouseenter="prefetchTechnologiesView"
       >
         <span class="app-sidebar__icon" aria-hidden="true">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M12 2v4" />
-            <path d="m4.93 4.93 2.83 2.83" />
-            <path d="M2 12h4" />
-            <path d="m4.93 19.07 2.83-2.83" />
-            <path d="M12 18v4" />
-            <path d="m17.24 17.24 2.83-2.83" />
-            <path d="M18 12h4" />
-            <path d="m17.24 6.76 2.83 2.83" />
-          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
         </span>
-        <span class="app-sidebar__link-text">Tecnologias</span>
+        <span class="app-sidebar__link-content">
+          <span class="app-sidebar__link-text">Tecnologias</span>
+          <span class="app-sidebar__link-route">/technologies</span>
+        </span>
       </RouterLink>
       <RouterLink
         to="/canvas"
@@ -327,23 +287,12 @@ function handleLogout() {
         aria-label="Ir para Canvas"
       >
         <span class="app-sidebar__icon" aria-hidden="true">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-            <path d="M3 9h18" />
-            <path d="M9 21V9" />
-          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg>
         </span>
-        <span class="app-sidebar__link-text">Canvas</span>
+        <span class="app-sidebar__link-content">
+          <span class="app-sidebar__link-text">Canvas</span>
+          <span class="app-sidebar__link-route">/canvas</span>
+        </span>
       </RouterLink>
       <RouterLink
         to="/graficos"
@@ -353,24 +302,12 @@ function handleLogout() {
         aria-label="Ir para Gráficos"
       >
         <span class="app-sidebar__icon" aria-hidden="true">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M3 3v18h18" />
-            <path d="M18 17V9" />
-            <path d="M13 17V5" />
-            <path d="M8 17v-3" />
-          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
         </span>
-        <span class="app-sidebar__link-text">Gráficos</span>
+        <span class="app-sidebar__link-content">
+          <span class="app-sidebar__link-text">Gráficos</span>
+          <span class="app-sidebar__link-route">/graficos</span>
+        </span>
       </RouterLink>
       <RouterLink
         to="/settings"
@@ -381,24 +318,12 @@ function handleLogout() {
         @mouseenter="prefetch.settings"
       >
         <span class="app-sidebar__icon" aria-hidden="true">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.73l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
-            />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.73l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
         </span>
-        <span class="app-sidebar__link-text">Configurações</span>
+        <span class="app-sidebar__link-content">
+          <span class="app-sidebar__link-text">Configurações</span>
+          <span class="app-sidebar__link-route">/settings</span>
+        </span>
       </RouterLink>
     </nav>
     <template v-if="stakentStyle?.value">
@@ -457,8 +382,10 @@ function handleLogout() {
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
           </svg>
         </span>
-        <span class="app-sidebar__link-text">
-          {{ uiStore.isDarkMode ? 'Tema claro' : 'Tema escuro' }}
+        <span class="app-sidebar__link-content">
+          <span class="app-sidebar__link-text">
+            {{ uiStore.isDarkMode ? 'Tema claro' : 'Tema escuro' }}
+          </span>
         </span>
       </button>
       <button type="button" class="app-sidebar__logout" @click="handleLogout">
@@ -479,7 +406,9 @@ function handleLogout() {
           <polyline points="16 17 21 12 16 7" />
           <line x1="21" y1="12" x2="9" y2="12" />
         </svg>
-        <span class="app-sidebar__link-text">Sair</span>
+        <span class="app-sidebar__link-content">
+          <span class="app-sidebar__link-text">Sair</span>
+        </span>
       </button>
     </div>
   </aside>
@@ -866,8 +795,8 @@ function handleLogout() {
   gap: var(--spacing-sm);
   color: var(--sidebar-link-color);
   text-decoration: none;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  min-height: 2.25rem;
+  padding: var(--spacing-sm) var(--spacing-md);
+  min-height: 2.75rem;
   border-radius: var(--radius-md);
   white-space: nowrap;
   font-size: var(--text-sm);
@@ -887,6 +816,18 @@ function handleLogout() {
   color: var(--color-primary);
   background: var(--color-primary-soft);
   font-weight: 600;
+}
+.app-sidebar__link-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.app-sidebar__link-route {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  opacity: 0.6;
+  font-weight: 400;
+  line-height: 1.2;
 }
 .app-sidebar__icon {
   display: flex;
@@ -913,7 +854,8 @@ function handleLogout() {
     width var(--duration-slow) var(--ease-out-expo),
     opacity var(--duration-normal) ease;
 }
-.app-sidebar--collapsed .app-sidebar__link-text {
+.app-sidebar--collapsed .app-sidebar__link-text,
+.app-sidebar--collapsed .app-sidebar__link-route {
   width: 0;
   opacity: 0;
   pointer-events: none;
@@ -995,19 +937,22 @@ function handleLogout() {
   }
 }
 
-/* Mobile: hamburger drawer */
+/* Mobile: hamburger drawer — full page */
 @media (max-width: 768px) {
   .app-sidebar {
     position: fixed;
     top: 0;
     left: 0;
     bottom: 0;
+    height: 100dvh;
+    width: 100vw;
     z-index: var(--z-overlay, 500);
     transform: translateX(-100%);
     transition: transform var(--duration-slow) var(--ease-out-expo);
-    width: var(--sidebar-drawer-width);
     overflow-y: auto;
     overscroll-behavior: contain;
+    box-shadow: var(--overlay-shadow);
+    padding: var(--spacing-xl);
   }
   .app-sidebar--open {
     transform: translateX(0);
@@ -1018,17 +963,43 @@ function handleLogout() {
   .app-sidebar__toggle {
     display: none;
   }
+  .app-sidebar__link {
+    padding: var(--spacing-md) var(--spacing-lg);
+    min-height: 3.25rem;
+    font-size: var(--text-base);
+    border-radius: var(--radius-lg);
+  }
+  .app-sidebar__link-content {
+    align-items: center;
+  }
+  .app-sidebar__link-route {
+    font-size: 11px;
+  }
+  .app-sidebar__nav {
+    gap: var(--spacing-sm);
+  }
+  .app-sidebar__theme-btn {
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: var(--text-base);
+    min-height: 3.25rem;
+    border-radius: var(--radius-lg);
+  }
+  .app-sidebar__logout {
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: var(--text-base);
+    min-height: 3.25rem;
+    border-radius: var(--radius-lg);
+  }
   .app-sidebar-backdrop {
     display: block;
     position: fixed;
     inset: 0;
+    height: 100dvh;
+    width: 100vw;
     background: var(--overlay-backdrop);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     z-index: calc(var(--z-overlay, 500) - 1);
-  }
-  .app-sidebar {
-    box-shadow: var(--overlay-shadow);
   }
 }
 </style>

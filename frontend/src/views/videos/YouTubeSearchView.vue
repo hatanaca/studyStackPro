@@ -348,7 +348,7 @@ onUnmounted(() => {
 .youtube-player {
   position: relative;
   padding-bottom: 56.25%;
-  background: #000;
+  background: var(--color-bg);
 }
 .youtube-player__iframe {
   position: absolute;
@@ -362,7 +362,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.6);
+  background: color-mix(in srgb, var(--color-bg) 60%, transparent);
 }
 .youtube-video-info {
   padding: var(--spacing-lg);
@@ -434,7 +434,7 @@ onUnmounted(() => {
 .youtube-card__thumb {
   position: relative;
   aspect-ratio: 16 / 9;
-  background: #1a1a2e;
+  background: var(--color-bg-soft);
   overflow: hidden;
 }
 .youtube-card__img {
@@ -448,7 +448,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.3);
+  background: color-mix(in srgb, var(--color-bg) 30%, transparent);
   opacity: 0;
   transition: opacity var(--duration-fast) ease;
 }
@@ -497,5 +497,54 @@ onUnmounted(() => {
 .youtube-pagination__btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .youtube-page {
+    padding: var(--spacing-md) var(--spacing-sm);
+    padding-bottom: calc(56.25vw + var(--spacing-md));
+  }
+  .youtube-page__title {
+    font-size: var(--text-xl);
+  }
+  .youtube-page__header {
+    margin-bottom: var(--spacing-md);
+  }
+  .youtube-search {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+  .youtube-search__btn {
+    width: 100%;
+  }
+  .youtube-player-section {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    margin: 0;
+    border-radius: 0;
+    border: none;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-card);
+  }
+  .youtube-player {
+    padding-bottom: 56.25%;
+  }
+  .youtube-video-info {
+    display: none;
+  }
+  .youtube-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+  .youtube-card__body {
+    padding: var(--spacing-xs) var(--spacing-sm) var(--spacing-sm);
+  }
+  .youtube-card__title {
+    font-size: var(--text-xs);
+    -webkit-line-clamp: 1;
+  }
 }
 </style>

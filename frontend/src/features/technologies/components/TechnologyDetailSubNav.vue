@@ -70,4 +70,30 @@ const links = computed(() => {
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
   border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
 }
+
+@media (max-width: 640px) {
+  .tech-detail-nav {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin-left: calc(-1 * var(--spacing-md));
+    margin-right: calc(-1 * var(--spacing-md));
+    padding: 0 var(--spacing-md);
+  }
+  .tech-detail-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .tech-detail-nav__list {
+    flex-wrap: nowrap;
+    padding-bottom: var(--spacing-xs);
+    gap: var(--spacing-2xs);
+  }
+  .tech-detail-nav__link {
+    scroll-snap-align: start;
+    white-space: nowrap;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--text-xs);
+  }
+}
 </style>

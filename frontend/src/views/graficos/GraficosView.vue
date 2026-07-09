@@ -352,24 +352,24 @@ watch(() => graficos.dateRange.value, () => {
 .hero {
   position: relative;
   background: linear-gradient(135deg,
-    rgba(10, 10, 15, 0.95) 0%,
-    rgba(15, 10, 25, 0.9) 50%,
-    rgba(10, 15, 20, 0.85) 100%
+    color-mix(in srgb, var(--color-bg-card) 95%, transparent) 0%,
+    color-mix(in srgb, var(--color-bg-soft) 90%, transparent) 50%,
+    color-mix(in srgb, var(--color-bg) 85%, transparent) 100%
   );
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(139, 92, 246, 0.12);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 12%, transparent);
   border-radius: 1.25rem;
   padding: var(--spacing-2xl);
   overflow: hidden;
   transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
 .hero:hover {
-  border-color: rgba(139, 92, 246, 0.3);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
   box-shadow:
-    0 0 0 1px rgba(139, 92, 246, 0.08),
-    0 8px 40px rgba(0, 0, 0, 0.4),
-    0 2px 8px rgba(139, 92, 246, 0.08);
+    0 0 0 1px color-mix(in srgb, var(--color-primary) 8%, transparent),
+    0 8px 40px color-mix(in srgb, var(--color-bg) 40%, transparent),
+    0 2px 8px color-mix(in srgb, var(--color-primary) 8%, transparent);
 }
 
 /* Animated gradient glow behind hero */
@@ -379,7 +379,7 @@ watch(() => graficos.dateRange.value, () => {
   left: -20%;
   width: 60%;
   height: 200%;
-  background: radial-gradient(ellipse, rgba(139, 92, 246, 0.12) 0%, transparent 60%);
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--color-primary) 12%, transparent) 0%, transparent 60%);
   animation: heroGlow 8s ease-in-out infinite alternate;
   pointer-events: none;
 }
@@ -431,8 +431,8 @@ watch(() => graficos.dateRange.value, () => {
   animation: dotBlink 1.5s ease-in-out infinite;
 }
 @keyframes badgePulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
-  50% { box-shadow: 0 0 0 6px rgba(139, 92, 246, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 40%, transparent); }
+  50% { box-shadow: 0 0 0 6px transparent; }
 }
 @keyframes dotBlink {
   0%, 100% { opacity: 1; }
@@ -463,11 +463,11 @@ watch(() => graficos.dateRange.value, () => {
 .hero__layout-picker {
   display: flex;
   gap: 6px;
-  background: rgba(0, 0, 0, 0.4);
+  background: color-mix(in srgb, var(--color-bg) 40%, transparent);
   backdrop-filter: blur(10px);
   border-radius: 1rem;
   padding: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid color-mix(in srgb, var(--color-primary-contrast) 4%, transparent);
 }
 
 .hero__pill {
@@ -481,13 +481,13 @@ watch(() => graficos.dateRange.value, () => {
   user-select: none;
 }
 .hero__pill:hover {
-  background: rgba(139, 92, 246, 0.12);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
 .hero__pill--active {
   background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
   box-shadow:
-    0 0 12px rgba(139, 92, 246, 0.4),
-    0 2px 8px rgba(0, 0, 0, 0.2);
+    0 0 12px color-mix(in srgb, var(--color-primary) 40%, transparent),
+    0 2px 8px color-mix(in srgb, var(--color-bg) 20%, transparent);
 }
 .hero__pill--active .hero__pill-label {
   color: var(--color-text);
@@ -553,6 +553,40 @@ watch(() => graficos.dateRange.value, () => {
   }
   .grid__half {
     grid-column: span 6;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero {
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+  }
+  .hero__header {
+    flex-direction: column;
+  }
+  .hero__layout-picker {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    gap: 4px;
+    scrollbar-width: none;
+  }
+  .hero__layout-picker::-webkit-scrollbar {
+    display: none;
+  }
+  .hero__pill {
+    scroll-snap-align: start;
+  }
+  .hero__chart {
+    min-height: 220px;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+  .grid > * {
+    min-height: auto;
   }
 }
 </style>
