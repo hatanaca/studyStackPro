@@ -53,7 +53,13 @@ class AuthServiceTest extends TestCase
                     && Hash::check('password123', $data['password'])
                     && $data['timezone'] === 'America/Sao_Paulo';
             }))
-            ->andReturn(new User(['id' => 'user-1', 'name' => 'Test User']));
+            ->andReturnUsing(function () {
+                $user = new User();
+                $user->id = 'user-1';
+                $user->name = 'Test User';
+                $user->setRawAttributes(['id' => 'user-1', 'name' => 'Test User']);
+                return $user;
+            });
 
         $result = $this->service->register($dto);
 

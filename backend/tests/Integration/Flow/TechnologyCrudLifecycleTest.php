@@ -47,7 +47,7 @@ class TechnologyCrudLifecycleTest extends TestCase
 
         // Update
         $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
-            ->patchJson('/api/v1/technologies/'.$techId, [
+            ->putJson('/api/v1/technologies/'.$techId, [
                 'name' => 'Vue 3',
                 'color' => '#42B883',
             ]);

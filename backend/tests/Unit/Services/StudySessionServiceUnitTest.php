@@ -55,7 +55,9 @@ class StudySessionServiceUnitTest extends TestCase
 
     public function test_find_for_user_throws_403_when_cross_user(): void
     {
-        $session = Mockery::mock(StudySession::class);
+        $session = Mockery::mock(StudySession::class)->makePartial();
+        $session->shouldReceive('getAttribute')->with('user_id')->andReturn('other-user-id');
+        $session->shouldReceive('getAttribute')->with('id')->andReturn('session-1');
         $session->user_id = 'other-user-id';
 
         $this->repository
@@ -85,7 +87,8 @@ class StudySessionServiceUnitTest extends TestCase
 
     public function test_create_dispatches_created_event(): void
     {
-        $session = new StudySession(['id' => 'session-1', 'user_id' => $this->user->id]);
+        $session = new StudySession();
+        $session->setRawAttributes(['id' => 'session-1', 'user_id' => $this->user->id]);
 
         $this->repository
             ->shouldReceive('create')
@@ -109,11 +112,14 @@ class StudySessionServiceUnitTest extends TestCase
 
     public function test_update_dispatches_updated_event(): void
     {
-        $session = Mockery::mock(StudySession::class);
+        $session = Mockery::mock(StudySession::class)->makePartial();
+        $session->shouldReceive('getAttribute')->with('user_id')->andReturn($this->user->id);
+        $session->shouldReceive('getAttribute')->with('id')->andReturn('session-1');
         $session->user_id = $this->user->id;
         $session->id = 'session-1';
 
-        $updatedSession = new StudySession(['id' => 'session-1', 'notes' => 'Updated']);
+        $updatedSession = new StudySession();
+        $updatedSession->setRawAttributes(['id' => 'session-1', 'notes' => 'Updated']);
 
         $this->repository
             ->shouldReceive('findById')
@@ -133,7 +139,11 @@ class StudySessionServiceUnitTest extends TestCase
 
     public function test_delete_dispatches_deleted_event_and_removes(): void
     {
-        $session = Mockery::mock(StudySession::class);
+        $session = Mockery::mock(StudySession::class)->makePartial();
+        $session->shouldReceive('getAttribute')->with('user_id')->andReturn($this->user->id);
+        $session->shouldReceive('getAttribute')->with('id')->andReturn('session-1');
+        $session->shouldReceive('getAttribute')->with('duration_min')->andReturn(60);
+        $session->shouldReceive('getAttribute')->with('started_at')->andReturn(Carbon::now()->subHour());
         $session->user_id = $this->user->id;
         $session->id = 'session-1';
         $session->duration_min = 60;
@@ -156,7 +166,8 @@ class StudySessionServiceUnitTest extends TestCase
 
     public function test_get_active_for_user_delegates_to_repository(): void
     {
-        $session = new StudySession(['id' => 'active-session']);
+        $session = new StudySession();
+        $session->setRawAttributes(['id' => 'active-session']);
 
         $this->repository
             ->shouldReceive('findActiveByUser')

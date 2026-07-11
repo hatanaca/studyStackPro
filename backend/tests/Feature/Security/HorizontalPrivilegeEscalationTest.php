@@ -119,7 +119,7 @@ class HorizontalPrivilegeEscalationTest extends TestCase
         $token1 = $user1->createToken('api-token')->plainTextToken;
 
         $response = $this->withHeader('Authorization', 'Bearer '.$token1)
-            ->patchJson('/api/v1/auth/me', [
+            ->putJson('/api/v1/auth/me', [
                 'name' => 'Hacked',
             ]);
 

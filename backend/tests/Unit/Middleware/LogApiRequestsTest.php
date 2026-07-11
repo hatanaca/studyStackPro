@@ -6,6 +6,7 @@ use App\Http\Middleware\LogApiRequests;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Mockery;
 use Symfony\Component\HttpFoundation\Response;
 use Tests\TestCase;
 

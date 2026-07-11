@@ -16,7 +16,7 @@ class AuthTest extends TestCase
         return ['Origin' => 'http://127.0.0.1:5173'];
     }
 
-    public function test_register_creates_user_and_returns_user_without_token(): void
+    public function test_register_creates_user_and_returns_token(): void
     {
         $response = $this->withHeaders($this->spaHeaders())->postJson('/api/v1/auth/register', [
             'name' => 'John Doe',
@@ -33,15 +33,14 @@ class AuthTest extends TestCase
             ->assertJsonStructure([
                 'data' => [
                     'user' => ['id', 'name', 'email', 'timezone', 'locale', 'created_at', 'updated_at'],
+                    'token',
                 ],
             ]);
-
-        $this->assertArrayNotHasKey('token', $response->json('data') ?? []);
 
         $this->assertDatabaseHas('users', ['email' => 'john@example.com']);
     }
 
-    public function test_login_returns_user_without_token_with_valid_credentials(): void
+    public function test_login_returns_user_and_token_with_valid_credentials(): void
     {
         User::factory()->create([
             'email' => 'john@example.com',
@@ -60,10 +59,9 @@ class AuthTest extends TestCase
             ->assertJsonStructure([
                 'data' => [
                     'user' => ['id', 'name', 'email'],
+                    'token',
                 ],
             ]);
-
-        $this->assertArrayNotHasKey('token', $response->json('data') ?? []);
     }
 
     public function test_login_returns_401_with_wrong_password(): void

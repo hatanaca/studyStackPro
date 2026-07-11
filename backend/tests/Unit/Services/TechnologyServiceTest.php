@@ -34,7 +34,9 @@ class TechnologyServiceTest extends TestCase
 
     public function test_list_for_user_delegates_to_repository(): void
     {
-        $techs = collect([new Technology(['name' => 'Laravel'])]);
+        $tech = new Technology();
+        $tech->setRawAttributes(['name' => 'Laravel']);
+        $techs = collect([$tech]);
 
         $this->repository
             ->shouldReceive('listForUser')
@@ -49,7 +51,9 @@ class TechnologyServiceTest extends TestCase
 
     public function test_search_delegates_to_repository(): void
     {
-        $techs = collect([new Technology(['name' => 'Vue.js'])]);
+        $tech = new Technology();
+        $tech->setRawAttributes(['name' => 'Vue.js']);
+        $techs = collect([$tech]);
 
         $this->repository
             ->shouldReceive('search')
@@ -64,7 +68,8 @@ class TechnologyServiceTest extends TestCase
 
     public function test_find_for_user_delegates_to_repository(): void
     {
-        $tech = new Technology(['id' => 'tech-1', 'name' => 'Laravel']);
+        $tech = new Technology();
+        $tech->setRawAttributes(['id' => 'tech-1', 'name' => 'Laravel']);
 
         $this->repository
             ->shouldReceive('findForUser')

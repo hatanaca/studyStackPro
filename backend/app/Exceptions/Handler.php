@@ -10,6 +10,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Throwable;
 
@@ -67,6 +68,10 @@ class Handler extends ExceptionHandler
                         'retry_after' => (int) ($e->getHeaders()['Retry-After'] ?? $e->getHeaders()['retry-after'] ?? 60),
                     ],
                 ], 429),
+                $e instanceof MethodNotAllowedHttpException => response()->json([
+                    'success' => false,
+                    'error' => ['code' => 'METHOD_NOT_ALLOWED', 'message' => 'Método não permitido.'],
+                ], 405),
                 default => response()->json([
                     'success' => false,
                     'error' => ['code' => 'INTERNAL_ERROR', 'message' => config('app.debug') && app()->isLocal() ? $e->getMessage() : 'Erro interno.'],
@@ -130,6 +135,7 @@ class Handler extends ExceptionHandler
     {
         return response()->json([
             'success' => false,
+            'errors' => $e->errors(),
             'error' => [
                 'code' => 'VALIDATION_ERROR',
                 'message' => $e->getMessage(),

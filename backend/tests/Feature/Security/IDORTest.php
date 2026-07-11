@@ -130,7 +130,7 @@ class IDORTest extends TestCase
         ]);
 
         $response = $this->withHeader('Authorization', 'Bearer '.$this->attackerToken)
-            ->patchJson('/api/v1/technologies/'.$tech->id, [
+            ->putJson('/api/v1/technologies/'.$tech->id, [
                 'name' => 'Hacked',
             ]);
 
