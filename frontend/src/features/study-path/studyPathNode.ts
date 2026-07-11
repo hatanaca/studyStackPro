@@ -38,5 +38,5 @@ export function normalizeStudyPathNode(node: Node): Node {
     class: topicShapeClass(shape),
     // forma deve ganhar a `border-radius` etc.; entradas antigas em `prevStyle` não podem anular a forma
     style: { ...prevStyle, ...shapeStyle(shape) },
-  }
+  } as Node
 }

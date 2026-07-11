@@ -91,6 +91,7 @@ function loadFromStorage() {
   try {
     const raw = localStorage.getItem(storageKey())
     if (!raw) {
+      // @ts-expect-error vue-flow Node generic type depth — runtime is correct
       nodes.value = defaultNodes.map((x) => normalizeStudyPathNode({ ...x }))
       edges.value = defaultEdges.map((x) => ({ ...x }))
       return
