@@ -17,7 +17,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,vue,js,css,json}\""
   },
   "dependencies": {
-    "@chenglou/pretext": "^0.0.5",
+    "@chenglou/pretext": "^0.0.8",
     "@primeuix/themes": "^2.0.3",
     "@tanstack/vue-query": "^5.101.2",
     "@tanstack/vue-virtual": "^3.13.31",
