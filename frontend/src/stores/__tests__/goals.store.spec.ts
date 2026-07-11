@@ -1,96 +1,197 @@
 import { setActivePinia, createPinia } from 'pinia'
 import { useGoalsStore } from '../goals.store'
+import { goalsApi } from '@/api/modules/goals.api'
+
+vi.mock('@/api/modules/goals.api', () => ({
+  goalsApi: {
+    list: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+}))
+
+const mockGoal = {
+  id: 'goal-1',
+  user_id: 'user-1',
+  type: 'minutes_per_week' as const,
+  target_value: 600,
+  current_value: 300,
+  status: 'active' as const,
+  start_date: '2025-01-01',
+  end_date: null,
+  created_at: '2025-01-01T00:00:00Z',
+  updated_at: '2025-01-01T00:00:00Z',
+}
+
+const mockCompletedGoal = {
+  ...mockGoal,
+  id: 'goal-2',
+  status: 'completed' as const,
+  current_value: 600,
+}
 
 describe('goals.store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    vi.stubGlobal('localStorage', {
-      getItem: vi.fn(() => null),
-      setItem: vi.fn(),
-      removeItem: vi.fn(),
-    })
+    vi.clearAllMocks()
   })
 
-  it('inicializa com lista vazia', () => {
+  it('initializes with empty items and default state', () => {
     const store = useGoalsStore()
     expect(store.items).toEqual([])
     expect(store.loading).toBe(false)
     expect(store.error).toBeNull()
   })
 
-  it('activeGoals filtra apenas status active', async () => {
+  it('fetchGoals loads goals from API', async () => {
+    vi.mocked(goalsApi.list).mockResolvedValue({
+      data: [mockGoal, mockCompletedGoal],
+    } as never)
+
     const store = useGoalsStore()
-    await store.createGoal({
-      type: 'minutes_per_week',
-      target_value: 300,
-      start_date: '2025-01-01',
-      end_date: null,
-    })
-    expect(store.activeGoals.length).toBe(1)
-    expect(store.completedGoals.length).toBe(0)
+    await store.fetchGoals()
+
+    expect(store.items).toHaveLength(2)
+    expect(store.loading).toBe(false)
   })
 
-  it('createGoal adiciona item à lista', async () => {
+  it('fetchGoals sets error on failure', async () => {
+    vi.mocked(goalsApi.list).mockRejectedValue(new Error('Network error'))
+
     const store = useGoalsStore()
-    const created = await store.createGoal({
-      type: 'sessions_per_week',
-      target_value: 5,
-      start_date: '2025-01-01',
-    })
-    expect(created).toBeDefined()
-    expect(created.type).toBe('sessions_per_week')
-    expect(created.target_value).toBe(5)
-    expect(store.items.length).toBe(1)
+    await store.fetchGoals()
+
+    expect(store.error).toBe('Network error')
+    expect(store.loading).toBe(false)
   })
 
-  it('getProgress retorna 0 quando target é 0', () => {
+  it('createGoal adds goal to beginning of list', async () => {
+    vi.mocked(goalsApi.create).mockResolvedValue({
+      data: mockGoal,
+    } as never)
+
     const store = useGoalsStore()
-    const progress = store.getProgress({
-      id: '1',
-      user_id: 'u1',
+    const result = await store.createGoal({
       type: 'minutes_per_week',
-      target_value: 0,
-      current_value: 0,
-      status: 'active',
+      target_value: 600,
       start_date: '2025-01-01',
-      end_date: null,
-      created_at: '',
-      updated_at: '',
     })
-    expect(progress).toBe(0)
+
+    expect(store.items[0]).toEqual(mockGoal)
+    expect(result).toEqual(mockGoal)
   })
 
-  it('getProgress retorna 100 quando current >= target', () => {
+  it('createGoal sets error and throws on failure', async () => {
+    vi.mocked(goalsApi.create).mockRejectedValue(new Error('Validation error'))
+
     const store = useGoalsStore()
-    const progress = store.getProgress({
-      id: '1',
-      user_id: 'u1',
-      type: 'minutes_per_week',
-      target_value: 100,
-      current_value: 150,
-      status: 'active',
-      start_date: '2025-01-01',
-      end_date: null,
-      created_at: '',
-      updated_at: '',
-    })
-    expect(progress).toBe(100)
+
+    await expect(
+      store.createGoal({
+        type: 'minutes_per_week',
+        target_value: 600,
+        start_date: '2025-01-01',
+      })
+    ).rejects.toThrow('Validation error')
+    expect(store.error).toBe('Validation error')
   })
 
-  it('getProgress calcula percentual corretamente', () => {
+  it('updateGoal updates goal in list', async () => {
+    vi.mocked(goalsApi.update).mockResolvedValue({
+      data: { ...mockGoal, current_value: 450 },
+    } as never)
+
     const store = useGoalsStore()
-    const progress = store.getProgress({
-      id: '1',
-      user_id: 'u1',
-      type: 'minutes_per_week',
-      target_value: 200,
-      current_value: 100,
-      status: 'active',
-      start_date: '2025-01-01',
-      end_date: null,
-      created_at: '',
-      updated_at: '',
-    })
-    expect(progress).toBe(50)
+    store.items = [mockGoal]
+    await store.updateGoal('goal-1', { target_value: 600 })
+
+    expect(store.items[0].current_value).toBe(450)
+  })
+
+  it('updateGoal does nothing if goal not found', async () => {
+    vi.mocked(goalsApi.update).mockResolvedValue({
+      data: mockGoal,
+    } as never)
+
+    const store = useGoalsStore()
+    store.items = []
+    await store.updateGoal('goal-1', { target_value: 600 })
+
+    expect(store.items).toHaveLength(0)
+  })
+
+  it('deleteGoal removes goal from list', async () => {
+    vi.mocked(goalsApi.delete).mockResolvedValue({} as never)
+
+    const store = useGoalsStore()
+    store.items = [mockGoal, mockCompletedGoal]
+    await store.deleteGoal('goal-1')
+
+    expect(store.items).toHaveLength(1)
+    expect(store.items[0].id).toBe('goal-2')
+  })
+
+  it('deleteGoal sets error on failure', async () => {
+    vi.mocked(goalsApi.delete).mockRejectedValue(new Error('Delete failed'))
+
+    const store = useGoalsStore()
+    store.items = [mockGoal]
+
+    await expect(store.deleteGoal('goal-1')).rejects.toThrow('Delete failed')
+    expect(store.error).toBe('Delete failed')
+  })
+
+  it('activeGoals filters only active goals', () => {
+    const store = useGoalsStore()
+    store.items = [mockGoal, mockCompletedGoal]
+
+    expect(store.activeGoals).toHaveLength(1)
+    expect(store.activeGoals[0].status).toBe('active')
+  })
+
+  it('completedGoals filters only completed goals', () => {
+    const store = useGoalsStore()
+    store.items = [mockGoal, mockCompletedGoal]
+
+    expect(store.completedGoals).toHaveLength(1)
+    expect(store.completedGoals[0].status).toBe('completed')
+  })
+
+  it('getProgress calculates correct percentage', () => {
+    const store = useGoalsStore()
+    expect(store.getProgress(mockGoal)).toBe(50)
+  })
+
+  it('getProgress caps at 100', () => {
+    const store = useGoalsStore()
+    const overGoal = { ...mockGoal, current_value: 1000, target_value: 600 }
+    expect(store.getProgress(overGoal)).toBe(100)
+  })
+
+  it('getProgress returns 0 when target is 0', () => {
+    const store = useGoalsStore()
+    const zeroGoal = { ...mockGoal, target_value: 0 }
+    expect(store.getProgress(zeroGoal)).toBe(0)
+  })
+
+  it('getProgress uses override value when provided', () => {
+    const store = useGoalsStore()
+    expect(store.getProgress(mockGoal, 120)).toBe(20)
+  })
+
+  it('getActiveWeeklyMinutesGoal returns first active minutes_per_week goal', () => {
+    const store = useGoalsStore()
+    store.items = [mockCompletedGoal, mockGoal]
+
+    const result = store.getActiveWeeklyMinutesGoal()
+    expect(result?.id).toBe('goal-1')
+  })
+
+  it('getActiveWeeklyMinutesGoal returns null when none found', () => {
+    const store = useGoalsStore()
+    store.items = [mockCompletedGoal]
+
+    expect(store.getActiveWeeklyMinutesGoal()).toBeNull()
   })
 })
