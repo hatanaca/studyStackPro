@@ -61,7 +61,7 @@ export const apiResponseSchema = <T extends z.ZodType>(dataSchema: T) =>
     success: z.literal(true),
     data: dataSchema,
     message: z.string().optional(),
-    meta: z.record(z.unknown()).optional(),
+    meta: z.record(z.string(), z.unknown()).optional(),
   })
 
 export const studySessionSchema = z.object({

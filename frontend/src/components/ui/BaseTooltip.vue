@@ -17,6 +17,7 @@ const props = withDefaults(
 
 const triggerRef = ref<HTMLElement | null>(null)
 const tooltipRef = ref<HTMLElement | null>(null)
+void tooltipRef // template ref
 const isVisible = ref(false)
 const tooltipId = `base-tooltip-${Math.random().toString(36).slice(2, 8)}`
 let showTimeout: ReturnType<typeof setTimeout> | null = null
