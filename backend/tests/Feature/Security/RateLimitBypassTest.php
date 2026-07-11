@@ -4,7 +4,6 @@ namespace Tests\Feature\Security;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\RateLimiter;
 use Tests\TestCase;
 
 class RateLimitBypassTest extends TestCase
@@ -64,23 +63,31 @@ class RateLimitBypassTest extends TestCase
         $this->assertContains($response->getStatusCode(), [201, 422]);
     }
 
-    public function test_rate_limit_key_is_based_on_ip(): void
+    public function test_rate_limit_resets_after_minute(): void
     {
-        // Verify that the login rate limiter keys by IP address
         $user = User::factory()->create([
             'password' => bcrypt('password123'),
         ]);
 
-        // Make requests from default IP (127.0.0.1) to exhaust limit
-        for ($i = 0; $i < 4; $i++) {
+        // Exhaust the rate limit (3 per minute)
+        for ($i = 0; $i < 6; $i++) {
             $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])
                 ->postJson('/api/v1/auth/login', [
                     'email' => $user->email,
-                    'password' => 'wrong',
+                    'password' => 'wrong-password',
                 ]);
         }
 
-        // Verify the rate limiter has entries for the default IP
-        $this->assertTrue(RateLimiter::tooManyAttempts('login:127.0.0.1', 3));
+        // Travel forward past the rate limit window
+        $this->travel(2)->minutes();
+
+        $response = $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])
+            ->postJson('/api/v1/auth/login', [
+                'email' => $user->email,
+                'password' => 'wrong-password',
+            ]);
+
+        // After the window resets, should get 422 (invalid credentials) not 429
+        $response->assertStatus(422);
     }
 }
