@@ -80,14 +80,14 @@ class TokenManagementTest extends TestCase
             'password' => 'password123',
         ]);
         $oldToken = $user->createToken('api-token')->plainTextToken;
-        $oldTokenId = $user->currentAccessToken()->id;
+        $tokenCountBefore = $user->tokens()->count();
 
         $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])->postJson('/api/v1/auth/login', [
             'email' => 'john@example.com',
             'password' => 'password123',
         ])->assertStatus(200);
 
-        // Old token should be revoked, but a new one was created
+        // Old tokens revoked, new one created
         $this->assertSame(1, $user->fresh()->tokens()->count(), 'Login deve revogar PATs antigos e criar um novo.');
 
         // The old token should not work

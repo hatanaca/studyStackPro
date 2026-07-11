@@ -21,30 +21,33 @@ class ContentTypeManipulationTest extends TestCase
 
     public function test_post_with_xml_content_type_rejected(): void
     {
-        $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
-            ->withHeader('Content-Type', 'application/xml')
-            ->post('/api/v1/technologies', '<tech><name>Hacker</name></tech>');
+        $response = $this->call('POST', '/api/v1/technologies', [], [], [], [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->token,
+            'CONTENT_TYPE' => 'application/xml',
+        ], '<tech><name>Hacker</name></tech>');
 
         $this->assertContains($response->getStatusCode(), [415, 422, 400]);
     }
 
     public function test_post_with_text_plain_content_type_rejected(): void
     {
-        $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
-            ->withHeader('Content-Type', 'text/plain')
-            ->post('/api/v1/technologies', 'name=Hacker');
+        $response = $this->call('POST', '/api/v1/technologies', [], [], [], [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->token,
+            'CONTENT_TYPE' => 'text/plain',
+        ], 'name=Hacker');
 
         $this->assertContains($response->getStatusCode(), [415, 422, 400]);
     }
 
     public function test_json_endpoint_requires_json_content_type(): void
     {
-        $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
-            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
-            ->post('/api/v1/technologies', [
-                'name' => 'Test',
-                'color' => '#000000',
-            ]);
+        $response = $this->call('POST', '/api/v1/technologies', [
+            'name' => 'Test',
+            'color' => '#000000',
+        ], [], [], [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->token,
+            'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+        ]);
 
         $this->assertContains($response->getStatusCode(), [415, 422]);
     }
@@ -60,12 +63,13 @@ class ContentTypeManipulationTest extends TestCase
 
     public function test_multipart_upload_for_json_endpoint_rejected(): void
     {
-        $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
-            ->withHeader('Content-Type', 'multipart/form-data')
-            ->post('/api/v1/technologies', [
-                'name' => 'Hacker',
-                'color' => '#000000',
-            ]);
+        $response = $this->call('POST', '/api/v1/technologies', [
+            'name' => 'Hacker',
+            'color' => '#000000',
+        ], [], [], [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->token,
+            'CONTENT_TYPE' => 'multipart/form-data',
+        ]);
 
         $this->assertContains($response->getStatusCode(), [415, 422]);
     }
