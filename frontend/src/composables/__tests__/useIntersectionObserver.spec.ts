@@ -1,23 +1,18 @@
+import { describe, it, expect } from 'vitest'
+import { ref } from 'vue'
 import { useIntersectionObserver } from '../useIntersectionObserver'
 
 describe('useIntersectionObserver', () => {
   it('returns expected API', () => {
-    const observer = useIntersectionObserver()
-    expect(typeof observer.observe).toBe('function')
-    expect(typeof observer.unobserve).toBe('function')
-    expect(typeof observer.disconnect).toBe('function')
+    const target = ref<HTMLElement | null>(null)
+    const observer = useIntersectionObserver(target)
+    expect(observer.isIntersecting).toBeDefined()
+    expect(typeof observer.isIntersecting.value).toBe('boolean')
   })
 
-  it('observe and unobserve are callable without error', () => {
-    const observer = useIntersectionObserver()
-    const mockEl = document.createElement('div')
-
-    expect(() => observer.observe(mockEl)).not.toThrow()
-    expect(() => observer.unobserve(mockEl)).not.toThrow()
-  })
-
-  it('disconnect is callable without error', () => {
-    const observer = useIntersectionObserver()
-    expect(() => observer.disconnect()).not.toThrow()
+  it('isIntersecting is false initially', () => {
+    const target = ref<HTMLElement | null>(null)
+    const observer = useIntersectionObserver(target)
+    expect(observer.isIntersecting.value).toBe(false)
   })
 })

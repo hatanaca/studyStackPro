@@ -1,23 +1,26 @@
-import { useTextMeasure } from '../useTextMeasure'
+import { describe, it, expect } from 'vitest'
+import { measureText, useTextLayout } from '../useTextMeasure'
 
 describe('useTextMeasure', () => {
-  it('returns expected API', () => {
-    const measure = useTextMeasure()
-    expect(typeof measure.measureText).toBe('function')
-    expect(typeof measure.getTextWidth).toBe('function')
+  it('measureText returns a result object', () => {
+    const result = measureText('Hello World', '14px Arial', 200, 20)
+    expect(typeof result.height).toBe('number')
+    expect(typeof result.lineCount).toBe('number')
+    expect(result.height).toBeGreaterThanOrEqual(0)
+    expect(result.lineCount).toBeGreaterThanOrEqual(0)
   })
 
-  it('measureText returns a number', () => {
-    const measure = useTextMeasure()
-    const width = measure.measureText('Hello World')
-    expect(typeof width).toBe('number')
-    expect(width).toBeGreaterThanOrEqual(0)
+  it('measureText returns zero for empty text', () => {
+    const result = measureText('', '14px Arial', 200, 20)
+    expect(result.height).toBe(0)
+    expect(result.lineCount).toBe(0)
   })
 
-  it('getTextWidth returns a number', () => {
-    const measure = useTextMeasure()
-    const width = measure.getTextWidth('Test', '14px', 'Arial')
-    expect(typeof width).toBe('number')
-    expect(width).toBeGreaterThanOrEqual(0)
+  it('useTextLayout returns computed refs', () => {
+    const layout = useTextLayout('Hello', '14px Arial', 200, 20)
+    expect(layout.height).toBeDefined()
+    expect(layout.lineCount).toBeDefined()
+    expect(typeof layout.height.value).toBe('number')
+    expect(typeof layout.lineCount.value).toBe('number')
   })
 })

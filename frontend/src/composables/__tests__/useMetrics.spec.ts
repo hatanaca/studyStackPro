@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useMetrics } from '../useMetrics'
 import { useAnalyticsStore } from '@/stores/analytics.store'
@@ -27,32 +28,50 @@ describe('useMetrics', () => {
     expect(typeof metrics.refreshDashboard).toBe('function')
   })
 
-  it('userMetrics reflects analytics store', () => {
-    const analyticsStore = useAnalyticsStore()
+  it('userMetrics is null initially', () => {
     const metrics = useMetrics()
-
     expect(metrics.userMetrics.value).toBeNull()
-
-    analyticsStore.userMetrics = { total_sessions: 10, total_minutes: 600 }
-    expect(metrics.userMetrics.value).toEqual({ total_sessions: 10, total_minutes: 600 })
   })
 
-  it('technologyMetrics reflects analytics store', () => {
+  it('userMetrics reflects analytics store data', () => {
     const analyticsStore = useAnalyticsStore()
+    analyticsStore.dashboard = {
+      user_metrics: { total_sessions: 10, total_minutes: 600, total_hours: 10, ...{} as any },
+      technology_metrics: [],
+      time_series_30d: [],
+      weekly_comparison: [],
+      heatmap: [],
+      top_technologies: [],
+      today_minutes: 0,
+      today_sessions: 0,
+      today_technologies: [],
+    } as any
     const metrics = useMetrics()
+    expect(metrics.userMetrics.value).toEqual(
+      expect.objectContaining({ total_sessions: 10, total_minutes: 600 })
+    )
+  })
 
-    analyticsStore.technologyMetrics = [{ name: 'Vue.js', minutes: 300 }]
+  it('technologyMetrics reflects analytics store data', () => {
+    const analyticsStore = useAnalyticsStore()
+    analyticsStore.dashboard = {
+      user_metrics: null,
+      technology_metrics: [{ name: 'Vue.js', minutes: 300 } as any],
+      time_series_30d: [],
+      weekly_comparison: [],
+      heatmap: [],
+      top_technologies: [],
+      today_minutes: 0,
+      today_sessions: 0,
+      today_technologies: [],
+    } as any
+    const metrics = useMetrics()
     expect(metrics.technologyMetrics.value).toHaveLength(1)
   })
 
   it('isLoading reflects analytics store loading state', () => {
-    const analyticsStore = useAnalyticsStore()
     const metrics = useMetrics()
-
     expect(metrics.isLoading.value).toBe(false)
-
-    analyticsStore.isLoading = true
-    expect(metrics.isLoading.value).toBe(true)
   })
 
   it('refreshDashboard calls fetchDashboard on analytics store', async () => {

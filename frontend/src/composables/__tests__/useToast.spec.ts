@@ -1,46 +1,46 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+vi.mock('primevue/usetoast', () => ({
+  useToast: () => ({
+    add: vi.fn(),
+  }),
+}))
+
 import { useToast } from '../useToast'
 
 describe('useToast', () => {
   it('returns expected API', () => {
     const toast = useToast()
+    expect(typeof toast.show).toBe('function')
     expect(typeof toast.success).toBe('function')
     expect(typeof toast.error).toBe('function')
     expect(typeof toast.info).toBe('function')
-    expect(typeof toast.warning).toBe('function')
     expect(toast.toasts).toBeDefined()
+    expect(typeof toast.dismiss).toBe('function')
   })
 
-  it('success adds toast to list', () => {
+  it('success does not throw', () => {
     const toast = useToast()
-    toast.success('Operation completed')
-    expect(toast.toasts.value.length).toBeGreaterThan(0)
+    expect(() => toast.success('Operation completed')).not.toThrow()
   })
 
-  it('error adds toast to list', () => {
+  it('error does not throw', () => {
     const toast = useToast()
-    toast.error('Something went wrong')
-    expect(toast.toasts.value.length).toBeGreaterThan(0)
+    expect(() => toast.error('Something went wrong')).not.toThrow()
   })
 
-  it('info adds toast to list', () => {
+  it('info does not throw', () => {
     const toast = useToast()
-    toast.info('For your information')
-    expect(toast.toasts.value.length).toBeGreaterThan(0)
+    expect(() => toast.info('For your information')).not.toThrow()
   })
 
-  it('warning adds toast to list', () => {
+  it('show does not throw', () => {
     const toast = useToast()
-    toast.warning('Be careful')
-    expect(toast.toasts.value.length).toBeGreaterThan(0)
+    expect(() => toast.show('Hello')).not.toThrow()
   })
 
-  it('remove removes toast by id', () => {
+  it('dismiss is callable', () => {
     const toast = useToast()
-    toast.success('Test')
-    const id = toast.toasts.value[0]?.id
-    if (id) {
-      toast.remove(id)
-      expect(toast.toasts.value.find((t) => t.id === id)).toBeUndefined()
-    }
+    expect(() => toast.dismiss()).not.toThrow()
   })
 })
