@@ -19,12 +19,12 @@ class LogApiRequestsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->middleware = new LogApiRequests();
+        $this->middleware = new LogApiRequests;
     }
 
     public function test_handle_sets_request_start_attribute(): void
     {
-        $request = new Request();
+        $request = new Request;
         $response = new Response('ok');
 
         $result = $this->middleware->handle($request, function ($req) use ($response) {
@@ -37,7 +37,7 @@ class LogApiRequestsTest extends TestCase
 
     public function test_handle_preserves_response(): void
     {
-        $request = new Request();
+        $request = new Request;
         $expectedResponse = new Response('test body', 201);
 
         $result = $this->middleware->handle($request, function ($req) use ($expectedResponse) {

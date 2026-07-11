@@ -15,7 +15,9 @@ class TechnologyServiceTest extends TestCase
     use RefreshDatabase;
 
     private TechnologyService $service;
+
     private TechnologyRepositoryInterface $repository;
+
     private User $user;
 
     protected function setUp(): void
@@ -34,7 +36,7 @@ class TechnologyServiceTest extends TestCase
 
     public function test_list_for_user_delegates_to_repository(): void
     {
-        $tech = new Technology();
+        $tech = new Technology;
         $tech->setRawAttributes(['name' => 'Laravel']);
         $techs = collect([$tech]);
 
@@ -51,7 +53,7 @@ class TechnologyServiceTest extends TestCase
 
     public function test_search_delegates_to_repository(): void
     {
-        $tech = new Technology();
+        $tech = new Technology;
         $tech->setRawAttributes(['name' => 'Vue.js']);
         $techs = collect([$tech]);
 
@@ -68,7 +70,7 @@ class TechnologyServiceTest extends TestCase
 
     public function test_find_for_user_delegates_to_repository(): void
     {
-        $tech = new Technology();
+        $tech = new Technology;
         $tech->setRawAttributes(['id' => 'tech-1', 'name' => 'Laravel']);
 
         $this->repository

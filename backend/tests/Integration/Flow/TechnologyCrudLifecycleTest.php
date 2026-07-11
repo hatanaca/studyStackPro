@@ -2,7 +2,6 @@
 
 namespace Tests\Integration\Flow;
 
-use App\Models\Technology;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
@@ -14,6 +13,7 @@ class TechnologyCrudLifecycleTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private string $token;
 
     protected function setUp(): void

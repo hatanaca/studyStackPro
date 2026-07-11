@@ -13,8 +13,11 @@ class IDORTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private User $attacker;
+
     private string $userToken;
+
     private string $attackerToken;
 
     protected function setUp(): void

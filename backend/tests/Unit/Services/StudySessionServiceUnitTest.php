@@ -23,7 +23,9 @@ class StudySessionServiceUnitTest extends TestCase
     use RefreshDatabase;
 
     private StudySessionService $service;
+
     private StudySessionRepositoryInterface $repository;
+
     private User $user;
 
     protected function setUp(): void
@@ -87,7 +89,7 @@ class StudySessionServiceUnitTest extends TestCase
 
     public function test_create_dispatches_created_event(): void
     {
-        $session = new StudySession();
+        $session = new StudySession;
         $session->setRawAttributes(['id' => 'session-1', 'user_id' => $this->user->id]);
 
         $this->repository
@@ -118,7 +120,7 @@ class StudySessionServiceUnitTest extends TestCase
         $session->user_id = $this->user->id;
         $session->id = 'session-1';
 
-        $updatedSession = new StudySession();
+        $updatedSession = new StudySession;
         $updatedSession->setRawAttributes(['id' => 'session-1', 'notes' => 'Updated']);
 
         $this->repository
@@ -166,7 +168,7 @@ class StudySessionServiceUnitTest extends TestCase
 
     public function test_get_active_for_user_delegates_to_repository(): void
     {
-        $session = new StudySession();
+        $session = new StudySession;
         $session->setRawAttributes(['id' => 'active-session']);
 
         $this->repository

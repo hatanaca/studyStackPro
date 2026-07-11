@@ -18,7 +18,9 @@ class AuthServiceTest extends TestCase
     use RefreshDatabase;
 
     private AuthService $service;
+
     private AuthRepositoryInterface $repository;
+
     private TokenService $tokenService;
 
     protected function setUp(): void
@@ -54,10 +56,11 @@ class AuthServiceTest extends TestCase
                     && $data['timezone'] === 'America/Sao_Paulo';
             }))
             ->andReturnUsing(function () {
-                $user = new User();
+                $user = new User;
                 $user->id = 'user-1';
                 $user->name = 'Test User';
                 $user->setRawAttributes(['id' => 'user-1', 'name' => 'Test User']);
+
                 return $user;
             });
 
