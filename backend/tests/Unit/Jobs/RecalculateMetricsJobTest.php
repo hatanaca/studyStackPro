@@ -7,6 +7,7 @@ use App\Models\StudySession;
 use App\Models\Technology;
 use App\Models\User;
 use App\Modules\Analytics\Aggregators\MetricsAggregator;
+use App\Modules\Analytics\Services\AnalyticsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -72,7 +73,7 @@ class RecalculateMetricsJobTest extends TestCase
         Event::fake();
 
         $job = new RecalculateMetricsJob($this->user->id);
-        $job->handle(app(MetricsAggregator::class), app(\App\Modules\Analytics\Services\AnalyticsService::class));
+        $job->handle(app(MetricsAggregator::class), app(AnalyticsService::class));
 
         $row = DB::selectOne('SELECT * FROM analytics.user_metrics WHERE user_id = ?::uuid', [$this->user->id]);
         $this->assertNotNull($row);
@@ -86,7 +87,7 @@ class RecalculateMetricsJobTest extends TestCase
         Event::fake();
 
         $job = new RecalculateMetricsJob($this->user->id);
-        $job->handle(app(MetricsAggregator::class), app(\App\Modules\Analytics\Services\AnalyticsService::class));
+        $job->handle(app(MetricsAggregator::class), app(AnalyticsService::class));
 
         $this->assertNull(Cache::tags(['analytics', "analytics:user:{$this->user->id}"])->get('test'));
     }

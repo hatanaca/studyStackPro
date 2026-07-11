@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Model de sessão de estudo.
@@ -13,8 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property int|null $duration_min
  * @property int|null $productivity_score
- * @property \Illuminate\Support\Carbon|null $started_at
- * @property \Illuminate\Support\Carbon|null $ended_at
+ * @property Carbon|null $started_at
+ * @property Carbon|null $ended_at
  */
 class StudySession extends BaseModel
 {

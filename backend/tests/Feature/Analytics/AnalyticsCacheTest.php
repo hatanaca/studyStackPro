@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Analytics;
 
+use App\Events\StudySession\StudySessionCreated;
 use App\Jobs\RecalculateMetricsJob;
 use App\Listeners\StudySession\DispatchMetricsRecalculation;
 use App\Models\StudySession;
@@ -43,7 +44,7 @@ class AnalyticsCacheTest extends TestCase
             'focus_score' => null,
         ]);
 
-        $event = new \App\Events\StudySession\StudySessionCreated($session);
+        $event = new StudySessionCreated($session);
         app(DispatchMetricsRecalculation::class)->handle($event);
 
         Bus::assertDispatched(RecalculateMetricsJob::class, function (RecalculateMetricsJob $job) use ($user) {

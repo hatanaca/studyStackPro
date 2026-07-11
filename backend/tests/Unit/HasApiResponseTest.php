@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Http\Controllers\Controller;
+use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Tests\TestCase;
 
@@ -17,7 +18,7 @@ class HasApiResponseTest extends TestCase
     {
         $controller = new class extends Controller
         {
-            use \App\Traits\HasApiResponse;
+            use HasApiResponse;
 
             public function doSuccess(): JsonResponse
             {
@@ -38,7 +39,7 @@ class HasApiResponseTest extends TestCase
     {
         $controller = new class extends Controller
         {
-            use \App\Traits\HasApiResponse;
+            use HasApiResponse;
 
             public function doCreated(): JsonResponse
             {
@@ -57,7 +58,7 @@ class HasApiResponseTest extends TestCase
     {
         $controller = new class extends Controller
         {
-            use \App\Traits\HasApiResponse;
+            use HasApiResponse;
 
             public function doError(): JsonResponse
             {
@@ -78,7 +79,7 @@ class HasApiResponseTest extends TestCase
     {
         $controller = new class extends Controller
         {
-            use \App\Traits\HasApiResponse;
+            use HasApiResponse;
 
             public function doErrorWithDetails(): JsonResponse
             {

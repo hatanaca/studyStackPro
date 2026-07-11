@@ -2,6 +2,7 @@
 
 namespace App\Modules\Auth\Services;
 
+use Illuminate\Redis\Connections\PhpRedisConnection;
 use Illuminate\Redis\RedisManager;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -44,7 +45,7 @@ class TokenService
         try {
             /** @var RedisManager $redis */
             $redis = app('redis');
-            /** @var \Illuminate\Redis\Connections\PhpRedisConnection $connection */
+            /** @var PhpRedisConnection $connection */
             $connection = $redis->connection();
             $connection->pipeline(function ($pipe) use ($tokenList) {
                 foreach ($tokenList as $token) {

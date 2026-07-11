@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\Analytics\MetricsRecalculated;
 use App\Models\User;
 use App\Modules\Analytics\Aggregators\MetricsAggregator;
 use App\Modules\Analytics\Services\AnalyticsService;
@@ -66,7 +67,7 @@ class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
         Cache::tags(['analytics', "analytics:user:{$this->userId}"])->flush();
         $dashboardData = $analyticsService->getDashboardData($this->userId);
 
-        event(new \App\Events\Analytics\MetricsRecalculated($this->userId, $dashboardData));
+        event(new MetricsRecalculated($this->userId, $dashboardData));
     }
 
     /** Callback de falha: log para debug */

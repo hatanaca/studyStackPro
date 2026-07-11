@@ -1,9 +1,15 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use App\Providers\EventServiceProvider;
+use App\Providers\RedisScriptServiceProvider;
+use App\Providers\RepositoryServiceProvider;
+use App\Providers\YouTubeServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\EventServiceProvider::class,
-    App\Providers\RepositoryServiceProvider::class,
-    App\Providers\RedisScriptServiceProvider::class,
-    App\Providers\YouTubeServiceProvider::class,
+    AppServiceProvider::class,
+    EventServiceProvider::class,
+    RepositoryServiceProvider::class,
+    RedisScriptServiceProvider::class,
+    YouTubeServiceProvider::class,
 ];

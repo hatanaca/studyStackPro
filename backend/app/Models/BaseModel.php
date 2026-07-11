@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HasUuid;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -24,6 +25,6 @@ abstract class BaseModel extends Model
     /** Serializa datas em ISO8601 para JSON */
     protected function serializeDate(\DateTimeInterface $date): string
     {
-        return \Carbon\Carbon::instance($date)->toIso8601String();
+        return Carbon::instance($date)->toIso8601String();
     }
 }

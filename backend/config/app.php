@@ -1,6 +1,28 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use App\Providers\YouTubeServiceProvider;
+use Illuminate\Auth\AuthServiceProvider;
+use Illuminate\Broadcasting\BroadcastServiceProvider;
+use Illuminate\Bus\BusServiceProvider;
+use Illuminate\Cache\CacheServiceProvider;
+use Illuminate\Cookie\CookieServiceProvider;
+use Illuminate\Database\DatabaseServiceProvider;
+use Illuminate\Encryption\EncryptionServiceProvider;
+use Illuminate\Filesystem\FilesystemServiceProvider;
+use Illuminate\Foundation\Providers\ConsoleSupportServiceProvider;
+use Illuminate\Foundation\Providers\FoundationServiceProvider;
+use Illuminate\Hashing\HashServiceProvider;
+use Illuminate\Queue\QueueServiceProvider;
+use Illuminate\Redis\RedisServiceProvider;
+use Illuminate\Session\SessionServiceProvider;
 use Illuminate\Support\Facades\Facade;
+use Illuminate\Translation\TranslationServiceProvider;
+use Illuminate\Validation\ValidationServiceProvider;
+use Illuminate\View\ViewServiceProvider;
+use Laravel\Horizon\HorizonServiceProvider;
+use Laravel\Reverb\ReverbServiceProvider;
+use Laravel\Sanctum\SanctumServiceProvider;
 
 return [
     'name' => env('APP_NAME', 'StudyTrackPro'),
@@ -20,28 +42,28 @@ return [
     'horizon_allowed_ips' => env('HORIZON_ALLOWED_IPS', ''),
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
     'providers' => [
-        Illuminate\Auth\AuthServiceProvider::class,
-        Illuminate\Broadcasting\BroadcastServiceProvider::class,
-        Illuminate\Cookie\CookieServiceProvider::class,
-        Illuminate\Hashing\HashServiceProvider::class,
-        Illuminate\Bus\BusServiceProvider::class,
-        Illuminate\Cache\CacheServiceProvider::class,
-        Illuminate\Foundation\Providers\ConsoleSupportServiceProvider::class,
-        Illuminate\Database\DatabaseServiceProvider::class,
-        Illuminate\Encryption\EncryptionServiceProvider::class,
-        Illuminate\Filesystem\FilesystemServiceProvider::class,
-        Illuminate\Foundation\Providers\FoundationServiceProvider::class,
-        Illuminate\Queue\QueueServiceProvider::class,
-        Illuminate\Redis\RedisServiceProvider::class,
-        Illuminate\Session\SessionServiceProvider::class,
-        Illuminate\Translation\TranslationServiceProvider::class,
-        Illuminate\Validation\ValidationServiceProvider::class,
-        Illuminate\View\ViewServiceProvider::class,
-        App\Providers\AppServiceProvider::class,
-        App\Providers\YouTubeServiceProvider::class,
-        Laravel\Sanctum\SanctumServiceProvider::class,
-        Laravel\Reverb\ReverbServiceProvider::class,
-        Laravel\Horizon\HorizonServiceProvider::class,
+        AuthServiceProvider::class,
+        BroadcastServiceProvider::class,
+        CookieServiceProvider::class,
+        HashServiceProvider::class,
+        BusServiceProvider::class,
+        CacheServiceProvider::class,
+        ConsoleSupportServiceProvider::class,
+        DatabaseServiceProvider::class,
+        EncryptionServiceProvider::class,
+        FilesystemServiceProvider::class,
+        FoundationServiceProvider::class,
+        QueueServiceProvider::class,
+        RedisServiceProvider::class,
+        SessionServiceProvider::class,
+        TranslationServiceProvider::class,
+        ValidationServiceProvider::class,
+        ViewServiceProvider::class,
+        AppServiceProvider::class,
+        YouTubeServiceProvider::class,
+        SanctumServiceProvider::class,
+        ReverbServiceProvider::class,
+        HorizonServiceProvider::class,
     ],
     'aliases' => Facade::defaultAliases()->merge([])->toArray(),
 ];

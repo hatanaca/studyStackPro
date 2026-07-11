@@ -5,6 +5,7 @@ namespace App\Modules\Analytics\Services;
 use App\Jobs\RecalculateMetricsJob;
 use App\Modules\Analytics\Repositories\Contracts\AnalyticsRepositoryInterface;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 /**
  * Serviço de analytics e métricas.
@@ -118,7 +119,7 @@ class AnalyticsService
         $job->onQueue('metrics');
         dispatch($job);
 
-        return ['job_id' => method_exists($job, 'uuid') && $job->uuid() ? $job->uuid() : \Illuminate\Support\Str::uuid()->toString()];
+        return ['job_id' => method_exists($job, 'uuid') && $job->uuid() ? $job->uuid() : Str::uuid()->toString()];
     }
 
     /**

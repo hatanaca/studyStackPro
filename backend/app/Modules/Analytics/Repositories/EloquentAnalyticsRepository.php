@@ -3,6 +3,7 @@
 namespace App\Modules\Analytics\Repositories;
 
 use App\Modules\Analytics\Repositories\Contracts\AnalyticsRepositoryInterface;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -42,7 +43,7 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
             'max_streak_days' => (int) ($row->max_streak_days ?? 0),
             'avg_mood' => $row->avg_mood !== null ? (float) $row->avg_mood : null,
             'avg_focus_score' => $row->avg_focus_score !== null ? (float) $row->avg_focus_score : null,
-            'last_session_at' => $row->last_session_at ? \Carbon\Carbon::parse($row->last_session_at)->toIso8601String() : null,
+            'last_session_at' => $row->last_session_at ? Carbon::parse($row->last_session_at)->toIso8601String() : null,
         ];
     }
 
@@ -80,7 +81,7 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
             'session_count' => (int) $r->session_count,
             'avg_session_min' => (float) ($r->avg_session_min ?? 0),
             'percentage_total' => (float) ($r->percentage_total ?? 0),
-            'last_studied_at' => $r->last_studied_at ? \Carbon\Carbon::parse($r->last_studied_at)->toIso8601String() : null,
+            'last_studied_at' => $r->last_studied_at ? Carbon::parse($r->last_studied_at)->toIso8601String() : null,
         ])->all();
     }
 

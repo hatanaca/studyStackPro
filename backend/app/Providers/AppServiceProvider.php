@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Exceptions\Handler;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Horizon\Horizon;
 use SocialiteProviders\Discord\DiscordExtendSocialite;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 
@@ -17,7 +19,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(ExceptionHandler::class, \App\Exceptions\Handler::class);
+        $this->app->singleton(ExceptionHandler::class, Handler::class);
     }
 
     public function boot(): void
@@ -54,8 +56,8 @@ class AppServiceProvider extends ServiceProvider
             database_path('migrations/analytics'),
         ]);
 
-        if (class_exists(\Laravel\Horizon\Horizon::class)) {
-            \Laravel\Horizon\Horizon::auth(function ($request) {
+        if (class_exists(Horizon::class)) {
+            Horizon::auth(function ($request) {
                 $allowedIps = array_filter(array_map('trim', explode(',', (string) config('app.horizon_allowed_ips', ''))));
                 if ($allowedIps !== [] && ! in_array($request->ip(), $allowedIps, true)) {
                     return false;

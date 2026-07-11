@@ -2,7 +2,6 @@
 
 namespace Tests\Integration\Flow;
 
-use App\Models\StudySession;
 use App\Models\Technology;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -13,7 +12,9 @@ class ConcurrentSessionTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Technology $tech;
+
     private string $token;
 
     protected function setUp(): void

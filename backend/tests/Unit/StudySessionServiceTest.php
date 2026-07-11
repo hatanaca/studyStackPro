@@ -12,6 +12,7 @@ use App\Modules\StudySessions\DTOs\StudySessionDTO;
 use App\Modules\StudySessions\DTOs\StudySessionFilterDTO;
 use App\Modules\StudySessions\Services\StudySessionService;
 use Carbon\Carbon;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
@@ -138,7 +139,7 @@ class StudySessionServiceTest extends TestCase
             'technology_id' => $otherTech->id,
         ]);
 
-        $this->expectException(\Illuminate\Auth\Access\AuthorizationException::class);
+        $this->expectException(AuthorizationException::class);
 
         $this->service->findForUser($session->id, $this->user->id);
     }
@@ -176,7 +177,7 @@ class StudySessionServiceTest extends TestCase
             title: 'X',
         );
 
-        $this->expectException(\Illuminate\Auth\Access\AuthorizationException::class);
+        $this->expectException(AuthorizationException::class);
 
         $this->service->create($this->user->id, $dto);
     }

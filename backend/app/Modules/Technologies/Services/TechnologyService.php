@@ -2,8 +2,10 @@
 
 namespace App\Modules\Technologies\Services;
 
+use App\Models\Technology;
 use App\Modules\Technologies\DTOs\TechnologyDTO;
 use App\Modules\Technologies\Repositories\Contracts\TechnologyRepositoryInterface;
+use Illuminate\Support\Collection;
 
 /**
  * Serviço de tecnologias.
@@ -20,7 +22,7 @@ class TechnologyService
     /**
      * Lista tecnologias ativas do usuário.
      */
-    public function listForUser(string $userId): \Illuminate\Support\Collection
+    public function listForUser(string $userId): Collection
     {
         return $this->repository->listForUser($userId);
     }
@@ -28,7 +30,7 @@ class TechnologyService
     /**
      * Busca por nome (ILIKE) com limite. Usado em autocomplete.
      */
-    public function search(string $userId, string $query, int $limit = 10): \Illuminate\Support\Collection
+    public function search(string $userId, string $query, int $limit = 10): Collection
     {
         return $this->repository->search($userId, $query, $limit);
     }
@@ -36,7 +38,7 @@ class TechnologyService
     /**
      * Busca tecnologia por ID/UUID. Garante que pertence ao usuário.
      */
-    public function findForUser(string $id, string $userId): \App\Models\Technology
+    public function findForUser(string $id, string $userId): Technology
     {
         return $this->repository->findForUser($id, $userId);
     }
@@ -44,7 +46,7 @@ class TechnologyService
     /**
      * Cria tecnologia a partir de array validado. Converte para TechnologyDTO.
      */
-    public function create(string $userId, array $data): \App\Models\Technology
+    public function create(string $userId, array $data): Technology
     {
         $dto = new TechnologyDTO(
             userId: $userId,
@@ -60,7 +62,7 @@ class TechnologyService
     /**
      * Atualiza tecnologia existente.
      */
-    public function update(string $id, string $userId, array $data): \App\Models\Technology
+    public function update(string $id, string $userId, array $data): Technology
     {
         $tech = $this->repository->findForUser($id, $userId);
 

@@ -92,7 +92,7 @@ class StudySessionFilterDTOTest extends TestCase
 
     public function test_constructor_defaults(): void
     {
-        $dto = new StudySessionFilterDTO();
+        $dto = new StudySessionFilterDTO;
 
         $this->assertNull($dto->technologyId);
         $this->assertNull($dto->dateFrom);
@@ -105,7 +105,7 @@ class StudySessionFilterDTOTest extends TestCase
 
     public function test_to_array_always_contains_per_page(): void
     {
-        $dto = new StudySessionFilterDTO();
+        $dto = new StudySessionFilterDTO;
         $arr = $dto->toArray();
 
         $this->assertArrayHasKey('per_page', $arr);
