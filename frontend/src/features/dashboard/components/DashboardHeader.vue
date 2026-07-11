@@ -190,8 +190,13 @@ async function handleRefresh() {
   }
 }
 @media (max-width: 640px) {
+  .dashboard-header {
+    padding: var(--spacing-md);
+    gap: var(--spacing-md);
+  }
   .dashboard-header__summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
   }
   .dashboard-header__title {
     font-size: var(--text-lg);

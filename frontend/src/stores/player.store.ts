@@ -125,6 +125,17 @@ export const usePlayerStore = defineStore('player', () => {
       searchError.value = e?.response?.data?.error?.message ?? 'Falha ao buscar'
     } finally { searching.value = false; persist() }
   }
+  async function loadMoreResults() {
+    if (!searchNextPageToken.value || searching.value || !searchQuery.value) return
+    searching.value = true
+    try {
+      const r = await youtubeApi.search(searchQuery.value, searchNextPageToken.value, 20)
+      const newItems = r.data.data?.items ?? []
+      searchResults.value = [...searchResults.value, ...newItems]
+      searchNextPageToken.value = r.data.data?.nextPageToken ?? null
+    } catch { /* silent */ }
+    finally { searching.value = false; persist() }
+  }
   function playSearchResult(i: number) {
     if (i >= 0 && i < searchResults.value.length) { videoIndex.value = i; isPlaying.value = true; isExpanded.value = true; persist() }
   }
@@ -201,7 +212,7 @@ export const usePlayerStore = defineStore('player', () => {
     mode, selectedPlaylist, videoIndex, isPlaying, isExpanded,
     isShuffled, repeatMode, volume, currentTime, duration, progress,
     currentPlaylistId, currentVideoId, currentTrack, hasContent,
-    fetchPlaylists, selectPlaylist, searchVideos, playSearchResult,
+    fetchPlaylists, selectPlaylist, searchVideos, loadMoreResults, playSearchResult,
     addToFavorites, removeFavorite, selectFavorite, isFavorite,
     switchMode, nextVideo, prevVideo, togglePlay, toggleExpand,
     toggleShuffle, cycleRepeat, setVolume, clearPlaylist, persist,

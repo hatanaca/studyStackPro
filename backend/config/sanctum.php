@@ -1,5 +1,9 @@
 <?php
 
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Laravel\Sanctum\Http\Middleware\AuthenticateSession;
+
 $sanctumExpiration = env('SANCTUM_EXPIRATION');
 
 return [
@@ -16,8 +20,8 @@ return [
     /** Minutos até expirar tokens Sanctum (defina SANCTUM_EXPIRATION vazio para manter 1440). */
     'expiration' => $sanctumExpiration !== null && $sanctumExpiration !== '' ? (int) $sanctumExpiration : 1440,
     'middleware' => [
-        'authenticate_session' => Laravel\Sanctum\Http\Middleware\AuthenticateSession::class,
-        'encrypt_cookies' => Illuminate\Cookie\Middleware\EncryptCookies::class,
-        'validate_csrf_token' => Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+        'authenticate_session' => AuthenticateSession::class,
+        'encrypt_cookies' => EncryptCookies::class,
+        'validate_csrf_token' => ValidateCsrfToken::class,
     ],
 ];

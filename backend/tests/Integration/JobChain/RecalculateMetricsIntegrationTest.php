@@ -7,6 +7,7 @@ use App\Models\StudySession;
 use App\Models\Technology;
 use App\Models\User;
 use App\Modules\Analytics\Aggregators\MetricsAggregator;
+use App\Modules\Analytics\Services\AnalyticsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -55,7 +56,7 @@ class RecalculateMetricsIntegrationTest extends TestCase
         ]);
 
         $job = new RecalculateMetricsJob($this->user->id);
-        $job->handle(app(MetricsAggregator::class), app(\App\Modules\Analytics\Services\AnalyticsService::class));
+        $job->handle(app(MetricsAggregator::class), app(AnalyticsService::class));
 
         $row = DB::selectOne('SELECT * FROM analytics.user_metrics WHERE user_id = ?::uuid', [$this->user->id]);
         $this->assertNotNull($row);
@@ -75,7 +76,7 @@ class RecalculateMetricsIntegrationTest extends TestCase
         ]);
 
         $job = new RecalculateMetricsJob($this->user->id);
-        $job->handle(app(MetricsAggregator::class), app(\App\Modules\Analytics\Services\AnalyticsService::class));
+        $job->handle(app(MetricsAggregator::class), app(AnalyticsService::class));
 
         $row = DB::selectOne(
             'SELECT * FROM analytics.technology_metrics WHERE user_id = ?::uuid AND technology_id = ?::uuid',
@@ -96,7 +97,7 @@ class RecalculateMetricsIntegrationTest extends TestCase
         ]);
 
         $job = new RecalculateMetricsJob($this->user->id);
-        $job->handle(app(MetricsAggregator::class), app(\App\Modules\Analytics\Services\AnalyticsService::class));
+        $job->handle(app(MetricsAggregator::class), app(AnalyticsService::class));
 
         $rows = DB::select('SELECT * FROM analytics.daily_minutes WHERE user_id = ?::uuid', [$this->user->id]);
         $this->assertNotEmpty($rows);
@@ -114,7 +115,7 @@ class RecalculateMetricsIntegrationTest extends TestCase
 
         $job = new RecalculateMetricsJob($this->user->id);
         $aggregator = app(MetricsAggregator::class);
-        $analyticsService = app(\App\Modules\Analytics\Services\AnalyticsService::class);
+        $analyticsService = app(AnalyticsService::class);
 
         $job->handle($aggregator, $analyticsService);
         $row1 = DB::selectOne('SELECT total_sessions FROM analytics.user_metrics WHERE user_id = ?::uuid', [$this->user->id]);

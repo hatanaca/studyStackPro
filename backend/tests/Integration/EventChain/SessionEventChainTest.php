@@ -123,7 +123,7 @@ class SessionEventChainTest extends TestCase
             'id' => $sessionId,
         ]);
 
-        $sessionInDb = \App\Models\StudySession::find($sessionId);
+        $sessionInDb = StudySession::find($sessionId);
         $this->assertNotNull($sessionInDb->duration_min);
         $this->assertGreaterThan(0, $sessionInDb->duration_min);
     }

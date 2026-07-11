@@ -141,4 +141,26 @@ const breadcrumbModel = computed(() => {
 .settings-layout__body {
   min-height: 12rem;
 }
+
+@media (max-width: 640px) {
+  .settings-layout__tabs {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .settings-layout__tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .settings-layout__tab {
+    scroll-snap-align: start;
+    white-space: nowrap;
+    font-size: var(--text-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+  .settings-layout__title {
+    font-size: var(--text-lg);
+  }
+}
 </style>

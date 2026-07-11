@@ -28,23 +28,23 @@ defineProps<{
 .cp {
   position: relative;
   background: linear-gradient(135deg,
-    rgba(8, 8, 14, 0.95) 0%,
-    rgba(12, 10, 20, 0.9) 100%
+    color-mix(in srgb, var(--color-bg-card) 95%, transparent) 0%,
+    color-mix(in srgb, var(--color-bg-soft) 90%, transparent) 100%
   );
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(139, 92, 246, 0.08);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 8%, transparent);
   border-radius: var(--radius-xl);
   padding: var(--spacing-lg);
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .cp:hover {
-  border-color: rgba(139, 92, 246, 0.2);
+  border-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
   box-shadow:
-    0 0 0 1px rgba(139, 92, 246, 0.04),
-    0 4px 24px rgba(0, 0, 0, 0.3),
-    0 1px 4px rgba(139, 92, 246, 0.06);
+    0 0 0 1px color-mix(in srgb, var(--color-primary) 4%, transparent),
+    0 4px 24px color-mix(in srgb, var(--color-bg) 30%, transparent),
+    0 1px 4px color-mix(in srgb, var(--color-primary) 6%, transparent);
   transform: translateY(-2px);
 }
 
@@ -55,7 +55,7 @@ defineProps<{
   right: -20%;
   width: 50%;
   height: 120%;
-  background: radial-gradient(ellipse, rgba(139, 92, 246, 0.04) 0%, transparent 70%);
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--color-primary) 4%, transparent) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;

@@ -1,27 +1,4 @@
 <script setup lang="ts">
-/**
- * @module CanvasToolbar
- * @description Barra de ferramentas do editor de canvas.
- *
- * Exibe grupo de ferramentas (seleção, desenho, formas, texto, destaque, nota adesiva),
- * seletores de cores (preenchimento e contorno), controle de espessura, zoom,
- * e botões de ação (undo, redo, imagem, excluir, exportar).
- *
- * @emits tool - Quando uma ferramenta de seleção/desenho é ativada
- * @emits undo - Solicita desfazer a última ação
- * @emits redo - Solicita refazer a ação desfeita
- * @emits zoomIn - Solicita aumento do zoom
- * @emits zoomOut - Solicita diminuição do zoom
- * @emits zoomReset - Solicita reset do zoom para 100%
- * @emits export - Solicita abertura do diálogo de exportação
- * @emits addImage - Solicita seleção de arquivo de imagem
- * @emits clear - Solicita limpeza total do canvas
- * @emits addShape - Solicita adição de uma forma geométrica
- * @emits addText - Solicita adição de um objeto de texto
- * @emits addSticky - Solicita adição de uma nota adesiva
- * @emits addHighlight - Solicita adição de um marcador de destaque
- * @emits delete - Solicita exclusão dos objetos selecionados
- */
 import { useCanvasStore } from '../store/canvas.store'
 import type { CanvasTool } from '../types/canvas.types'
 
@@ -44,7 +21,6 @@ const emit = defineEmits<{
   delete: []
 }>()
 
-/** Lista de ferramentas disponíveis na toolbar com ícones e rótulos */
 const tools: { tool: CanvasTool; icon: string; label: string }[] = [
   { tool: 'select', icon: '⊹', label: 'Selecionar' },
   { tool: 'pencil', icon: '✏', label: 'Pincel' },
@@ -59,207 +35,221 @@ const tools: { tool: CanvasTool; icon: string; label: string }[] = [
   { tool: 'sticky', icon: '◻', label: 'Nota Adesiva' },
 ]
 
-/**
- * @description Processa a seleção de uma ferramenta e emite o evento correspondente.
- *
- * Redireciona para o emit adequado conforme o tipo de ferramenta:
- * formas, textos, notas adesivas e destaques são emitidos como eventos separados.
- *
- * @param tool - Ferramenta selecionada pelo usuário
- */
 function selectTool(tool: CanvasTool) {
-  if (tool === 'highlight') {
-    emit('addHighlight')
-  } else if (tool === 'sticky') {
-    emit('addSticky')
-  } else if (tool === 'rect' || tool === 'circle' || tool === 'triangle' || tool === 'line') {
-    emit('addShape', tool)
-  } else if (tool === 'text') {
-    emit('addText', 'text')
-  } else if (tool === 'textbox') {
-    emit('addText', 'textbox')
-  } else {
-    emit('tool', tool)
-  }
+  if (tool === 'highlight') emit('addHighlight')
+  else if (tool === 'sticky') emit('addSticky')
+  else if (['rect', 'circle', 'triangle', 'line'].includes(tool)) emit('addShape', tool)
+  else if (tool === 'text') emit('addText', 'text')
+  else if (tool === 'textbox') emit('addText', 'textbox')
+  else emit('tool', tool)
 }
 </script>
 
 <template>
-  <div class="canvas-toolbar">
-    <div class="canvas-toolbar__group">
-      <span class="canvas-toolbar__label">Ferramentas</span>
-      <div class="canvas-toolbar__tools">
-        <button
-          v-for="t in tools"
-          :key="t.tool"
-          :class="['canvas-toolbar__btn', { 'canvas-toolbar__btn--active': store.activeTool === t.tool }]"
-          :title="t.label"
-          @click="selectTool(t.tool)"
-        >
-          <span class="canvas-toolbar__icon">{{ t.icon }}</span>
-        </button>
+  <div class="ct">
+    <!-- Ferramentas de desenho -->
+    <div class="ct__section">
+      <button
+        v-for="t in tools"
+        :key="t.tool"
+        :class="['ct__btn', { 'ct__btn--on': store.activeTool === t.tool }]"
+        :title="t.label"
+        @click="selectTool(t.tool)"
+      >
+        {{ t.icon }}
+      </button>
+    </div>
+
+    <div class="ct__div" />
+
+    <!-- Cores -->
+    <div class="ct__section ct__section--colors">
+      <label class="ct__swatch" title="Preenchimento">
+        <input
+          type="color"
+          :value="store.fillColor"
+          class="ct__swatch-input"
+          @input="store.fillColor = ($event.target as HTMLInputElement).value"
+        />
+        <span class="ct__swatch-fill" :style="{ background: store.fillColor }" />
+      </label>
+      <label class="ct__swatch" title="Contorno">
+        <input
+          type="color"
+          :value="store.strokeColor"
+          class="ct__swatch-input"
+          @input="store.strokeColor = ($event.target as HTMLInputElement).value"
+        />
+        <span class="ct__swatch-fill" :style="{ background: store.strokeColor }" />
+      </label>
+      <div class="ct__slider" title="Espessura do contorno">
+        <input
+          type="range"
+          :value="store.strokeWidth"
+          min="1"
+          max="20"
+          class="ct__range"
+          @input="store.strokeWidth = Number(($event.target as HTMLInputElement).value)"
+        />
       </div>
     </div>
 
-    <div class="canvas-toolbar__separator" />
+    <div class="ct__div" />
 
-    <div class="canvas-toolbar__group">
-      <span class="canvas-toolbar__label">Cores</span>
-      <div class="canvas-toolbar__colors">
-        <label class="canvas-toolbar__color-label" title="Cor de preenchimento">
-          <span class="canvas-toolbar__color-text">Preench.</span>
-          <input
-            type="color"
-            :value="store.fillColor"
-            class="canvas-toolbar__color-input"
-            @input="store.fillColor = ($event.target as HTMLInputElement).value"
-          />
-        </label>
-        <label class="canvas-toolbar__color-label" title="Cor do contorno">
-          <span class="canvas-toolbar__color-text">Contorno</span>
-          <input
-            type="color"
-            :value="store.strokeColor"
-            class="canvas-toolbar__color-input"
-            @input="store.strokeColor = ($event.target as HTMLInputElement).value"
-          />
-        </label>
-        <label class="canvas-toolbar__size-label" title="Espessura">
-          <span class="canvas-toolbar__size-text">Tamanho</span>
-          <input
-            type="range"
-            :value="store.strokeWidth"
-            min="1"
-            max="20"
-            class="canvas-toolbar__size-input"
-            @input="store.strokeWidth = Number(($event.target as HTMLInputElement).value)"
-          />
-        </label>
-      </div>
+    <!-- Zoom -->
+    <div class="ct__section">
+      <button class="ct__btn" title="Zoom −" @click="emit('zoomOut')">−</button>
+      <span class="ct__zoom" title="Resetar zoom" @click="emit('zoomReset')">{{ store.zoom }}%</span>
+      <button class="ct__btn" title="Zoom +" @click="emit('zoomIn')">+</button>
     </div>
 
-    <div class="canvas-toolbar__separator" />
+    <div class="ct__div" />
 
-    <div class="canvas-toolbar__group">
-      <span class="canvas-toolbar__label">Zoom</span>
-      <div class="canvas-toolbar__zoom">
-        <button class="canvas-toolbar__btn" title="Zoom −" @click="emit('zoomOut')">−</button>
-        <button class="canvas-toolbar__btn canvas-toolbar__zoom-value" title="Resetar zoom" @click="emit('zoomReset')">
-          {{ store.zoom }}%
-        </button>
-        <button class="canvas-toolbar__btn" title="Zoom +" @click="emit('zoomIn')">+</button>
-      </div>
-    </div>
-
-    <div class="canvas-toolbar__separator" />
-
-    <div class="canvas-toolbar__group">
-      <span class="canvas-toolbar__label">Ações</span>
-      <div class="canvas-toolbar__actions">
-        <button class="canvas-toolbar__btn" :disabled="!store.canUndo" title="Desfazer (Ctrl+Z)" @click="emit('undo')">↩</button>
-        <button class="canvas-toolbar__btn" :disabled="!store.canRedo" title="Refazer (Ctrl+Y)" @click="emit('redo')">↪</button>
-        <button class="canvas-toolbar__btn" title="Adicionar imagem" @click="emit('addImage')">🖼</button>
-        <button class="canvas-toolbar__btn" title="Excluir seleção" @click="emit('delete')">🗑</button>
-        <button class="canvas-toolbar__btn" title="Exportar" @click="emit('export')">💾</button>
-      </div>
+    <!-- Ações -->
+    <div class="ct__section">
+      <button class="ct__btn" :disabled="!store.canUndo" title="Desfazer (Ctrl+Z)" @click="emit('undo')">↩</button>
+      <button class="ct__btn" :disabled="!store.canRedo" title="Refazer (Ctrl+Y)" @click="emit('redo')">↪</button>
+      <button class="ct__btn" title="Imagem" @click="emit('addImage')">🖼</button>
+      <button class="ct__btn" title="Excluir" @click="emit('delete')">🗑</button>
+      <button class="ct__btn" title="Exportar" @click="emit('export')">💾</button>
     </div>
   </div>
 </template>
 
 <style scoped>
-.canvas-toolbar {
+.ct {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-xs) var(--spacing-sm);
+  gap: 6px;
+  padding: 6px 12px;
   background: var(--color-bg-card);
   border-bottom: 1px solid var(--color-border);
-  flex-wrap: wrap;
-  min-height: 3rem;
+  height: 40px;
+  box-sizing: border-box;
 }
-.canvas-toolbar__group {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-}
-.canvas-toolbar__label {
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  font-weight: 500;
-  white-space: nowrap;
-}
-.canvas-toolbar__tools,
-.canvas-toolbar__colors,
-.canvas-toolbar__zoom,
-.canvas-toolbar__actions {
+
+.ct__section {
   display: flex;
   align-items: center;
   gap: 2px;
 }
-.canvas-toolbar__separator {
-  width: 1px;
-  height: 1.5rem;
-  background: var(--color-border);
+
+.ct__section--colors {
+  gap: 8px;
 }
-.canvas-toolbar__btn {
+
+.ct__div {
+  width: 1px;
+  height: 20px;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+/* Botões de ferramenta */
+.ct__btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 30px;
+  height: 30px;
   padding: 0;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border: none;
+  border-radius: 6px;
   background: transparent;
   color: var(--color-text);
   cursor: pointer;
-  font-size: var(--text-sm);
-  transition: all var(--duration-fast) ease;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: background 0.12s, color 0.12s;
 }
-.canvas-toolbar__btn:hover:not(:disabled) {
+
+.ct__btn:hover:not(:disabled) {
   background: var(--color-bg-soft);
-  border-color: var(--color-border);
 }
-.canvas-toolbar__btn--active {
-  background: var(--color-primary-soft) !important;
-  color: var(--color-primary) !important;
-  border-color: var(--color-primary) !important;
+
+.ct__btn--on {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
 }
-.canvas-toolbar__btn:disabled {
-  opacity: 0.4;
+
+.ct__btn:disabled {
+  opacity: 0.3;
   cursor: not-allowed;
 }
-.canvas-toolbar__icon {
-  font-size: 1rem;
+
+/* Swatches de cor */
+.ct__swatch {
+  position: relative;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  flex-shrink: 0;
 }
-.canvas-toolbar__color-label {
+
+.ct__swatch-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ct__swatch-fill {
+  display: block;
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  border: 1px solid var(--color-border);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: transform 0.12s, box-shadow 0.12s;
+  pointer-events: none;
+}
+
+.ct__swatch:hover .ct__swatch-fill {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+/* Slider de espessura */
+.ct__slider {
   display: flex;
   align-items: center;
-  gap: var(--spacing-2xs);
+}
+
+.ct__range {
+  width: 60px;
+  height: 4px;
+  accent-color: var(--color-primary);
   cursor: pointer;
 }
-.canvas-toolbar__color-text,
-.canvas-toolbar__size-text {
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-}
-.canvas-toolbar__color-input {
-  width: 1.5rem;
-  height: 1.5rem;
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-}
-.canvas-toolbar__size-input {
-  width: 4rem;
-  height: 1.5rem;
-}
-.canvas-toolbar__zoom-value {
-  width: auto;
-  padding: 0 var(--spacing-xs);
-  font-size: var(--text-xs);
+
+/* Zoom */
+.ct__zoom {
+  font-size: 11px;
   font-weight: 600;
+  color: var(--color-text-muted);
+  min-width: 36px;
+  text-align: center;
   cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: background 0.12s;
+  user-select: none;
+}
+
+.ct__zoom:hover {
+  background: var(--color-bg-soft);
+}
+
+@media (max-width: 640px) {
+  .ct { flex-wrap: wrap; gap: 6px; padding: 6px 10px; height: auto; min-height: 40px; }
+  .ct__section { gap: 2px; }
+  .ct__section--colors { gap: 8px; }
+  .ct__btn { width: 36px; height: 36px; font-size: 14px; }
+  .ct__swatch { width: 20px; height: 20px; }
+  .ct__swatch-fill { width: 20px; height: 20px; }
+  .ct__range { width: 52px; }
+  .ct__div { display: none; }
 }
 </style>

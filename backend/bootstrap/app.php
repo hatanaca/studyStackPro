@@ -12,9 +12,14 @@ if (! defined('SIGTSTP')) {
     define('SIGTSTP', 20);
 }
 
+use App\Http\Middleware\EnsureJsonResponse;
+use App\Http\Middleware\LogApiRequests;
+use App\Http\Middleware\SetUserTimezone;
+use App\Http\Middleware\SlidingWindowRateLimit;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use SocialiteProviders\Manager\ServiceProvider;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -25,11 +30,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withProviders([
-        \SocialiteProviders\Manager\ServiceProvider::class,
+        ServiceProvider::class,
     ])
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            'throttle.sliding' => \App\Http\Middleware\SlidingWindowRateLimit::class,
+            'throttle.sliding' => SlidingWindowRateLimit::class,
         ]);
 
         $middleware->statefulApi();
@@ -56,11 +61,11 @@ return Application::configure(basePath: dirname(__DIR__))
         }
 
         $middleware->api(prepend: [
-            \App\Http\Middleware\EnsureJsonResponse::class,
+            EnsureJsonResponse::class,
         ]);
         $middleware->api(append: [
-            \App\Http\Middleware\SetUserTimezone::class,
-            \App\Http\Middleware\LogApiRequests::class,
+            SetUserTimezone::class,
+            LogApiRequests::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

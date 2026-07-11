@@ -40,7 +40,7 @@ const labels = computed(() =>
 
 const total = computed(() => chartSeries.value.reduce((a, b) => a + b, 0))
 
-const chartOptions = computed<ApexOptions>(() => {
+const chartOptions = computed(() => {
   const colors = props.colors.length ? props.colors : palette.value
   const t = theme.value
   return {
@@ -89,7 +89,7 @@ const chartOptions = computed<ApexOptions>(() => {
     },
     dataLabels: {
       enabled: props.showDataLabels,
-      formatter: (val: number, opts: { w?: { globals?: { seriesTotals?: number[] } } }) => {
+      formatter: (val: number, opts: { w?: { globals?: { seriesTotals?: number[] } } } = {}) => {
         const w = opts?.w
         const sum = w?.globals?.seriesTotals?.reduce((a, b) => a + b, 0) ?? total.value
         const pct = sum ? (Number(val) / sum) * 100 : 0
@@ -181,7 +181,7 @@ const chartOptions = computed<ApexOptions>(() => {
         },
       },
     ],
-  }
+  } as ApexOptions
 })
 </script>
 

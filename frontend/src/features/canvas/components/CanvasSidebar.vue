@@ -30,8 +30,8 @@ const hasSelection = computed(() => store.hasSelection)
 
 watch(() => store.selectedObject, (obj) => {
   if (!obj) return
-  fillColor.value = obj.fill || '#fafafa'
-  strokeColor.value = obj.stroke || '#fafafa'
+  fillColor.value = obj.fill || '#000000'
+  strokeColor.value = obj.stroke || '#000000'
   strokeWidth.value = obj.strokeWidth || 1
   opacity.value = Math.round((obj.opacity || 1) * 100)
   fontSize.value = obj.fontSize || 24
@@ -296,12 +296,13 @@ const isText = computed(() => {
   width: 220px;
   background: var(--color-bg-card);
   border-left: 1px solid var(--color-border);
-  padding: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-sm);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
   flex-shrink: 0;
+  border-top: none;
 }
 
 .canvas-sidebar__header {
@@ -429,10 +430,41 @@ const isText = computed(() => {
 
 .canvas-sidebar__btn--danger {
   color: var(--color-error);
-  border-color: rgba(239, 68, 68, 0.3);
+  border-color: color-mix(in srgb, var(--color-error) 30%, transparent);
 }
 
 .canvas-sidebar__btn--danger:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--color-error-soft);
+}
+
+@media (max-width: 640px) {
+  .canvas-sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 60vh;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    z-index: 100;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
+    padding-top: 0;
+  }
+  .canvas-sidebar__header {
+    padding: var(--spacing-sm) var(--spacing-md);
+    position: relative;
+  }
+  .canvas-sidebar__header::before {
+    content: '';
+    display: block;
+    width: 32px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--color-text-muted);
+    opacity: 0.25;
+    margin: 0 auto var(--spacing-sm);
+  }
 }
 </style>

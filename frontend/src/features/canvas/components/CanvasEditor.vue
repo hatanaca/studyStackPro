@@ -262,12 +262,12 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 </template>
 
 <style scoped>
-.canvas-editor { display:flex; flex-direction:column; height:calc(100vh - 4rem); background:var(--color-bg); outline:none; user-select:text; -webkit-user-select:text; }
-.canvas-editor__actions { display:flex; gap:var(--spacing-xs); padding:var(--spacing-xs) var(--spacing-sm); border-bottom:1px solid var(--color-border); background:var(--color-bg-card); }
-.canvas-editor__action-btn { height:1.75rem; padding:0 var(--spacing-sm); border:1px solid var(--color-border); border-radius:var(--radius-sm); background:var(--color-bg); color:var(--color-text); font-size:var(--text-xs); cursor:pointer; transition:all .15s ease; }
+.canvas-editor { display:flex; flex-direction:column; height:calc(100vh - 4rem); background:var(--color-bg); outline:none; user-select:text; -webkit-user-select:text; border-radius:10px 10px 0 0; overflow:hidden; }
+.canvas-editor__actions { display:flex; align-items:center; gap:6px; padding:4px 12px; border-bottom:1px solid var(--color-border); background:var(--color-bg-card); height:36px; box-sizing:border-box; }
+.canvas-editor__action-btn { height:28px; padding:0 10px; border:1px solid var(--color-border); border-radius:6px; background:transparent; color:var(--color-text); font-size:11px; font-weight:500; cursor:pointer; transition:background .12s, border-color .12s; display:flex; align-items:center; gap:4px; white-space:nowrap; }
 .canvas-editor__action-btn:hover { background:var(--color-bg-soft); border-color:var(--color-primary); }
-.canvas-editor__workspace { display:flex; flex:1; min-height:0; }
-.canvas-editor__container { flex:1 1 0%; min-width:0; position:relative; background:var(--color-bg-card, #1c1c1f); margin:var(--spacing-xs); overflow:visible; }
+.canvas-editor__workspace { display:flex; flex:1; min-height:0; padding:8px; gap:8px; }
+.canvas-editor__container { flex:1 1 0%; min-width:0; position:relative; background:var(--color-bg-card, #1c1c1f); border-radius:8px; overflow:hidden; }
 .canvas-editor__file-input { display:none; }
 .canvas-editor__modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; z-index:1000; }
 .canvas-editor__modal { background:var(--color-bg-card); border-radius:var(--radius-lg); border:1px solid var(--color-border); width:100%; max-width:500px; max-height:80vh; overflow:hidden; }
@@ -286,6 +286,12 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 .canvas-editor__mural-item:hover { border-color:var(--color-primary); }
 .canvas-editor__mural-item img { width:100%; height:100%; object-fit:cover; }
 .canvas-editor__debug { flex:1; font-size:var(--text-xs); color:var(--color-text-muted, #71717a); text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 8px; line-height:1.75rem; }
+
+@media (max-width: 640px) {
+  .canvas-editor__actions { overflow-x: auto; flex-wrap: nowrap; gap: 4px; padding: 4px 8px; }
+  .canvas-editor__action-btn { white-space: nowrap; flex-shrink: 0; font-size: 10px; padding: 0 8px; height: 26px; }
+  .canvas-editor__debug { display: none; }
+}
 </style>
 
 <style>

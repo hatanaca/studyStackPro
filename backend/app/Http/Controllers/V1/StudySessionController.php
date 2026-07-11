@@ -14,6 +14,7 @@ use App\Modules\StudySessions\DTOs\StudySessionFilterDTO;
 use App\Modules\StudySessions\Services\StudySessionService;
 use App\Traits\HasApiResponse;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -154,7 +155,7 @@ class StudySessionController extends Controller
 
         try {
             $session = $this->studySessionService->create($user->id, $dto);
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             if (str_contains($e->getMessage(), 'sessão ativa') || $e->getCode() === 'P0001') {
                 throw new ConcurrentSessionException('O usuário já possui uma sessão ativa.');
             }

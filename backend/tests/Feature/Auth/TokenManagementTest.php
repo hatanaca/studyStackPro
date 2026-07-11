@@ -73,24 +73,27 @@ class TokenManagementTest extends TestCase
             ->assertJsonCount(3, 'data');
     }
 
-    public function test_login_revokes_previous_tokens(): void
+    public function test_login_revokes_previous_tokens_and_creates_new_one(): void
     {
         $user = User::factory()->create([
             'email' => 'john@example.com',
             'password' => 'password123',
         ]);
         $oldToken = $user->createToken('api-token')->plainTextToken;
+        $tokenCountBefore = $user->tokens()->count();
 
         $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])->postJson('/api/v1/auth/login', [
             'email' => 'john@example.com',
             'password' => 'password123',
         ])->assertStatus(200);
 
-        $this->assertSame(0, $user->fresh()->tokens()->count(), 'Login deve revogar PATs existentes.');
+        // Old tokens revoked, new one created
+        $this->assertSame(1, $user->fresh()->tokens()->count(), 'Login deve revogar PATs antigos e criar um novo.');
 
-        // Evita que a sessão web do login autentique o pedido seguinte (Sanctum aceita sessão ou PAT).
+        // Flush web session so the next request is authenticated only via Bearer token
         $this->flushSession();
 
+        // The old token should not work
         $this->withHeader('Authorization', 'Bearer '.$oldToken)
             ->getJson('/api/v1/auth/me')
             ->assertStatus(401);

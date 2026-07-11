@@ -71,12 +71,12 @@ const endModel = computed({
   gap: var(--spacing-lg);
   padding: var(--spacing-sm) var(--spacing-lg);
   background: linear-gradient(135deg,
-    rgba(8, 8, 14, 0.95) 0%,
-    rgba(12, 10, 20, 0.85) 100%
+    color-mix(in srgb, var(--color-bg-card) 95%, transparent) 0%,
+    color-mix(in srgb, var(--color-bg-soft) 85%, transparent) 100%
   );
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(139, 92, 246, 0.1);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 10%, transparent);
   border-radius: var(--radius-xl);
   flex-wrap: wrap;
 }
@@ -101,9 +101,9 @@ const endModel = computed({
 }
 .tb__input {
   padding: 6px 12px;
-  border: 1px solid rgba(139, 92, 246, 0.1);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 10%, transparent);
   border-radius: var(--radius-lg);
-  background: rgba(0, 0, 0, 0.35);
+  background: color-mix(in srgb, var(--color-bg) 35%, transparent);
   color: var(--color-text);
   font-size: var(--text-xs);
   font-family: var(--font-sans);
@@ -112,7 +112,7 @@ const endModel = computed({
 .tb__input:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
 }
 .tb__sep {
   font-size: var(--text-xs);
@@ -125,9 +125,9 @@ const endModel = computed({
 }
 .tb__preset {
   padding: 4px 12px;
-  border: 1px solid rgba(139, 92, 246, 0.08);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 8%, transparent);
   border-radius: var(--radius-md);
-  background: rgba(139, 92, 246, 0.04);
+  background: color-mix(in srgb, var(--color-primary) 4%, transparent);
   color: var(--color-text-muted);
   font-size: var(--text-2xs);
   font-weight: 600;
@@ -135,8 +135,31 @@ const endModel = computed({
   transition: all 0.2s ease;
 }
 .tb__preset:hover {
-  background: rgba(139, 92, 246, 0.15);
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
   color: var(--color-text);
-  border-color: rgba(139, 92, 246, 0.25);
+  border-color: color-mix(in srgb, var(--color-primary) 25%, transparent);
+}
+
+@media (max-width: 640px) {
+  .tb {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--spacing-sm);
+  }
+  .tb__range {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+  .tb__dates {
+    flex-direction: column;
+    width: 100%;
+  }
+  .tb__input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .tb__presets {
+    flex-wrap: wrap;
+  }
 }
 </style>

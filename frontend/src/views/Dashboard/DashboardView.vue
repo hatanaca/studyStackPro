@@ -532,6 +532,11 @@ async function retry() {
   pointer-events: auto;
   filter: drop-shadow(0 12px 40px color-mix(in srgb, var(--color-text) 18%, transparent));
 }
+@media (max-width: 768px) {
+  .today-summary-float {
+    display: none;
+  }
+}
 .today-summary-float__close {
   position: absolute;
   top: var(--spacing-sm);
@@ -582,6 +587,18 @@ async function retry() {
   .today-summary-float-enter-active,
   .today-summary-float-leave-active {
     transition: none;
+  }
+}
+
+/* Mobile: layout compacto */
+@media (max-width: 640px) {
+  .dashboard__content {
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin-top: 0;
+  }
+  .widgets {
+    gap: var(--spacing-md);
   }
 }
 

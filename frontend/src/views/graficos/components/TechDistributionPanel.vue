@@ -52,10 +52,10 @@ const viewMode = ref<'donut' | 'treemap'>('donut')
 .toggle {
   display: flex;
   gap: 4px;
-  background: rgba(0, 0, 0, 0.4);
+  background: color-mix(in srgb, var(--color-bg) 40%, transparent);
   border-radius: var(--radius-lg);
   padding: 3px;
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  border: 1px solid color-mix(in srgb, var(--color-primary-contrast) 3%, transparent);
 }
 .toggle__btn {
   padding: 4px 12px;
@@ -70,11 +70,11 @@ const viewMode = ref<'donut' | 'treemap'>('donut')
 }
 .toggle__btn:hover {
   color: var(--color-text);
-  background: rgba(255, 255, 255, 0.05);
+  background: color-mix(in srgb, var(--color-primary-contrast) 5%, transparent);
 }
 .toggle__btn--active {
   background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
   color: var(--color-text);
-  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 30%, transparent);
 }
 </style>

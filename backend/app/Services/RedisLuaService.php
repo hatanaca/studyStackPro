@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Redis\Connections\PhpRedisConnection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 use Predis\Client as PredisClient;
@@ -65,7 +66,7 @@ class RedisLuaService
 
     /**
      * PhpRedis: evalsha(sha, args[], num_keys). Predis: evalsha(sha, numkeys, key..., arg...).
-     * Não usar {@see \Illuminate\Redis\Connections\PhpRedisConnection::evalsha} do Laravel — o primeiro
+     * Não usar {@see PhpRedisConnection::evalsha} do Laravel — o primeiro
      * parâmetro lá é o corpo do script (SCRIPT LOAD), não o SHA.
      */
     private function evalSha(string $sha, array $keys, array $args): mixed

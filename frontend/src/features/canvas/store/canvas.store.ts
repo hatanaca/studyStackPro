@@ -28,9 +28,9 @@ export const useCanvasStore = defineStore('canvas', () => {
   /** Quantidade total de entradas no histórico */
   const historyLength = ref(0)
   /** Cor de preenchimento atual para novos objetos */
-  const fillColor = ref('#fafafa')
+  const fillColor = ref('#000000')
   /** Cor de contorno atual para novos objetos */
-  const strokeColor = ref('#fafafa')
+  const strokeColor = ref('#000000')
   /** Espessura do contorno em pixels para novos objetos */
   const strokeWidth = ref(2)
   /** Tamanho da fonte em pixels para novos objetos de texto */

@@ -1,5 +1,11 @@
 <?php
 
+use App\Http\Controllers\HealthController;
+use App\Http\Controllers\V1\AnalyticsController;
+use App\Http\Controllers\V1\AuthController;
+use App\Http\Controllers\V1\StudySessionController;
+use App\Http\Controllers\V1\TechnologyController;
+use App\Http\Controllers\V1\YouTubeController;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
@@ -13,9 +19,9 @@ Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
 Route::prefix('v1')->name('v1.')->group(function () {
     // Registo e login: limitadores separados (register não deve herdar o limite mais apertado de login).
-    Route::post('auth/register', [\App\Http\Controllers\V1\AuthController::class, 'register'])
+    Route::post('auth/register', [AuthController::class, 'register'])
         ->middleware('throttle:register');
-    Route::post('auth/login', [\App\Http\Controllers\V1\AuthController::class, 'login'])
+    Route::post('auth/login', [AuthController::class, 'login'])
         ->middleware('throttle:login');
 
     // OAuth Routes movidas para web.php — precisam de sessão web completa
@@ -24,76 +30,76 @@ Route::prefix('v1')->name('v1.')->group(function () {
     Route::middleware(['auth:sanctum'])->group(function () {
         // User info endpoints
         Route::middleware('throttle:60,1')->group(function () {
-            Route::get('auth/me', [\App\Http\Controllers\V1\AuthController::class, 'me']);
-            Route::get('auth/tokens', [\App\Http\Controllers\V1\AuthController::class, 'tokens']);
+            Route::get('auth/me', [AuthController::class, 'me']);
+            Route::get('auth/tokens', [AuthController::class, 'tokens']);
         });
 
         // Search endpoints - moderate throttling
         // YouTube API proxy (autenticado — não expõe a API key ao frontend)
         Route::middleware('throttle:search')->group(function () {
-            Route::get('youtube/search', [\App\Http\Controllers\V1\YouTubeController::class, 'search'])
+            Route::get('youtube/search', [YouTubeController::class, 'search'])
                 ->name('youtube.search');
-            Route::get('youtube/videos', [\App\Http\Controllers\V1\YouTubeController::class, 'videos'])
+            Route::get('youtube/videos', [YouTubeController::class, 'videos'])
                 ->name('youtube.videos');
-            Route::get('youtube/playlists', [\App\Http\Controllers\V1\YouTubeController::class, 'playlists'])
+            Route::get('youtube/playlists', [YouTubeController::class, 'playlists'])
                 ->name('youtube.playlists');
         });
         Route::middleware('throttle:search')->group(function () {
-            Route::get('technologies/search', [\App\Http\Controllers\V1\TechnologyController::class, 'search'])
+            Route::get('technologies/search', [TechnologyController::class, 'search'])
                 ->name('technologies.search');
-            Route::get('study-sessions/active', [\App\Http\Controllers\V1\StudySessionController::class, 'active'])
+            Route::get('study-sessions/active', [StudySessionController::class, 'active'])
                 ->name('study-sessions.active');
         });
 
         // Read operations
         Route::middleware('throttle:60,1')->group(function () {
-            Route::get('technologies', [\App\Http\Controllers\V1\TechnologyController::class, 'index']);
-            Route::get('technologies/{technology}', [\App\Http\Controllers\V1\TechnologyController::class, 'show']);
-            Route::get('study-sessions', [\App\Http\Controllers\V1\StudySessionController::class, 'index']);
-            Route::get('study-sessions/{id}', [\App\Http\Controllers\V1\StudySessionController::class, 'show']);
+            Route::get('technologies', [TechnologyController::class, 'index']);
+            Route::get('technologies/{technology}', [TechnologyController::class, 'show']);
+            Route::get('study-sessions', [StudySessionController::class, 'index']);
+            Route::get('study-sessions/{id}', [StudySessionController::class, 'show']);
             Route::prefix('analytics')->name('analytics.')->group(function () {
-                Route::get('dashboard', [\App\Http\Controllers\V1\AnalyticsController::class, 'dashboard']);
-                Route::get('user-metrics', [\App\Http\Controllers\V1\AnalyticsController::class, 'userMetrics']);
-                Route::get('tech-stats', [\App\Http\Controllers\V1\AnalyticsController::class, 'techStats']);
-                Route::get('time-series', [\App\Http\Controllers\V1\AnalyticsController::class, 'timeSeries']);
-                Route::get('weekly', [\App\Http\Controllers\V1\AnalyticsController::class, 'weekly']);
-                Route::get('heatmap', [\App\Http\Controllers\V1\AnalyticsController::class, 'heatmap']);
+                Route::get('dashboard', [AnalyticsController::class, 'dashboard']);
+                Route::get('user-metrics', [AnalyticsController::class, 'userMetrics']);
+                Route::get('tech-stats', [AnalyticsController::class, 'techStats']);
+                Route::get('time-series', [AnalyticsController::class, 'timeSeries']);
+                Route::get('weekly', [AnalyticsController::class, 'weekly']);
+                Route::get('heatmap', [AnalyticsController::class, 'heatmap']);
                 Route::middleware('throttle:export')->group(function () {
-                    Route::get('export', [\App\Http\Controllers\V1\AnalyticsController::class, 'export'])->name('export');
+                    Route::get('export', [AnalyticsController::class, 'export'])->name('export');
                 });
             });
         });
 
         // Write operations
         Route::middleware('throttle:30,1')->group(function () {
-            Route::post('auth/logout', [\App\Http\Controllers\V1\AuthController::class, 'logout']);
-            Route::put('auth/me', [\App\Http\Controllers\V1\AuthController::class, 'updateProfile']);
-            Route::post('auth/change-password', [\App\Http\Controllers\V1\AuthController::class, 'changePassword'])
+            Route::post('auth/logout', [AuthController::class, 'logout']);
+            Route::put('auth/me', [AuthController::class, 'updateProfile']);
+            Route::post('auth/change-password', [AuthController::class, 'changePassword'])
                 ->middleware('throttle:sensitive');
-            Route::delete('auth/tokens', [\App\Http\Controllers\V1\AuthController::class, 'revokeAllTokens']);
-            Route::post('technologies', [\App\Http\Controllers\V1\TechnologyController::class, 'store']);
-            Route::put('technologies/{technology}', [\App\Http\Controllers\V1\TechnologyController::class, 'update']);
-            Route::delete('technologies/{technology}', [\App\Http\Controllers\V1\TechnologyController::class, 'destroy']);
-            Route::post('study-sessions/start', [\App\Http\Controllers\V1\StudySessionController::class, 'start'])
+            Route::delete('auth/tokens', [AuthController::class, 'revokeAllTokens']);
+            Route::post('technologies', [TechnologyController::class, 'store']);
+            Route::put('technologies/{technology}', [TechnologyController::class, 'update']);
+            Route::delete('technologies/{technology}', [TechnologyController::class, 'destroy']);
+            Route::post('study-sessions/start', [StudySessionController::class, 'start'])
                 ->middleware('throttle.sliding:10')
                 ->name('study-sessions.start');
-            Route::post('study-sessions', [\App\Http\Controllers\V1\StudySessionController::class, 'store'])
+            Route::post('study-sessions', [StudySessionController::class, 'store'])
                 ->middleware('throttle.sliding:30');
-            Route::patch('study-sessions/{id}/end', [\App\Http\Controllers\V1\StudySessionController::class, 'end'])
+            Route::patch('study-sessions/{id}/end', [StudySessionController::class, 'end'])
                 ->middleware('throttle.sliding:10')
                 ->name('study-sessions.end');
-            Route::put('study-sessions/{id}', [\App\Http\Controllers\V1\StudySessionController::class, 'update'])
+            Route::put('study-sessions/{id}', [StudySessionController::class, 'update'])
                 ->middleware('throttle.sliding:30')
                 ->name('study-sessions.put');
-            Route::patch('study-sessions/{id}', [\App\Http\Controllers\V1\StudySessionController::class, 'update'])
+            Route::patch('study-sessions/{id}', [StudySessionController::class, 'update'])
                 ->middleware('throttle.sliding:30')
                 ->name('study-sessions.patch');
-            Route::delete('study-sessions/{id}', [\App\Http\Controllers\V1\StudySessionController::class, 'destroy'])
+            Route::delete('study-sessions/{id}', [StudySessionController::class, 'destroy'])
                 ->middleware('throttle.sliding:30');
-            Route::post('analytics/recalculate', [\App\Http\Controllers\V1\AnalyticsController::class, 'recalculate'])
+            Route::post('analytics/recalculate', [AnalyticsController::class, 'recalculate'])
                 ->middleware('throttle:recalculate');
         });
     });
 });
 
-Route::middleware('throttle:health')->get('health', \App\Http\Controllers\HealthController::class)->name('api.health');
+Route::middleware('throttle:health')->get('health', HealthController::class)->name('api.health');

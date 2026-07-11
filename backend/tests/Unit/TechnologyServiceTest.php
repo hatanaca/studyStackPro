@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Models\Technology;
 use App\Models\User;
 use App\Modules\Technologies\Services\TechnologyService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
@@ -123,7 +124,7 @@ class TechnologyServiceTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->expectException(\Illuminate\Auth\Access\AuthorizationException::class);
+        $this->expectException(AuthorizationException::class);
 
         $this->service->findForUser($tech->id, $this->user->id);
     }

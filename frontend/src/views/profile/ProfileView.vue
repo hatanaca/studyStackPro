@@ -546,4 +546,20 @@ function formatDate(iso: string | null): string {
 .w-full {
   width: 100%;
 }
+
+@media (max-width: 640px) {
+  .profile-view__card :deep(.p-card-content) {
+    padding: var(--spacing-md);
+  }
+  .profile-view__avatar-wrap {
+    margin-bottom: var(--spacing-lg);
+  }
+  .profile-view__tabs :deep(.p-tablist) {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .profile-view__tabs :deep(.p-tablist)::-webkit-scrollbar {
+    display: none;
+  }
+}
 </style>

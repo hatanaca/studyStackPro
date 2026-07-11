@@ -190,6 +190,8 @@ onUnmounted(() => {
 
 <style scoped>
 .yt-frame {
-  width: 200px; height: 200px;
+  width: 1px; height: 1px;
+  position: absolute;
+  overflow: hidden;
 }
 </style>

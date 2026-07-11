@@ -2,14 +2,17 @@
 
 namespace App\Exceptions;
 
+use App\Exceptions\Domain\ConcurrentSessionException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\MissingAttributeException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Throwable;
 
@@ -45,17 +48,17 @@ class Handler extends ExceptionHandler
                     'success' => false,
                     'error' => ['code' => 'NOT_FOUND', 'message' => 'Recurso não encontrado.'],
                 ], 404),
-                $e instanceof \App\Exceptions\Domain\ConcurrentSessionException => response()->json([
+                $e instanceof ConcurrentSessionException => response()->json([
                     'success' => false,
-                    'error' => ['code' => \App\Exceptions\Domain\ConcurrentSessionException::CODE, 'message' => $e->getMessage()],
+                    'error' => ['code' => ConcurrentSessionException::CODE, 'message' => $e->getMessage()],
                 ], 409),
-                $e instanceof \App\Exceptions\ApiException => response()->json([
+                $e instanceof ApiException => response()->json([
                     'success' => false,
                     'error' => ['code' => $e->errorCode, 'message' => $e->getMessage()],
                 ], $e->statusCode),
                 $e instanceof QueryException && str_contains($e->getMessage(), 'sessão ativa') => response()->json([
                     'success' => false,
-                    'error' => ['code' => \App\Exceptions\Domain\ConcurrentSessionException::CODE, 'message' => 'O usuário já possui uma sessão ativa.'],
+                    'error' => ['code' => ConcurrentSessionException::CODE, 'message' => 'O usuário já possui uma sessão ativa.'],
                 ], 409),
                 $e instanceof MissingAttributeException && $this->isMissingStudySessionTitleAttribute($e) => $this->schemaOutdatedStudySessionsTitleResponse($e),
                 $e instanceof QueryException && $this->isMissingStudySessionsTitleColumn($e) => $this->schemaOutdatedStudySessionsTitleResponse($e),
@@ -67,6 +70,10 @@ class Handler extends ExceptionHandler
                         'retry_after' => (int) ($e->getHeaders()['Retry-After'] ?? $e->getHeaders()['retry-after'] ?? 60),
                     ],
                 ], 429),
+                $e instanceof MethodNotAllowedHttpException => response()->json([
+                    'success' => false,
+                    'error' => ['code' => 'METHOD_NOT_ALLOWED', 'message' => 'Método não permitido.'],
+                ], 405),
                 default => response()->json([
                     'success' => false,
                     'error' => ['code' => 'INTERNAL_ERROR', 'message' => config('app.debug') && app()->isLocal() ? $e->getMessage() : 'Erro interno.'],
@@ -110,7 +117,7 @@ class Handler extends ExceptionHandler
      * Resposta JSON quando a coluna `title` de `study_sessions` ainda não existe (migração pendente).
      * Registo apenas via canal de log da app — evita escrita em paths arbitrários fora do projeto.
      */
-    private function schemaOutdatedStudySessionsTitleResponse(Throwable $e): \Illuminate\Http\JsonResponse
+    private function schemaOutdatedStudySessionsTitleResponse(Throwable $e): JsonResponse
     {
         Log::notice('Schema study_sessions: coluna title em falta ou modelo desatualizado.', [
             'exception' => $e::class,
@@ -130,6 +137,7 @@ class Handler extends ExceptionHandler
     {
         return response()->json([
             'success' => false,
+            'errors' => $e->errors(),
             'error' => [
                 'code' => 'VALIDATION_ERROR',
                 'message' => $e->getMessage(),
