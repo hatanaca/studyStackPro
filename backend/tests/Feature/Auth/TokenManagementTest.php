@@ -90,6 +90,9 @@ class TokenManagementTest extends TestCase
         // Old tokens revoked, new one created
         $this->assertSame(1, $user->fresh()->tokens()->count(), 'Login deve revogar PATs antigos e criar um novo.');
 
+        // Flush web session so the next request is authenticated only via Bearer token
+        $this->flushSession();
+
         // The old token should not work
         $this->withHeader('Authorization', 'Bearer '.$oldToken)
             ->getJson('/api/v1/auth/me')
