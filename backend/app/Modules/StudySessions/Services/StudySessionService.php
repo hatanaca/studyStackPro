@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Modules\StudySessions\DTOs\StudySessionDTO;
 use App\Modules\StudySessions\DTOs\StudySessionFilterDTO;
 use App\Modules\StudySessions\Repositories\Contracts\StudySessionRepositoryInterface;
+use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -86,6 +87,10 @@ class StudySessionService
      */
     public function start(User $user, ?string $technologyId): StudySession
     {
+        if ($this->getActiveForUser($user->id)) {
+            throw new ConcurrentSessionException('O usuário já possui uma sessão ativa.');
+        }
+
         $techId = $technologyId ?? $user->technologies()->first()?->id;
 
         $dto = new StudySessionDTO(

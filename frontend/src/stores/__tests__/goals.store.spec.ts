@@ -47,7 +47,7 @@ describe('goals.store', () => {
     vi.mocked(goalsApi.list).mockReturnValue([mockGoal, mockCompletedGoal])
 
     const store = useGoalsStore()
-    await store.fetchGoals()
+    store.fetchGoals()
 
     expect(store.items).toHaveLength(2)
   })
@@ -58,7 +58,7 @@ describe('goals.store', () => {
     })
 
     const store = useGoalsStore()
-    await store.fetchGoals()
+    store.fetchGoals()
 
     expect(store.error).toBe('Network error')
   })
@@ -67,7 +67,7 @@ describe('goals.store', () => {
     vi.mocked(goalsApi.create).mockReturnValue(mockGoal)
 
     const store = useGoalsStore()
-    const result = await store.createGoal({
+    const result = store.createGoal({
       type: 'minutes_per_week',
       target_value: 600,
       start_date: '2025-01-01',
@@ -98,7 +98,7 @@ describe('goals.store', () => {
 
     const store = useGoalsStore()
     store.items = [mockGoal]
-    await store.updateGoal('goal-1', { target_value: 600 })
+    store.updateGoal('goal-1', { target_value: 600 })
 
     expect(store.items[0].current_value).toBe(450)
   })
@@ -108,7 +108,7 @@ describe('goals.store', () => {
 
     const store = useGoalsStore()
     store.items = []
-    await store.updateGoal('goal-1', { target_value: 600 })
+    store.updateGoal('goal-1', { target_value: 600 })
 
     expect(store.items).toHaveLength(0)
   })
@@ -118,7 +118,7 @@ describe('goals.store', () => {
 
     const store = useGoalsStore()
     store.items = [mockGoal, mockCompletedGoal]
-    await store.deleteGoal('goal-1')
+    store.deleteGoal('goal-1')
 
     expect(store.items).toHaveLength(1)
     expect(store.items[0].id).toBe('goal-2')

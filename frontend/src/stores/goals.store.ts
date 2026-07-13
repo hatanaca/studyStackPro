@@ -31,7 +31,7 @@ export const useGoalsStore = defineStore('goals', () => {
     }
   }
 
-  async function updateGoal(
+  function updateGoal(
     id: string,
     payload: { target_value?: number; status?: Goal['status']; end_date?: string | null }
   ): Promise<Goal | null> {
@@ -52,7 +52,7 @@ export const useGoalsStore = defineStore('goals', () => {
   async function deleteGoal(id: string): Promise<boolean> {
     error.value = null
     try {
-      await goalsApi.delete(id)
+      goalsApi.delete(id)
       items.value = items.value.filter((g) => g.id !== id)
       return true
     } catch (e) {
