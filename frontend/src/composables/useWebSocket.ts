@@ -6,7 +6,7 @@ import { useAnalyticsStore } from '@/stores/analytics.store'
 import { useSessionsStore } from '@/stores/sessions.store'
 import { queryKeys } from '@/api/queryKeys'
 import type { ActiveSessionResponse } from '@/api/modules/sessions.api'
-import type { MetricsUpdatedEvent, SessionStartedEvent } from '@/types/websocket.types'
+import type { SessionStartedEvent } from '@/types/websocket.types'
 
 /**
  * Composables de WebSocket (Laravel Reverb).
@@ -141,11 +141,9 @@ export async function connectWebSocket(userId: string): Promise<void> {
 
   echo
     .private(`dashboard.${userId}`)
-    .listen('.metrics.updated', (e: unknown) => {
+    .listen('.metrics.updated', () => {
       clearRecalcFallbackTimer()
-      const ev = e as MetricsUpdatedEvent
-      if (ev.dashboard) analyticsStore.updateFromWebSocket(ev.dashboard)
-      else analyticsStore.setRecalculating(false)
+      analyticsStore.setRecalculating(false)
       queryClient?.invalidateQueries({ queryKey: queryKeys.analytics.dashboard() })
     })
     .listen('.metrics.recalculating', () => {

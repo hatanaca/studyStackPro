@@ -5,13 +5,17 @@ namespace App\Modules\StudySessions\Services;
 use App\Events\StudySession\StudySessionCreated;
 use App\Events\StudySession\StudySessionDeleted;
 use App\Events\StudySession\StudySessionUpdated;
+use App\Exceptions\Domain\ConcurrentSessionException;
 use App\Models\StudySession;
+use App\Models\User;
 use App\Modules\StudySessions\DTOs\StudySessionDTO;
 use App\Modules\StudySessions\DTOs\StudySessionFilterDTO;
 use App\Modules\StudySessions\Repositories\Contracts\StudySessionRepositoryInterface;
+use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 
 /**
  * Serviço de sessões de estudo.
@@ -75,6 +79,58 @@ class StudySessionService
         event(new StudySessionCreated($session));
 
         return $session;
+    }
+
+    /**
+     * Inicia uma nova sessão de estudo (modo foco).
+     * Lança ConcurrentSessionException se já existir sessão ativa.
+     */
+    public function start(User $user, ?string $technologyId): StudySession
+    {
+        if ($this->getActiveForUser($user->id)) {
+            throw new ConcurrentSessionException('O usuário já possui uma sessão ativa.');
+        }
+
+        $techId = $technologyId ?? $user->technologies()->first()?->id;
+
+        $dto = new StudySessionDTO(
+            userId: $user->id,
+            technologyId: $techId,
+            startedAt: now(),
+            endedAt: null,
+            notes: null,
+            mood: null,
+            title: null,
+        );
+
+        try {
+            return $this->create($user->id, $dto);
+        } catch (QueryException $e) {
+            $state = (string) ($e->errorInfo[0] ?? '');
+            if ($state === 'P0001') {
+                throw new ConcurrentSessionException('O usuário já possui uma sessão ativa.');
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Encerra uma sessão em andamento. Define ended_at = now().
+     * Lança InvalidArgumentException se a sessão já estiver finalizada.
+     */
+    public function end(string $id, string $userId): StudySession
+    {
+        $session = $this->findForUser($id, $userId);
+
+        if ($session->ended_at) {
+            throw new \InvalidArgumentException('Sessão já finalizada.');
+        }
+
+        $endedAt = now()->max($session->started_at->copy()->addSecond());
+
+        return $this->update($id, $userId, [
+            'ended_at' => $endedAt->toIso8601String(),
+        ]);
     }
 
     /**

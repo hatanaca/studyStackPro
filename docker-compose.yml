@@ -192,7 +192,7 @@ services:
       - app
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "php -r \"echo 'ok';\" || exit 1"]
+      test: ["CMD-SHELL", "php artisan schedule:status 2>/dev/null || php -r \"echo 'ok';\""]
       interval: 30s
       timeout: 5s
       retries: 3

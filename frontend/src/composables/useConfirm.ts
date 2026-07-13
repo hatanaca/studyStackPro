@@ -8,11 +8,16 @@ export interface ConfirmOptions {
   variant?: 'danger' | 'primary'
 }
 
-const isOpen = ref(false)
-const options = ref<ConfirmOptions>({ message: '' })
-let resolveFn: ((value: boolean) => void) | null = null
-
+/**
+ * Composable de confirmação modal.
+ * Cada instância mantém seu próprio estado, evitando race conditions
+ * quando múltiplos componentes abrem confirmações simultaneamente.
+ */
 export function useConfirm() {
+  const isOpen = ref(false)
+  const options = ref<ConfirmOptions>({ message: '' })
+  let resolveFn: ((value: boolean) => void) | null = null
+
   function open(opts: ConfirmOptions | string): Promise<boolean> {
     options.value = typeof opts === 'string' ? { message: opts } : opts
     isOpen.value = true

@@ -27,12 +27,11 @@ function setStoredGoals(goals: Goal[]) {
 }
 
 export const goalsApi = {
-  async list(): Promise<{ data: Goal[] }> {
-    const list = getStoredGoals()
-    return { data: list }
+  list(): Goal[] {
+    return getStoredGoals()
   },
 
-  async create(payload: CreateGoalPayload): Promise<{ data: Goal }> {
+  create(payload: CreateGoalPayload): Goal {
     const list = getStoredGoals()
     const id = `goal_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
     const now = new Date().toISOString()
@@ -51,22 +50,21 @@ export const goalsApi = {
     }
     list.push(goal)
     setStoredGoals(list)
-    return { data: goal }
+    return goal
   },
 
-  async update(id: string, payload: UpdateGoalPayload): Promise<{ data: Goal }> {
+  update(id: string, payload: UpdateGoalPayload): Goal {
     const list = getStoredGoals()
     const index = list.findIndex((g) => g.id === id)
     if (index === -1) throw new Error('Meta não encontrada')
     const updated = { ...list[index], ...payload, updated_at: new Date().toISOString() }
     list[index] = updated
     setStoredGoals(list)
-    return { data: updated }
+    return updated
   },
 
-  async delete(id: string): Promise<{ success: boolean }> {
+  delete(id: string): void {
     const list = getStoredGoals().filter((g) => g.id !== id)
     setStoredGoals(list)
-    return { success: true }
   },
 }

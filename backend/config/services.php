@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+
     'rate_limit' => [
         'fail_open' => env('RATE_LIMIT_FAIL_OPEN', false),
     ],

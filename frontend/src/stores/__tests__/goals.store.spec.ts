@@ -40,39 +40,34 @@ describe('goals.store', () => {
   it('initializes with empty items and default state', () => {
     const store = useGoalsStore()
     expect(store.items).toEqual([])
-    expect(store.loading).toBe(false)
     expect(store.error).toBeNull()
   })
 
-  it('fetchGoals loads goals from API', async () => {
-    vi.mocked(goalsApi.list).mockResolvedValue({
-      data: [mockGoal, mockCompletedGoal],
-    } as never)
+  it('fetchGoals loads goals from API', () => {
+    vi.mocked(goalsApi.list).mockReturnValue([mockGoal, mockCompletedGoal])
 
     const store = useGoalsStore()
-    await store.fetchGoals()
+    store.fetchGoals()
 
     expect(store.items).toHaveLength(2)
-    expect(store.loading).toBe(false)
   })
 
-  it('fetchGoals sets error on failure', async () => {
-    vi.mocked(goalsApi.list).mockRejectedValue(new Error('Network error'))
+  it('fetchGoals sets error on failure', () => {
+    vi.mocked(goalsApi.list).mockImplementation(() => {
+      throw new Error('Network error')
+    })
 
     const store = useGoalsStore()
-    await store.fetchGoals()
+    store.fetchGoals()
 
     expect(store.error).toBe('Network error')
-    expect(store.loading).toBe(false)
   })
 
-  it('createGoal adds goal to beginning of list', async () => {
-    vi.mocked(goalsApi.create).mockResolvedValue({
-      data: mockGoal,
-    } as never)
+  it('createGoal adds goal to beginning of list', () => {
+    vi.mocked(goalsApi.create).mockReturnValue(mockGoal)
 
     const store = useGoalsStore()
-    const result = await store.createGoal({
+    const result = store.createGoal({
       type: 'minutes_per_week',
       target_value: 600,
       start_date: '2025-01-01',
@@ -82,63 +77,63 @@ describe('goals.store', () => {
     expect(result).toEqual(mockGoal)
   })
 
-  it('createGoal sets error and throws on failure', async () => {
-    vi.mocked(goalsApi.create).mockRejectedValue(new Error('Validation error'))
+  it('createGoal sets error and returns null on failure', () => {
+    vi.mocked(goalsApi.create).mockImplementation(() => {
+      throw new Error('Validation error')
+    })
 
     const store = useGoalsStore()
+    const result = store.createGoal({
+      type: 'minutes_per_week',
+      target_value: 600,
+      start_date: '2025-01-01',
+    })
 
-    await expect(
-      store.createGoal({
-        type: 'minutes_per_week',
-        target_value: 600,
-        start_date: '2025-01-01',
-      })
-    ).rejects.toThrow('Validation error')
+    expect(result).toBeNull()
     expect(store.error).toBe('Validation error')
   })
 
-  it('updateGoal updates goal in list', async () => {
-    vi.mocked(goalsApi.update).mockResolvedValue({
-      data: { ...mockGoal, current_value: 450 },
-    } as never)
+  it('updateGoal updates goal in list', () => {
+    vi.mocked(goalsApi.update).mockReturnValue({ ...mockGoal, current_value: 450 })
 
     const store = useGoalsStore()
     store.items = [mockGoal]
-    await store.updateGoal('goal-1', { target_value: 600 })
+    store.updateGoal('goal-1', { target_value: 600 })
 
     expect(store.items[0].current_value).toBe(450)
   })
 
-  it('updateGoal does nothing if goal not found', async () => {
-    vi.mocked(goalsApi.update).mockResolvedValue({
-      data: mockGoal,
-    } as never)
+  it('updateGoal does nothing if goal not found', () => {
+    vi.mocked(goalsApi.update).mockReturnValue(mockGoal)
 
     const store = useGoalsStore()
     store.items = []
-    await store.updateGoal('goal-1', { target_value: 600 })
+    store.updateGoal('goal-1', { target_value: 600 })
 
     expect(store.items).toHaveLength(0)
   })
 
-  it('deleteGoal removes goal from list', async () => {
-    vi.mocked(goalsApi.delete).mockResolvedValue({} as never)
+  it('deleteGoal removes goal from list', () => {
+    vi.mocked(goalsApi.delete).mockReturnValue(undefined)
 
     const store = useGoalsStore()
     store.items = [mockGoal, mockCompletedGoal]
-    await store.deleteGoal('goal-1')
+    store.deleteGoal('goal-1')
 
     expect(store.items).toHaveLength(1)
     expect(store.items[0].id).toBe('goal-2')
   })
 
-  it('deleteGoal sets error on failure', async () => {
-    vi.mocked(goalsApi.delete).mockRejectedValue(new Error('Delete failed'))
+  it('deleteGoal sets error on failure', () => {
+    vi.mocked(goalsApi.delete).mockImplementation(() => {
+      throw new Error('Delete failed')
+    })
 
     const store = useGoalsStore()
     store.items = [mockGoal]
 
-    await expect(store.deleteGoal('goal-1')).rejects.toThrow('Delete failed')
+    const result = store.deleteGoal('goal-1')
+    expect(result).toBe(false)
     expect(store.error).toBe('Delete failed')
   })
 

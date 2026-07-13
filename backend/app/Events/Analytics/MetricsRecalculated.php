@@ -9,7 +9,7 @@ use Illuminate\Foundation\Events\Dispatchable;
 
 /**
  * Evento broadcast quando recálculo de métricas termina.
- * Canal privado dashboard.{userId}. Payload: dashboard (objeto completo).
+ * Canal privado dashboard.{userId}. Sinaliza ao frontend que deve refazer fetch.
  */
 class MetricsRecalculated implements ShouldBroadcast
 {
@@ -17,7 +17,6 @@ class MetricsRecalculated implements ShouldBroadcast
 
     public function __construct(
         public readonly string $userId,
-        public readonly array $dashboardData,
     ) {}
 
     public function broadcastOn(): array
@@ -34,8 +33,6 @@ class MetricsRecalculated implements ShouldBroadcast
 
     public function broadcastWith(): array
     {
-        return [
-            'dashboard' => $this->dashboardData,
-        ];
+        return [];
     }
 }

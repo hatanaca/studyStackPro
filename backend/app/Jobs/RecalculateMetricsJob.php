@@ -48,7 +48,7 @@ class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
         $this->onQueue('metrics');
     }
 
-    public function handle(MetricsAggregator $aggregator, AnalyticsService $analyticsService): void
+    public function handle(MetricsAggregator $aggregator): void
     {
         $user = User::find($this->userId);
         if (! $user) {
@@ -65,9 +65,8 @@ class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
         });
 
         Cache::tags(['analytics', "analytics:user:{$this->userId}"])->flush();
-        $dashboardData = $analyticsService->getDashboardData($this->userId);
 
-        event(new MetricsRecalculated($this->userId, $dashboardData));
+        event(new MetricsRecalculated($this->userId));
     }
 
     /** Callback de falha: log para debug */

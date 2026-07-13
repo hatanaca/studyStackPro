@@ -4,6 +4,7 @@ namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
 use App\Services\YouTubeService;
+use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\Log;
  */
 class YouTubeController extends Controller
 {
+    use HasApiResponse;
+
     public function __construct(private YouTubeService $youtube) {}
 
     /**
@@ -36,17 +39,11 @@ class YouTubeController extends Controller
                 $validated['maxResults'] ?? 20
             );
 
-            return response()->json([
-                'success' => true,
-                'data' => $result,
-            ]);
+            return $this->success($result);
         } catch (\Exception $e) {
             Log::error('YouTube search error', ['message' => $e->getMessage()]);
 
-            return response()->json([
-                'success' => false,
-                'error' => ['message' => 'Falha ao buscar vídeos. Tente novamente.'],
-            ], 502);
+            return $this->error('Falha ao buscar vídeos. Tente novamente.', 'YOUTUBE_ERROR', null, 502);
         }
     }
 
@@ -59,33 +56,26 @@ class YouTubeController extends Controller
             'ids' => 'required|string|max:500',
         ]);
 
-        $ids = array_slice(
+        $rawIds = array_slice(
             array_filter(explode(',', $validated['ids'])),
             0,
             50
         );
 
+        $ids = array_filter($rawIds, fn (string $id) => preg_match('/^[a-zA-Z0-9_-]{11}$/', $id));
+
         if (empty($ids)) {
-            return response()->json([
-                'success' => false,
-                'error' => ['message' => 'Informe ao menos um ID de vídeo.'],
-            ], 422);
+            return $this->error('Informe ao menos um ID de vídeo válido.', 'VALIDATION_ERROR', null, 422);
         }
 
         try {
             $result = $this->youtube->videos($ids);
 
-            return response()->json([
-                'success' => true,
-                'data' => $result,
-            ]);
+            return $this->success($result);
         } catch (\Exception $e) {
             Log::error('YouTube videos error', ['message' => $e->getMessage()]);
 
-            return response()->json([
-                'success' => false,
-                'error' => ['message' => 'Falha ao buscar detalhes dos vídeos.'],
-            ], 502);
+            return $this->error('Falha ao buscar detalhes dos vídeos.', 'YOUTUBE_ERROR', null, 502);
         }
     }
 
@@ -94,31 +84,22 @@ class YouTubeController extends Controller
      *
      * Busca playlists do usuário autenticado via OAuth Google.
      */
-    public function playlists(): JsonResponse
+    public function playlists(Request $request): JsonResponse
     {
-        $user = auth()->user();
+        $user = $request->user();
 
         if (! $user || ! $user->google_token) {
-            return response()->json([
-                'success' => false,
-                'error' => ['message' => 'Conta Google não vinculada. Faça login com Google.'],
-            ], 401);
+            return $this->error('Conta Google não vinculada. Faça login com Google.', 'UNAUTHENTICATED', null, 401);
         }
 
         try {
             $result = $this->youtube->playlists($user->google_token);
 
-            return response()->json([
-                'success' => true,
-                'data' => $result,
-            ]);
+            return $this->success($result);
         } catch (\Exception $e) {
             Log::error('YouTube playlists error', ['message' => $e->getMessage()]);
 
-            return response()->json([
-                'success' => false,
-                'error' => ['message' => 'Falha ao buscar playlists. Token pode ter expirado. Faça login novamente.'],
-            ], 502);
+            return $this->error('Falha ao buscar playlists. Token pode ter expirado. Faça login novamente.', 'YOUTUBE_ERROR', null, 502);
         }
     }
 }

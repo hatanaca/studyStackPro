@@ -12,7 +12,6 @@ use App\Events\StudySession\StudySessionCreated;
 use App\Events\StudySession\StudySessionDeleted;
 use App\Events\StudySession\StudySessionUpdated;
 use App\Listeners\Analytics\BroadcastMetricsUpdate;
-use App\Listeners\Analytics\UpdateCacheWithFreshData;
 use App\Listeners\StudySession\BroadcastMetricsRecalculating;
 use App\Listeners\StudySession\BroadcastSessionEnded;
 use App\Listeners\StudySession\BroadcastSessionStarted;
@@ -43,7 +42,6 @@ class EventServiceProvider extends ServiceProvider
             BroadcastMetricsRecalculating::class,
         ],
         MetricsRecalculated::class => [
-            UpdateCacheWithFreshData::class,
             BroadcastMetricsUpdate::class,
         ],
         SocialiteWasCalled::class => [

@@ -53,7 +53,7 @@ class OAuthController extends Controller
             abort(400, 'Provider inválido.');
         }
 
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+        $frontendUrl = config('services.frontend_url');
 
         try {
             $socialUser = Socialite::driver($provider)->stateless()->user();

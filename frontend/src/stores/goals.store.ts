@@ -5,61 +5,57 @@ import { goalsApi } from '@/api/modules/goals.api'
 
 export const useGoalsStore = defineStore('goals', () => {
   const items = ref<Goal[]>([])
-  const loading = ref(false)
   const error = ref<string | null>(null)
 
   const activeGoals = computed(() => items.value.filter((g) => g.status === 'active'))
   const completedGoals = computed(() => items.value.filter((g) => g.status === 'completed'))
 
-  async function fetchGoals() {
-    loading.value = true
+  function fetchGoals() {
     error.value = null
     try {
-      const { data } = await goalsApi.list()
-      items.value = data
+      items.value = goalsApi.list()
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Erro ao carregar metas'
-    } finally {
-      loading.value = false
     }
   }
 
-  async function createGoal(payload: CreateGoalPayload) {
+  function createGoal(payload: CreateGoalPayload): Goal | null {
     error.value = null
     try {
-      const { data } = await goalsApi.create(payload)
-      items.value = [data, ...items.value]
-      return data
+      const goal = goalsApi.create(payload)
+      items.value = [goal, ...items.value]
+      return goal
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Erro ao criar meta'
-      throw e
+      return null
     }
   }
 
-  async function updateGoal(
+  function updateGoal(
     id: string,
     payload: { target_value?: number; status?: Goal['status']; end_date?: string | null }
-  ) {
+  ): Goal | null {
     error.value = null
     try {
-      const { data } = await goalsApi.update(id, payload)
+      const updated = goalsApi.update(id, payload)
       const index = items.value.findIndex((g) => g.id === id)
-      if (index !== -1) items.value[index] = data
-      return data
+      if (index !== -1) items.value[index] = updated
+      return updated
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Erro ao atualizar meta'
-      throw e
+      return null
     }
   }
 
-  async function deleteGoal(id: string) {
+  function deleteGoal(id: string): boolean {
     error.value = null
     try {
-      await goalsApi.delete(id)
+      goalsApi.delete(id)
       items.value = items.value.filter((g) => g.id !== id)
+      return true
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Erro ao excluir meta'
-      throw e
+      return false
     }
   }
 
@@ -76,7 +72,6 @@ export const useGoalsStore = defineStore('goals', () => {
 
   return {
     items,
-    loading,
     error,
     activeGoals,
     completedGoals,

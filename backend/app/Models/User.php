@@ -58,6 +58,10 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'discord_token' => 'encrypted',
+            'discord_refresh_token' => 'encrypted',
+            'google_token' => 'encrypted',
+            'google_refresh_token' => 'encrypted',
             'discord_token_expires_at' => 'datetime',
             'google_token_expires_at' => 'datetime',
         ];

@@ -83,19 +83,8 @@ async function handleUpdate(payload: { id: string; target_value: number }) {
     <div class="goal-list__toolbar">
       <Button label="Nova meta" @click="showForm = true" />
     </div>
-    <div
-      v-if="goalsStore.loading"
-      class="goal-list__loading"
-      role="status"
-      aria-live="polite"
-      aria-label="Carregando metas"
-    >
-      <Skeleton class="goal-list__skeleton" height="6rem" />
-      <Skeleton class="goal-list__skeleton" height="6rem" />
-      <Skeleton class="goal-list__skeleton" height="6rem" />
-    </div>
     <ErrorCard
-      v-else-if="goalsStore.error"
+      v-if="goalsStore.error"
       title="Erro ao carregar metas"
       :message="goalsStore.error"
       :on-retry="() => goalsStore.fetchGoals()"

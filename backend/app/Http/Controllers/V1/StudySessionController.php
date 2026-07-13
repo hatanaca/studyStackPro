@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\V1;
 
-use App\Exceptions\Domain\ConcurrentSessionException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StudySessions\IndexStudySessionsRequest;
 use App\Http\Requests\StudySessions\StartStudySessionRequest;
@@ -14,7 +13,6 @@ use App\Modules\StudySessions\DTOs\StudySessionFilterDTO;
 use App\Modules\StudySessions\Services\StudySessionService;
 use App\Traits\HasApiResponse;
 use Carbon\Carbon;
-use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -136,31 +134,10 @@ class StudySessionController extends Controller
      */
     public function start(StartStudySessionRequest $request): JsonResponse
     {
-        $user = $request->user();
-        if ($this->studySessionService->getActiveForUser($user->id)) {
-            throw new ConcurrentSessionException('O usuário já possui uma sessão ativa.');
-        }
-
-        $techId = $request->validated('technology_id')
-            ?? $user->technologies()->first()?->id;
-        $dto = new StudySessionDTO(
-            userId: $user->id,
-            technologyId: $techId,
-            startedAt: now(),
-            endedAt: null,
-            notes: null,
-            mood: null,
-            title: null,
+        $session = $this->studySessionService->start(
+            $request->user(),
+            $request->validated('technology_id')
         );
-
-        try {
-            $session = $this->studySessionService->create($user->id, $dto);
-        } catch (QueryException $e) {
-            if (str_contains($e->getMessage(), 'sessão ativa') || $e->getCode() === 'P0001') {
-                throw new ConcurrentSessionException('O usuário já possui uma sessão ativa.');
-            }
-            throw $e;
-        }
 
         return $this->success(new StudySessionResource($session->load('technology')), 'Sessão iniciada.', 201);
     }
@@ -171,17 +148,7 @@ class StudySessionController extends Controller
      */
     public function end(Request $request, string $id): JsonResponse
     {
-        $session = $this->studySessionService->findForUser($id, $request->user()->id);
-        if ($session->ended_at) {
-            return $this->error('Sessão já finalizada.', 'VALIDATION_ERROR', null, 422);
-        }
-
-        // Trigger PG validate_ended_at exige ended_at > started_at (estrito).
-        $endedAt = now()->max($session->started_at->copy()->addSecond());
-
-        $session = $this->studySessionService->update($id, $request->user()->id, [
-            'ended_at' => $endedAt->toIso8601String(),
-        ]);
+        $session = $this->studySessionService->end($id, $request->user()->id);
 
         return $this->success(new StudySessionResource($session), 'Sessão finalizada.');
     }
