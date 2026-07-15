@@ -7,6 +7,7 @@ export interface User {
   locale?: string
   google_id?: string | null
   discord_id?: string | null
+  linkedin_id?: string | null
   avatar_url?: string | null
   created_at?: string
   updated_at?: string
@@ -78,4 +79,24 @@ export interface DailyMinute {
   date: string
   total_minutes: number
   session_count?: number
+}
+
+/** Status da conexão LinkedIn */
+export interface LinkedInStatus {
+  connected: boolean
+  profile?: {
+    id: string
+    name: string
+    headline?: string
+  } | null
+}
+
+/** Payload para publicar post no LinkedIn */
+export interface LinkedInSharePayload {
+  text: string
+}
+
+/** Resultado da publicação no LinkedIn */
+export interface LinkedInShareResult {
+  id: string
 }

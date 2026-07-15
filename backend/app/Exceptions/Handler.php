@@ -93,7 +93,6 @@ class Handler extends ExceptionHandler
     {
         return response()->json([
             'success' => false,
-            'errors' => $e->errors(),
             'error' => [
                 'code' => 'VALIDATION_ERROR',
                 'message' => $e->getMessage(),

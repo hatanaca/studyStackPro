@@ -15,6 +15,8 @@ import { settingsRoutes, legacySettingsRedirects } from './routes/settings.route
 import { studyPathRoutes } from './routes/study-path.routes'
 import { canvasRoutes } from './routes/canvas.routes'
 import { reportsRoutes } from './routes/reports.routes'
+import { shareRoutes } from './routes/share.routes'
+import { terminalRoutes } from './routes/terminal.routes'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,6 +40,8 @@ const router = createRouter({
         ...studyPathRoutes,
         ...canvasRoutes,
         ...reportsRoutes,
+        ...shareRoutes,
+        ...terminalRoutes,
         ...settingsRoutes,
         ...legacySettingsRedirects,
         ...profileRoutes,

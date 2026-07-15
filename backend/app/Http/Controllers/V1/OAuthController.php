@@ -24,7 +24,7 @@ class OAuthController extends Controller
      */
     public function redirect(string $provider): RedirectResponse
     {
-        if (! in_array($provider, ['google', 'discord'], true)) {
+        if (! in_array($provider, ['google', 'discord', 'linkedin'], true)) {
             abort(400, 'Provider inválido.');
         }
 
@@ -49,7 +49,7 @@ class OAuthController extends Controller
      */
     public function callback(Request $request, string $provider): RedirectResponse
     {
-        if (! in_array($provider, ['google', 'discord'], true)) {
+        if (! in_array($provider, ['google', 'discord', 'linkedin'], true)) {
             abort(400, 'Provider inválido.');
         }
 

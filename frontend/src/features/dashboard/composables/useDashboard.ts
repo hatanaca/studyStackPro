@@ -80,6 +80,9 @@ export function useDashboard(options?: UseDashboardOptions) {
   async function handleVisibilityChange() {
     if (document.visibilityState !== 'visible') return
 
+    // Skip fetch if WebSocket is connected - it will receive updates via events
+    if (isConnected.value) return
+
     const now = Date.now()
     if (now - lastVisibilityFetchAt < VISIBILITY_COOLDOWN_MS) return
     lastVisibilityFetchAt = now

@@ -26,9 +26,9 @@ Route::prefix('api/v1/auth')->middleware([
     ShareErrorsFromSession::class,
 ])->name('v1.auth.')->group(function () {
     Route::get('/{provider}', [OAuthController::class, 'redirect'])
-        ->where('provider', 'google|discord')
+        ->where('provider', 'google|discord|linkedin')
         ->name('oauth.redirect');
     Route::get('/{provider}/callback', [OAuthController::class, 'callback'])
-        ->where('provider', 'google|discord')
+        ->where('provider', 'google|discord|linkedin')
         ->name('oauth.callback');
 });

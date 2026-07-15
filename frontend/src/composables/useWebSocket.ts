@@ -38,6 +38,11 @@ let echo: EchoInstance | null = null
 const RECALC_FALLBACK_MS = 45_000
 let recalcFallbackTimer: ReturnType<typeof setTimeout> | null = null
 
+/** Callbacks de eventos de conexão para cleanup */
+let onConnected: (() => void) | null = null
+let onDisconnected: (() => void) | null = null
+let onFailed: (() => void) | null = null
+
 function clearRecalcFallbackTimer() {
   if (recalcFallbackTimer) {
     clearTimeout(recalcFallbackTimer)
@@ -129,15 +134,13 @@ export async function connectWebSocket(userId: string): Promise<void> {
     channelAuthorization,
   }) as EchoInstance
 
-  echo.connector.pusher.connection.bind('connected', () => {
-    isConnected.value = true
-  })
-  echo.connector.pusher.connection.bind('disconnected', () => {
-    isConnected.value = false
-  })
-  echo.connector.pusher.connection.bind('failed', () => {
-    isConnected.value = false
-  })
+  onConnected = () => { isConnected.value = true }
+  onDisconnected = () => { isConnected.value = false }
+  onFailed = () => { isConnected.value = false }
+
+  echo.connector.pusher.connection.bind('connected', onConnected)
+  echo.connector.pusher.connection.bind('disconnected', onDisconnected)
+  echo.connector.pusher.connection.bind('failed', onFailed)
 
   echo
     .private(`dashboard.${userId}`)
@@ -183,6 +186,19 @@ export async function connectWebSocket(userId: string): Promise<void> {
 export function disconnectWebSocket(): void {
   clearRecalcFallbackTimer()
   if (echo) {
+    // Unbind connection event listeners before disconnecting
+    if (onConnected) {
+      echo.connector.pusher.connection.unbind('connected', onConnected)
+      onConnected = null
+    }
+    if (onDisconnected) {
+      echo.connector.pusher.connection.unbind('disconnected', onDisconnected)
+      onDisconnected = null
+    }
+    if (onFailed) {
+      echo.connector.pusher.connection.unbind('failed', onFailed)
+      onFailed = null
+    }
     echo.disconnect()
     echo = null
   }

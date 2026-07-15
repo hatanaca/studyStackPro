@@ -14,9 +14,12 @@ export function useSessionTimer() {
   let intervalId: ReturnType<typeof setInterval> | null = null
   let baseTimestamp: number | null = null
   let baseElapsed = 0
+  let isTicking = false
 
   function startTicking() {
+    if (isTicking) return
     stopTicking()
+    isTicking = true
     baseTimestamp = Date.now()
     baseElapsed = store.elapsedSeconds
     intervalId = setInterval(() => {
@@ -33,6 +36,7 @@ export function useSessionTimer() {
       intervalId = null
     }
     baseTimestamp = null
+    isTicking = false
   }
 
   async function fetchActive() {

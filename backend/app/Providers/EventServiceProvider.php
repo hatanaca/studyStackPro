@@ -19,6 +19,7 @@ use App\Listeners\StudySession\DispatchMetricsRecalculation;
 use App\Listeners\StudySession\InvalidateSessionCache;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use SocialiteProviders\Discord\DiscordExtendSocialite;
+use SocialiteProviders\LinkedIn\LinkedInExtendSocialite;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 
 class EventServiceProvider extends ServiceProvider
@@ -46,6 +47,7 @@ class EventServiceProvider extends ServiceProvider
         ],
         SocialiteWasCalled::class => [
             DiscordExtendSocialite::class,
+            LinkedInExtendSocialite::class,
         ],
     ];
 

@@ -20,6 +20,12 @@ return [
         'scopes' => ['identify', 'email', 'guilds', 'messages.read'],
     ],
 
+    'linkedin' => [
+        'client_id' => env('LINKEDIN_CLIENT_ID'),
+        'client_secret' => env('LINKEDIN_CLIENT_SECRET'),
+        'redirect' => env('LINKEDIN_REDIRECT_URI'),
+    ],
+
     'youtube' => [
         'api_key' => env('YOUTUBE_API_KEY'),
     ],

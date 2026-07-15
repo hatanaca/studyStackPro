@@ -3,6 +3,8 @@
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\V1\AnalyticsController;
 use App\Http\Controllers\V1\AuthController;
+use App\Http\Controllers\V1\CodeExecutionController;
+use App\Http\Controllers\V1\LinkedInController;
 use App\Http\Controllers\V1\StudySessionController;
 use App\Http\Controllers\V1\TechnologyController;
 use App\Http\Controllers\V1\YouTubeController;
@@ -25,7 +27,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
         ->middleware('throttle:login');
 
     // OAuth Routes movidas para web.php — precisam de sessão web completa
-    // pois o callback do provider (Google/Discord) não passa pelo statefulApi.
+    // pois o callback do provider (Google/Discord/LinkedIn) não passa pelo statefulApi.
 
     Route::middleware(['auth:sanctum'])->group(function () {
         // User info endpoints
@@ -43,6 +45,16 @@ Route::prefix('v1')->name('v1.')->group(function () {
                 ->name('youtube.videos');
             Route::get('youtube/playlists', [YouTubeController::class, 'playlists'])
                 ->name('youtube.playlists');
+        });
+
+        // LinkedIn integration
+        Route::middleware('throttle:30,1')->group(function () {
+            Route::get('linkedin/status', [LinkedInController::class, 'status'])
+                ->name('linkedin.status');
+            Route::post('linkedin/share', [LinkedInController::class, 'share'])
+                ->name('linkedin.share');
+            Route::post('linkedin/disconnect', [LinkedInController::class, 'disconnect'])
+                ->name('linkedin.disconnect');
         });
         Route::middleware('throttle:search')->group(function () {
             Route::get('technologies/search', [TechnologyController::class, 'search'])
@@ -98,6 +110,14 @@ Route::prefix('v1')->name('v1.')->group(function () {
                 ->middleware('throttle.sliding:30');
             Route::post('analytics/recalculate', [AnalyticsController::class, 'recalculate'])
                 ->middleware('throttle:recalculate');
+
+            // Code execution terminal
+            Route::middleware('throttle:10,1')->group(function () {
+                Route::post('code/execute', [CodeExecutionController::class, 'execute'])
+                    ->name('code.execute');
+            });
+            Route::get('code/languages', [CodeExecutionController::class, 'languages'])
+                ->name('code.languages');
         });
     });
 });

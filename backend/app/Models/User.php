@@ -34,12 +34,16 @@ class User extends Authenticatable
         'avatar_url',
         'google_id',
         'discord_id',
+        'linkedin_id',
         'discord_token',
         'discord_refresh_token',
         'discord_token_expires_at',
         'google_token',
         'google_refresh_token',
         'google_token_expires_at',
+        'linkedin_token',
+        'linkedin_refresh_token',
+        'linkedin_token_expires_at',
     ];
 
     /** Campos nunca expostos em JSON (segurança) */
@@ -50,6 +54,8 @@ class User extends Authenticatable
         'discord_refresh_token',
         'google_token',
         'google_refresh_token',
+        'linkedin_token',
+        'linkedin_refresh_token',
     ];
 
     /** Casts de atributos (tipos e mutators) */
@@ -62,8 +68,11 @@ class User extends Authenticatable
             'discord_refresh_token' => 'encrypted',
             'google_token' => 'encrypted',
             'google_refresh_token' => 'encrypted',
+            'linkedin_token' => 'encrypted',
+            'linkedin_refresh_token' => 'encrypted',
             'discord_token_expires_at' => 'datetime',
             'google_token_expires_at' => 'datetime',
+            'linkedin_token_expires_at' => 'datetime',
         ];
     }
 

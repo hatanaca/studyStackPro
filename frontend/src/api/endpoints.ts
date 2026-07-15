@@ -44,4 +44,13 @@ export const ENDPOINTS = {
     videos: '/youtube/videos',
     playlists: '/youtube/playlists',
   },
+  linkedin: {
+    status: '/linkedin/status',
+    share: '/linkedin/share',
+    disconnect: '/linkedin/disconnect',
+  },
+  code: {
+    execute: '/code/execute',
+    languages: '/code/languages',
+  },
 } as const

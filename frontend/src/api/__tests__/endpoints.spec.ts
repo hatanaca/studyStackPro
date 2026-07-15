@@ -107,4 +107,28 @@ describe('ENDPOINTS', () => {
       expect(ENDPOINTS.youtube.playlists).toBe('/youtube/playlists')
     })
   })
+
+  describe('linkedin endpoints', () => {
+    it('has correct status endpoint', () => {
+      expect(ENDPOINTS.linkedin.status).toBe('/linkedin/status')
+    })
+
+    it('has correct share endpoint', () => {
+      expect(ENDPOINTS.linkedin.share).toBe('/linkedin/share')
+    })
+
+    it('has correct disconnect endpoint', () => {
+      expect(ENDPOINTS.linkedin.disconnect).toBe('/linkedin/disconnect')
+    })
+  })
+
+  describe('code endpoints', () => {
+    it('has correct execute endpoint', () => {
+      expect(ENDPOINTS.code.execute).toBe('/code/execute')
+    })
+
+    it('has correct languages endpoint', () => {
+      expect(ENDPOINTS.code.languages).toBe('/code/languages')
+    })
+  })
 })

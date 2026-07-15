@@ -1,0 +1,38 @@
+# Docker Compose para containers de sandbox de código
+# Usado pelo CodeExecutionService para executar código de forma isolada
+#
+# Build: docker compose -f docker-compose.sandbox.yml build
+# Os containers são criados e destruídos dinamicamente pelo DockerSandboxService
+
+services:
+  php-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.php
+    image: code-sandbox-php
+    container_name: code-sandbox-php-build
+    entrypoint: ["echo", "Build complete"]
+
+  php-laravel-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.php-laravel
+    image: code-sandbox-php-laravel
+    container_name: code-sandbox-php-laravel-build
+    entrypoint: ["echo", "Build complete"]
+
+  sql-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.sql
+    image: code-sandbox-sql
+    container_name: code-sandbox-sql-build
+    entrypoint: ["echo", "Build complete"]
+
+  bash-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.bash
+    image: code-sandbox-bash
+    container_name: code-sandbox-bash-build
+    entrypoint: ["echo", "Build complete"]
