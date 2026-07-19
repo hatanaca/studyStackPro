@@ -125,7 +125,7 @@ run_all() {
     echo "╔══════════════════════════════════════════════════════╗"
     [ $failures -eq 0 ] && echo "║   TODOS OS CHECKS DE SEGURANÇA PASSARAM ✅       ║" || echo "║   $failures CHECK(S) FALHARAM ❌       ║"
     echo "╚══════════════════════════════════════════════════════╝"; echo "Relatório: $REPORT_FILE"; echo ""
-    sentry_report_check "check-security" $failures "Verificacao: ${script%.sh}"
+    sentry_report_check "check-security" $failures "Verificacao: ${0%.sh}"
     return $failures
 }
 

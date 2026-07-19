@@ -281,7 +281,7 @@ run_all() {
     echo "Relatório: $REPORT_FILE"
     echo ""
 
-    sentry_report_check "check-evolution" $failures "Verificacao: ${script%.sh}"
+    sentry_report_check "check-evolution" $failures "Verificacao: ${0%.sh}"
     return $failures
 }
 
