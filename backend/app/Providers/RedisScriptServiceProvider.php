@@ -14,9 +14,15 @@ class RedisScriptServiceProvider extends ServiceProvider
         try {
             $redisLuaService->loadScripts();
         } catch (Throwable $exception) {
-            Log::warning('Falha ao carregar scripts Lua do Redis no boot; seguindo em fail-open.', [
-                'error' => $exception->getMessage(),
-            ]);
+            // Falha ao logar NUNCA deve quebrar o boot da aplicação.
+            // Erros comuns: Redis indisponível, permissão de arquivo de log.
+            try {
+                Log::warning('Falha ao carregar scripts Lua do Redis no boot; seguindo em fail-open.', [
+                    'error' => $exception->getMessage(),
+                ]);
+            } catch (Throwable) {
+                // Silencia — o boot da aplicação não pode falhar por causa de log
+            }
         }
     }
 }

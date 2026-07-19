@@ -124,9 +124,12 @@ class OAuthController extends Controller
         try {
             Auth::guard('web')->login($user);
         } catch (\Throwable $e) {
-            Log::error('oauthComplete login failed', ['error' => $e->getMessage(), 'class' => get_class($e)]);
-
-            return $this->error('Falha ao criar sessão.', 'INTERNAL_ERROR', null, 500);
+            // Sessão web indisponível (ex.: requisição API sem session cookie).
+            // Não falha — o token Bearer abaixo ainda funciona perfeitamente.
+            Log::warning('oauthComplete: web login skipped (no session)', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
         }
         // Gera Bearer token como fallback para autenticação via API
         $user->tokens()->where('name', 'oauth-token')->delete();
