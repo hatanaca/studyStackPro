@@ -25,16 +25,28 @@ parameters:
 			path: app/Events/StudySession/SessionStarted.php
 
 		-
-			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
-			identifier: larastan.noEnvCallsOutsideOfConfig
+			message: '#^Offset ''headline'' on array\{id\: string, localizedFirstName\: string, localizedLastName\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
 			count: 1
-			path: app/Http/Controllers/V1/OAuthController.php
+			path: app/Http/Controllers/V1/LinkedInController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
+			message: '#^Offset ''id'' on array\{id\: string, localizedFirstName\: string, localizedLastName\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
 			count: 1
-			path: app/Http/Controllers/V1/StudySessionController.php
+			path: app/Http/Controllers/V1/LinkedInController.php
+
+		-
+			message: '#^Offset ''localizedFirstName'' on array\{id\: string, localizedFirstName\: string, localizedLastName\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Http/Controllers/V1/LinkedInController.php
+
+		-
+			message: '#^Offset ''localizedLastName'' on array\{id\: string, localizedFirstName\: string, localizedLastName\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Http/Controllers/V1/LinkedInController.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -97,10 +109,46 @@ parameters:
 			path: app/Modules/Analytics/Aggregators/MetricsAggregator.php
 
 		-
-			message: '#^Call to function method_exists\(\) with App\\Jobs\\RecalculateMetricsJob and ''uuid'' will always evaluate to false\.$#'
-			identifier: function.impossibleType
+			message: '#^Property App\\Modules\\Analytics\\Services\\AnalyticsService\:\:\$technologyService is never read, only written\.$#'
+			identifier: property.onlyWritten
 			count: 1
 			path: app/Modules/Analytics/Services/AnalyticsService.php
+
+		-
+			message: '#^Instantiated class App\\Modules\\CodeExecution\\Exceptions\\SandboxExecutionException not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Modules/CodeExecution/Services/CodeExecutionService.php
+
+		-
+			message: '#^Throwing object of an unknown class App\\Modules\\CodeExecution\\Exceptions\\SandboxExecutionException\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Modules/CodeExecution/Services/CodeExecutionService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between int and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Modules/CodeExecution/Services/DockerSandboxService.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: app/Modules/CodeExecution/Services/DockerSandboxService.php
+
+		-
+			message: '#^Constant App\\Modules\\LinkedIn\\Services\\LinkedInService\:\:SHARE_SCOPE is unused\.$#'
+			identifier: classConstant.unused
+			count: 1
+			path: app/Modules/LinkedIn/Services/LinkedInService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/StudySessions/Services/StudySessionService.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
