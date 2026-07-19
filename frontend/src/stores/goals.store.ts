@@ -31,7 +31,7 @@ export const useGoalsStore = defineStore('goals', () => {
     }
   }
 
-  function updateGoal(
+  async function updateGoal(
     id: string,
     payload: { target_value?: number; status?: Goal['status']; end_date?: string | null }
   ): Promise<Goal | null> {

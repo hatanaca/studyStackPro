@@ -51,9 +51,9 @@ class RecalculateMetricsJobTest extends TestCase
             ->once()
             ->withArgs(function ($msg, $context) use ($user) {
                 return $msg === 'RecalculateMetricsJob failed'
-                    && isset($context['userId'], $context['attempt'], $context['error'])
+                    && isset($context['userId'], $context['attempt'], $context['exception'])
                     && $context['userId'] === $user->id
-                    && $context['error'] === 'Test failure';
+                    && $context['exception']->getMessage() === 'Test failure';
             });
 
         $job->failed($exception);
