@@ -8,8 +8,8 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
+use Sentry\Laravel\Integration;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -22,13 +22,13 @@ class Handler extends ExceptionHandler
      * Exceções 4xx que são comportamento normal — não devem poluir os logs de erro.
      */
     protected $dontReport = [
-        \Illuminate\Auth\AuthenticationException::class,
-        \Illuminate\Auth\Access\AuthorizationException::class,
-        \Illuminate\Database\Eloquent\ModelNotFoundException::class,
-        \Symfony\Component\HttpKernel\Exception\NotFoundHttpException::class,
-        \Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException::class,
-        \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException::class,
-        \Illuminate\Validation\ValidationException::class,
+        AuthenticationException::class,
+        AuthorizationException::class,
+        ModelNotFoundException::class,
+        NotFoundHttpException::class,
+        TooManyRequestsHttpException::class,
+        MethodNotAllowedHttpException::class,
+        ValidationException::class,
     ];
 
     protected $dontFlash = [
@@ -41,7 +41,7 @@ class Handler extends ExceptionHandler
     {
         $this->reportable(function (Throwable $e) {
             if (app()->bound('sentry')) {
-                \Sentry\Laravel\Integration::captureUnhandledException($e);
+                Integration::captureUnhandledException($e);
             }
         });
     }
@@ -111,6 +111,7 @@ class Handler extends ExceptionHandler
     private function isConcurrentSessionQueryException(QueryException $e): bool
     {
         $state = (string) ($e->errorInfo[0] ?? '');
+
         return $state === 'P0001';
     }
 

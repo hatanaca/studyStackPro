@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Http\Controllers\V1;
+
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
@@ -18,6 +20,7 @@ use Illuminate\Support\Facades\Auth;
 class AuthController extends Controller
 {
     use HasApiResponse;
+
     public function __construct(
         private AuthService $authService,
         private TokenService $tokenService
@@ -38,6 +41,7 @@ class AuthController extends Controller
         }
         $user->tokens()->where('name', 'auth-token')->delete();
         $token = $user->createToken('auth-token')->plainTextToken;
+
         return $this->success([
             'user' => new UserResource($user->fresh()),
             'token' => $token,
@@ -62,6 +66,7 @@ class AuthController extends Controller
         }
         $user->tokens()->where('name', 'auth-token')->delete();
         $token = $user->createToken('auth-token')->plainTextToken;
+
         return $this->success([
             'user' => new UserResource($user),
             'token' => $token,
@@ -79,6 +84,7 @@ class AuthController extends Controller
             $request->session()->invalidate();
             $request->session()->regenerateToken();
         }
+
         return $this->success(null, 'Sessão terminada.');
     }
 
@@ -90,6 +96,7 @@ class AuthController extends Controller
     public function updateProfile(UpdateProfileRequest $request): JsonResponse
     {
         $user = $this->authService->updateProfile($request->user(), $request->validated());
+
         return $this->success(new UserResource($user), 'Perfil atualizado.');
     }
 
@@ -103,12 +110,14 @@ class AuthController extends Controller
         )) {
             return $this->error('Senha atual incorreta.', 'VALIDATION_ERROR', null, 422);
         }
+
         return $this->success(null, 'Senha alterada. Reconecte seus dispositivos.');
     }
 
     public function tokens(Request $request): JsonResponse
     {
         $tokens = $request->user()->tokens()->get(['id', 'name', 'created_at', 'last_used_at']);
+
         return $this->success($tokens->map(fn ($t) => [
             'id' => $t->id,
             'name' => $t->name,
@@ -120,6 +129,7 @@ class AuthController extends Controller
     public function revokeAllTokens(Request $request): JsonResponse
     {
         $count = $this->tokenService->revokeMany($request->user()->tokens()->cursor());
+
         return $this->success(
             ['revoked_count' => $count],
             $count === 1 ? '1 token revogado.' : "{$count} tokens revogados."

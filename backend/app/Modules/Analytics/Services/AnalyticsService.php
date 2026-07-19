@@ -1,8 +1,11 @@
 <?php
+
 namespace App\Modules\Analytics\Services;
+
 use App\Jobs\RecalculateMetricsJob;
 use App\Modules\Analytics\Repositories\Contracts\AnalyticsRepositoryInterface;
 use App\Modules\Technologies\Services\TechnologyService;
+
 class AnalyticsService
 {
     public function __construct(
@@ -55,6 +58,7 @@ class AnalyticsService
         $job = new RecalculateMetricsJob($userId, true);
         $job->onQueue('metrics');
         dispatch($job);
+
         return ['job_id' => $userId];
     }
 
@@ -62,6 +66,7 @@ class AnalyticsService
     {
         $technologyMetrics = $this->repository->getTechnologyMetrics($userId);
         $topTechnologies = array_slice($technologyMetrics, 0, 5);
+
         return [
             'user_metrics' => $this->repository->getUserMetrics($userId),
             'technology_metrics' => $technologyMetrics,

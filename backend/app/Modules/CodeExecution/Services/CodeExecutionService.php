@@ -1,8 +1,9 @@
 <?php
+
 namespace App\Modules\CodeExecution\Services;
+
 use App\Modules\CodeExecution\DTOs\ExecutionResultDTO;
 use App\Modules\CodeExecution\Exceptions\SandboxExecutionException;
-use Illuminate\Support\Facades\Log;
 
 class CodeExecutionService
 {
@@ -24,6 +25,7 @@ class CodeExecutionService
         }
 
         $result = $this->sandboxService->run($code, $language);
+
         return new ExecutionResultDTO(
             success: $result['success'],
             output: $result['output'],
@@ -49,12 +51,13 @@ class CodeExecutionService
         if (trim($code) === '') {
             return false;
         }
-        if (!in_array(strtolower(trim($language)), $this->supportedLanguages(), true)) {
+        if (! in_array(strtolower(trim($language)), $this->supportedLanguages(), true)) {
             return false;
         }
         if (strlen($code) > 10000) {
             return false;
         }
+
         return true;
     }
 }

@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Http\Requests\StudySessions;
+
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateStudySessionRequest extends FormRequest

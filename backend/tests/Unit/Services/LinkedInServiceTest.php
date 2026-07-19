@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\LinkedIn\DTOs\LinkedInPostDTO;
 use App\Modules\LinkedIn\Services\LinkedInService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -18,7 +19,7 @@ class LinkedInServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new LinkedInService();
+        $this->service = new LinkedInService;
     }
 
     public function test_is_connected_returns_false_when_no_linkedin_id(): void
@@ -78,7 +79,7 @@ class LinkedInServiceTest extends TestCase
 
         $dto = new LinkedInPostDTO(text: 'Teste');
 
-        $this->expectException(\Illuminate\Http\Client\RequestException::class);
+        $this->expectException(RequestException::class);
 
         $this->service->sharePost($user, $dto);
     }

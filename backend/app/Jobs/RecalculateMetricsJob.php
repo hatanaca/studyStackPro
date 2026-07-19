@@ -5,7 +5,6 @@ namespace App\Jobs;
 use App\Events\Analytics\MetricsRecalculated;
 use App\Models\User;
 use App\Modules\Analytics\Aggregators\MetricsAggregator;
-use App\Modules\Analytics\Services\AnalyticsService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;

@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Http\Middleware;
+
 use Closure;
 use DateTimeZone;
 use Illuminate\Http\Request;
@@ -15,6 +17,7 @@ class SetUserTimezone
             // Armazenar timezone no request para uso local (não mutar Carbon global)
             $request->attributes->set('user_timezone', $user->timezone);
         }
+
         return $next($request);
     }
 

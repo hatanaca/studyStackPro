@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Horizon\Horizon;
+use Sentry\Laravel\Integration;
+use Sentry\State\Scope;
 use SocialiteProviders\Discord\DiscordExtendSocialite;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 
@@ -33,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Sentry context: environment info attached to every event
         if (app()->bound('sentry')) {
-            \Sentry\Laravel\Integration::configureScope(function (\Sentry\State\Scope $scope): void {
+            Integration::configureScope(function (Scope $scope): void {
                 $scope->setContext('app', [
                     'name' => config('app.name'),
                     'env' => config('app.env'),

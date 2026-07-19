@@ -4,6 +4,7 @@ namespace Tests\Feature\LinkedIn;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as SocialiteUser;
 use Tests\TestCase;
@@ -14,14 +15,14 @@ class LinkedInOAuthTest extends TestCase
 
     private function validState(): string
     {
-        return urlencode(\Illuminate\Support\Facades\Crypt::encryptString(
+        return urlencode(Crypt::encryptString(
             json_encode(['ts' => time()])
         ));
     }
 
     private function makeSocialiteUser(array $data): SocialiteUser
     {
-        $user = new SocialiteUser();
+        $user = new SocialiteUser;
         $user->id = $data['id'];
         $user->name = $data['name'] ?? null;
         $user->email = $data['email'] ?? null;
@@ -29,6 +30,7 @@ class LinkedInOAuthTest extends TestCase
         $user->token = $data['token'] ?? null;
         $user->refreshToken = $data['refreshToken'] ?? null;
         $user->expiresIn = $data['expiresIn'] ?? null;
+
         return $user;
     }
 

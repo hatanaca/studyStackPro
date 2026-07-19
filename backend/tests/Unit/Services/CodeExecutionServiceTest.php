@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Services;
 
+use App\Modules\CodeExecution\DTOs\ExecutionResultDTO;
 use App\Modules\CodeExecution\Services\CodeExecutionService;
 use App\Modules\CodeExecution\Services\DockerSandboxService;
 use Mockery;
@@ -77,7 +78,7 @@ class CodeExecutionServiceTest extends TestCase
 
         $result = $this->service->execute('<?php echo "hello";', 'php');
 
-        $this->assertInstanceOf(\App\Modules\CodeExecution\DTOs\ExecutionResultDTO::class, $result);
+        $this->assertInstanceOf(ExecutionResultDTO::class, $result);
         $this->assertTrue($result->success);
         $this->assertEquals('hello', $result->output);
     }

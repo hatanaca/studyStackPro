@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Http\Middleware;
+
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -10,8 +12,10 @@ class LogApiRequests
     public function handle(Request $request, Closure $next): Response
     {
         $request->attributes->set('_request_start', microtime(true));
+
         return $next($request);
     }
+
     public function terminate(Request $request, Response $response): void
     {
         try {
@@ -28,7 +32,7 @@ class LogApiRequests
             // Falha ao logar NUNCA deve quebrar a requisição.
             // Erros comuns: permissão de arquivo de log, disco cheio.
             // Log via erro padrão como último recurso.
-            error_log('LogApiRequests: ' . $e->getMessage());
+            error_log('LogApiRequests: '.$e->getMessage());
         }
     }
 }

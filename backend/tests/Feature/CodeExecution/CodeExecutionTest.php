@@ -5,7 +5,6 @@ namespace Tests\Feature\CodeExecution;
 use App\Models\User;
 use App\Modules\CodeExecution\Services\DockerSandboxService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Http;
 use Mockery;
 use Tests\TestCase;
 

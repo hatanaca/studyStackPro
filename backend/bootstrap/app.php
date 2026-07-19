@@ -1,7 +1,14 @@
 <?php
-if (! defined('SIGINT')) { define('SIGINT', 2); }
-if (! defined('SIGTERM')) { define('SIGTERM', 15); }
-if (! defined('SIGTSTP')) { define('SIGTSTP', 20); }
+
+if (! defined('SIGINT')) {
+    define('SIGINT', 2);
+}
+if (! defined('SIGTERM')) {
+    define('SIGTERM', 15);
+}
+if (! defined('SIGTSTP')) {
+    define('SIGTSTP', 20);
+}
 use App\Http\Middleware\EnsureJsonResponse;
 use App\Http\Middleware\LogApiRequests;
 use App\Http\Middleware\SecurityHeaders;
@@ -33,7 +40,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 $middleware->trustProxies(at: '*');
             } else {
                 $at = array_values(array_filter(array_map('trim', explode(',', $trustedProxies))));
-                if ($at !== []) { $middleware->trustProxies(at: $at); }
+                if ($at !== []) {
+                    $middleware->trustProxies(at: $at);
+                }
             }
         }
         $middleware->append(SecurityHeaders::class);

@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,6 +15,7 @@ class User extends Authenticatable
     use HasUuids;
 
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -51,6 +54,13 @@ class User extends Authenticatable
         ];
     }
 
-    public function technologies(): HasMany { return $this->hasMany(Technology::class); }
-    public function studySessions(): HasMany { return $this->hasMany(StudySession::class); }
+    public function technologies(): HasMany
+    {
+        return $this->hasMany(Technology::class);
+    }
+
+    public function studySessions(): HasMany
+    {
+        return $this->hasMany(StudySession::class);
+    }
 }

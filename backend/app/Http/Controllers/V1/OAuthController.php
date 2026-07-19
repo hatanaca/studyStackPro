@@ -1,6 +1,9 @@
 <?php
+
 namespace App\Http\Controllers\V1;
+
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Modules\Auth\Services\SocialAuthService;
 use App\Traits\HasApiResponse;
@@ -34,7 +37,8 @@ class OAuthController extends Controller
         $csrfToken = Crypt::encryptString(json_encode(['ts' => time()]));
         $response = $driver->redirect();
         $url = $response->getTargetUrl();
-        $url .= (str_contains($url, '?') ? '&' : '?') . 'state=' . urlencode($csrfToken);
+        $url .= (str_contains($url, '?') ? '&' : '?').'state='.urlencode($csrfToken);
+
         return redirect($url);
     }
 
@@ -42,22 +46,26 @@ class OAuthController extends Controller
     {
         if (! in_array($provider, ['google', 'discord', 'linkedin'], true)) {
             Log::warning('OAuth callback: provider inválido', ['provider' => $provider]);
+
             return redirect(config('services.frontend_url').'/login?error=oauth_failed');
         }
         // Valida o estado CSRF assinado (autocontido, sem sessão)
         $state = $request->input('state');
         if ($state === null) {
             Log::warning('OAuth callback: state ausente', ['provider' => $provider]);
+
             return redirect(config('services.frontend_url').'/login?error=oauth_failed');
         }
         try {
             $payload = json_decode(Crypt::decryptString($state), true);
-            if (!isset($payload['ts']) || (time() - $payload['ts']) > 600) {
+            if (! isset($payload['ts']) || (time() - $payload['ts']) > 600) {
                 Log::warning('OAuth callback: state expirado', ['provider' => $provider]);
+
                 return redirect(config('services.frontend_url').'/login?error=oauth_failed');
             }
         } catch (\Exception $e) {
             Log::error('OAuth callback: state inválido', ['provider' => $provider, 'error' => $e->getMessage()]);
+
             return redirect(config('services.frontend_url').'/login?error=oauth_failed');
         }
         $frontendUrl = config('services.frontend_url');
@@ -69,6 +77,7 @@ class OAuthController extends Controller
                 'error' => $e->getMessage(),
                 'class' => get_class($e),
             ]);
+
             return redirect($frontendUrl.'/login?error=oauth_failed');
         }
 
@@ -76,6 +85,7 @@ class OAuthController extends Controller
             $user = $this->socialAuthService->handleOAuthUser($socialUser, $provider);
         } catch (\Throwable $e) {
             Log::error('OAuth handleOAuthUser failed', ['provider' => $provider, 'exception' => $e]);
+
             return redirect($frontendUrl.'/login?error=oauth_failed');
         }
         // Token assinado para criar sessão no port do frontend (5173)
@@ -83,6 +93,7 @@ class OAuthController extends Controller
             'user_id' => $user->id,
             'ts' => time(),
         ]));
+
         return redirect($frontendUrl.'/auth/callback?status=ok&token='.urlencode($token));
     }
 
@@ -92,12 +103,12 @@ class OAuthController extends Controller
     public function oauthComplete(Request $request): JsonResponse
     {
         $token = $request->input('token');
-        if (!is_string($token) || $token === '') {
+        if (! is_string($token) || $token === '') {
             return $this->error('Token ausente.', 'VALIDATION_ERROR', null, 422);
         }
         try {
             $payload = json_decode(Crypt::decryptString($token), true);
-            if (!$payload || !isset($payload['user_id'], $payload['ts'])) {
+            if (! $payload || ! isset($payload['user_id'], $payload['ts'])) {
                 return $this->error('Token inválido.', 'UNAUTHENTICATED', null, 401);
             }
             if (time() - $payload['ts'] > 600) {
@@ -107,20 +118,22 @@ class OAuthController extends Controller
             return $this->error('Token inválido.', 'UNAUTHENTICATED', null, 401);
         }
         $user = User::find($payload['user_id']);
-        if (!$user) {
+        if (! $user) {
             return $this->error('Utilizador não encontrado.', 'NOT_FOUND', null, 404);
         }
         try {
             Auth::guard('web')->login($user);
         } catch (\Throwable $e) {
             Log::error('oauthComplete login failed', ['error' => $e->getMessage(), 'class' => get_class($e)]);
+
             return $this->error('Falha ao criar sessão.', 'INTERNAL_ERROR', null, 500);
         }
         // Gera Bearer token como fallback para autenticação via API
         $user->tokens()->where('name', 'oauth-token')->delete();
         $bearer = $user->createToken('oauth-token')->plainTextToken;
+
         return $this->success([
-            'user' => new \App\Http\Resources\UserResource($user),
+            'user' => new UserResource($user),
             'token' => $bearer,
         ]);
     }
