@@ -21,7 +21,9 @@ function onSuccess(payload: SessionSavedPayload) {
   analyticsStore.fetchHeatmap().catch(handleError('fetchHeatmap'))
   analyticsStore.fetchWeekly().catch(handleError('fetchWeekly'))
   if (analyticsStore.selectedPeriod) {
-    analyticsStore.fetchTimeSeries(analyticsStore.selectedPeriod).catch(handleError('fetchTimeSeries'))
+    analyticsStore
+      .fetchTimeSeries(analyticsStore.selectedPeriod)
+      .catch(handleError('fetchTimeSeries'))
   }
   showDialog.value = false
 }

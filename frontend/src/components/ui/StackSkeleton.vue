@@ -13,15 +13,18 @@
 <script setup lang="ts">
 import Skeleton from 'primevue/skeleton'
 
-withDefaults(defineProps<{
-  rows?: Array<{ width?: string; height?: string }>
-}>(), {
-  rows: () => [
-    { width: '38%', height: '1rem' },
-    { width: '100%', height: '10rem' },
-    { width: '100%', height: '6rem' },
-  ],
-})
+withDefaults(
+  defineProps<{
+    rows?: Array<{ width?: string; height?: string }>
+  }>(),
+  {
+    rows: () => [
+      { width: '38%', height: '1rem' },
+      { width: '100%', height: '10rem' },
+      { width: '100%', height: '6rem' },
+    ],
+  }
+)
 </script>
 
 <style scoped>
@@ -30,5 +33,7 @@ withDefaults(defineProps<{
   flex-direction: column;
   gap: var(--spacing-sm, 0.5rem);
 }
-.stack-skeleton__bar { border-radius: var(--radius-sm); }
+.stack-skeleton__bar {
+  border-radius: var(--radius-sm);
+}
 </style>

@@ -23,7 +23,14 @@ onErrorCaptured((err) => {
   <div v-if="hasError" class="error-boundary">
     <h2>Algo deu errado</h2>
     <p>{{ error?.message }}</p>
-    <button @click="hasError = false; error = null">Tentar novamente</button>
+    <button
+      @click="
+        hasError = false
+        error = null
+      "
+    >
+      Tentar novamente
+    </button>
   </div>
   <RouterView v-else />
   <Toast />

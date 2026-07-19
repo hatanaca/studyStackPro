@@ -82,6 +82,29 @@ export function formatCurrency(value: number, currency = 'BRL'): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(value)
 }
 
+/**
+ * Converte duração ISO 8601 (ex: PT1H30M15S) para formato legível (ex: "1:30:15").
+ * Usado em players e cards de vídeo YouTube.
+ */
+export function formatISODuration(iso: string): string {
+  const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
+  if (!match) return iso
+  const h = parseInt(match[1] || '0')
+  const m = parseInt(match[2] || '0')
+  const s = parseInt(match[3] || '0')
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+/** Abrevia número grande (ex: 1234567 → "1.2M"). Usado em contadores e views. */
+export function formatCompactNumber(value: number | string): string {
+  const num = typeof value === 'string' ? parseInt(value) : value
+  if (isNaN(num)) return String(value)
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`
+  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`
+  return String(num)
+}
+
 /** Texto truncado com reticências */
 export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text

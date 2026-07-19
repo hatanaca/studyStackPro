@@ -13,9 +13,6 @@ defineProps<{
 <template>
   <ChartPanel title="Funil de engajamento" :loading="loading">
     <ChartSkeleton v-if="loading" height="280px" />
-    <FunnelChart
-      v-else
-      :data="data"
-    />
+    <FunnelChart v-else :data="data" />
   </ChartPanel>
 </template>

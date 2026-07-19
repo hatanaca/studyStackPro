@@ -26,7 +26,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
   }
 
   function markRead(id: string) {
-    items.value = items.value.map((n) => n.id === id ? { ...n, read: true } : n)
+    items.value = items.value.map((n) => (n.id === id ? { ...n, read: true } : n))
   }
 
   function markAllRead() {

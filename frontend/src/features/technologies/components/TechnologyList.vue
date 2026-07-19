@@ -143,12 +143,7 @@ defineExpose({ openCreate })
     />
     <div v-else-if="store.technologies?.length" class="technology-list__grid">
       <template v-for="t in store.technologies" :key="t?.id ?? 'empty'">
-        <TechnologyCard
-          v-if="t"
-          :technology="t"
-          @edit="openEdit"
-          @delete="handleDelete"
-        />
+        <TechnologyCard v-if="t" :technology="t" @edit="openEdit" @delete="handleDelete" />
       </template>
     </div>
     <EmptyState

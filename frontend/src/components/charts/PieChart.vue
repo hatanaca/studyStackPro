@@ -116,7 +116,7 @@ const chartOptions = computed(() => {
       y: {
         formatter: (
           val: number,
-          opts: { w?: { globals?: { seriesTotals?: number[] } }; seriesIndex?: number } = {},
+          opts: { w?: { globals?: { seriesTotals?: number[] } }; seriesIndex?: number } = {}
         ) => {
           const w = opts?.w
           const sum = w?.globals?.seriesTotals?.reduce((a, b) => a + b, 0) ?? total.value

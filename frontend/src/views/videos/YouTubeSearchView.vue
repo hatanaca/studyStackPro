@@ -2,6 +2,7 @@
 import { ref, onUnmounted } from 'vue'
 import { useYouTubeStore } from '@/stores/youtube.store'
 import PageView from '@/components/layout/PageView.vue'
+import { formatISODuration, formatCompactNumber } from '@/utils/formatters'
 
 const store = useYouTubeStore()
 const query = ref('')
@@ -44,25 +45,7 @@ function prevPage() {
   }
 }
 
-function formatDuration(iso: string): string {
-  const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
-  if (!match) return iso
-  const h = parseInt(match[1] || '0')
-  const m = parseInt(match[2] || '0')
-  const s = parseInt(match[3] || '0')
-  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-  return `${m}:${String(s).padStart(2, '0')}`
-}
-
-function formatViews(n: string): string {
-  const num = parseInt(n)
-  if (isNaN(num)) return n
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`
-  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`
-  return String(num)
-}
-
-function formatDate(dateStr: string): string {
+function formatVideoDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('pt-BR', {
     year: 'numeric', month: 'short', day: 'numeric',
   })
@@ -154,17 +137,17 @@ onUnmounted(() => {
                   {{ store.videoDetail.snippet.channelTitle }}
                 </span>
                 <span class="yt-detail__sep">•</span>
-                <span>{{ formatViews(store.videoDetail.statistics.viewCount) }} visualizações</span>
+                <span>{{ formatCompactNumber(store.videoDetail.statistics.viewCount) }} visualizações</span>
                 <span class="yt-detail__sep">•</span>
-                <span>{{ formatDuration(store.videoDetail.contentDetails.duration) }}</span>
+                <span>{{ formatISODuration(store.videoDetail.contentDetails.duration) }}</span>
                 <span class="yt-detail__sep">•</span>
-                <span>{{ formatDate(store.videoDetail.snippet.publishedAt) }}</span>
+                <span>{{ formatVideoDate(store.videoDetail.snippet.publishedAt) }}</span>
               </div>
 
               <div class="yt-detail__stats">
                 <span class="yt-detail__stat">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  {{ formatViews(store.videoDetail.statistics.viewCount) }}
+                  {{ formatCompactNumber(store.videoDetail.statistics.viewCount) }}
                 </span>
                 <span class="yt-detail__stat">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -253,7 +236,7 @@ onUnmounted(() => {
               <div class="yt-card__info">
                 <h3 class="yt-card__title">{{ item.snippet.title }}</h3>
                 <p class="yt-card__channel">{{ item.snippet.channelTitle }}</p>
-                <p class="yt-card__date">{{ formatDate(item.snippet.publishedAt) }}</p>
+                <p class="yt-card__date">{{ formatVideoDate(item.snippet.publishedAt) }}</p>
               </div>
             </div>
           </article>

@@ -35,14 +35,26 @@ describe('code-terminal store', () => {
       id: '1',
       code: 'print("hello")',
       language: 'javascript',
-      result: { success: true, output: 'hello', error: null, executionTime: 10, language: 'javascript' },
+      result: {
+        success: true,
+        output: 'hello',
+        error: null,
+        executionTime: 10,
+        language: 'javascript',
+      },
       timestamp: 1000,
     }
     const entry2: TerminalEntry = {
       id: '2',
       code: 'print("world")',
       language: 'javascript',
-      result: { success: true, output: 'world', error: null, executionTime: 5, language: 'javascript' },
+      result: {
+        success: true,
+        output: 'world',
+        error: null,
+        executionTime: 5,
+        language: 'javascript',
+      },
       timestamp: 2000,
     }
 

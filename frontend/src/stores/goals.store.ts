@@ -71,5 +71,16 @@ export const useGoalsStore = defineStore('goals', () => {
     return items.value.find((g) => g.status === 'active' && g.type === 'minutes_per_week') ?? null
   }
 
-  return { items, error, activeGoals, completedGoals, fetchGoals, createGoal, updateGoal, deleteGoal, getProgress, getActiveWeeklyMinutesGoal }
+  return {
+    items,
+    error,
+    activeGoals,
+    completedGoals,
+    fetchGoals,
+    createGoal,
+    updateGoal,
+    deleteGoal,
+    getProgress,
+    getActiveWeeklyMinutesGoal,
+  }
 })

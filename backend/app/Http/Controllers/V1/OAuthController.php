@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Modules\Auth\Services\SocialAuthService;
+use App\Modules\Auth\Services\TokenService;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -19,7 +20,10 @@ class OAuthController extends Controller
 {
     use HasApiResponse;
 
-    public function __construct(private SocialAuthService $socialAuthService) {}
+    public function __construct(
+        private SocialAuthService $socialAuthService,
+        private TokenService $tokenService
+    ) {}
 
     public function redirect(string $provider): RedirectResponse
     {
@@ -132,8 +136,7 @@ class OAuthController extends Controller
             ]);
         }
         // Gera Bearer token como fallback para autenticação via API
-        $user->tokens()->where('name', 'oauth-token')->delete();
-        $bearer = $user->createToken('oauth-token')->plainTextToken;
+        $bearer = $this->tokenService->createApiToken($user, 'oauth-token');
 
         return $this->success([
             'user' => new UserResource($user),

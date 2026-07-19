@@ -13,10 +13,6 @@ defineProps<{
 <template>
   <ChartPanel title="Perfil de estudo" :loading="loading">
     <ChartSkeleton v-if="loading" height="280px" />
-    <RadarChart
-      v-else
-      :series="data.series"
-      :labels="data.labels"
-    />
+    <RadarChart v-else :series="data.series" :labels="data.labels" />
   </ChartPanel>
 </template>

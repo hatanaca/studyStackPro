@@ -50,10 +50,12 @@ const chartOptions = computed<ApexOptions>(() => ({
   tooltip: { enabled: false },
 }))
 
-const series = computed(() => [{
-  name: '',
-  data: props.data,
-}])
+const series = computed(() => [
+  {
+    name: '',
+    data: props.data,
+  },
+])
 </script>
 
 <template>

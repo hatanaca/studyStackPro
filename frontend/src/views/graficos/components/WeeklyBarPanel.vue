@@ -14,7 +14,7 @@ defineProps<{
     <ChartSkeleton v-if="loading" height="280px" />
     <BarChart
       v-else
-      :data="{ labels: data.labels, values: data.values, scores: data.scores.map(s => s ?? 0) }"
+      :data="{ labels: data.labels, values: data.values, scores: data.scores.map((s) => s ?? 0) }"
       orientation="vertical"
       value-unit="min"
       :show-data-labels="true"

@@ -1,13 +1,14 @@
-# Pipeline de Qualidade — 2026-07-19 13:43:05
-## Modo: Verificação
-
+# Pipeline de Qualidade — 2026-07-19 14:43:47
 ## Resultados
 
-- **Segurança**: ⚠️ Parcial
+- **Evolução**: ❌ Falhou
+  (mas 10 correção(ões) foram aplicadas)
+- **Segurança**: ❌ Falhou
 - **Integridade**: ❌ Falhou
-  (mas 1 correção(ões) foram aplicadas mesmo assim)
+  (mas 1 correção(ões) foram aplicadas)
 - **Testes**: ❌ Falhou
-- **Desempenho**: ⚠️ Parcial
-- **Design**: ✅ OK + 1 auto-fix(es)
+- **Desempenho**: ✅ Passou
+- **Sentry**: ✅ Passou
+- **Design**: ✅ OK + 4 auto-fix(es)
 
-**Resumo**: ❌ 2 de 5 checks falharam
+**Resumo**: ❌ 4 de 7 checks falharam

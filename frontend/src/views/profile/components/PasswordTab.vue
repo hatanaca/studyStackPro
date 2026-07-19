@@ -68,7 +68,16 @@ async function submit() {
           type="text"
           name="username"
           autocomplete="username"
-          style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;"
+          style="
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+          "
           tabindex="-1"
           aria-hidden="true"
         />
@@ -82,7 +91,9 @@ async function submit() {
             class="w-full"
             :class="{ 'p-invalid': errors.current_password }"
           />
-          <small v-if="errors.current_password" class="p-error">{{ errors.current_password }}</small>
+          <small v-if="errors.current_password" class="p-error">{{
+            errors.current_password
+          }}</small>
         </div>
         <div class="p-field">
           <label>Nova senha</label>
@@ -106,7 +117,9 @@ async function submit() {
             class="w-full"
             :class="{ 'p-invalid': errors.password_confirmation }"
           />
-          <small v-if="errors.password_confirmation" class="p-error">{{ errors.password_confirmation }}</small>
+          <small v-if="errors.password_confirmation" class="p-error">{{
+            errors.password_confirmation
+          }}</small>
         </div>
         <Button
           type="submit"

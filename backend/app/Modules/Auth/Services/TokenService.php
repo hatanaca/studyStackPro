@@ -2,6 +2,7 @@
 
 namespace App\Modules\Auth\Services;
 
+use App\Models\User;
 use Illuminate\Redis\Connections\PhpRedisConnection;
 use Illuminate\Redis\RedisManager;
 use Illuminate\Support\Carbon;
@@ -67,6 +68,19 @@ class TokenService
         PersonalAccessToken::whereIn('id', $ids)->delete();
 
         return count($tokenList);
+    }
+
+    /**
+     * Cria um novo token de API para o usuário, removendo tokens anteriores com o mesmo nome.
+     *
+     * Esse padrão de "revoga anterior, cria novo" é usado em register, login e OAuth complete.
+     * Centralizar aqui garante consistência e evita duplicação.
+     */
+    public function createApiToken(User $user, string $tokenName = 'auth-token'): string
+    {
+        $user->tokens()->where('name', $tokenName)->delete();
+
+        return $user->createToken($tokenName)->plainTextToken;
     }
 
     private function resolveTtl(PersonalAccessToken $token): int

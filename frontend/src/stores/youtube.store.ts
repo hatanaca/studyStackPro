@@ -1,6 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { youtubeApi, type YouTubeSearchItem, type YouTubeVideoItem } from '@/api/modules/youtube.api'
+import {
+  youtubeApi,
+  type YouTubeSearchItem,
+  type YouTubeVideoItem,
+} from '@/api/modules/youtube.api'
 
 export const useYouTubeStore = defineStore('youtube', () => {
   const results = ref<YouTubeSearchItem[]>([])

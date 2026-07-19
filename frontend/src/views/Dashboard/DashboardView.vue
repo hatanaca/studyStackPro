@@ -167,7 +167,9 @@ onMounted(async () => {
 
   const idleGlobal = globalThis as IdleCapableGlobal
   if (typeof idleGlobal.requestIdleCallback === 'function') {
-    _idleCallbackId = idleGlobal.requestIdleCallback(loadHeavyWidgets, { timeout: 1200 }) as unknown as number
+    _idleCallbackId = idleGlobal.requestIdleCallback(loadHeavyWidgets, {
+      timeout: 1200,
+    }) as unknown as number
   } else {
     _heavyWidgetTimer = setTimeout(loadHeavyWidgets, 500)
   }

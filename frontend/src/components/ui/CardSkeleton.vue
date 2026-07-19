@@ -8,15 +8,18 @@
 <script setup lang="ts">
 import Skeleton from 'primevue/skeleton'
 
-withDefaults(defineProps<{
-  titleWidth?: string
-  contentWidth?: string
-  contentHeight?: string
-}>(), {
-  titleWidth: '45%',
-  contentWidth: '7rem',
-  contentHeight: '2rem',
-})
+withDefaults(
+  defineProps<{
+    titleWidth?: string
+    contentWidth?: string
+    contentHeight?: string
+  }>(),
+  {
+    titleWidth: '45%',
+    contentWidth: '7rem',
+    contentHeight: '2rem',
+  }
+)
 </script>
 
 <style scoped>
@@ -28,6 +31,10 @@ withDefaults(defineProps<{
   background: var(--color-bg-card, #1c1c1f);
   border-radius: var(--radius-lg, 0.75rem);
 }
-.card-skeleton__title { border-radius: var(--radius-sm); }
-.card-skeleton__content { border-radius: var(--radius-sm); }
+.card-skeleton__title {
+  border-radius: var(--radius-sm);
+}
+.card-skeleton__content {
+  border-radius: var(--radius-sm);
+}
 </style>

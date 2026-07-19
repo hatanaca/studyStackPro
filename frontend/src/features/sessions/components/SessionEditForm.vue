@@ -62,17 +62,8 @@ const editForm = defineModel<EditFormState>('editForm', { required: true })
       </div>
 
       <div class="edit-form__actions">
-        <Button
-          type="submit"
-          :label="loading ? 'Salvando...' : 'Salvar'"
-          :loading="loading"
-        />
-        <Button
-          label="Cancelar"
-          severity="secondary"
-          variant="outlined"
-          @click="emit('cancel')"
-        />
+        <Button type="submit" :label="loading ? 'Salvando...' : 'Salvar'" :loading="loading" />
+        <Button label="Cancelar" severity="secondary" variant="outlined" @click="emit('cancel')" />
       </div>
     </form>
   </div>

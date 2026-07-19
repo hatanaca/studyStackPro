@@ -1,9 +1,21 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount, shallowRef } from 'vue'
-import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, KeyBinding } from '@codemirror/view'
+import {
+  EditorView,
+  keymap,
+  lineNumbers,
+  highlightActiveLineGutter,
+  highlightSpecialChars,
+  KeyBinding,
+} from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
-import { bracketMatching, indentOnInput, syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language'
+import {
+  bracketMatching,
+  indentOnInput,
+  syntaxHighlighting,
+  defaultHighlightStyle,
+} from '@codemirror/language'
 import { javascript } from '@codemirror/lang-javascript'
 import { php } from '@codemirror/lang-php'
 import { sql } from '@codemirror/lang-sql'
@@ -103,27 +115,36 @@ onMounted(() => {
   })
 })
 
-watch(() => props.language, (newLang) => {
-  if (!editorView.value) return
-  const doc = editorView.value.state.doc.toString()
-  editorView.value.setState(createEditorState(doc, newLang, props.darkMode ?? false))
-})
-
-watch(() => props.darkMode, (dark) => {
-  if (!editorView.value) return
-  const doc = editorView.value.state.doc.toString()
-  editorView.value.setState(createEditorState(doc, props.language, dark ?? false))
-})
-
-watch(() => props.modelValue, (newVal) => {
-  if (!editorView.value) return
-  const currentDoc = editorView.value.state.doc.toString()
-  if (currentDoc !== newVal) {
-    editorView.value.dispatch({
-      changes: { from: 0, to: currentDoc.length, insert: newVal },
-    })
+watch(
+  () => props.language,
+  (newLang) => {
+    if (!editorView.value) return
+    const doc = editorView.value.state.doc.toString()
+    editorView.value.setState(createEditorState(doc, newLang, props.darkMode ?? false))
   }
-})
+)
+
+watch(
+  () => props.darkMode,
+  (dark) => {
+    if (!editorView.value) return
+    const doc = editorView.value.state.doc.toString()
+    editorView.value.setState(createEditorState(doc, props.language, dark ?? false))
+  }
+)
+
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (!editorView.value) return
+    const currentDoc = editorView.value.state.doc.toString()
+    if (currentDoc !== newVal) {
+      editorView.value.dispatch({
+        changes: { from: 0, to: currentDoc.length, insert: newVal },
+      })
+    }
+  }
+)
 
 onBeforeUnmount(() => {
   editorView.value?.destroy()

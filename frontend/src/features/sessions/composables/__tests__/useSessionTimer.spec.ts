@@ -40,9 +40,11 @@ describe('useSessionTimer', () => {
 
   it('refresh fetches active session from API', async () => {
     const mockSession = { id: 's1', started_at: '2026-01-01T00:00:00Z' }
-    vi.mocked((await import('@/api/modules/sessions.api')).sessionsApi.getActive).mockResolvedValue({
-      data: { success: true, data: mockSession },
-    })
+    vi.mocked((await import('@/api/modules/sessions.api')).sessionsApi.getActive).mockResolvedValue(
+      {
+        data: { success: true, data: mockSession },
+      }
+    )
 
     const timer = useSessionTimer()
     await timer.refresh()

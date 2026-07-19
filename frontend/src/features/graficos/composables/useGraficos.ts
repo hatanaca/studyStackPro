@@ -1,7 +1,13 @@
 import { ref, shallowRef, computed } from 'vue'
 import { analyticsApi } from '@/api/modules/analytics.api'
 import type { DashboardData, DailyMinute, TechnologyMetric } from '@/types/domain.types'
-import type { DateRange, RadarChartData, FunnelDataPoint, TreemapDataPoint, KpiCard } from '@/types/chart.types'
+import type {
+  DateRange,
+  RadarChartData,
+  FunnelDataPoint,
+  TreemapDataPoint,
+  KpiCard,
+} from '@/types/chart.types'
 import type { WeeklySummary } from '@/stores/analytics.store'
 import { formatDuration, formatHoursLabel } from '@/utils/formatters'
 import { toISODateString } from '@/utils/dateUtils'
@@ -43,7 +49,9 @@ export function useGraficos() {
   })
 
   const timeSeriesForChart = computed(() => {
-    const clean = timeSeriesData.value.filter((d): d is DailyMinute => d != null && typeof d.date === 'string')
+    const clean = timeSeriesData.value.filter(
+      (d): d is DailyMinute => d != null && typeof d.date === 'string'
+    )
     const sorted = [...clean].sort((a, b) => a.date.localeCompare(b.date))
     return {
       labels: sorted.map((d) => {
@@ -55,7 +63,9 @@ export function useGraficos() {
   })
 
   const weeklyForChart = computed(() => {
-    const clean = weeklyData.value.filter((w): w is WeeklySummary => w != null && typeof w.week_start === 'string')
+    const clean = weeklyData.value.filter(
+      (w): w is WeeklySummary => w != null && typeof w.week_start === 'string'
+    )
     const sorted = [...clean].sort((a, b) => a.week_start.localeCompare(b.week_start))
     return {
       labels: sorted.map((w) => {
@@ -63,7 +73,9 @@ export function useGraficos() {
         return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
       }),
       values: sorted.map((w) => w.total_minutes),
-      scores: sorted.map((w) => w.score ?? w.focus_score ?? w.avg_focus_score ?? w.study_score ?? null),
+      scores: sorted.map(
+        (w) => w.score ?? w.focus_score ?? w.avg_focus_score ?? w.study_score ?? null
+      ),
     }
   })
 
@@ -87,16 +99,18 @@ export function useGraficos() {
     const maxStreak = Math.max(m.max_streak_days ?? 1, 1)
     return {
       labels: ['Horas totais', 'Sessões', 'Streak atual', 'Melhor streak', 'Média/sessão'],
-      series: [{
-        name: 'Seu perfil',
-        data: [
-          Math.round(((m.total_minutes ?? 0) / maxMinutes) * 100),
-          Math.round(((m.total_sessions ?? 0) / maxSessions) * 100),
-          Math.round(((m.current_streak_days ?? 0) / maxStreak) * 100),
-          Math.round(((m.max_streak_days ?? 0) / maxStreak) * 100),
-          Math.min(100, Math.round(((m.avg_session_min ?? 0) / 120) * 100)),
-        ],
-      }],
+      series: [
+        {
+          name: 'Seu perfil',
+          data: [
+            Math.round(((m.total_minutes ?? 0) / maxMinutes) * 100),
+            Math.round(((m.total_sessions ?? 0) / maxSessions) * 100),
+            Math.round(((m.current_streak_days ?? 0) / maxStreak) * 100),
+            Math.round(((m.max_streak_days ?? 0) / maxStreak) * 100),
+            Math.min(100, Math.round(((m.avg_session_min ?? 0) / 120) * 100)),
+          ],
+        },
+      ],
     }
   })
 
@@ -131,7 +145,10 @@ export function useGraficos() {
     const totalDays = dailyMinutes.length || 1
     const avgDaily = Math.round((m.total_minutes ?? 0) / totalDays)
     const activeDays = dailyMinutes.filter((d) => d.total_minutes > 0).length
-    const bestDay = dailyMinutes.reduce((best, d) => d.total_minutes > best.total_minutes ? d : best, { total_minutes: 0, date: '' })
+    const bestDay = dailyMinutes.reduce(
+      (best, d) => (d.total_minutes > best.total_minutes ? d : best),
+      { total_minutes: 0, date: '' }
+    )
 
     return [
       {
@@ -154,7 +171,10 @@ export function useGraficos() {
       {
         label: 'Melhor dia',
         value: bestDay.date
-          ? new Date(bestDay.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+          ? new Date(bestDay.date + 'T12:00:00').toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: 'short',
+            })
           : '—',
         color: 'var(--color-warning)',
       },

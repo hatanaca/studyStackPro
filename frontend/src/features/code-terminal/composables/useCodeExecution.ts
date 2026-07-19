@@ -2,7 +2,11 @@ import { ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { codeExecutionApi } from '@/api/modules/code-execution.api'
 import { executeLua } from '../utils/lua-executor'
-import type { ProgrammingLanguage, CodeExecutionResult, TerminalEntry } from '../types/code-terminal.types'
+import type {
+  ProgrammingLanguage,
+  CodeExecutionResult,
+  TerminalEntry,
+} from '../types/code-terminal.types'
 
 /**
  * Composable para execução de código.
@@ -25,10 +29,9 @@ export function useCodeExecution() {
   function executeJS(code: string): Promise<CodeExecutionResult> {
     return new Promise((resolve) => {
       const startTime = performance.now()
-      const worker = new Worker(
-        new URL('../workers/js-executor.worker.ts', import.meta.url),
-        { type: 'module' }
-      )
+      const worker = new Worker(new URL('../workers/js-executor.worker.ts', import.meta.url), {
+        type: 'module',
+      })
 
       const id = String(++workerIdCounter)
 
@@ -61,7 +64,10 @@ export function useCodeExecution() {
   /**
    * Executa código PHP/Laravel/SQL/Bash via backend sandbox.
    */
-  async function executeBackend(code: string, language: ProgrammingLanguage): Promise<CodeExecutionResult> {
+  async function executeBackend(
+    code: string,
+    language: ProgrammingLanguage
+  ): Promise<CodeExecutionResult> {
     try {
       const { data } = await codeExecutionApi.execute({ code, language })
       const result = data.data

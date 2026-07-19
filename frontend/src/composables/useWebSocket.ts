@@ -60,11 +60,20 @@ function probeReverb(host: string, port: string, timeout = 1500): Promise<boolea
     const url = `ws://${host}:${port}/app/local-key?protocol=7&client=js&version=8.5.0`
     const ws = new WebSocket(url)
     const timer = setTimeout(() => {
-      ws.onclose = null; ws.onerror = null; ws.close()
+      ws.onclose = null
+      ws.onerror = null
+      ws.close()
       resolve(false)
     }, timeout)
-    ws.onopen = () => { clearTimeout(timer); ws.close(); resolve(true) }
-    ws.onerror = () => { clearTimeout(timer); resolve(false) }
+    ws.onopen = () => {
+      clearTimeout(timer)
+      ws.close()
+      resolve(true)
+    }
+    ws.onerror = () => {
+      clearTimeout(timer)
+      resolve(false)
+    }
   })
 }
 
@@ -94,10 +103,7 @@ function scheduleReconnect() {
   }
 
   clearReconnectTimer()
-  const delay = Math.min(
-    RECONNECT_BASE_DELAY_MS * Math.pow(2, reconnectAttempts),
-    60_000
-  )
+  const delay = Math.min(RECONNECT_BASE_DELAY_MS * Math.pow(2, reconnectAttempts), 60_000)
   reconnectAttempts++
 
   reconnectTimer = setTimeout(() => {
@@ -141,125 +147,130 @@ export async function connectWebSocket(userId: string): Promise<void> {
     const scheme = import.meta.env.VITE_REVERB_SCHEME || 'http'
     const host = import.meta.env.VITE_REVERB_HOST || 'localhost'
     const port = import.meta.env.VITE_REVERB_PORT || '8080'
-    if (!await probeReverb(host, port)) {
+    if (!(await probeReverb(host, port))) {
       console.info('[WS] Reverb não está disponível no momento')
       return
     }
 
     const [{ default: Echo }, { default: Pusher }] = await Promise.all([
-    import('laravel-echo'),
-    import('pusher-js'),
-  ])
+      import('laravel-echo'),
+      import('pusher-js'),
+    ])
 
-  // Evita poluição global no hot-reload: só define se não existir
-  if (!window.Pusher) {
-    window.Pusher = Pusher
-  }
+    // Evita poluição global no hot-reload: só define se não existir
+    if (!window.Pusher) {
+      window.Pusher = Pusher
+    }
 
-  const sessionsStore = useSessionsStore()
-  const key = import.meta.env.VITE_REVERB_APP_KEY || 'local-key'
-  const apiUrl = import.meta.env.VITE_API_URL || ''
-  const broadcastingAuthUrl = `${apiUrl.replace(/\/+$/, '')}/api/broadcasting/auth`
+    const sessionsStore = useSessionsStore()
+    const key = import.meta.env.VITE_REVERB_APP_KEY || 'local-key'
+    const apiUrl = import.meta.env.VITE_API_URL || ''
+    const broadcastingAuthUrl = `${apiUrl.replace(/\/+$/, '')}/api/broadcasting/auth`
 
-  /**
-   * O transporte XHR do pusher-js não activa `withCredentials`; com API noutro host a sessão
-   * Sanctum não chegava ao `/broadcasting/auth`. Axios envia cookies + CSRF como o resto da SPA.
-   */
-  const channelAuthorization = {
-    /** Satisfaz tipos do Echo 2.x / pusher-js; a autorização real usa `customHandler` (cookies + CSRF). */
-    transport: 'ajax' as const,
-    endpoint: broadcastingAuthUrl,
-    customHandler: (
-      params: { socketId: string; channelName: string },
-      callback: (error: Error | null, data: { auth: string; channel_data?: string } | null) => void
-    ) => {
-      const body = new URLSearchParams()
-      body.set('socket_id', params.socketId)
-      body.set('channel_name', params.channelName)
-      axios
-        .post(broadcastingAuthUrl, body, {
-          withCredentials: true,
-          withXSRFToken: true,
-          headers: { Accept: 'application/json' },
-        })
-        .then((res) => {
-          callback(null, res.data as { auth: string; channel_data?: string })
-        })
-        .catch((err: unknown) => {
-          const msg =
-            axios.isAxiosError(err) && err.response?.data && typeof err.response.data === 'object'
-              ? JSON.stringify(err.response.data)
-              : err instanceof Error
-                ? err.message
-                : 'Falha na autorização do canal.'
-          callback(new Error(msg), null)
-        })
-    },
-  }
+    /**
+     * O transporte XHR do pusher-js não activa `withCredentials`; com API noutro host a sessão
+     * Sanctum não chegava ao `/broadcasting/auth`. Axios envia cookies + CSRF como o resto da SPA.
+     */
+    const channelAuthorization = {
+      /** Satisfaz tipos do Echo 2.x / pusher-js; a autorização real usa `customHandler` (cookies + CSRF). */
+      transport: 'ajax' as const,
+      endpoint: broadcastingAuthUrl,
+      customHandler: (
+        params: { socketId: string; channelName: string },
+        callback: (
+          error: Error | null,
+          data: { auth: string; channel_data?: string } | null
+        ) => void
+      ) => {
+        const body = new URLSearchParams()
+        body.set('socket_id', params.socketId)
+        body.set('channel_name', params.channelName)
+        axios
+          .post(broadcastingAuthUrl, body, {
+            withCredentials: true,
+            withXSRFToken: true,
+            headers: { Accept: 'application/json' },
+          })
+          .then((res) => {
+            callback(null, res.data as { auth: string; channel_data?: string })
+          })
+          .catch((err: unknown) => {
+            const msg =
+              axios.isAxiosError(err) && err.response?.data && typeof err.response.data === 'object'
+                ? JSON.stringify(err.response.data)
+                : err instanceof Error
+                  ? err.message
+                  : 'Falha na autorização do canal.'
+            callback(new Error(msg), null)
+          })
+      },
+    }
 
-  echo = new Echo({
-    broadcaster: 'reverb',
-    key,
-    wsHost: host,
-    wsPort: parseInt(port, 10),
-    wssPort: scheme === 'https' ? 443 : parseInt(port, 10),
-    forceTLS: scheme === 'https',
-    enabledTransports: ['ws', 'wss'],
-    channelAuthorization,
-  }) as EchoInstance
+    echo = new Echo({
+      broadcaster: 'reverb',
+      key,
+      wsHost: host,
+      wsPort: parseInt(port, 10),
+      wssPort: scheme === 'https' ? 443 : parseInt(port, 10),
+      forceTLS: scheme === 'https',
+      enabledTransports: ['ws', 'wss'],
+      channelAuthorization,
+    }) as EchoInstance
 
-  onConnected = () => { isConnected.value = true }
-  onDisconnected = () => {
-    isConnected.value = false
-    scheduleReconnect()
-  }
-  onFailed = () => {
-    isConnected.value = false
-    scheduleReconnect()
-  }
+    onConnected = () => {
+      isConnected.value = true
+    }
+    onDisconnected = () => {
+      isConnected.value = false
+      scheduleReconnect()
+    }
+    onFailed = () => {
+      isConnected.value = false
+      scheduleReconnect()
+    }
 
-  echo.connector.pusher.connection.bind('connected', onConnected)
-  echo.connector.pusher.connection.bind('disconnected', onDisconnected)
-  echo.connector.pusher.connection.bind('failed', onFailed)
+    echo.connector.pusher.connection.bind('connected', onConnected)
+    echo.connector.pusher.connection.bind('disconnected', onDisconnected)
+    echo.connector.pusher.connection.bind('failed', onFailed)
 
-  echo
-    .private(`dashboard.${userId}`)
-    .listen('.metrics.updated', () => {
-      clearRecalcFallbackTimer()
-      analyticsStore.setRecalculating(false)
-      queryClient?.invalidateQueries({ queryKey: queryKeys.analytics.dashboard() })
-    })
-    .listen('.metrics.recalculating', () => {
-      analyticsStore.setRecalculating(true)
-      clearRecalcFallbackTimer()
-      recalcFallbackTimer = setTimeout(() => {
+    echo
+      .private(`dashboard.${userId}`)
+      .listen('.metrics.updated', () => {
+        clearRecalcFallbackTimer()
         analyticsStore.setRecalculating(false)
-        recalcFallbackTimer = null
-      }, RECALC_FALLBACK_MS)
-    })
-    .listen('.session.started', (e: unknown) => {
-      const ev = e as SessionStartedEvent
-      if (ev.session) {
-        const s = ev.session
-        const payload: ActiveSessionResponse = {
-          id: s.id,
-          user_id: userId,
-          technology_id: s.technology?.id ?? '',
-          technology: s.technology ? { ...s.technology, is_active: true } : undefined,
-          started_at: s.started_at,
-          ended_at: null,
-          duration_min: null,
-          created_at: s.started_at,
-          elapsed_seconds: s.elapsed_seconds ?? 0,
-          notes: null,
-          mood: null,
+        queryClient?.invalidateQueries({ queryKey: queryKeys.analytics.dashboard() })
+      })
+      .listen('.metrics.recalculating', () => {
+        analyticsStore.setRecalculating(true)
+        clearRecalcFallbackTimer()
+        recalcFallbackTimer = setTimeout(() => {
+          analyticsStore.setRecalculating(false)
+          recalcFallbackTimer = null
+        }, RECALC_FALLBACK_MS)
+      })
+      .listen('.session.started', (e: unknown) => {
+        const ev = e as SessionStartedEvent
+        if (ev.session) {
+          const s = ev.session
+          const payload: ActiveSessionResponse = {
+            id: s.id,
+            user_id: userId,
+            technology_id: s.technology?.id ?? '',
+            technology: s.technology ? { ...s.technology, is_active: true } : undefined,
+            started_at: s.started_at,
+            ended_at: null,
+            duration_min: null,
+            created_at: s.started_at,
+            elapsed_seconds: s.elapsed_seconds ?? 0,
+            notes: null,
+            mood: null,
+          }
+          sessionsStore.setActiveSession(payload)
         }
-        sessionsStore.setActiveSession(payload)
-      }
-    })
-    .listen('.session.ended', () => {
-      sessionsStore.clearActiveSession()
-    })
+      })
+      .listen('.session.ended', () => {
+        sessionsStore.clearActiveSession()
+      })
   } finally {
     isConnecting = false
   }

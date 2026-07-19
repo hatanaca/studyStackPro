@@ -65,7 +65,7 @@ export default defineConfig({
             },
         },
     },
-    server: __assign(__assign({ host: '0.0.0.0', port: 5173 }, (process.env.VITE_DEV_POLLING === 'true'
+    server: __assign(__assign({ host: '0.0.0.0', port: 5173, allowedHosts: true }, (process.env.VITE_DEV_POLLING === 'true'
         ? { watch: { usePolling: true, interval: 1000 } }
         : {})), { proxy: {
             '/sanctum': { target: process.env.PROXY_TARGET || 'http://127.0.0.1:8000', changeOrigin: true },

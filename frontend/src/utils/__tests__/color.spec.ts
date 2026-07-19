@@ -1,11 +1,4 @@
-import {
-  normalizeHexColor,
-  safeHexColor,
-  hexToRgb,
-  rgbToHex,
-  darken,
-  lighten,
-} from '../color'
+import { normalizeHexColor, safeHexColor, hexToRgb, rgbToHex, darken, lighten } from '../color'
 
 describe('color utils', () => {
   describe('normalizeHexColor', () => {
