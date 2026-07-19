@@ -1,98 +1,96 @@
-# Resumo arquitetural StudyTrack Pro
+# StudyTrack Pro Architectural Summary
 
-Consolidação do funcionamento do monorepo **StudyTrack Pro**: **frontend** (`[frontend/](../../frontend/)`, Vue 3), **backend** (`[backend/](../../backend/)`, Laravel 11+), integração **HTTP JSON**, **PostgreSQL** (schemas separados), **Redis** (scripts Lua), **filas** e **WebSocket** (Laravel Reverb + Echo).
+Consolidation of how the **StudyTrack Pro** monorepo works: **frontend** (`[frontend/](../../frontend/)`, Vue 3), **backend** (`[backend/](../../backend/)`, Laravel 11+), **HTTP JSON** integration, **PostgreSQL** (separate schemas), **Redis** (Lua scripts), **queues**, and **WebSocket** (Laravel Reverb + Echo).
 
-Para a ordem detalhada de execução HTTP e da SPA, ver também [FLUXO_COMPLETO_STUDYTRACK_PRO.md](FLUXO_COMPLETO_STUDYTRACK_PRO.md).
-
----
-
-## Visão geral do produto
-
-A aplicação é um **rastreador de estudos**: o utilizador gere **tecnologias** (áreas/tópicos), regista **sessões de estudo** (duração, tecnologia, timestamps), consulta **analytics** agregados (dashboard, heatmap, séries temporais, export) e pode usar **timer/sessão ativa**. A UX de **metas (goals)** é em grande parte **só no frontend** (localStorage), sem endpoints no backend — ver `[frontend/src/api/modules/goals.api.ts](../../frontend/src/api/modules/goals.api.ts)` e [operations/GOALS-FRONTEND-ONLY.md](../operations/GOALS-FRONTEND-ONLY.md).
+For the detailed HTTP and SPA execution order, also see [FLUXO_COMPLETO_STUDYTRACK_PRO.md](FLUXO_COMPLETO_STUDYTRACK_PRO.md).
 
 ---
 
-## Stack e responsabilidades
+## Product Overview
 
-
-| Camada        | Tecnologia                                 | Papel                                                                         |
-| ------------- | ------------------------------------------ | ----------------------------------------------------------------------------- |
-| UI            | Vue 3, PrimeVue, Pinia, TanStack Vue Query | Rotas, formulários, estado global, cache de servidor                          |
-| API           | Laravel, prefixo `/api/v1`                 | Autenticação Sanctum, CRUD, analytics, health                                 |
-| BD            | PostgreSQL                                 | Dados transacionais + tabelas de analytics                                    |
-| Cache / infra | Redis                                      | Tags de cache analytics, blacklist de tokens, Lua (rate limit, dedup, streak) |
-| Assíncrono    | Redis queue, jobs                          | Recálculo de métricas, resumos semanais                                       |
-| Tempo real    | Reverb (protocolo Pusher), Laravel Echo    | Canal privado `dashboard.{userId}`                                            |
-
+The application is a **study tracker**: the user manages **technologies** (areas/topics), logs **study sessions** (duration, technology, timestamps), views **aggregated analytics** (dashboard, heatmap, time series, export), and can use **timer/active session**. The **goals** UX is largely **frontend-only** (localStorage), without backend endpoints — see `[frontend/src/api/modules/goals.api.ts](../../frontend/src/api/modules/goals.api.ts)` and [operations/GOALS-FRONTEND-ONLY.md](../operations/GOALS-FRONTEND-ONLY.md).
 
 ---
 
-## Backend: entrada HTTP e camadas
+## Stack and Responsibilities
 
-### Rotas principais
-
-O ficheiro `[backend/routes/api.php](../../backend/routes/api.php)` define:
-
-- **Broadcast auth**: `Broadcast::routes` com `auth:sanctum` (subscrição a canais privados).
-- **Grupo `v1`**: registo/login com throttles dedicados; resto autenticado com `auth:sanctum`.
-- **Leitura**: tecnologias, sessões (lista/detalhe/ativa), vários endpoints sob `analytics/*` (dashboard, user-metrics, tech-stats, time-series, weekly, heatmap, export).
-- **Escrita**: logout, perfil, CRUD tecnologias, CRUD/patch de sessões, `study-sessions/start` e `.../end`, `analytics/recalculate`.
-- Várias rotas de escrita usam middleware `**throttle.sliding`** (Lua no Redis) em vez de só throttle por minuto.
-- **Health**: `GET health` (fora do prefixo `v1` no mesmo ficheiro).
-
-### Bootstrap e middleware da API
-
-Em `[backend/bootstrap/app.php](../../backend/bootstrap/app.php)`: routing API, canais, alias `throttle.sliding` → `SlidingWindowRateLimit`, e stack com middleware como `**EnsureJsonResponse`**, `**SetUserTimezone**`, `**LogApiRequests**`.
-
-### Arquitetura modular (domínio)
-
-Em `backend/app/Modules/` existem módulos por contexto (**Auth**, **StudySessions**, **Technologies**, **Analytics**) com **serviços**, **repositórios Eloquent** e **DTOs**. Os bindings interface → implementação estão em `[backend/app/Providers/RepositoryServiceProvider.php](../../backend/app/Providers/RepositoryServiceProvider.php)`.
-
-Os **controllers HTTP** em `[backend/app/Http/Controllers/V1/](../../backend/app/Http/Controllers/V1/)` delegam aos serviços dos módulos.
-
-### Autenticação e tokens
-
-- **Laravel Sanctum** (`auth:sanctum`), modelo `[backend/app/Models/User.php](../../backend/app/Models/User.php)` com `HasApiTokens`.
-- `[backend/app/Modules/Auth/Services/TokenService.php](../../backend/app/Modules/Auth/Services/TokenService.php)` e **AuthService** para login/registo, revogação e **blacklist em Redis** (pipeline), além dos tokens na tabela `personal_access_tokens`.
-
-### Modelos Eloquent e relações principais
-
-- **Transacional (schema público)**: `User`, `Technology`, `StudySession` — `User` tem muitas tecnologias/sessões; `Technology` tem muitas sessões; `StudySession` pertence a utilizador e tecnologia.
-- **Analytics (schema `analytics`)**: `UserMetrics`, `TechnologyMetrics`, `DailyMinutes`, `WeeklySummary` — chaves compostas ou `user_id` como PK onde aplicável; migração base em `[backend/database/migrations/analytics/2025_01_02_000002_create_analytics_tables.php](../../backend/database/migrations/analytics/2025_01_02_000002_create_analytics_tables.php)`.
-
-Migrações em `database/migrations/transactional/` criam utilizadores, tecnologias, sessões, tokens, índices, triggers e funções. O projeto assume **PostgreSQL** (extensões, schemas, JSONB em weekly summaries).
+| Layer | Technology | Role |
+|-------|------------|------|
+| UI | Vue 3, PrimeVue, Pinia, TanStack Vue Query | Routes, forms, global state, server cache |
+| API | Laravel, `/api/v1` prefix | Sanctum authentication, CRUD, analytics, health |
+| DB | PostgreSQL | Transactional data + analytics tables |
+| Cache / infra | Redis | Analytics cache tags, token blacklist, Lua (rate limit, dedup, streak) |
+| Async | Redis queue, jobs | Metrics recalculation, weekly summaries |
+| Real-time | Reverb (Pusher protocol), Laravel Echo | Private channel `dashboard.{userId}` |
 
 ---
 
-## Fluxo de dados no backend: sessão → eventos → fila → métricas → broadcast
+## Backend: HTTP Entry and Layers
 
-O mapeamento central está em `[backend/app/Providers/EventServiceProvider.php](../../backend/app/Providers/EventServiceProvider.php)`:
+### Main Routes
+
+The file `[backend/routes/api.php](../../backend/routes/api.php)` defines:
+
+- **Broadcast auth**: `Broadcast::routes` with `auth:sanctum` (private channel subscription).
+- **`v1` group**: registration/login with dedicated throttles; rest authenticated with `auth:sanctum`.
+- **Reads**: technologies, sessions (list/detail/active), various endpoints under `analytics/*` (dashboard, user-metrics, tech-stats, time-series, weekly, heatmap, export).
+- **Writes**: logout, profile, technology CRUD, session CRUD/patch, `study-sessions/start` and `.../end`, `analytics/recalculate`.
+- Several write routes use **`throttle.sliding`** middleware (Lua on Redis) instead of just per-minute throttle.
+- **Health**: `GET health` (outside the `v1` prefix in the same file).
+
+### API Bootstrap and Middleware
+
+In `[backend/bootstrap/app.php](../../backend/bootstrap/app.php)`: API routing, channels, `throttle.sliding` alias → `SlidingWindowRateLimit`, and stack with middleware like **`EnsureJsonResponse`**, **`SetUserTimezone`**, **`LogApiRequests`**.
+
+### Domain Modular Architecture
+
+In `backend/app/Modules/` there are modules by context (**Auth**, **StudySessions**, **Technologies**, **Analytics**) with **services**, **Eloquent repositories**, and **DTOs**. Interface → implementation bindings are in `[backend/app/Providers/RepositoryServiceProvider.php](../../backend/app/Providers/RepositoryServiceProvider.php)`.
+
+The **HTTP controllers** in `[backend/app/Http/Controllers/V1/](../../backend/app/Http/Controllers/V1/)` delegate to module services.
+
+### Authentication and Tokens
+
+- **Laravel Sanctum** (`auth:sanctum`), model `[backend/app/Models/User.php](../../backend/app/Models/User.php)` with `HasApiTokens`.
+- `[backend/app/Modules/Auth/Services/TokenService.php](../../backend/app/Modules/Auth/Services/TokenService.php)` and **AuthService** for login/registration, revocation, and **Redis blacklist** (pipeline), plus tokens in the `personal_access_tokens` table.
+
+### Eloquent Models and Main Relationships
+
+- **Transactional (public schema)**: `User`, `Technology`, `StudySession` — `User` has many technologies/sessions; `Technology` has many sessions; `StudySession` belongs to user and technology.
+- **Analytics (`analytics` schema)**: `UserMetrics`, `TechnologyMetrics`, `DailyMinutes`, `WeeklySummary` — composite keys or `user_id` as PK where applicable; base migration in `[backend/database/migrations/analytics/2025_01_02_000002_create_analytics_tables.php](../../backend/database/migrations/analytics/2025_01_02_000002_create_analytics_tables.php)`.
+
+Migrations in `database/migrations/transactional/` create users, technologies, sessions, tokens, indexes, triggers, and functions. The project assumes **PostgreSQL** (extensions, schemas, JSONB in weekly summaries).
+
+---
+
+## Data Flow in Backend: Session → Events → Queue → Metrics → Broadcast
+
+The central mapping is in `[backend/app/Providers/EventServiceProvider.php](../../backend/app/Providers/EventServiceProvider.php)`:
 
 ```mermaid
 flowchart LR
   subgraph http [HTTP]
     C[StudySessionController]
   end
-  subgraph domain [Dominio]
+  subgraph domain [Domain]
     S[StudySessionService]
-    R[Repositories Eloquent]
+    R[Eloquent Repositories]
   end
   subgraph pg [PostgreSQL]
     T[technologies study_sessions users]
   end
-  subgraph events [Eventos]
+  subgraph events [Events]
     EC[StudySessionCreated]
     EU[StudySessionUpdated]
     ED[StudySessionDeleted]
     MR[MetricsRecalculated]
   end
-  subgraph async [Assincrono]
+  subgraph async [Async]
     L[DispatchMetricsRecalculation Lua job_dedup]
-    J[RecalculateMetricsJob fila metrics]
+    J[RecalculateMetricsJob metrics queue]
     Agg[MetricsAggregator]
     Ana[AnalyticsService getDashboardData]
   end
-  subgraph realtime [Tempo real]
+  subgraph realtime [Real-time]
     BC[BroadcastMetricsUpdate etc]
   end
   C --> S --> R --> T
@@ -111,104 +109,101 @@ flowchart LR
 
 
 
-- **Alteração em sessão** dispara eventos de domínio (`StudySessionCreated` / `Updated` / `Deleted`).
-- **Listeners** invalidam cache de sessões, **agendam recálculo** (`DispatchMetricsRecalculation`), e em alguns casos fazem **broadcast** de sessão iniciada/terminada e métricas a recalcular.
-- `[backend/app/Listeners/StudySession/DispatchMetricsRecalculation.php](../../backend/app/Listeners/StudySession/DispatchMetricsRecalculation.php)` usa **Lua `job_dedup`** via `[backend/app/Services/RedisLuaService.php](../../backend/app/Services/RedisLuaService.php)` para evitar enfileirar múltiplos jobs para o mesmo utilizador; em falha Redis faz **fail-open**. O job é `**RecalculateMetricsJob`** com **delay de 2s** para agrupar escritas.
-- `[backend/app/Jobs/RecalculateMetricsJob.php](../../backend/app/Jobs/RecalculateMetricsJob.php)`: `ShouldQueue` + `**ShouldBeUnique` por `userId`**, fila `metrics`; dentro de **transação DB** chama o agregador para `**user_metrics`**, `**technology_metrics**`, `**daily_minutes**`; depois **flush de cache** com tags `analytics` e `analytics:user:{id}`; obtém snapshot do dashboard e dispara `**MetricsRecalculated`**, que atualiza cache e **broadcast** para o frontend.
+- **Session change** dispatches domain events (`StudySessionCreated` / `Updated` / `Deleted`).
+- **Listeners** invalidate session cache, **schedule recalculation** (`DispatchMetricsRecalculation`), and in some cases **broadcast** session started/ended and metrics being recalculated.
+- `[backend/app/Listeners/StudySession/DispatchMetricsRecalculation.php](../../backend/app/Listeners/StudySession/DispatchMetricsRecalculation.php)` uses **Lua `job_dedup`** via `[backend/app/Services/RedisLuaService.php](../../backend/app/Services/RedisLuaService.php)` to avoid enqueueing multiple jobs for the same user; on Redis failure it does **fail-open**. The job is **`RecalculateMetricsJob`** with a **2s delay** to batch writes.
+- `[backend/app/Jobs/RecalculateMetricsJob.php](../../backend/app/Jobs/RecalculateMetricsJob.php)`: `ShouldQueue` + **`ShouldBeUnique` per `userId`**, `metrics` queue; within a **DB transaction** it calls the aggregator for **`user_metrics`**, **`technology_metrics`**, **`daily_minutes`**; then **flushes cache** with tags `analytics` and `analytics:user:{id}`; obtains a dashboard snapshot and dispatches **`MetricsRecalculated`**, which updates cache and **broadcasts** to the frontend.
 
-### Scripts Redis Lua (repositório)
+### Redis Lua Scripts (Repository)
 
-Ficheiros em `[redis-scripts/](../../redis-scripts/)` (preload via `[backend/app/Providers/RedisScriptServiceProvider.php](../../backend/app/Providers/RedisScriptServiceProvider.php)`):
+Files in `[redis-scripts/](../../redis-scripts/)` (preloaded via `[backend/app/Providers/RedisScriptServiceProvider.php](../../backend/app/Providers/RedisScriptServiceProvider.php)`):
 
-- `**job_dedup`**: deduplicação do dispatch de jobs de métricas.
-- `**sliding_window**`: rate limiting deslizante (middleware API).
-- `**streak_update**`: usado por `[backend/app/Services/StreakService.php](../../backend/app/Services/StreakService.php)` (complementar à persistência em analytics).
+- **`job_dedup`**: deduplication of metrics job dispatches.
+- **`sliding_window`**: sliding rate limiting (API middleware).
+- **`streak_update`**: used by `[backend/app/Services/StreakService.php](../../backend/app/Services/StreakService.php)` (complementary to analytics persistence).
 
-### Agendamento (scheduler)
+### Scheduling (Scheduler)
 
-`[backend/routes/console.php](../../backend/routes/console.php)`: jobs agendados (ex.: resumo semanal em `analytics.weekly_summaries`, prune de jobs falhados).
-
----
-
-## Broadcasting e WebSocket
-
-- **Canais**: `[backend/routes/channels.php](../../backend/routes/channels.php)` — canal privado `dashboard.{userId}` só se o ID autenticado coincidir.
-- **Config**: `[backend/config/broadcasting.php](../../backend/config/broadcasting.php)` — driver **Reverb** quando as variáveis de ambiente estão definidas; caso contrário pode cair em `**log`** (dev sem servidor WS).
-- **Eventos `ShouldBroadcast`**: métricas recalculadas / a recalcular, sessão iniciada/terminada (`app/Events/`).
-- **Health**: `[backend/app/Http/Controllers/HealthController.php](../../backend/app/Http/Controllers/HealthController.php)` verifica DB, Redis, fila e probe TCP ao host/porto do Reverb.
+`[backend/routes/console.php](../../backend/routes/console.php)`: scheduled jobs (e.g., weekly summary in `analytics.weekly_summaries`, failed job pruning).
 
 ---
 
-## Frontend: arranque, auth e dados
+## Broadcasting and WebSocket
 
-### Arranque
+- **Channels**: `[backend/routes/channels.php](../../backend/routes/channels.php)` — private channel `dashboard.{userId}` only if the authenticated ID matches.
+- **Config**: `[backend/config/broadcasting.php](../../backend/config/broadcasting.php)` — **Reverb** driver when environment variables are defined; otherwise it may fall back to **`log`** (dev without WS server).
+- **`ShouldBroadcast` events**: recalculated / recalculating metrics, session started/ended (`app/Events/`).
+- **Health**: `[backend/app/Http/Controllers/HealthController.php](../../backend/app/Http/Controllers/HealthController.php)` checks DB, Redis, queue, and TCP probe to Reverb host/port.
 
-`[frontend/src/main.ts](../../frontend/src/main.ts)`: Pinia, **Vue Query** (retry evitando 401/403 e `SESSION_NOT_READY`), Router, PrimeVue, tema em `localStorage` (`studytrack.theme`) e `data-theme` no `document`.
+---
 
-### Rotas e guardas
+## Frontend: Startup, Auth, and Data
 
-- Router em `[frontend/src/router/index.ts](../../frontend/src/router/index.ts)`; rotas autenticadas sob `[frontend/src/components/layout/AppLayout.vue](../../frontend/src/components/layout/AppLayout.vue)` com `meta.requiresAuth`.
-- `[frontend/src/router/guards.ts](../../frontend/src/router/guards.ts)`: convidado autenticado → dashboard; com token e `sessionValidated === false` força `**fetchMe()`** antes de rotas protegidas.
+### Startup
 
-### Cliente API
+`[frontend/src/main.ts](../../frontend/src/main.ts)`: Pinia, **Vue Query** (retry avoiding 401/403 and `SESSION_NOT_READY`), Router, PrimeVue, theme in `localStorage` (`studytrack.theme`) and `data-theme` on `document`.
 
-`[frontend/src/api/client.ts](../../frontend/src/api/client.ts)`: Axios com `baseURL` → `VITE_API_URL + '/api/v1'`, **Bearer**, bloqueio de pedidos (exceto `/auth/me` e logout) até `**sessionValidated`**, **401** (limpa sessão → login), **429** (toast opcional).
+### Routes and Guards
 
-### Estado e sincronização com o servidor
+- Router in `[frontend/src/router/index.ts](../../frontend/src/router/index.ts)`; authenticated routes under `[frontend/src/components/layout/AppLayout.vue](../../frontend/src/components/layout/AppLayout.vue)` with `meta.requiresAuth`.
+- `[frontend/src/router/guards.ts](../../frontend/src/router/guards.ts)`: authenticated guest → dashboard; with token and `sessionValidated === false` forces **`fetchMe()`** before protected routes.
+
+### API Client
+
+`[frontend/src/api/client.ts](../../frontend/src/api/client.ts)`: Axios with `baseURL` → `VITE_API_URL + '/api/v1'`, **Bearer**, request blocking (except `/auth/me` and logout) until **`sessionValidated`**, **401** (clear session → login), **429** (optional toast).
+
+### State and Server Synchronization
 
 - **Pinia**: `auth`, `analytics`, `sessions`, `technologies`, `notifications`, `ui`, `goals`.
-- **TanStack Query**: queries com `**enabled`** ligado à sessão validada (ex.: `useQueryAuthEnabled`).
-- **Padrão híbrido**: dashboard/tecnologias espelham dados em stores; lista de sessões muitas vezes **infinite query**; **store de sessões** cobre sessão ativa/timer e WS.
+- **TanStack Query**: queries with **`enabled`** tied to validated session (e.g., `useQueryAuthEnabled`).
+- **Hybrid pattern**: dashboard/technologies mirror data in stores; session list often uses **infinite query**; **session store** covers active session/timer and WS.
 
-### WebSocket no browser
+### Browser WebSocket
 
-`[frontend/src/composables/useWebSocket.ts](../../frontend/src/composables/useWebSocket.ts)`: Echo + Pusher; canal `**dashboard.{userId}`**; `authEndpoint` `/api/broadcasting/auth` com Bearer; eventos `.metrics.updated`, `.metrics.recalculating`, `.session.started`, `.session.ended`; invalidação de queries; fallback por timeout se o payload de fim de recálculo falhar. Desativável com `VITE_REVERB_ENABLED=false`.
+`[frontend/src/composables/useWebSocket.ts](../../frontend/src/composables/useWebSocket.ts)`: Echo + Pusher; channel **`dashboard.{userId}`**; `authEndpoint` `/api/broadcasting/auth` with Bearer; events `.metrics.updated`, `.metrics.recalculating`, `.session.started`, `.session.ended`; query invalidation; timeout fallback if the recalculation end payload fails. Can be disabled with `VITE_REVERB_ENABLED=false`.
 
-`[frontend/src/features/dashboard/composables/useDashboard.ts](../../frontend/src/features/dashboard/composables/useDashboard.ts)`: **polling** quando WS desligado e **refetch** em `visibilitychange`.
-
----
-
-## Fluxo ponta a ponta (exemplo: iniciar e terminar sessão)
-
-1. UI chama `[frontend/src/api/modules/sessions.api.ts](../../frontend/src/api/modules/sessions.api.ts)` (`POST study-sessions/start` ou `PATCH .../end`).
-2. Axios envia o pedido autenticado → **StudySessionController**.
-3. Serviço persiste em **PostgreSQL** (`study_sessions`, FKs para `technologies` / `users`).
-4. Eventos de domínio → listeners: invalidação de cache, dedup + **RecalculateMetricsJob**, broadcasts.
-5. Worker processa o job: agrega `**analytics.*`**, flush de **cache tagged**, **MetricsRecalculated**.
-6. Cliente Echo recebe atualizações e/ou invalida queries; sem WS, polling/refetch.
+`[frontend/src/features/dashboard/composables/useDashboard.ts](../../frontend/src/features/dashboard/composables/useDashboard.ts)`: **polling** when WS is off and **refetch** on `visibilitychange`.
 
 ---
 
-## Interação com a base de dados (resumo)
+## End-to-End Flow (Example: Start and End Session)
 
-- **Escrita transacional**: CRUD em `users`, `technologies`, `study_sessions` (+ tokens Sanctum, `failed_jobs`).
-- **Escrita analítica**: sobretudo via **job de recálculo** e jobs agendados (ex.: weekly summary no schema analytics).
-- **Triggers / funções** (`transactional/`): consistência e campos derivados na BD.
-- **Leitura na API**: repositórios/serviços leem transacional + `**analytics.*`**; dashboard **cacheado** por tags até flush após recálculo.
-
----
-
-## Operação e ambiente
-
-- **Filas**: ligação típica `redis`; filas nomeadas (`metrics`, `scheduler`, …).
-- **Health**: DB, Redis, fila, Reverb (TCP).
-- **Rate limits** em `api.php` + **sliding window** Lua em rotas sensíveis de sessão.
+1. UI calls `[frontend/src/api/modules/sessions.api.ts](../../frontend/src/api/modules/sessions.api.ts)` (`POST study-sessions/start` or `PATCH .../end`).
+2. Axios sends the authenticated request → **StudySessionController**.
+3. Service persists in **PostgreSQL** (`study_sessions`, FKs to `technologies` / `users`).
+4. Domain events → listeners: cache invalidation, dedup + **RecalculateMetricsJob**, broadcasts.
+5. Worker processes the job: aggregates **`analytics.*`**, flushes **tagged cache**, dispatches **MetricsRecalculated**.
+6. Echo client receives updates and/or invalidates queries; without WS, polling/refetch.
 
 ---
 
-## Ficheiros de referência rápida
+## Database Interaction (Summary)
 
+- **Transactional writes**: CRUD on `users`, `technologies`, `study_sessions` (+ Sanctum tokens, `failed_jobs`).
+- **Analytical writes**: mainly via **recalculation job** and scheduled jobs (e.g., weekly summary in analytics schema).
+- **Triggers / functions** (`transactional/`): consistency and derived fields in the DB.
+- **API reads**: repositories/services read transactional + **`analytics.*`**; dashboard **cached** by tags until flush after recalculation.
 
-| Área             | Caminho                                                                                                                                                                            |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| API HTTP         | `[backend/routes/api.php](../../backend/routes/api.php)`                                                                                                                           |
-| Eventos          | `[backend/app/Providers/EventServiceProvider.php](../../backend/app/Providers/EventServiceProvider.php)`                                                                           |
-| Job de métricas  | `[backend/app/Jobs/RecalculateMetricsJob.php](../../backend/app/Jobs/RecalculateMetricsJob.php)`                                                                                   |
-| Dedup Lua        | `[backend/app/Listeners/StudySession/DispatchMetricsRecalculation.php](../../backend/app/Listeners/StudySession/DispatchMetricsRecalculation.php)`                                 |
-| Schema analytics | `[backend/database/migrations/analytics/2025_01_02_000002_create_analytics_tables.php](../../backend/database/migrations/analytics/2025_01_02_000002_create_analytics_tables.php)` |
-| Cliente HTTP     | `[frontend/src/api/client.ts](../../frontend/src/api/client.ts)`                                                                                                                   |
-| Auth store       | `[frontend/src/stores/auth.store.ts](../../frontend/src/stores/auth.store.ts)`                                                                                                     |
-| WebSocket        | `[frontend/src/composables/useWebSocket.ts](../../frontend/src/composables/useWebSocket.ts)`                                                                                       |
-| Canais broadcast | `[backend/routes/channels.php](../../backend/routes/channels.php)`                                                                                                                 |
+---
 
+## Operations and Environment
 
+- **Queues**: typical `redis` connection; named queues (`metrics`, `scheduler`, …).
+- **Health**: DB, Redis, queue, Reverb (TCP).
+- **Rate limits** in `api.php` + **sliding window** Lua on sensitive session routes.
+
+---
+
+## Quick Reference Files
+
+| Area | Path |
+|------|------|
+| HTTP API | `[backend/routes/api.php](../../backend/routes/api.php)` |
+| Events | `[backend/app/Providers/EventServiceProvider.php](../../backend/app/Providers/EventServiceProvider.php)` |
+| Metrics Job | `[backend/app/Jobs/RecalculateMetricsJob.php](../../backend/app/Jobs/RecalculateMetricsJob.php)` |
+| Lua Dedup | `[backend/app/Listeners/StudySession/DispatchMetricsRecalculation.php](../../backend/app/Listeners/StudySession/DispatchMetricsRecalculation.php)` |
+| Analytics Schema | `[backend/database/migrations/analytics/2025_01_02_000002_create_analytics_tables.php](../../backend/database/migrations/analytics/2025_01_02_000002_create_analytics_tables.php)` |
+| HTTP Client | `[frontend/src/api/client.ts](../../frontend/src/api/client.ts)` |
+| Auth Store | `[frontend/src/stores/auth.store.ts](../../frontend/src/stores/auth.store.ts)` |
+| WebSocket | `[frontend/src/composables/useWebSocket.ts](../../frontend/src/composables/useWebSocket.ts)` |
+| Broadcast Channels | `[backend/routes/channels.php](../../backend/routes/channels.php)` |

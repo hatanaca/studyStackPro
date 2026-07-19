@@ -1,16 +1,25 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import AuthLayout from '@/components/layout/AuthLayout.vue'
 import LoginForm from '@/features/auth/components/LoginForm.vue'
 
 const loading = ref(false)
 const loginFormRef = ref<InstanceType<typeof LoginForm> | null>(null)
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const oauthError = ref<string | null>(null)
 
 const apiOrigin = String(import.meta.env.VITE_API_URL ?? '')
+
+onMounted(() => {
+  const errorParam = route.query.error
+  if (errorParam === 'oauth_failed') {
+    oauthError.value = 'Falha na autenticação com o Google. Verifique se o redirect URI "http://177-112-223-72.nip.io:5173/api/v1/auth/google/callback" está cadastrado no Google Cloud Console em "APIs e Serviços > Credenciais > App OAuth 2.0".'
+  }
+})
 
 function loginWith(provider: string) {
   window.location.href = `${apiOrigin}/api/v1/auth/${provider}`
@@ -42,6 +51,11 @@ async function onSubmit(payload: { email: string; password: string }) {
   <AuthLayout>
     <h1>StudyTrack Pro</h1>
     <p class="subtitle">Entrar</p>
+
+    <div v-if="oauthError" class="oauth-error">
+      <p>{{ oauthError }}</p>
+    </div>
+
     <LoginForm ref="loginFormRef" :loading="loading" @submit="onSubmit" />
 
     <div class="oauth-divider">
@@ -166,5 +180,16 @@ h1 {
 .oauth-btn:focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus);
+}
+
+.oauth-error {
+  background: var(--color-danger-bg, #fef2f2);
+  border: 1px solid var(--color-danger, #ef4444);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-danger, #ef4444);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
 }
 </style>

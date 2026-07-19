@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 
 vi.mock('primevue/usetoast', () => ({
   useToast: () => ({
@@ -15,8 +15,6 @@ describe('useToast', () => {
     expect(typeof toast.success).toBe('function')
     expect(typeof toast.error).toBe('function')
     expect(typeof toast.info).toBe('function')
-    expect(toast.toasts).toBeDefined()
-    expect(typeof toast.dismiss).toBe('function')
   })
 
   it('success does not throw', () => {
@@ -37,10 +35,5 @@ describe('useToast', () => {
   it('show does not throw', () => {
     const toast = useToast()
     expect(() => toast.show('Hello')).not.toThrow()
-  })
-
-  it('dismiss is callable', () => {
-    const toast = useToast()
-    expect(() => toast.dismiss()).not.toThrow()
   })
 })

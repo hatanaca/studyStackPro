@@ -1,14 +1,14 @@
 # Security Policy
 
-## Reportar Vulnerabilidade
+## Reporting a Vulnerability
 
-Nao abra issues publicas. Use:
+Do not open public issues. Use:
 https://github.com/hatanaca/studyStackPro/security/advisories/new
 
-Sera tratado de forma confidencial.
+It will be handled confidentially.
 
-## Politica
+## Policy
 
-- Resposta em ate 48 horas
-- Correcao em ate 7 dias para criticos
-- Creditado no CHANGELOG
+- Response within 48 hours
+- Fix within 7 days for critical issues
+- Credited in the CHANGELOG

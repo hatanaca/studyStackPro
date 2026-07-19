@@ -1,112 +1,112 @@
-﻿# StudyTrack Pro — correções de segurança aplicadas
+# StudyTrack Pro — Completed Security Fixes
 
-**Data de referência:** 2026-03-11  
-**Estado:** registro histórico das alterações prioritárias tratadas no repositório.
+**Reference date:** 2026-03-11
+**Status:** historical log of priority changes handled in the repository.
 
-> **Nota:** Não commite ficheiros `.env` ou `.env.production` com segredos reais. Use `backend/.env.example` como modelo e gere chaves com `php artisan key:generate` e passwords com `openssl`.
+> **Note:** Do not commit `.env` or `.env.production` files with real secrets. Use `backend/.env.example` as a template and generate keys with `php artisan key:generate` and passwords with `openssl`.
 
 ---
 
-## Crítico — tratado
+## Critical — Handled
 
 ### 1. CORS
 
-- **Ficheiro:** `backend/config/cors.php`
-- **Comportamento:** origens a partir de `CORS_ALLOWED_ORIGINS`; sem fallback para `*` em produção.
+- **File:** `backend/config/cors.php`
+- **Behavior:** origins from `CORS_ALLOWED_ORIGINS`; no fallback to `*` in production.
 
 ### 2. APP_DEBUG
 
-- **Produção:** `APP_DEBUG=false` no ambiente de deploy.
-- **Desenvolvimento:** `APP_DEBUG=true` é aceitável localmente.
+- **Production:** `APP_DEBUG=false` in the deploy environment.
+- **Development:** `APP_DEBUG=true` is acceptable locally.
 
-### 3. Palavra-passe da base de dados
+### 3. Database Password
 
-- **Produção:** usar valor forte (ex.: 32+ caracteres aleatórios), nunca `secret`.
+- **Production:** use a strong value (e.g., 32+ random characters), never `secret`.
 
-### 4. Redis com autenticação
+### 4. Redis Authentication
 
-- **Ficheiros:** `docker/redis/redis.conf`, variáveis `REDIS_*` no backend, alinhamento com `docker-compose.yml`.
-
----
-
-## Alta severidade — tratado
-
-### 5. Expiração de tokens Sanctum
-
-- **Ficheiro:** `backend/config/sanctum.php`
-- **Campo:** `expiration` (minutos), conforme política do projeto.
-
-### 6. Rate limiting de autenticação
-
-- **Ficheiros:** `backend/app/Providers/AppServiceProvider.php`, `backend/routes/api.php`
-- **Limitadores nomeados:** `login` (3/min por IP), `register` (5/min por IP), entre outros — ver código atual.
-
-### 7. HTTPS / WSS em produção
-
-- `APP_URL` e `REVERB_SCHEME` devem refletir HTTPS/WSS em produção.
-
-### 8. Acesso ao Horizon
-
-- **Ficheiro:** `backend/app/Providers/AppServiceProvider.php` (callback `Horizon::auth`)
-- **Configuração:** `HORIZON_ADMIN_EMAILS` em `config/app.php` / `.env`.
+- **Files:** `docker/redis/redis.conf`, `REDIS_*` variables in backend, alignment with `docker-compose.yml`.
 
 ---
 
-## Média severidade — tratado
+## High Severity — Handled
 
-### 9. Cabeçalhos de segurança
+### 5. Sanctum Token Expiration
 
-- **Proxy:** `docker/nginx/nginx.conf` e `docker/nginx/conf.d/studytrack.conf` (OpenResty), incluindo reforço por Lua onde aplicável.
+- **File:** `backend/config/sanctum.php`
+- **Field:** `expiration` (minutes), per project policy.
 
-### 10. Utilizador não-root no PHP (quando aplicável)
+### 6. Authentication Rate Limiting
 
-- **Ficheiro:** `docker/php/Dockerfile` — revisar `USER` e permissões de `storage`.
+- **Files:** `backend/app/Providers/AppServiceProvider.php`, `backend/routes/api.php`
+- **Named limiters:** `login` (3/min per IP), `register` (5/min per IP), among others — see current code.
 
-### 11. Rede Docker
+### 7. HTTPS / WSS in Production
 
-- **Ficheiro:** `docker-compose.yml` — rede interna `app`; apenas o proxy expõe portas públicas por omissão.
+- `APP_URL` and `REVERB_SCHEME` should reflect HTTPS/WSS in production.
 
-### 12. Configuração Redis
+### 8. Horizon Access
 
-- **Ficheiro:** `docker/redis/redis.conf` — `requirepass`, limites de memória e política de eviction conforme ambiente.
+- **File:** `backend/app/Providers/AppServiceProvider.php` (`Horizon::auth` callback)
+- **Configuration:** `HORIZON_ADMIN_EMAILS` in `config/app.php` / `.env`.
 
 ---
 
-## Ficheiros tipicamente envolvidos
+## Medium Severity — Handled
 
-| Ficheiro | Notas |
-|----------|--------|
+### 9. Security Headers
+
+- **Proxy:** `docker/nginx/nginx.conf` and `docker/nginx/conf.d/studytrack.conf` (OpenResty), including Lua reinforcement where applicable.
+
+### 10. Non-root User in PHP (When Applicable)
+
+- **File:** `docker/php/Dockerfile` — review `USER` and `storage` permissions.
+
+### 11. Docker Network
+
+- **File:** `docker-compose.yml` — internal `app` network; only the proxy exposes public ports by default.
+
+### 12. Redis Configuration
+
+- **File:** `docker/redis/redis.conf` — `requirepass`, memory limits, and eviction policy per environment.
+
+---
+
+## Typically Involved Files
+
+| File | Notes |
+|------|-------|
 | `backend/config/cors.php` | CORS |
 | `backend/config/sanctum.php` | Tokens |
 | `backend/app/Providers/AppServiceProvider.php` | Rate limits, Horizon |
-| `backend/routes/api.php` | Throttle por rota |
-| `docker/nginx/*.conf` | Cabeçalhos, TLS (quando ativo) |
-| `docker/redis/redis.conf` | Auth Redis |
-| `docker-compose.yml` | Rede e serviços |
+| `backend/routes/api.php` | Per-route throttle |
+| `docker/nginx/*.conf` | Headers, TLS (when active) |
+| `docker/redis/redis.conf` | Redis auth |
+| `docker-compose.yml` | Network and services |
 
 ---
 
-## Próximos passos em produção
+## Production Next Steps
 
-- [ ] Domínios reais em `CORS_ALLOWED_ORIGINS`, `SANCTUM_STATEFUL_DOMAINS`, `APP_URL`
-- [ ] Certificados TLS e redirecionamento HTTP → HTTPS
-- [ ] `HORIZON_ADMIN_EMAILS` definido
-- [ ] `composer audit` e `npm audit` periódicos
-- [ ] HSTS após TLS estável
-- [ ] Backups PostgreSQL e monitorização
+- [ ] Real domains in `CORS_ALLOWED_ORIGINS`, `SANCTUM_STATEFUL_DOMAINS`, `APP_URL`
+- [ ] TLS certificates and HTTP → HTTPS redirect
+- [ ] `HORIZON_ADMIN_EMAILS` defined
+- [ ] Periodic `composer audit` and `npm audit`
+- [ ] HSTS after TLS is stable
+- [ ] PostgreSQL backups and monitoring
 
 ---
 
-## Resumo
+## Summary
 
-| Área | Direção |
-|------|---------|
-| CORS | Restrito por configuração |
-| Debug | Desligado em produção |
-| Credenciais | Fortes e fora do Git |
-| Redis | Autenticado |
-| Tokens | Com expiração configurada |
-| Login/register | Throttle estrito (ver código) |
-| Horizon | Apenas emails autorizados |
+| Area | Direction |
+|------|-----------|
+| CORS | Restricted by configuration |
+| Debug | Disabled in production |
+| Credentials | Strong and outside Git |
+| Redis | Authenticated |
+| Tokens | With configured expiration |
+| Login/register | Strict throttle (see code) |
+| Horizon | Only authorized emails |
 
-Para checklist operacional atualizado, ver [DEPLOY_SECURITY_PASSO_A_PASSO.md](DEPLOY_SECURITY_PASSO_A_PASSO.md).
+For an updated operational checklist, see [DEPLOY_SECURITY_PASSO_A_PASSO.md](DEPLOY_SECURITY_PASSO_A_PASSO.md).

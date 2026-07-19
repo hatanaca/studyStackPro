@@ -90,6 +90,6 @@ class SQLInjectionTest extends TestCase
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson("/api/v1/study-sessions?date_from=' OR SLEEP(5)--");
 
-        $response->assertStatus(422);
+        $response->assertStatus(422); // Validação de data rejeita SQL injection em date_from
     }
 }

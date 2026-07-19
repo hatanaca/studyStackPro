@@ -27,7 +27,7 @@ class RedisLuaService
     public function loadScripts(): void
     {
         foreach ($this->scripts() as $name => $path) {
-            $content = @file_get_contents($path);
+            $content = file_get_contents($path);
             if ($content === false) {
                 throw new RuntimeException("Não foi possível ler o script Lua [{$name}] em [{$path}].");
             }

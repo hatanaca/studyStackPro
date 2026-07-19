@@ -12,6 +12,7 @@ const technologyListRef = ref<{ openCreate: () => void } | null>(null)
     :breadcrumb="[{ label: 'Dashboard', to: '/' }, { label: 'Tecnologias' }]"
     title="Tecnologias"
     subtitle="Suas sessões de estudo ficam organizadas por tecnologia. Clique em uma para ver e registrar sessões."
+    narrow
   >
     <template #hint>
       Adicione uma tecnologia (ex.: JavaScript, React), acesse seus detalhes e registre sessões

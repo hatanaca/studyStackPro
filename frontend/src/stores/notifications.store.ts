@@ -20,25 +20,17 @@ export const useNotificationsStore = defineStore('notifications', () => {
   function add(notification: Omit<AppNotification, 'id' | 'read' | 'created_at'>) {
     const id = `notif_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
     items.value = [
-      {
-        ...notification,
-        id,
-        read: false,
-        created_at: new Date().toISOString(),
-      },
+      { ...notification, id, read: false, created_at: new Date().toISOString() },
       ...items.value,
     ].slice(0, 50)
   }
 
   function markRead(id: string) {
-    const item = items.value.find((n) => n.id === id)
-    if (item) item.read = true
+    items.value = items.value.map((n) => n.id === id ? { ...n, read: true } : n)
   }
 
   function markAllRead() {
-    items.value.forEach((n) => {
-      n.read = true
-    })
+    items.value = items.value.map((n) => ({ ...n, read: true }))
   }
 
   function remove(id: string) {
@@ -47,12 +39,5 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
   const unreadCount = computed(() => items.value.filter((n) => !n.read).length)
 
-  return {
-    items,
-    add,
-    markRead,
-    markAllRead,
-    remove,
-    unreadCount,
-  }
+  return { items, add, markRead, markAllRead, remove, unreadCount }
 })

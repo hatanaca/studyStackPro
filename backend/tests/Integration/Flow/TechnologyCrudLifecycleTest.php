@@ -89,7 +89,8 @@ class TechnologyCrudLifecycleTest extends TestCase
             ]);
 
         $response->assertStatus(422);
-        $this->assertArrayHasKey('errors', $response->json());
+        $response->assertJson(['error' => ['code' => 'VALIDATION_ERROR']]);
+        $this->assertArrayHasKey('name', $response->json('error.details') ?? []);
     }
 
     public function test_technology_requires_authentication(): void

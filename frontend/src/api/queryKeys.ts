@@ -23,4 +23,8 @@ export const queryKeys = {
     list: () => [...queryKeys.technologies.all, 'list'] as const,
     detail: (id: string) => [...queryKeys.technologies.all, 'detail', id] as const,
   },
+  linkedin: {
+    all: ['linkedin'] as const,
+    status: () => [...queryKeys.linkedin.all, 'status'] as const,
+  },
 } as const

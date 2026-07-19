@@ -1,174 +1,174 @@
-# Prompt: Implementar melhorias no backend StudyTrackPro
+# Prompt: Implement Backend Improvements for StudyTrackPro
 
-Use este prompt quando quiser que o Composer (ou outro agente) **execute** melhorias no backend do StudyTrackPro. As tarefas estão priorizadas. Pode solicitar "implementar todas as de alta prioridade" ou "implementar apenas o item X".
+Use this prompt when you want the Composer (or another agent) to **execute** improvements in the StudyTrackPro backend. Tasks are prioritized. You can request "implement all high-priority items" or "implement only item X".
 
-**Contexto:** Laravel 11, PHP 8.2+, módulos em `app/Modules/` (Auth, StudySessions, Technologies, Analytics), rotas em `routes/api.php`, eventos/listeners/jobs para cache e Reverb. Regras do agente backend: `docs/agents/prompt-agente-backend-studytrackpro.md`.
-
----
-
-## Instrução para o agente
-
-Você deve implementar as melhorias de backend listadas abaixo na ordem indicada (ou apenas as que o usuário solicitar). Para cada item:
-
-1. **Não quebre** contratos existentes com o frontend (payloads de API e eventos WebSocket); se precisar alterar resposta ou evento, documentar e avisar impacto no frontend.
-2. Manter **testes** existentes passando e adicionar testes para funcionalidades novas ou alteradas.
-3. Seguir convenções do projeto: Services orquestram regras, Repositories acessam dados, Events/Listeners para efeitos colaterais (cache, broadcast, jobs).
+**Context:** Laravel 11, PHP 8.2+, modules in `app/Modules/` (Auth, StudySessions, Technologies, Analytics), routes in `routes/api.php`, events/listeners/jobs for cache and Reverb. Backend agent rules: `docs/agents/prompt-agente-backend-studytrackpro.md`.
 
 ---
 
-## Melhorias de alta prioridade
+## Agent Instructions
 
-### 1. API de Goals no backend (ou decisão explícita de não ter)
+You must implement the backend improvements listed below in the indicated order (or only those the user requests). For each item:
 
-**Objetivo:** O frontend possui stores, views e rotas de Goals; atualmente não há API de Goals no backend. Ou implementar a API ou desativar/remover Goals no frontend e documentar a decisão.
-
-**Opção A — Implementar API de Goals:**
-
-- Criar migration(s) para metas (ex.: tabela `goals`: user_id, tipo [diário/semanal], valor alvo em minutos, período, etc.).
-- Criar model `Goal` (ou equivalente), com scopes e relações.
-- Criar módulo `app/Modules/Goals/`: Contract de Repository, EloquentGoalRepository, GoalService, DTOs.
-- Registrar rotas em `api.php`: listar, criar, atualizar, excluir metas (autenticadas com `auth:sanctum`).
-- Criar Controller (ex.: `GoalsController`), Form Request para validação.
-- Emitir eventos se necessário (ex.: GoalCreated para analytics); integrar com cálculo de métricas se "meta do dia" for usado no dashboard.
-- Adicionar testes Feature para CRUD de Goals e testes Unit para GoalService.
-- Documentar no README ou em docs que Goals passou a ser persistido no backend.
-
-**Opção B — Não implementar (Goals só frontend):**
-
-- Documentar em README ou docs que Goals é apenas local (localStorage/store) e não há persistência no backend.
-- Garantir que o frontend não chame endpoints inexistentes (remover ou mockar `goals.api.ts` se fizer chamadas reais).
-
-**Entrega:** Ou API funcional + testes + doc, ou doc explícito + frontend ajustado para não depender de API de Goals.
+1. **Don't break** existing contracts with the frontend (API payloads and WebSocket events); if you need to change a response or event, document and notify about frontend impact.
+2. Keep existing **tests** passing and add tests for new or changed functionality.
+3. Follow project conventions: Services orchestrate rules, Repositories access data, Events/Listeners for side effects (cache, broadcast, jobs).
 
 ---
 
-### 2. Atualizar coleção Postman com endpoint de export de analytics
+## High Priority Improvements
 
-**Objetivo:** A documentação da API (Postman) deve incluir o endpoint real de exportação de analytics.
+### 1. Goals API in Backend (or Explicit Decision Not to Have One)
 
-**Ação:**
+**Objective:** The frontend has Goals stores, views, and routes; currently there is no Goals API in the backend. Either implement the API or disable/remove Goals in the frontend and document the decision.
 
-- Localizar a coleção Postman em `docs/` (ex.: `StudyTrack_API_Collection.postman.json` ou similar).
-- Adicionar request para `GET /api/v1/analytics/export` (ou o path correto) com parâmetros documentados: período (date_from, date_to), formato (csv, xlsx, etc.), se houver.
-- Incluir variáveis de ambiente necessárias (token, base URL) e exemplo de resposta/headers.
-- Se existir outro formato de documentação (OpenAPI, Markdown), atualizar também.
+**Option A — Implement Goals API:**
 
-**Entrega:** Coleção Postman atualizada e commitada.
+- Create migration(s) for goals (e.g., `goals` table: user_id, type [daily/weekly], target value in minutes, period, etc.).
+- Create `Goal` model (or equivalent), with scopes and relationships.
+- Create `app/Modules/Goals/` module: Repository Contract, EloquentGoalRepository, GoalService, DTOs.
+- Register routes in `api.php`: list, create, update, delete goals (authenticated with `auth:sanctum`).
+- Create Controller (e.g., `GoalsController`), Form Request for validation.
+- Dispatch events if needed (e.g., GoalCreated for analytics); integrate with metrics calculation if "daily goal" is used on dashboard.
+- Add Feature tests for Goals CRUD and Unit tests for GoalService.
+- Document in README or docs that Goals is now persisted in the backend.
 
----
+**Option B — Don't Implement (Goals frontend-only):**
 
-### 3. Testes Feature/Unit para o endpoint de export de analytics
+- Document in README or docs that Goals is local only (localStorage/store) with no backend persistence.
+- Ensure the frontend doesn't call non-existent endpoints (remove or mock `goals.api.ts` if it makes real calls).
 
-**Objetivo:** O endpoint de export não deve ficar sem cobertura de testes.
-
-**Ação:**
-
-- Identificar o controller e o service que tratam do export (ex.: `AnalyticsController@export`, `AnalyticsService`).
-- Criar ou completar testes Feature: chamada autenticada com parâmetros válidos; retorno do formato esperado (CSV/Excel); validação de parâmetros (datas inválidas, período máximo); usuário não autenticado retorna 401.
-- Se houver lógica de geração de arquivo no Service, adicionar testes Unit para essa lógica.
-- Garantir que os testes passem com `php artisan test` ou `make test`.
-
-**Entrega:** Testes commitados e verificação de que `make test` (backend) passa.
+**Deliverable:** Either functional API + tests + docs, or explicit docs + frontend adjusted to not depend on a Goals API.
 
 ---
 
-### 4. Alinhar payloads dos eventos WebSocket com o frontend
+### 2. Update Postman Collection with Analytics Export Endpoint
 
-**Objetivo:** Os eventos broadcast (SessionStarted, SessionEnded, MetricsUpdated, etc.) devem enviar exatamente a estrutura esperada pelo frontend (tipos em `websocket.types.ts`).
+**Objective:** The API documentation (Postman) should include the actual analytics export endpoint.
 
-**Ação:**
+**Action:**
 
-- Listar eventos broadcast no backend (BroadcastSessionStarted, BroadcastSessionEnded, BroadcastMetricsUpdate, BroadcastMetricsRecalculating).
-- Ver a estrutura atual de cada evento (propriedades da classe ou do payload).
-- Comparar com o que o frontend espera (ex.: `technology.slug` vs `technology.id`); ajustar o backend para enviar os campos necessários (ex.: incluir `slug` no objeto technology do SessionStarted).
-- Documentar em comentário no Event ou no README a estrutura de cada evento para referência futura.
+- Locate the Postman collection in `docs/` (e.g., `StudyTrack_API_Collection.postman.json` or similar).
+- Add a request for `GET /api/v1/analytics/export` (or the correct path) with documented parameters: period (date_from, date_to), format (csv, xlsx, etc.), if applicable.
+- Include required environment variables (token, base URL) and response/headers example.
+- If another documentation format exists (OpenAPI, Markdown), update it too.
 
-**Entrega:** Eventos ajustados; testes que verificam o payload (opcional); doc ou comentário com a estrutura.
-
----
-
-### 5. Unificar seeders de dados de demonstração
-
-**Objetivo:** Evitar duplicidade (ex.: dois DemoDataSeeder ou entradas duplicadas) e ter um único ponto de entrada para dados de demo.
-
-**Ação:**
-
-- Identificar todos os seeders que criam dados de demonstração (ex.: DemoDataSeeder, GenericTwoMonthsDailyStudySeeder, StudySpreadsheetUserSeeder).
-- Decidir um fluxo único: por exemplo, `DatabaseSeeder` chama `DemoDataSeeder`, que por sua vez chama os outros seeders necessários na ordem correta.
-- Remover ou depreciar seeders duplicados; garantir que `php artisan db:seed` (ou `make fresh`) produza um estado consistente e sem duplicação de dados.
-- Documentar no README como rodar apenas dados de demo, se aplicável.
-
-**Entrega:** Seeders reorganizados; README atualizado; nenhum seeder duplicado ativo.
+**Deliverable:** Postman collection updated and committed.
 
 ---
 
-## Melhorias de média prioridade
+### 3. Feature/Unit Tests for Analytics Export Endpoint
 
-### 6. Documentação OpenAPI/Swagger da API
+**Objective:** The export endpoint should not lack test coverage.
 
-**Objetivo:** Ter uma spec OpenAPI (Swagger) gerada ou mantida para a API, além da coleção Postman.
+**Action:**
 
-**Ação:**
+- Identify the controller and service handling the export (e.g., `AnalyticsController@export`, `AnalyticsService`).
+- Create or complete Feature tests: authenticated call with valid parameters; expected format return (CSV/Excel); parameter validation (invalid dates, max period); unauthenticated user returns 401.
+- If there's file generation logic in the Service, add Unit tests for that logic.
+- Ensure tests pass with `php artisan test` or `make test`.
 
-- Avaliar uso de Scramble, L5-Swagger ou anotações em controllers/resources para gerar OpenAPI.
-- Configurar geração da spec (por exemplo, rota `/api/documentation` ou arquivo `openapi.yaml`).
-- Garantir que os principais endpoints (auth, technologies, sessions, analytics, export) estejam documentados com parâmetros e respostas.
-- Opcional: usar a spec para gerar tipos TypeScript no frontend.
-
----
-
-### 7. Rate limiting e throttles documentados
-
-Documentar em README ou em docs quais rotas têm throttle (ex.: login 5 req/min, export 10 req/min), para que integradores e frontend saibam o comportamento esperado em 429.
+**Deliverable:** Tests committed and verification that `make test` (backend) passes.
 
 ---
 
-### 8. Testes E2E ou de integração para fluxos críticos
+### 4. Align WebSocket Event Payloads with Frontend
 
-Avaliar adoção de Laravel Dusk ou testes de integração que cubram: login → dashboard → iniciar sessão → receber evento WebSocket → encerrar sessão. Isso pode ser feito em conjunto com o frontend (Playwright/Cypress) ou apenas backend simulando cliente.
+**Objective:** Broadcast events (SessionStarted, SessionEnded, MetricsUpdated, etc.) must send exactly the structure expected by the frontend (types in `websocket.types.ts`).
 
----
+**Action:**
 
-### 9. Variáveis de ambiente documentadas
+- List broadcast events in the backend (BroadcastSessionStarted, BroadcastSessionEnded, BroadcastMetricsUpdate, BroadcastMetricsRecalculating).
+- Check the current structure of each event (class properties or payload).
+- Compare with what the frontend expects (e.g., `technology.slug` vs `technology.id`); adjust the backend to send necessary fields (e.g., include `slug` in the SessionStarted technology object).
+- Document in an Event comment or README the structure of each event for future reference.
 
-**Objetivo:** Um único ponto de referência para variáveis do backend (e, se possível, do frontend).
-
-**Ação:**
-
-- Garantir que `.env.example` contenha todas as variáveis necessárias para rodar a API, Reverb, Horizon, Redis, PostgreSQL, etc., com descrição em comentário.
-- Opcional: criar `docs/env.md` ou seção no README listando cada variável e seu propósito.
+**Deliverable:** Events adjusted; tests verifying the payload (optional); doc or comment with the structure.
 
 ---
 
-## Melhorias de baixa prioridade
+### 5. Unify Demo Data Seeders
 
-### 10. PHPStan level 6 ou superior
+**Objective:** Avoid duplication (e.g., two DemoDataSeeds or duplicate entries) and have a single entry point for demo data.
 
-Subir o level do PHPStan em `phpstan.neon` para 6 (ou mais) e corrigir os issues reportados, melhorando a segurança de tipos no backend.
+**Action:**
 
-### 11. Laravel Telescope em ambiente local (opcional)
+- Identify all seeders that create demo data (e.g., DemoDataSeeder, GenericTwoMonthsDailyStudySeeder, StudySpreadsheetUserSeeder).
+- Decide on a single flow: for example, `DatabaseSeeder` calls `DemoDataSeeder`, which in turn calls other necessary seeders in the correct order.
+- Remove or deprecate duplicate seeders; ensure `php artisan db:seed` (or `make fresh`) produces a consistent state without data duplication.
+- Document in README how to run only demo data, if applicable.
 
-O projeto **não** inclui Telescope por padrão. Se a equipa quiser UI de debug: `composer require laravel/telescope --dev`, publicar assets, restringir a `local`/IPs e **nunca** expor em produção sem hardening. Alternativa já usada: logs, `LogApiRequests`, Horizon e `php artisan queue:failed`.
-
-### 12. Comando ou job para limpar dados antigos
-
-Se houver necessidade de retenção de dados (ex.: sessões ou logs antigos), considerar comando Artisan ou job agendado para arquivar ou apagar dados conforme política definida.
-
----
-
-## Checklist antes de dar por concluído
-
-- [ ] `php artisan test` (ou `make test` no backend) passa.
-- [ ] Nenhum contrato de API ou evento WebSocket quebrado sem documentar e (se possível) avisar no frontend.
-- [ ] Migrations rodam em ordem sem erro (`php artisan migrate`).
-- [ ] README ou docs atualizados quando a melhoria alterar comportamento ou setup.
+**Deliverable:** Seeders reorganized; README updated; no active duplicate seeders.
 
 ---
 
-## Como usar este prompt
+## Medium Priority Improvements
 
-- **Implementar tudo (alta):** "Implemente todas as melhorias de alta prioridade do documento docs/agents/prompt-implementar-melhorias-backend.md."
-- **Implementar um item:** "Implemente apenas o item 2 (Postman) do docs/agents/prompt-implementar-melhorias-backend.md."
-- **Implementar por tema:** "Implemente os itens relacionados a documentação (2, 6 e 9) do docs/agents/prompt-implementar-melhorias-backend.md."
+### 6. OpenAPI/Swagger API Documentation
 
-Inclua no contexto os arquivos relevantes (ex.: `routes/api.php`, `app/Events/`, `app/Http/Controllers/V1/AnalyticsController.php`, coleção Postman) para o agente ter referência imediata.
+**Objective:** Have an OpenAPI (Swagger) spec generated or maintained for the API, in addition to the Postman collection.
+
+**Action:**
+
+- Evaluate using Scramble, L5-Swagger, or controller/resource annotations to generate OpenAPI.
+- Configure spec generation (e.g., `/api/documentation` route or `openapi.yaml` file).
+- Ensure main endpoints (auth, technologies, sessions, analytics, export) are documented with parameters and responses.
+- Optional: use the spec to generate TypeScript types in the frontend.
+
+---
+
+### 7. Documented Rate Limiting and Throttles
+
+Document in README or docs which routes have throttle (e.g., login 5 req/min, export 10 req/min), so integrators and frontend know the expected behavior on 429.
+
+---
+
+### 8. E2E or Integration Tests for Critical Flows
+
+Evaluate adopting Laravel Dusk or integration tests covering: login → dashboard → start session → receive WebSocket event → end session. This can be done in conjunction with the frontend (Playwright/Cypress) or backend only simulating a client.
+
+---
+
+### 9. Documented Environment Variables
+
+**Objective:** A single reference point for backend variables (and, if possible, frontend).
+
+**Action:**
+
+- Ensure `.env.example` contains all variables needed to run the API, Reverb, Horizon, Redis, PostgreSQL, etc., with description in comments.
+- Optional: create `docs/env.md` or a README section listing each variable and its purpose.
+
+---
+
+## Low Priority Improvements
+
+### 10. PHPStan Level 6 or Higher
+
+Raise the PHPStan level in `phpstan.neon` to 6 (or more) and fix reported issues, improving type safety in the backend.
+
+### 11. Laravel Telescope in Local Environment (Optional)
+
+The project does **not** include Telescope by default. If the team wants a debug UI: `composer require laravel/telescope --dev`, publish assets, restrict to `local`/IPs and **never** expose in production without hardening. Already used alternative: logs, `LogApiRequests`, Horizon, and `php artisan queue:failed`.
+
+### 12. Command or Job to Clean Old Data
+
+If data retention is needed (e.g., old sessions or logs), consider an Artisan command or scheduled job to archive or delete data per defined policy.
+
+---
+
+## Pre-Completion Checklist
+
+- [ ] `php artisan test` (or `make test` in backend) passes.
+- [ ] No API contract or WebSocket event broken without documenting and (if possible) notifying the frontend.
+- [ ] Migrations run in order without error (`php artisan migrate`).
+- [ ] README or docs updated when the improvement changes behavior or setup.
+
+---
+
+## How to Use This Prompt
+
+- **Implement all (high):** "Implement all high-priority improvements from docs/agents/prompt-implementar-melhorias-backend.md."
+- **Implement one item:** "Implement only item 2 (Postman) from docs/agents/prompt-implementar-melhorias-backend.md."
+- **Implement by topic:** "Implement the documentation-related items (2, 6, and 9) from docs/agents/prompt-implementar-melhorias-backend.md."
+
+Include relevant files in context (e.g., `routes/api.php`, `app/Events/`, `app/Http/Controllers/V1/AnalyticsController.php`, Postman collection) so the agent has immediate reference.

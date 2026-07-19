@@ -64,3 +64,51 @@ prod-up:
 
 prod-down:
 	docker compose -f docker-compose.yml -f docker-compose.production.yml down
+
+# Rebuild das imagens de sandbox (code execution) com base layers atualizadas
+sandbox-rebuild:
+	docker compose -f docker/code-sandbox/docker-compose.sandbox.yml build --no-cache
+
+# Rebuild total: todas as imagens customizadas com cache invalidado
+rebuild-all: prod-build
+	docker compose build --no-cache
+	docker compose -f docker/code-sandbox/docker-compose.sandbox.yml build --no-cache
+
+# Backup do PostgreSQL (one-shot ou restore)
+backup:
+	docker compose exec postgres /backup/backup.sh
+
+backup-restore:
+	@echo "Uso: docker compose exec -T postgres psql -U studytrack studytrack < arquivo.sql"
+	@echo "Ex: gunzip -c backups/studytrack_20260716_030000.sql.gz | docker compose exec -T postgres psql -U studytrack studytrack"
+
+backup-start:
+	docker compose --profile backup up -d pg-backup
+
+# Per-service log targets
+logs-nginx:
+	docker compose logs -f nginx
+
+logs-php:
+	docker compose logs -f php-fpm
+
+logs-reverb:
+	docker compose logs -f reverb
+
+logs-horizon:
+	docker compose logs -f horizon
+
+logs-scheduler:
+	docker compose logs -f scheduler
+
+logs-postgres:
+	docker compose logs -f postgres
+
+logs-redis:
+	docker compose logs -f redis
+
+logs-node:
+	docker compose logs -f node
+
+logs-worker:
+	docker compose logs -f horizon scheduler

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
-import Breadcrumb from 'primevue/breadcrumb'
 import PageView from '@/components/layout/PageView.vue'
 
 const route = useRoute()
@@ -28,15 +27,13 @@ const breadcrumbModel = computed(() => {
 </script>
 
 <template>
-  <PageView narrow>
+  <PageView
+    :breadcrumb="breadcrumbModel"
+    title="Configurações"
+    subtitle="Aparência, exportação, relatórios e ajuda num só sítio."
+    narrow
+  >
     <template #default>
-      <Breadcrumb :model="breadcrumbModel" class="settings-layout__breadcrumb" />
-      <header class="settings-layout__intro">
-        <h1 class="settings-layout__title">Configurações</h1>
-        <p class="settings-layout__subtitle">
-          Aparência, exportação, relatórios e ajuda num só sítio.
-        </p>
-      </header>
       <nav class="settings-layout__tabs" aria-label="Secções de configurações">
         <RouterLink
           v-for="t in tabs"

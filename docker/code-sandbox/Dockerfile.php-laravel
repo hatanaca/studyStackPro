@@ -1,0 +1,14 @@
+FROM php:8.4-cli-alpine
+
+# Atualiza pacotes base Alpine para corrigir CVEs
+RUN apk upgrade --no-cache
+
+# Composer para projetos Laravel (sandbox)
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+WORKDIR /sandbox
+
+RUN addgroup -S sandbox && adduser -S sandbox -G sandbox
+USER sandbox
+
+ENTRYPOINT ["php", "-r"]

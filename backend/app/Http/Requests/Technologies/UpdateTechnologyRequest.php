@@ -8,7 +8,13 @@ class UpdateTechnologyRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $technology = $this->route('technology');
+        if (! $technology) {
+            return true;
+        }
+
+        return $this->user()?->technologies()->where('id', $technology)->exists()
+            || $this->user()?->technologies()->where('slug', $technology)->exists();
     }
 
     public function rules(): array
@@ -18,7 +24,6 @@ class UpdateTechnologyRequest extends FormRequest
             'color' => ['nullable', 'string', 'regex:/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/'],
             'icon' => ['nullable', 'string', 'max:80'],
             'description' => ['nullable', 'string', 'max:500'],
-            'is_active' => ['sometimes', 'boolean'],
         ];
     }
 }

@@ -1,117 +1,117 @@
-# Execucao dos To-dos de Auditoria UX/UI
+# UX/UI Audit To-Do Execution
 
-Este documento consolida a execucao dos 4 to-dos atribuídos da auditoria UX/UI, com foco em correcoes de impacto real, padrao unico de experiencia e quick wins de baixo risco.
+This document consolidates the execution of the 4 assigned UX/UI audit to-dos, focusing on real-impact fixes, a single experience pattern, and low-risk quick wins.
 
-## 1) `audit-p0-confiabilidade` (Concluido)
+## 1) `audit-p0-confiabilidade` (Completed)
 
-### Objetivo
-Priorizar correcoes de confiabilidade em acoes e overlays para reduzir comportamento enganoso e risco de abandono de fluxo.
+### Objective
+Prioritize reliability fixes on actions and overlays to reduce deceptive behavior and flow abandonment risk.
 
-### Diagnostico confirmado
-- CTA de export local em `src/views/settings/DataSection.vue` exibe progresso, mas nao gera arquivo nem feedback final persistente.
-- Modal base em `src/components/ui/BaseModal.vue` ainda sem semantica minima de dialogo (`role="dialog"`, `aria-modal`) e sem ciclo de foco.
-- Drawer mobile em `src/components/layout/AppSidebar.vue` abre/fecha visualmente, mas sem gestao robusta de foco e sem fechamento por `Escape`.
+### Confirmed Diagnosis
+- Export CTA in `src/views/settings/DataSection.vue` shows progress but doesn't generate a file or persistent final feedback.
+- Base modal in `src/components/ui/BaseModal.vue` still lacks minimum dialog semantics (`role="dialog"`, `aria-modal`) and focus cycle.
+- Mobile drawer in `src/components/layout/AppSidebar.vue` opens/closes visually but without robust focus management and no `Escape` closing.
 
-### Priorizacao por impacto
-- **P0.1 (alto impacto, baixo esforco):** Ajustar copy/feedback do CTA de dados locais para evitar expectativa de exportacao de sessoes do servidor.
-- **P0.2 (alto impacto, medio esforco):** Evoluir `BaseModal` para contrato a11y minimo (semantica, foco inicial, retorno de foco, `Escape`, lock de scroll).
-- **P0.3 (alto impacto, medio esforco):** Aplicar foco guiado no drawer mobile (`AppSidebar`) reutilizando `useFocusTrap` e definindo elemento inicial focado.
+### Prioritization by Impact
+- **P0.1 (high impact, low effort):** Adjust copy/feedback of local data CTA to avoid expectation of server session export.
+- **P0.2 (high impact, medium effort):** Evolve `BaseModal` to minimum a11y contract (semantics, initial focus, focus return, `Escape`, scroll lock).
+- **P0.3 (high impact, medium effort):** Apply guided focus in mobile drawer (`AppSidebar`) reusing `useFocusTrap` and defining initial focused element.
 
-### Resultado esperado
-- Menos acoes "falsas", overlays previsiveis e navegacao por teclado confiavel em fluxos criticos.
+### Expected Outcome
+- Fewer "false" actions, predictable overlays, and reliable keyboard navigation in critical flows.
 
-## 2) `audit-p1-consistencia-fluxo` (Concluido)
+## 2) `audit-p1-consistencia-fluxo` (Completed)
 
-### Objetivo
-Mapear divergencias de estados de tela, feedback global e confirmacoes destrutivas e definir padrao unico.
+### Objective
+Map screen state divergences, global feedback, and destructive confirmations, and define a single pattern.
 
-### Divergencias mapeadas
-- **Confirmacoes destrutivas**
-  - `src/features/technologies/components/TechnologyList.vue`: `confirm(...)` nativo.
-  - `src/views/profile/ProfileView.vue`: `window.confirm(...)` para revogacao global.
+### Mapped Divergences
+- **Destructive confirmations**
+  - `src/features/technologies/components/TechnologyList.vue`: native `confirm(...)`.
+  - `src/views/profile/ProfileView.vue`: `window.confirm(...)` for global revocation.
   - `src/features/goals/components/GoalList.vue`: `useConfirm` (PrimeVue ConfirmDialog).
-  - `src/features/sessions/components/SessionList.vue`: `Dialog` custom para delete.
-- **Estados de loading/empty/error**
-  - `src/views/Dashboard/DashboardView.vue`: combina `Skeleton`, `Message` e empty state com copy mais detalhada.
-  - `src/features/sessions/components/SessionList.vue`: loading/empty textual simples.
-  - `src/views/profile/ProfileView.vue`: loading parcial por aba e erros via toast.
-- **Feedback global**
-  - `src/App.vue` usa `Toast` + `ConfirmDialog` do PrimeVue.
-  - `src/composables/useToast.ts` delega para PrimeVue e manteve API legada.
-  - `src/components/ui/BaseToast.vue` ficou como componente legado sem uso funcional real.
+  - `src/features/sessions/components/SessionList.vue`: custom `Dialog` for delete.
+- **Loading/empty/error states**
+  - `src/views/Dashboard/DashboardView.vue`: combines `Skeleton`, `Message`, and empty state with more detailed copy.
+  - `src/features/sessions/components/SessionList.vue`: simple textual loading/empty.
+  - `src/views/profile/ProfileView.vue`: partial loading per tab and errors via toast.
+- **Global feedback**
+  - `src/App.vue` uses PrimeVue `Toast` + `ConfirmDialog`.
+  - `src/composables/useToast.ts` delegates to PrimeVue and kept legacy API.
+  - `src/components/ui/BaseToast.vue` remains as a legacy component without real functional use.
 
-### Padrao unico proposto
-- **Confirmacao destrutiva:** centralizar em `ConfirmDialog` (PrimeVue) com severidade, verbos e copy padrao por risco.
-- **Estados de tela:** contrato unico `loading / empty / error / ready` com componentes base (`Skeleton`, `EmptyState`, `ErrorCard`) e microcopy consistente.
-- **Feedback global:** manter apenas `useToast` + `Toast` PrimeVue; descontinuar `BaseToast` para evitar dupla fonte de verdade.
+### Proposed Single Pattern
+- **Destructive confirmation:** centralize in `ConfirmDialog` (PrimeVue) with severity, verbs, and standard copy per risk level.
+- **Screen states:** single contract `loading / empty / error / ready` with base components (`Skeleton`, `EmptyState`, `ErrorCard`) and consistent microcopy.
+- **Global feedback:** keep only `useToast` + PrimeVue `Toast`; discontinue `BaseToast` to avoid dual source of truth.
 
-### Regras de UX para todo fluxo
-- Erro sempre com proxima acao clara ("Tentar novamente", "Recarregar", "Voltar").
-- Estado vazio sempre com CTA contextual.
-- Acao destrutiva sempre com verbo explicito (`Excluir`, `Revogar`) e escopo na copy.
+### UX Rules for All Flows
+- Error always with a clear next action ("Try again", "Reload", "Go back").
+- Empty state always with a contextual CTA.
+- Destructive action always with an explicit verb (`Delete`, `Revoke`) and scope in the copy.
 
-## 3) `audit-design-system-gaps` (Concluido)
+## 3) `audit-design-system-gaps` (Completed)
 
-### Objetivo
-Consolidar lacunas de tokenizacao e breakpoints com quick wins de baixo risco.
+### Objective
+Consolidate tokenization and breakpoint gaps with low-risk quick wins.
 
-### Lacunas identificadas
-- `src/assets/styles/variables.css` define breakpoints em tokens (`--screen-*`), mas ainda existem media queries hardcoded em componentes.
-- `src/components/layout/AppTopBar.vue` usa `0.65rem`, `4px`, `1024px` e `640px` hardcoded.
-- `src/components/layout/AppSidebar.vue` usa `769px/768px`, `280px`, `85vw`, `rgba(0, 0, 0, 0.5)` e sombra hardcoded no drawer.
-- `src/views/Dashboard/DashboardView.vue` ainda possui breakpoints hardcoded (`480px`, `640px`, `1024px`) em alguns blocos.
+### Identified Gaps
+- `src/assets/styles/variables.css` defines breakpoints in tokens (`--screen-*`), but there are still hardcoded media queries in components.
+- `src/components/layout/AppTopBar.vue` uses hardcoded `0.65rem`, `4px`, `1024px`, and `640px`.
+- `src/components/layout/AppSidebar.vue` uses hardcoded `769px/768px`, `280px`, `85vw`, `rgba(0, 0, 0, 0.5)`, and shadow in the drawer.
+- `src/views/Dashboard/DashboardView.vue` still has hardcoded breakpoints (`480px`, `640px`, `1024px`) in some blocks.
 
-### Quick wins de baixo risco (ordem recomendada)
-- **QW-1:** Substituir `@media (max-width: 640px|1024px|768px|480px)` por `var(--screen-*)` no shell (`AppLayout`, `AppTopBar`, `AppSidebar`).
-- **QW-2:** Promover tokens para radius/texto pequenos (`--radius-xs`, `--text-2xs`) e remover `4px`/`0.65rem` hardcoded.
-- **QW-3:** Criar tokens de overlay (`--overlay-backdrop`, `--overlay-shadow`) para drawer/modal.
-- **QW-4:** Normalizar larguras mobile (`min(280px, 85vw)`, `min(90vw, 420px)`) via tokens de overlay/painel.
+### Low-Risk Quick Wins (Recommended Order)
+- **QW-1:** Replace `@media (max-width: 640px|1024px|768px|480px)` with `var(--screen-*)` in the shell (`AppLayout`, `AppTopBar`, `AppSidebar`).
+- **QW-2:** Promote tokens for small radius/text (`--radius-xs`, `--text-2xs`) and remove hardcoded `4px`/`0.65rem`.
+- **QW-3:** Create overlay tokens (`--overlay-backdrop`, `--overlay-shadow`) for drawer/modal.
+- **QW-4:** Normalize mobile widths (`min(280px, 85vw)`, `min(90vw, 420px)`) via overlay/panel tokens.
 
-### Ganho esperado
-- Menos divergencia visual entre paginas, manutencao mais segura e previsibilidade responsiva entre 375px e 1440px.
+### Expected Gain
+- Less visual divergence between pages, safer maintenance, and responsive predictability between 375px and 1440px.
 
-## 4) `audit-polimento-a11y-visual` (Concluido)
+## 4) `audit-polimento-a11y-visual` (Completed)
 
-### Objetivo
-Listar ajustes finos de foco, microinteracoes e microcopy por componente para elevar clareza e consistencia sem redesign.
+### Objective
+List fine-tuning adjustments for focus, micro-interactions, and microcopy per component to elevate clarity and consistency without a redesign.
 
-### Lista de ajustes por componente
+### Adjustment List by Component
 - `src/features/technologies/components/TechnologyCard.vue`
-  - Garantir `:focus-visible` em acoes de card (editar/excluir) com `--shadow-focus`.
-  - Padronizar hover/focus para mesma hierarquia de destaque.
+  - Ensure `:focus-visible` on card actions (edit/delete) with `--shadow-focus`.
+  - Standardize hover/focus for the same highlight hierarchy.
 - `src/features/sessions/components/SessionList.vue`
-  - Migrar inputs custom de `:focus` para `:focus-visible` quando aplicavel.
-  - Aplicar foco visivel em botoes de paginacao (`.pagination__btn`).
+  - Migrate custom inputs from `:focus` to `:focus-visible` where applicable.
+  - Apply visible focus on pagination buttons (`.pagination__btn`).
 - `src/components/layout/AppTopBar.vue`
-  - Adicionar estado de foco em links/icones (`brand`, `icon-btn`) com token de foco.
-  - Ajustar microcopy do titulo dinamico para evitar termos ambiguos ("Top Metricas de Estudo").
+  - Add focus state on links/icons (`brand`, `icon-btn`) with focus token.
+  - Adjust dynamic title microcopy to avoid ambiguous terms ("Top Study Metrics").
 - `src/views/reports/ReportsView.vue`, `src/views/settings/AppearanceSection.vue`, `src/views/help/HelpView.vue`
-  - Reduzir ruído de CTA placeholder sem acao real.
-  - Incluir status explicito ("Em desenvolvimento") com proxima acao concreta.
-- `src/components/ui/BaseModal.vue` e `src/components/layout/AppSidebar.vue`
-  - Garantir ordem de tab previsivel, foco inicial e retorno de foco para trigger.
-  - Fechamento por `Escape` com anuncio coerente para leitores de tela.
+  - Reduce placeholder CTA noise with no real action.
+  - Include explicit status ("In development") with a concrete next action.
+- `src/components/ui/BaseModal.vue` and `src/components/layout/AppSidebar.vue`
+  - Ensure predictable tab order, initial focus, and focus return to trigger.
+  - `Escape` closing with coherent screen reader announcement.
 
-### Checklist objetivo de polimento
-- Todos os controles interativos com `:focus-visible`.
-- Sem CTA sem efeito observavel.
-- Sem microcopy vaga em estados vazios/placeholder.
-- Microinteracoes consistentes em duracao e intensidade visual.
+### Polishing Objective Checklist
+- All interactive controls with `:focus-visible`.
+- No CTA without observable effect.
+- No vague microcopy in empty/placeholder states.
+- Consistent micro-interactions in duration and visual intensity.
 
-## Backlog recomendado (2 sprints)
+## Recommended Backlog (2 Sprints)
 
-- **Sprint 1 (confiabilidade + consistencia):**
+- **Sprint 1 (reliability + consistency):**
   - P0.1, P0.2, P0.3
-  - Padrao unico de confirmacao destrutiva
-  - Descontinuacao de `BaseToast`
-- **Sprint 2 (design system + polimento):**
-  - QW-1 a QW-4
-  - Foco/microinteracoes por componente
-  - Revisao final de microcopy em telas placeholder
+  - Single destructive confirmation pattern
+  - `BaseToast` discontinuation
+- **Sprint 2 (design system + polish):**
+  - QW-1 to QW-4
+  - Focus/micro-interactions per component
+  - Final microcopy review on placeholder screens
 
-## Criterios de aceite desta execucao
+## Acceptance Criteria for This Execution
 
-- Itens P0/P1/P2 transformados em backlog acionavel com prioridade clara.
-- Divergencias mapeadas com arquivos de origem.
-- Padrao alvo definido para estados, feedback e confirmacoes.
-- Quick wins de tokenizacao/breakpoints definidos com baixo risco de regressao.
+- P0/P1/P2 items transformed into actionable backlog with clear priority.
+- Divergences mapped with source files.
+- Target pattern defined for states, feedback, and confirmations.
+- Tokenization/breakpoint quick wins defined with low regression risk.

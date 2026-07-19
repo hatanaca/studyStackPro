@@ -420,9 +420,6 @@ function formatDate(iso: string | null): string {
 </template>
 
 <style scoped>
-.profile-view {
-  max-width: 100%;
-}
 .profile-view__avatar-wrap {
   margin-bottom: var(--spacing-xl);
   display: flex;

@@ -15,13 +15,13 @@ class RestrictHorizonToIps
         );
 
         if ($allowedIps === []) {
-            return $next($request);
+            abort(403, 'Horizon access denied: no allowed IPs configured.');
         }
 
         $clientIp = $request->ip();
 
         if (! in_array($clientIp, $allowedIps, true)) {
-            abort(403, ' Horizon access denied.');
+            abort(403, 'Horizon access denied.');
         }
 
         return $next($request);

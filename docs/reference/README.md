@@ -1,26 +1,26 @@
-# Referência histórica (`StudyTrack_*.txt`)
+# Historical Reference (`StudyTrack_*.txt`)
 
-Estes ficheiros são notas e planos antigos do projeto. **Podem conter detalhes desatualizados** (rotas, limites, nomes de classes).
+These files are old notes and plans from the project. **They may contain outdated details** (routes, limits, class names).
 
-Para decisões e números alinhados ao código atual, use:
+For decisions and numbers aligned with the current code, use:
 
 - [`../technical/DOCUMENTACAO_TECNICA.md`](../technical/DOCUMENTACAO_TECNICA.md)
 - [`../../backend/README.md`](../../backend/README.md)
 - [`../../backend/routes/api.php`](../../backend/routes/api.php)
 - [`../../backend/app/Providers/AppServiceProvider.php`](../../backend/app/Providers/AppServiceProvider.php)
 
-## Inconsistências comuns (substituições conceituais)
+## Common Inconsistencies (Conceptual Substitutions)
 
-Ao ler os `.txt`, interprete termos antigos da seguinte forma (alinhado ao repositório atual):
+When reading the `.txt` files, interpret old terms as follows (aligned with the current repository):
 
-| Texto legado nos `.txt` | Estado real no repo |
-|-------------------------|---------------------|
-| **Chart.js** / imports `chart.js` | **ApexCharts** + **vue3-apexcharts** (`frontend/src/components/charts/`) |
+| Legacy Text in `.txt` | Actual State in Repo |
+|------------------------|----------------------|
+| **Chart.js** / `chart.js` imports | **ApexCharts** + **vue3-apexcharts** (`frontend/src/components/charts/`) |
 | **Socket.io** / **Socket.io-client** | **Laravel Reverb** + **Laravel Echo** + **pusher-js** (real-time) |
-| **RouteServiceProvider** para rate limit | **`AppServiceProvider`** (`RateLimiter::for(...)`) + atribuição de `throttle:*` em **`routes/api.php`** |
-| **`Route::apiResource('study-sessions', …)`** | Rotas **explícitas** em `api.php`: CRUD, `POST …/start`, `PATCH …/{id}/end`, `GET …/active` (não é resource “puro”) |
-| **Nginx** como único proxy | Imagem **OpenResty** em Docker (`docker/nginx/`); ver [`../../docker/README.md`](../../docker/README.md) |
-| Endpoints sem prefixo `/api/v1` | API versionada: prefixo **`/api/v1`** (ex.: `POST /api/v1/auth/login`); health em `/api/health`, `/health`, `/up` |
-| **Laravel Telescope** como dado adquirido | **Não** está no `composer.json`; debug via **logs**, **`LogApiRequests`**, **Horizon**, **`queue:failed`**; Telescope só se instalado opcionalmente em dev |
+| **RouteServiceProvider** for rate limit | **`AppServiceProvider`** (`RateLimiter::for(...)`) + `throttle:*` assignment in **`routes/api.php`** |
+| **`Route::apiResource('study-sessions', …)`** | **Explicit** routes in `api.php`: CRUD, `POST …/start`, `PATCH …/{id}/end`, `GET …/active` (not a "pure" resource) |
+| **Nginx** as the only proxy | **OpenResty** image in Docker (`docker/nginx/`); see [`../../docker/README.md`](../../docker/README.md) |
+| Endpoints without `/api/v1` prefix | Versioned API: **`/api/v1`** prefix (e.g., `POST /api/v1/auth/login`); health at `/api/health`, `/health`, `/up` |
+| **Laravel Telescope** as acquired data | **Not** in `composer.json`; debug via **logs**, **`LogApiRequests`**, **Horizon**, **`queue:failed`**; Telescope only if optionally installed in dev |
 
-Algumas inconsistências pontuais nos originais: limites de login antigos (5/min), paths relativos em tabelas sem repetir `/api/v1`.
+Some point-inconsistencies in the originals: old login limits (5/min), relative paths in tables without repeating `/api/v1`.

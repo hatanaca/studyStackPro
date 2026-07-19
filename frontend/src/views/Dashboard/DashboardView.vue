@@ -142,6 +142,8 @@ watch(
 
 let _heavyWidgetTimer: ReturnType<typeof setTimeout> | null = null
 
+let _idleCallbackId: number | null = null
+
 onMounted(async () => {
   try {
     if (localStorage.getItem(TODAY_SUMMARY_DISMISS_KEY) !== todayCalendarKey()) {
@@ -160,11 +162,12 @@ onMounted(async () => {
   const loadHeavyWidgets = () => {
     showHeavyWidgets.value = true
     _heavyWidgetTimer = null
+    _idleCallbackId = null
   }
 
   const idleGlobal = globalThis as IdleCapableGlobal
   if (typeof idleGlobal.requestIdleCallback === 'function') {
-    idleGlobal.requestIdleCallback(loadHeavyWidgets, { timeout: 1200 })
+    _idleCallbackId = idleGlobal.requestIdleCallback(loadHeavyWidgets, { timeout: 1200 }) as unknown as number
   } else {
     _heavyWidgetTimer = setTimeout(loadHeavyWidgets, 500)
   }
@@ -174,6 +177,10 @@ onBeforeUnmount(() => {
   if (_heavyWidgetTimer) {
     clearTimeout(_heavyWidgetTimer)
     _heavyWidgetTimer = null
+  }
+  if (_idleCallbackId !== null && typeof globalThis.cancelIdleCallback === 'function') {
+    globalThis.cancelIdleCallback(_idleCallbackId)
+    _idleCallbackId = null
   }
 })
 

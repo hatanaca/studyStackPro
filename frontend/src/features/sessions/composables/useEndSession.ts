@@ -12,12 +12,18 @@ export function useEndSession() {
   const { activeSession, formattedTime, refresh } = useSessionTimer()
   const toast = useToast()
   const ending = ref(false)
+  let pendingSessionId: string | null = null
 
   async function endSession(): Promise<boolean> {
     if (!activeSession.value || ending.value) return false
+
+    const sessionId = activeSession.value.id
+    if (pendingSessionId === sessionId) return false
+
     ending.value = true
+    pendingSessionId = sessionId
     try {
-      await sessionsApi.end(activeSession.value.id)
+      await sessionsApi.end(sessionId)
       await refresh()
       return true
     } catch (err: unknown) {
@@ -25,6 +31,7 @@ export function useEndSession() {
       return false
     } finally {
       ending.value = false
+      pendingSessionId = null
     }
   }
 

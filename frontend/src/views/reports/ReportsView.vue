@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import Callout from '@/components/ui/Callout.vue'
 import ErrorCard from '@/components/ui/ErrorCard.vue'
+import PageView from '@/components/layout/PageView.vue'
 import Skeleton from 'primevue/skeleton'
 import { sessionsApi } from '@/api/modules/sessions.api'
 import { parseSessionsListResponse } from '@/types/schemas/api.schemas'
@@ -30,6 +31,7 @@ const dateError = computed(() => {
 })
 
 const PAGE_SIZE = 50
+const MAX_SESSION_PAGES = 500
 
 async function fetchAllSessions(dateFrom: string, dateTo: string): Promise<StudySession[]> {
   const allSessions: StudySession[] = []
@@ -50,7 +52,7 @@ async function fetchAllSessions(dateFrom: string, dateTo: string): Promise<Study
       lastPage = parsed.meta.last_page
     }
     currentPage++
-  } while (currentPage <= lastPage)
+  } while (currentPage <= lastPage && currentPage <= MAX_SESSION_PAGES)
 
   return allSessions
 }
@@ -86,6 +88,12 @@ async function onGenerate() {
 </script>
 
 <template>
+  <PageView
+    :breadcrumb="[{ label: 'Dashboard', to: '/' }, { label: 'Relatórios' }]"
+    title="Relatórios"
+    subtitle="Gere relatórios em PDF com resumo detalhado de sessões."
+    narrow
+  >
   <div class="reports-view">
     <p class="reports-view__lead">
       Selecione um período para gerar um relatório em PDF com resumo e detalhamento de sessões.
@@ -140,6 +148,7 @@ async function onGenerate() {
       </Callout>
     </section>
   </div>
+  </PageView>
 </template>
 
 <style scoped>

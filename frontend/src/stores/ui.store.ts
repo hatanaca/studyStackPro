@@ -80,6 +80,8 @@ export const useUiStore = defineStore('ui', () => {
     fontSans: '--font-sans',
   }
 
+  const SAFE_CSS_VALUE_RE = /^[a-zA-Z0-9\s\-#,.%()\/]+$/
+
   function applyCustomTheme() {
     const root = document.documentElement
     const opts = customTheme.value
@@ -87,7 +89,9 @@ export const useUiStore = defineStore('ui', () => {
       const value = opts[key]
       const varName = customThemeVarMap[key]
       if (value && varName) {
-        root.style.setProperty(varName, key === 'fontSans' ? value : value)
+        if (key === 'fontSans' || SAFE_CSS_VALUE_RE.test(value)) {
+          root.style.setProperty(varName, value)
+        }
       } else {
         root.style.removeProperty(varName)
       }

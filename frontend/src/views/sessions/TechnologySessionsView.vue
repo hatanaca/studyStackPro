@@ -102,10 +102,15 @@ onMounted(async () => {
   loading.value = false
 })
 
+let fetchGeneration = 0
+
 watch(id, async () => {
   sessionsError.value = null
+  const gen = ++fetchGeneration
   await loadTechnology()
+  if (gen !== fetchGeneration) return
   if (technology.value) await loadSessions()
+  if (gen !== fetchGeneration) return
 })
 
 function goBack() {
@@ -134,7 +139,7 @@ function formatMinutes(m: number) {
 </script>
 
 <template>
-  <PageView :breadcrumb="breadcrumbItems" class="technology-sessions-view">
+  <PageView :breadcrumb="breadcrumbItems" class="technology-sessions-view" narrow>
     <div
       v-if="loading"
       class="technology-sessions-view__loading"
@@ -201,9 +206,6 @@ function formatMinutes(m: number) {
 </template>
 
 <style scoped>
-.technology-sessions-view {
-  max-width: var(--page-max-width-detail);
-}
 .technology-sessions-view__loading {
   padding: var(--spacing-2xl);
   text-align: center;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import InputText from 'primevue/inputtext'
-import { useDebounceFn } from '@/composables/useDebounce'
+import { useDebounceFn } from '@vueuse/core'
 
 const props = withDefaults(
   defineProps<{

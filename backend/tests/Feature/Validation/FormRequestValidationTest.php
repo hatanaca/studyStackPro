@@ -28,12 +28,13 @@ class FormRequestValidationTest extends TestCase
         $response = $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])
             ->postJson('/api/v1/auth/register', [
                 'email' => 'test@test.com',
-                'password' => 'password123',
-                'password_confirmation' => 'password123',
+                'password' => 'Password123',
+                'password_confirmation' => 'Password123',
             ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['name']);
+        $response->assertJson(['error' => ['code' => 'VALIDATION_ERROR']]);
+        $this->assertArrayHasKey('name', $response->json('error.details'));
     }
 
     public function test_register_rejects_invalid_email(): void
@@ -42,12 +43,13 @@ class FormRequestValidationTest extends TestCase
             ->postJson('/api/v1/auth/register', [
                 'name' => 'User',
                 'email' => 'not-an-email',
-                'password' => 'password123',
-                'password_confirmation' => 'password123',
+                'password' => 'Password123',
+                'password_confirmation' => 'Password123',
             ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['email']);
+        $response->assertJson(['error' => ['code' => 'VALIDATION_ERROR']]);
+        $this->assertArrayHasKey('email', $response->json('error.details'));
     }
 
     public function test_register_rejects_short_password(): void
@@ -61,7 +63,8 @@ class FormRequestValidationTest extends TestCase
             ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['password']);
+        $response->assertJson(['error' => ['code' => 'VALIDATION_ERROR']]);
+        $this->assertArrayHasKey('password', $response->json('error.details'));
     }
 
     public function test_register_rejects_unconfirmed_password(): void
@@ -70,12 +73,13 @@ class FormRequestValidationTest extends TestCase
             ->postJson('/api/v1/auth/register', [
                 'name' => 'User',
                 'email' => 'test@test.com',
-                'password' => 'password123',
+                'password' => 'Password123',
                 'password_confirmation' => 'different-password',
             ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['password']);
+        $response->assertJson(['error' => ['code' => 'VALIDATION_ERROR']]);
+        $this->assertArrayHasKey('password', $response->json('error.details'));
     }
 
     public function test_register_rejects_duplicate_email(): void
@@ -86,12 +90,13 @@ class FormRequestValidationTest extends TestCase
             ->postJson('/api/v1/auth/register', [
                 'name' => 'User',
                 'email' => 'existing@test.com',
-                'password' => 'password123',
-                'password_confirmation' => 'password123',
+                'password' => 'Password123',
+                'password_confirmation' => 'Password123',
             ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['email']);
+        $response->assertJson(['error' => ['code' => 'VALIDATION_ERROR']]);
+        $this->assertArrayHasKey('email', $response->json('error.details'));
     }
 
     // ── StoreStudySessionRequest ──
@@ -104,7 +109,8 @@ class FormRequestValidationTest extends TestCase
             ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['title']);
+        $response->assertJson(['error' => ['code' => 'VALIDATION_ERROR']]);
+        $this->assertArrayHasKey('title', $response->json('error.details'));
     }
 
     public function test_store_session_rejects_missing_started_at(): void
@@ -115,7 +121,8 @@ class FormRequestValidationTest extends TestCase
             ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['started_at']);
+        $response->assertJson(['error' => ['code' => 'VALIDATION_ERROR']]);
+        $this->assertArrayHasKey('started_at', $response->json('error.details'));
     }
 
     public function test_store_session_rejects_invalid_mood(): void
@@ -128,7 +135,8 @@ class FormRequestValidationTest extends TestCase
             ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['mood']);
+        $response->assertJson(['error' => ['code' => 'VALIDATION_ERROR']]);
+        $this->assertArrayHasKey('mood', $response->json('error.details'));
     }
 
     public function test_store_session_rejects_invalid_focus_score(): void
@@ -141,7 +149,8 @@ class FormRequestValidationTest extends TestCase
             ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['focus_score']);
+        $response->assertJson(['error' => ['code' => 'VALIDATION_ERROR']]);
+        $this->assertArrayHasKey('focus_score', $response->json('error.details'));
     }
 
     public function test_store_session_rejects_ended_at_before_started_at(): void
@@ -154,7 +163,8 @@ class FormRequestValidationTest extends TestCase
             ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['ended_at']);
+        $response->assertJson(['error' => ['code' => 'VALIDATION_ERROR']]);
+        $this->assertArrayHasKey('ended_at', $response->json('error.details'));
     }
 
     // ── StoreTechnologyRequest ──
@@ -167,7 +177,8 @@ class FormRequestValidationTest extends TestCase
             ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['name']);
+        $response->assertJson(['error' => ['code' => 'VALIDATION_ERROR']]);
+        $this->assertArrayHasKey('name', $response->json('error.details'));
     }
 
     public function test_store_technology_rejects_long_name(): void
@@ -179,7 +190,8 @@ class FormRequestValidationTest extends TestCase
             ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['name']);
+        $response->assertJson(['error' => ['code' => 'VALIDATION_ERROR']]);
+        $this->assertArrayHasKey('name', $response->json('error.details'));
     }
 
     // ── LoginRequest ──
@@ -188,11 +200,12 @@ class FormRequestValidationTest extends TestCase
     {
         $response = $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])
             ->postJson('/api/v1/auth/login', [
-                'password' => 'password123',
+                'password' => 'Password123',
             ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['email']);
+        $response->assertJson(['error' => ['code' => 'VALIDATION_ERROR']]);
+        $this->assertArrayHasKey('email', $response->json('error.details'));
     }
 
     public function test_login_rejects_missing_password(): void
@@ -203,6 +216,7 @@ class FormRequestValidationTest extends TestCase
             ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['password']);
+        $response->assertJson(['error' => ['code' => 'VALIDATION_ERROR']]);
+        $this->assertArrayHasKey('password', $response->json('error.details'));
     }
 }

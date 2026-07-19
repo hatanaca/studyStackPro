@@ -47,6 +47,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    allowedHosts: true,
     // Polling constante deixa o dev muito lento (Windows, OneDrive, SSD). Só ative em Docker/WSL se precisar:
     // VITE_DEV_POLLING=true npm run dev
     ...(process.env.VITE_DEV_POLLING === 'true'

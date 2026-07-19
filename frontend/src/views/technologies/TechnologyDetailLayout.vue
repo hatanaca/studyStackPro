@@ -113,8 +113,9 @@ function goBack() {
 
     <template v-else>
       <div
+        v-if="technology"
         class="technology-detail-layout"
-        :style="technology ? { '--tech-color': technology.color } : {}"
+        :style="{ '--tech-color': technology.color }"
       >
         <TechnologyDetailSubNav />
         <RouterView />
@@ -132,8 +133,5 @@ function goBack() {
 }
 .technology-detail-layout__back {
   margin-top: var(--spacing-xl);
-}
-.technology-detail-layout {
-  max-width: 100%;
 }
 </style>

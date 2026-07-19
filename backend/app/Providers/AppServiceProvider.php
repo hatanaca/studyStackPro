@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Horizon\Horizon;
+use Sentry\Laravel\Integration;
+use Sentry\State\Scope;
 use SocialiteProviders\Discord\DiscordExtendSocialite;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 
@@ -31,11 +33,21 @@ class AppServiceProvider extends ServiceProvider
 
         Model::shouldBeStrict(! app()->isProduction());
 
+        // Sentry context: environment info attached to every event
+        if (app()->bound('sentry')) {
+            Integration::configureScope(function (Scope $scope): void {
+                $scope->setContext('app', [
+                    'name' => config('app.name'),
+                    'env' => config('app.env'),
+                ]);
+            });
+        }
+
         // Registra o driver OAuth do Discord (SocialiteProviders)
         Event::listen(SocialiteWasCalled::class, DiscordExtendSocialite::class);
 
         // Authentication endpoints - strict rate limiting to prevent brute force
-        RateLimiter::for('login', fn (Request $request) => Limit::perMinute(3)->by($request->ip()));
+        RateLimiter::for('login', fn (Request $request) => Limit::perMinute(3)->by($request->ip().':'.$request->input('email', '')));
         RateLimiter::for('register', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
         RateLimiter::for('auth', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
 
@@ -59,7 +71,7 @@ class AppServiceProvider extends ServiceProvider
         if (class_exists(Horizon::class)) {
             Horizon::auth(function ($request) {
                 $allowedIps = array_filter(array_map('trim', explode(',', (string) config('app.horizon_allowed_ips', ''))));
-                if ($allowedIps !== [] && ! in_array($request->ip(), $allowedIps, true)) {
+                if ($allowedIps === [] || ! in_array($request->ip(), $allowedIps, true)) {
                     return false;
                 }
 

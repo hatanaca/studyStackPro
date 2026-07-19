@@ -77,14 +77,14 @@ class TokenManagementTest extends TestCase
     {
         $user = User::factory()->create([
             'email' => 'john@example.com',
-            'password' => 'password123',
+            'password' => 'Password123',
         ]);
         $oldToken = $user->createToken('api-token')->plainTextToken;
         $tokenCountBefore = $user->tokens()->count();
 
         $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])->postJson('/api/v1/auth/login', [
             'email' => 'john@example.com',
-            'password' => 'password123',
+            'password' => 'Password123',
         ])->assertStatus(200);
 
         // Old tokens revoked, new one created

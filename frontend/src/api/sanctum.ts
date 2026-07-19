@@ -12,5 +12,5 @@ function apiOrigin(): string {
 export async function fetchSanctumCsrfCookie(): Promise<void> {
   const base = apiOrigin()
   const url = base ? `${base}/sanctum/csrf-cookie` : '/sanctum/csrf-cookie'
-  await axios.get(url, { withCredentials: true })
+  await axios.get(url, { withCredentials: true, timeout: 10000 })
 }

@@ -19,17 +19,19 @@ class UpdateStudySessionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'technology_id' => ['sometimes', 'uuid', 'exists:technologies,id'],
-            'title' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'started_at' => ['sometimes', 'date'],
-            // 'after:started_at' só se aplica quando started_at também está presente
-            // na requisição; PATCH parcial com apenas ended_at não deve falhar.
-            'ended_at' => array_filter([
-                'nullable',
-                'date',
-                $this->has('started_at') ? 'after:started_at' : null,
-            ]),
-            'notes' => ['nullable', 'string', 'max:2000'],
+            'title' => ['nullable', 'string', 'max:255'],
+            'technology_id' => ['nullable', 'uuid', 'exists:technologies,id'],
+            'started_at' => ['nullable', 'date_format:Y-m-d\TH:i:s'],
+            'ended_at' => [
+                'nullable', 'date_format:Y-m-d\TH:i:s',
+                function ($attribute, $value, $fail) {
+                    if ($this->has('started_at') && $value && $this->started_at >= $value) {
+                        $fail('A data de término deve ser posterior à data de início.');
+                    }
+                },
+            ],
+            'duration_min' => ['nullable', 'integer', 'min:1'],
+            'notes' => ['nullable', 'string', 'max:5000'],
             'mood' => ['nullable', 'integer', 'min:1', 'max:5'],
             'focus_score' => ['nullable', 'integer', 'min:1', 'max:10'],
         ];

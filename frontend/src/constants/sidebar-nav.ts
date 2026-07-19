@@ -61,6 +61,18 @@ export const sidebarNavItems: SidebarNavItem[] = [
     isActive: (path) => path.startsWith('/graficos'),
   },
   {
+    to: '/share',
+    label: 'Compartilhar',
+    icon: 'share',
+    isActive: (path) => path.startsWith('/share'),
+  },
+  {
+    to: '/terminal',
+    label: 'Terminal',
+    icon: 'terminal',
+    isActive: (path) => path.startsWith('/terminal'),
+  },
+  {
     to: '/settings',
     label: 'Configurações',
     icon: 'settings',

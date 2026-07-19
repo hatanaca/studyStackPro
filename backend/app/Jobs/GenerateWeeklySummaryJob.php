@@ -27,33 +27,40 @@ class GenerateWeeklySummaryJob implements ShouldQueue
 
     public function handle(): void
     {
-        // Agrega daily_minutes em weekly_summaries por usuário (ISO week, Monday = start)
-        // Conforme spec: week_start, week_number, year, total_minutes, session_count, active_days
-        DB::statement("
-            INSERT INTO analytics.weekly_summaries (
-                user_id, week_start, week_number, year,
-                total_minutes, session_count, active_days, recalculated_at
-            )
-            SELECT
-                user_id,
-                date_trunc('week', study_date)::date AS week_start,
-                EXTRACT(WEEK FROM date_trunc('week', study_date)::date)::smallint AS week_number,
-                EXTRACT(ISOYEAR FROM date_trunc('week', study_date)::date)::smallint AS year,
-                COALESCE(SUM(total_minutes), 0)::integer,
-                COALESCE(SUM(session_count), 0)::integer,
-                COUNT(DISTINCT study_date)::smallint AS active_days,
-                NOW()
-            FROM analytics.daily_minutes
-            WHERE study_date >= CURRENT_DATE - interval '1 year'
-            GROUP BY user_id, date_trunc('week', study_date)::date
-            ON CONFLICT (user_id, week_start) DO UPDATE SET
-                week_number = EXCLUDED.week_number,
-                year = EXCLUDED.year,
-                total_minutes = EXCLUDED.total_minutes,
-                session_count = EXCLUDED.session_count,
-                active_days = EXCLUDED.active_days,
-                recalculated_at = NOW()
-        ");
+        $batchSize = 100;
+        $userIds = DB::table('analytics.daily_minutes')
+            ->where('study_date', '>=', now()->subYear())
+            ->pluck('user_id')
+            ->unique();
+
+        foreach ($userIds->chunk($batchSize) as $chunk) {
+            DB::statement("
+                INSERT INTO analytics.weekly_summaries (
+                    user_id, week_start, week_number, year,
+                    total_minutes, session_count, active_days, recalculated_at
+                )
+                SELECT
+                    user_id,
+                    date_trunc('week', study_date)::date AS week_start,
+                    EXTRACT(WEEK FROM date_trunc('week', study_date)::date)::smallint AS week_number,
+                    EXTRACT(ISOYEAR FROM date_trunc('week', study_date)::date)::smallint AS year,
+                    COALESCE(SUM(total_minutes), 0)::integer,
+                    COALESCE(SUM(session_count), 0)::integer,
+                    COUNT(DISTINCT study_date)::smallint AS active_days,
+                    NOW()
+                FROM analytics.daily_minutes
+                WHERE study_date >= CURRENT_DATE - interval '1 year'
+                  AND user_id IN (".implode(',', array_fill(0, $chunk->count(), '?')).")
+                GROUP BY user_id, date_trunc('week', study_date)::date
+                ON CONFLICT (user_id, week_start) DO UPDATE SET
+                    week_number = EXCLUDED.week_number,
+                    year = EXCLUDED.year,
+                    total_minutes = EXCLUDED.total_minutes,
+                    session_count = EXCLUDED.session_count,
+                    active_days = EXCLUDED.active_days,
+                    recalculated_at = NOW()
+            ", $chunk->toArray());
+        }
     }
 
     public function failed(\Throwable $e): void

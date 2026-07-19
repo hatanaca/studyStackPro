@@ -1,35 +1,35 @@
 ---
 name: Bug report
-about: Reporte um bug
+about: Report a bug
 title: '[BUG] '
 labels: bug
 assignees: ''
 ---
 
-## Descrição do bug
+## Bug Description
 
-<!-- Descrição clara e concisa do bug -->
+<!-- Clear and concise description of the bug -->
 
-## Passos para reproduzir
+## Steps to Reproduce
 
 1. 
 2. 
 3. 
 
-## Comportamento esperado
+## Expected Behavior
 
-<!-- O que deveria acontecer -->
+<!-- What should happen -->
 
-## Comportamento atual
+## Actual Behavior
 
-<!-- O que está acontecendo -->
+<!-- What is happening -->
 
-## Ambiente
+## Environment
 
 - OS: 
-- Navegador (se frontend): 
-- Versões relevantes: 
+- Browser (if frontend): 
+- Relevant versions: 
 
-## Informações adicionais
+## Additional Information
 
 <!-- Screenshots, logs, etc. -->

@@ -1,13 +1,13 @@
 # PostgreSQL 16 — StudyTrack Pro
 
-## Estrutura
+## Structure
 
-- **init/** — Scripts executados na primeira inicialização do container (quando o volume de dados está vazio).
-  - `01-extensions-and-schema.sql` — Cria as extensões (`pgcrypto`, `pg_trgm`) e o schema `analytics`, e define o `search_path` do banco.
+- **init/** — Scripts executed on the first container startup (when the data volume is empty).
+  - `01-extensions-and-schema.sql` — Creates extensions (`pgcrypto`, `pg_trgm`) and the `analytics` schema, and sets the database `search_path`.
 
-## Observação
+## Note
 
-Os scripts em `init/` rodam apenas na **primeira** subida do serviço (volume novo). Se o volume `postgres_data` já existir, eles são ignorados. Para rodar de novo, é preciso remover o volume e subir de novo:
+The scripts in `init/` run only on the **first** service startup (new volume). If the `postgres_data` volume already exists, they are ignored. To run them again, you need to remove the volume and start fresh:
 
 ```bash
 docker compose down -v

@@ -1,5 +1,6 @@
 import { onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
+import { handleError } from '@/utils/handleError'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 import { isConnected } from '@/composables/useWebSocket'
 
@@ -34,10 +35,9 @@ export function useDashboard(options?: UseDashboardOptions) {
 
   function startPolling() {
     if (pollingIntervalId) return
-    const doFetch = getFetchFn()
     pollingIntervalId = setInterval(async () => {
       try {
-        await doFetch()
+        await getFetchFn()()
         consecutiveErrors = 0
       } catch {
         consecutiveErrors++
@@ -80,6 +80,9 @@ export function useDashboard(options?: UseDashboardOptions) {
   async function handleVisibilityChange() {
     if (document.visibilityState !== 'visible') return
 
+    // Skip fetch if WebSocket is connected - it will receive updates via events
+    if (isConnected.value) return
+
     const now = Date.now()
     if (now - lastVisibilityFetchAt < VISIBILITY_COOLDOWN_MS) return
     lastVisibilityFetchAt = now
@@ -115,17 +118,17 @@ export function useDashboard(options?: UseDashboardOptions) {
    */
   async function initDashboard() {
     await Promise.all([
-      analyticsStore.fetchHeatmap().catch(() => {}),
-      analyticsStore.fetchWeekly().catch(() => {}),
+      analyticsStore.fetchHeatmap().catch(handleError('fetchHeatmap')),
+      analyticsStore.fetchWeekly().catch(handleError('fetchWeekly')),
     ])
 
     // 30d: widgets padrão; 7d: progresso de metas (useGoalProgress); 90d: sob demanda no TimeSeriesWidget
     const series: Promise<unknown>[] = []
     if (!analyticsStore.timeSeriesData['30d']?.length) {
-      series.push(analyticsStore.fetchTimeSeries('30d').catch(() => {}))
+      series.push(analyticsStore.fetchTimeSeries('30d').catch(handleError('fetchTimeSeries-30d')))
     }
     if (!analyticsStore.timeSeriesData['7d']?.length) {
-      series.push(analyticsStore.fetchTimeSeries('7d').catch(() => {}))
+      series.push(analyticsStore.fetchTimeSeries('7d').catch(handleError('fetchTimeSeries-7d')))
     }
     if (series.length) await Promise.all(series)
   }

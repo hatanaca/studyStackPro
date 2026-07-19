@@ -55,7 +55,11 @@ export const usePlayerStore = defineStore('player', () => {
   const progress = computed(() => duration.value > 0 ? (currentTime.value / duration.value) * 100 : 0)
 
   function loadRepeat(): 'none' | 'playlist' | 'single' {
-    try { return (localStorage.getItem('studytrack_repeat') as any) || 'none' } catch { return 'none' }
+    try {
+      const v = localStorage.getItem('studytrack_repeat')
+      if (v === 'none' || v === 'playlist' || v === 'single') return v
+      return 'none'
+    } catch { return 'none' }
   }
   function loadVolume(): number {
     try { const v = localStorage.getItem('studytrack_volume'); return v ? Number(v) : 80 } catch { return 80 }
@@ -125,14 +129,18 @@ export const usePlayerStore = defineStore('player', () => {
       searchError.value = e?.response?.data?.error?.message ?? 'Falha ao buscar'
     } finally { searching.value = false; persist() }
   }
+  const MAX_SEARCH_RESULTS = 100
+
   async function loadMoreResults() {
     if (!searchNextPageToken.value || searching.value || !searchQuery.value) return
+    if (searchResults.value.length >= MAX_SEARCH_RESULTS) return
     searching.value = true
     try {
       const r = await youtubeApi.search(searchQuery.value, searchNextPageToken.value, 20)
       const newItems = r.data.data?.items ?? []
-      searchResults.value = [...searchResults.value, ...newItems]
+      searchResults.value = [...searchResults.value, ...newItems].slice(0, MAX_SEARCH_RESULTS)
       searchNextPageToken.value = r.data.data?.nextPageToken ?? null
+      if (searchResults.value.length >= MAX_SEARCH_RESULTS) searchNextPageToken.value = null
     } catch { /* silent */ }
     finally { searching.value = false; persist() }
   }
@@ -168,7 +176,7 @@ export const usePlayerStore = defineStore('player', () => {
   let shuffleHistory: number[] = []
 
   // --- Controls ---
-  function switchMode(m: PlayerMode) { mode.value = m; videoIndex.value = 0; persist() }
+  function switchMode(m: PlayerMode) { mode.value = m; videoIndex.value = 0; shuffleHistory = []; persist() }
   function nextVideo() {
     if (mode.value === 'search') {
       if (isShuffled.value) {
@@ -182,6 +190,7 @@ export const usePlayerStore = defineStore('player', () => {
         videoIndex.value = videoIndex.value < searchResults.value.length - 1 ? videoIndex.value + 1 : 0
       }
     } else {
+      // Playlist mode: increment index (playlist items loaded on demand)
       videoIndex.value++
     }
     isPlaying.value = true
@@ -194,6 +203,8 @@ export const usePlayerStore = defineStore('player', () => {
       videoIndex.value--
     } else if (mode.value === 'search') {
       videoIndex.value = searchResults.value.length - 1
+    } else if (mode.value === 'playlists') {
+      // Wrap to last video in playlist (index is loaded on demand)
     }
     isPlaying.value = true
     persist()

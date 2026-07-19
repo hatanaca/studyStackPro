@@ -70,6 +70,7 @@ function createPlayer() {
       disablekb: 1,
       fs: 0,
       iv_load_policy: 3,
+      origin: window.location.origin,
     },
     events: {
       onReady: () => {
@@ -95,9 +96,15 @@ function createPlayer() {
           emit('ended')
         }
       },
-      onError: () => {
+      onError: (e: YT.OnErrorEvent) => {
         if (destroyed) return
         isCreating = false
+        // Erro 150 = vídeo restrito; 100 = vídeo não encontrado; 2 = parâmetro inválido
+        const errCode = typeof e?.data === 'number' ? e.data : -1
+        emit('stateChange', -1) // sinaliza estado de erro
+        if (errCode === 150 || errCode === 100) {
+          emit('ended')
+        }
       },
     },
   }
@@ -124,10 +131,16 @@ function startTimePoll() {
   if (timeInterval) clearInterval(timeInterval)
   timeInterval = setInterval(() => {
     if (player && isReady && !destroyed) {
-      const t = player.getCurrentTime()
-      const d = player.getDuration()
-      if (typeof t === 'number' && typeof d === 'number' && d > 0) {
-        emit('timeUpdate', t, d)
+      // Verifica se player é instância válida antes de chamar métodos
+      if (typeof player.getCurrentTime !== 'function') return
+      try {
+        const t = player.getCurrentTime()
+        const d = player.getDuration()
+        if (typeof t === 'number' && typeof d === 'number' && d > 0) {
+          emit('timeUpdate', t, d)
+        }
+      } catch {
+        // Player em estado inválido (ex.: erro 150) — ignora
       }
     }
   }, 1000)

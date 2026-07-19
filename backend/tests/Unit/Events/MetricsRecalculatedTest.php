@@ -12,7 +12,7 @@ class MetricsRecalculatedTest extends TestCase
     public function test_broadcasts_on_correct_channel(): void
     {
         $userId = (string) Str::uuid();
-        $event = new MetricsRecalculated($userId, ['total_hours' => 100]);
+        $event = new MetricsRecalculated($userId);
 
         $channels = $event->broadcastOn();
 
@@ -25,19 +25,18 @@ class MetricsRecalculatedTest extends TestCase
 
     public function test_broadcast_as_returns_correct_event_name(): void
     {
-        $event = new MetricsRecalculated((string) Str::uuid(), []);
+        $event = new MetricsRecalculated((string) Str::uuid());
 
         $this->assertEquals('.metrics.updated', $event->broadcastAs());
     }
 
-    public function test_broadcast_with_contains_dashboard_data(): void
+    public function test_broadcast_with_returns_empty_payload(): void
     {
-        $dashboardData = ['total_hours' => 100, 'streak' => 5];
-        $event = new MetricsRecalculated((string) Str::uuid(), $dashboardData);
+        $event = new MetricsRecalculated((string) Str::uuid());
 
         $payload = $event->broadcastWith();
 
-        $this->assertArrayHasKey('dashboard', $payload);
-        $this->assertEquals($dashboardData, $payload['dashboard']);
+        $this->assertIsArray($payload);
+        $this->assertEmpty($payload);
     }
 }

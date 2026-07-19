@@ -1,62 +1,62 @@
-# Documentacao Tecnica da Integracao Lua
+# Lua Integration Technical Documentation
 
-## 1. Objetivo
+## 1. Purpose
 
-Este documento registra, de forma tecnica e segura, a integracao de Lua realizada no `StudyTrack Pro`.
+This document records, in a technical and secure manner, the Lua integration performed in `StudyTrack Pro`.
 
-O foco aqui nao e apenas listar arquivos alterados, mas explicar:
+The focus here is not just listing changed files, but explaining:
 
-- o problema que cada alteracao resolveu;
-- como Redis Lua, OpenResty e PL/Lua foram encaixados no projeto;
-- quais fluxos de negocio passaram a depender dessas pecas;
-- quais validacoes foram executadas;
-- quais cuidados de seguranca devem ser preservados em manutencoes futuras.
+- the problem each change solved;
+- how Redis Lua, OpenResty, and PL/Lua were fitted into the project;
+- which business flows now depend on these pieces;
+- which validations were executed;
+- which security concerns must be preserved in future maintenance.
 
-Este documento foi escrito para estudo posterior do projeto. Por isso, ele privilegia contexto, motivacao, arquitetura e comportamento observado.
+This document was written for subsequent study of the project. Therefore, it prioritizes context, motivation, architecture, and observed behavior.
 
-## 2. Regra de seguranca deste documento
+## 2. Security Rule for This Document
 
-Para nao comprometer a seguranca do projeto, este arquivo **nao** registra:
+To not compromise the project's security, this file does **not** record:
 
-- senhas reais;
+- real passwords;
 - tokens;
-- hashes de tokens capturados em runtime;
-- valores secretos de `.env`;
-- comandos com credenciais embutidas;
-- enderecos internos que so fariam sentido na maquina local de desenvolvimento.
+- hashes of tokens captured at runtime;
+- secret values from `.env`;
+- commands with embedded credentials;
+- internal addresses that would only make sense on the local development machine.
 
-Sempre que uma configuracao depende de segredo, este documento menciona apenas o nome da variavel de ambiente ou o conceito envolvido.
+Whenever a configuration depends on a secret, this document only mentions the environment variable name or the concept involved.
 
-## 3. Escopo da implementacao
+## 3. Implementation Scope
 
-A integracao adicionada cobre tres frentes principais:
+The added integration covers three main fronts:
 
-1. **Redis Lua no backend Laravel**
-2. **OpenResty na borda HTTP**
-3. **PL/Lua no PostgreSQL**
+1. **Redis Lua in the Laravel backend**
+2. **OpenResty at the HTTP edge**
+3. **PL/Lua in PostgreSQL**
 
-Tambem foram adicionados testes focados e ajustes de infraestrutura para permitir build, bootstrap e validacao em containers.
+Focused tests and infrastructure adjustments were also added to enable build, bootstrap, and validation in containers.
 
-## 4. Visao geral da arquitetura resultante
+## 4. Resulting Architecture Overview
 
-Depois das alteracoes, o fluxo ficou assim:
+After the changes, the flow became:
 
-1. O cliente continua consumindo a API Laravel por `nginx`.
-2. O `nginx` agora roda sobre OpenResty e executa logica Lua na borda.
-3. O backend Laravel usa scripts Lua no Redis para operacoes que se beneficiam de atomicidade e baixa latencia.
-4. O PostgreSQL executa PL/Lua para derivar `productivity_score` diretamente na camada de banco.
-5. O sistema preserva estrategia de **fail-open** na maior parte dos pontos Lua operacionais:
-  - se Redis Lua falha, a aplicacao tenta seguir com comportamento seguro;
-  - se o edge nao consegue consultar Redis, o request nao e derrubado por engano;
-  - se a trigger PL/Lua falha internamente, cai para valor seguro em vez de quebrar toda escrita.
+1. The client continues consuming the Laravel API through `nginx`.
+2. `nginx` now runs on OpenResty and executes Lua logic at the edge.
+3. The Laravel backend uses Lua scripts in Redis for operations that benefit from atomicity and low latency.
+4. PostgreSQL executes PL/Lua to derive `productivity_score` directly at the database layer.
+5. The system preserves a **fail-open** strategy at most Lua operational points:
+   - if Redis Lua fails, the application tries to proceed with safe behavior;
+   - if the edge cannot query Redis, the request is not dropped by mistake;
+   - if the PL/Lua trigger fails internally, it falls back to a safe value instead of breaking the entire write.
 
-Essa abordagem reduz risco de indisponibilidade acidental durante integracoes com componentes dinamicos.
+This approach reduces the risk of accidental unavailability during integrations with dynamic components.
 
-## 5. Inventario do que foi implementado
+## 5. Implementation Inventory
 
-### 5.1 Scripts Redis Lua
+### 5.1 Redis Lua Scripts
 
-Foram adicionados tres scripts em `redis-scripts/`:
+Three scripts were added in `redis-scripts/`:
 
 - `job_dedup.lua`
 - `sliding_window.lua`
@@ -64,504 +64,504 @@ Foram adicionados tres scripts em `redis-scripts/`:
 
 #### `job_dedup.lua`
 
-Responsabilidade:
+Responsibility:
 
-- evitar despacho duplicado de jobs por uma janela curta.
+- prevent duplicate job dispatch within a short window.
 
-Uso principal:
+Main usage:
 
-- deduplicar disparos do `RecalculateMetricsJob` apos mudancas em sessoes.
+- deduplicate `RecalculateMetricsJob` dispatches after session changes.
 
-Estrategia:
+Strategy:
 
-- usa `SET key value NX EX ttl` para criar um lock curto;
-- retorna `1` quando o lock e criado;
-- retorna `0` quando o lock ja existe.
+- uses `SET key value NX EX ttl` to create a short lock;
+- returns `1` when the lock is created;
+- returns `0` when the lock already exists.
 
-Beneficio:
+Benefit:
 
-- evita rajadas de jobs redundantes para o mesmo usuario quando varias alteracoes acontecem em sequencia.
+- prevents bursts of redundant jobs for the same user when multiple changes happen in sequence.
 
 #### `sliding_window.lua`
 
-Responsabilidade:
+Responsibility:
 
-- aplicar rate limit por janela deslizante com retorno de `retry_after`.
+- apply sliding window rate limiting with `retry_after` response.
 
-Uso principal:
+Main usage:
 
-- proteger endpoints criticos de escrita de sessao de estudo.
+- protect critical study session write endpoints.
 
-Estrategia:
+Strategy:
 
-- remove eventos antigos de um `sorted set`;
-- conta eventos ainda dentro da janela;
-- bloqueia quando o limite e atingido;
-- calcula quanto tempo falta para a janela voltar a aceitar requests.
+- removes old events from a `sorted set`;
+- counts events still within the window;
+- blocks when the limit is reached;
+- calculates how much time remains before the window accepts requests again.
 
-Beneficio:
+Benefit:
 
-- evita o comportamento grosseiro de janelas fixas e melhora a precisao do throttling.
+- avoids the coarse behavior of fixed windows and improves throttling precision.
 
 #### `streak_update.lua`
 
-Responsabilidade:
+Responsibility:
 
-- atualizar streak diario de estudo com uma unica ida ao Redis.
+- update daily study streak with a single Redis round-trip.
 
-Uso principal:
+Main usage:
 
-- servir de base para manutencao de streak sem round-trips multiplos.
+- serve as the basis for streak maintenance without multiple round-trips.
 
-Estrategia:
+Strategy:
 
-- compara `today` e `yesterday` com a ultima data registrada;
-- mantem a streak se for o mesmo dia;
-- incrementa se houve estudo no dia seguinte;
-- reinicia para `1` se houve quebra.
+- compares `today` and `yesterday` with the last recorded date;
+- maintains the streak if it's the same day;
+- increments if there was study the next day;
+- resets to `1` if there was a break.
 
-Beneficio:
+Benefit:
 
-- reduz acoplamento da regra de streak a varias operacoes separadas em Redis.
+- reduces coupling of the streak rule to multiple separate Redis operations.
 
-## 6. Integracao Redis Lua no Laravel
+## 6. Redis Lua Integration in Laravel
 
 ### 6.1 `App\Services\RedisLuaService`
 
-Arquivo:
+File:
 
 - `backend/app/Services/RedisLuaService.php`
 
-Responsabilidades:
+Responsibilities:
 
-- mapear os scripts Lua disponiveis;
-- carregar scripts no Redis;
-- armazenar SHA em cache;
-- executar via `EVALSHA`;
-- recarregar automaticamente em caso de `NOSCRIPT`.
+- map available Lua scripts;
+- load scripts into Redis;
+- cache SHA values;
+- execute via `EVALSHA`;
+- automatically reload on `NOSCRIPT`.
 
-Decisoes relevantes:
+Relevant decisions:
 
-- a carga inicial acontece por nome de script;
-- o SHA e mantido em cache para evitar `SCRIPT LOAD` em toda chamada;
-- se o Redis perder o script da memoria, o service recarrega automaticamente;
-- a deteccao de `NOSCRIPT` e tratada explicitamente.
+- initial loading happens by script name;
+- SHA is cached to avoid `SCRIPT LOAD` on every call;
+- if Redis loses the script from memory, the service reloads automatically;
+- `NOSCRIPT` detection is handled explicitly.
 
-Isso transformou o uso de Lua em uma abstracao reaproveitavel, em vez de espalhar chamadas Redis cruas pelo codigo.
+This transformed Lua usage into a reusable abstraction, instead of spreading raw Redis calls throughout the code.
 
 ### 6.2 `App\Providers\RedisScriptServiceProvider`
 
-Arquivo:
+File:
 
 - `backend/app/Providers/RedisScriptServiceProvider.php`
 
-Responsabilidade:
+Responsibility:
 
-- carregar os scripts no boot da aplicacao.
+- load scripts at application boot.
 
-Caracteristica importante:
+Important characteristic:
 
-- se a carga falhar, o sistema registra log e segue em **fail-open**.
+- if loading fails, the system logs and proceeds in **fail-open**.
 
 ### 6.3 `App\Http\Middleware\SlidingWindowRateLimit`
 
-Arquivo:
+File:
 
 - `backend/app/Http/Middleware/SlidingWindowRateLimit.php`
 
-Responsabilidade:
+Responsibility:
 
-- aplicar rate limit por script Lua em rotas de escrita.
+- apply rate limiting via Lua script on write routes.
 
-Funcionamento:
+Operation:
 
-- monta uma chave por usuario ou IP e por path;
-- usa timestamp em milissegundos;
-- consulta `sliding_window.lua`;
-- devolve `429` com `Retry-After` quando bloqueado;
-- inclui `X-RateLimit-Limit` na resposta.
+- builds a key per user or IP and per path;
+- uses millisecond timestamp;
+- queries `sliding_window.lua`;
+- returns `429` with `Retry-After` when blocked;
+- includes `X-RateLimit-Limit` in response.
 
-Comportamento de resiliencia:
+Resilience behavior:
 
-- se Redis Lua falhar, registra warning; em seguida, se `services.rate_limit.fail_open` for `true`, a requisicao segue; caso contrario responde `503` com payload JSON de indisponibilidade (ver `config/services.php`).
+- if Redis Lua fails, logs a warning; then, if `services.rate_limit.fail_open` is `true`, the request proceeds; otherwise responds `503` with JSON unavailability payload (see `config/services.php`).
 
 ### 6.4 `App\Services\StreakService`
 
-Arquivo:
+File:
 
 - `backend/app/Services/StreakService.php`
 
-Responsabilidade:
+Responsibility:
 
-- encapsular o uso do script `streak_update.lua`.
+- encapsulate the use of `streak_update.lua`.
 
-Detalhes:
+Details:
 
-- busca timezone do usuario;
-- calcula `today` e `yesterday` no fuso correto;
-- delega ao Redis Lua;
-- em falha, retorna `0` com log de warning.
+- fetches user timezone;
+- calculates `today` and `yesterday` in the correct timezone;
+- delegates to Redis Lua;
+- on failure, returns `0` with warning log.
 
-### 6.5 Deduplicacao de recalc de metricas
+### 6.5 Metrics Recalculation Deduplication
 
-Arquivo principal:
+Main file:
 
 - `backend/app/Listeners/StudySession/DispatchMetricsRecalculation.php`
 
-Alteracao:
+Change:
 
-- o listener passou a consultar `job_dedup.lua` antes de despachar `RecalculateMetricsJob`.
+- the listener now consults `job_dedup.lua` before dispatching `RecalculateMetricsJob`.
 
-Efeito pratico:
+Practical effect:
 
-- varias alteracoes proximas de uma mesma sessao nao geram explosao de jobs iguais para o mesmo usuario.
+- multiple nearby changes to the same session don't generate an explosion of identical jobs for the same user.
 
-Importante:
+Important:
 
-- se a deduplicacao Lua estiver indisponivel, o listener nao aborta o fluxo; apenas faz log e segue.
+- if Lua deduplication is unavailable, the listener doesn't abort the flow; it just logs and proceeds.
 
-## 7. Alteracoes na autenticacao e revogacao de token
+## 7. Authentication and Token Revocation Changes
 
 ### 7.1 `TokenService`
 
-Arquivo:
+File:
 
 - `backend/app/Modules/Auth/Services/TokenService.php`
 
-Responsabilidades:
+Responsibilities:
 
-- centralizar revogacao de tokens Sanctum;
-- enviar o hash persistido do token para blacklist no Redis;
-- apagar o token do banco;
-- revogar um token ou varios.
+- centralize Sanctum token revocation;
+- send the persisted token hash to Redis blacklist;
+- delete the token from the database;
+- revoke one or multiple tokens.
 
-Ponto importante:
+Important point:
 
-- o Redis guarda o **hash persistido do token**, nao o Bearer plaintext.
-- isso e coerente com a forma como o Sanctum armazena tokens.
+- Redis stores the **persisted token hash**, not the Bearer plaintext.
+- this is consistent with how Sanctum stores tokens.
 
-### 7.2 `AuthController` e `AuthService`
+### 7.2 `AuthController` and `AuthService`
 
-Arquivos:
+Files:
 
 - `backend/app/Http/Controllers/V1/AuthController.php`
 - `backend/app/Modules/Auth/Services/AuthService.php`
 
-Alteracoes:
+Changes:
 
-- `logout` passou a usar `TokenService`;
-- `revokeAllTokens` passou a usar `TokenService`;
-- `login` revoga tokens anteriores via `TokenService`;
-- `changePassword` revoga tokens anteriores via `TokenService`.
+- `logout` now uses `TokenService`;
+- `revokeAllTokens` now uses `TokenService`;
+- `login` revokes previous tokens via `TokenService`;
+- `changePassword` revokes previous tokens via `TokenService`.
 
-Resultado:
+Result:
 
-- a revogacao passou a ficar consistente entre backend e edge;
-- a regra de blacklist deixou de depender de chamadas isoladas a `tokens()->delete()`.
+- revocation is now consistent between backend and edge;
+- the blacklist rule no longer depends on isolated `tokens()->delete()` calls.
 
-## 8. Alteracoes nas rotas e no modelo de sessao
+## 8. Routes and Session Model Changes
 
-### 8.1 Rotas
+### 8.1 Routes
 
-Arquivo:
+File:
 
 - `backend/routes/api.php`
 
-Alteracoes:
+Changes:
 
-- `throttle.sliding` foi aplicado nas rotas de mutacao de `study-sessions` (valores conforme `routes/api.php`):
-  - `POST /api/v1/study-sessions/start` — limite deslizante 10
-  - `POST /api/v1/study-sessions` — limite deslizante 30
-  - `PATCH /api/v1/study-sessions/{id}/end` — limite deslizante 10
-  - `PUT /api/v1/study-sessions/{id}` e `PATCH /api/v1/study-sessions/{id}` — limite deslizante 30
-  - `DELETE /api/v1/study-sessions/{id}` — limite deslizante 30
+- `throttle.sliding` was applied to `study-sessions` mutation routes (values per `routes/api.php`):
+  - `POST /api/v1/study-sessions/start` — sliding limit 10
+  - `POST /api/v1/study-sessions` — sliding limit 30
+  - `PATCH /api/v1/study-sessions/{id}/end` — sliding limit 10
+  - `PUT /api/v1/study-sessions/{id}` and `PATCH /api/v1/study-sessions/{id}` — sliding limit 30
+  - `DELETE /api/v1/study-sessions/{id}` — sliding limit 30
 
-Isso faz com que o rate limit mais sensivel use a implementacao Lua, enquanto o restante da API continua usando throttles Laravel ja existentes.
+This makes the most sensitive rate limiting use the Lua implementation, while the rest of the API continues using existing Laravel throttles.
 
-### 8.2 Bootstrap do middleware
+### 8.2 Middleware Bootstrap
 
-Arquivo:
+File:
 
 - `backend/bootstrap/app.php`
 
-Alteracao:
+Change:
 
-- foi registrado o alias `throttle.sliding`.
+- the `throttle.sliding` alias was registered.
 
-### 8.3 Registro do provider
+### 8.3 Provider Registration
 
-Arquivo:
+File:
 
 - `backend/bootstrap/providers.php`
 
-Alteracao:
+Change:
 
-- foi registrado `RedisScriptServiceProvider`.
+- `RedisScriptServiceProvider` was registered.
 
-### 8.4 `StudySession` e `StudySessionResource`
+### 8.4 `StudySession` and `StudySessionResource`
 
-Arquivos:
+Files:
 
 - `backend/app/Models/StudySession.php`
 - `backend/app/Http/Resources/StudySessionResource.php`
 
-Alteracoes:
+Changes:
 
-- `productivity_score` passou a fazer parte do cast do model;
-- `productivity_score` passou a ser serializado na resposta da API.
+- `productivity_score` became part of the model's cast;
+- `productivity_score` is now serialized in the API response.
 
-Resultado:
+Result:
 
-- o campo calculado no banco agora e explicitamente consumivel pela API e pelo frontend.
+- the database-calculated field is now explicitly consumable by the API and frontend.
 
-## 9. Integracao OpenResty no edge
+## 9. OpenResty Edge Integration
 
-### 9.1 Troca da base do proxy
+### 9.1 Proxy Base Swap
 
-Arquivos:
+Files:
 
 - `docker/nginx/Dockerfile`
 - `docker/nginx/nginx.conf`
 - `docker/nginx/conf.d/studytrack.conf`
 
-Mudanca estrutural:
+Structural change:
 
-- o proxy deixou de ser apenas Nginx padrao e passou a usar OpenResty.
+- the proxy stopped being just standard Nginx and started using OpenResty.
 
-Motivacao:
+Motivation:
 
-- habilitar logica Lua diretamente na borda HTTP.
+- enable Lua logic directly at the HTTP edge.
 
-### 9.2 O que o edge passou a fazer
+### 9.2 What the Edge Now Does
 
-#### WAF simples por Lua
+#### Simple WAF via Lua
 
-No `rewrite_by_lua_block`, o edge verifica:
+In `rewrite_by_lua_block`, the edge checks:
 
-- user-agents suspeitos;
-- padroes simples de URI relacionados a probes triviais.
+- suspicious user-agents;
+- simple URI patterns related to trivial probes.
 
-Resultado:
+Result:
 
-- requests com agentes reconhecidamente ofensivos podem ser bloqueados antes de chegar ao PHP.
+- requests with recognizably offensive agents can be blocked before reaching PHP.
 
-#### Headers de seguranca por Lua
+#### Security Headers via Lua
 
-No `header_filter_by_lua_block`, o edge garante:
+In `header_filter_by_lua_block`, the edge ensures:
 
 - `X-Content-Type-Options`
 - `X-Frame-Options`
 - `Referrer-Policy`
 - `X-Request-ID`
 - `Permissions-Policy`
-- remocao de headers desnecessarios de exposicao
+- removal of unnecessary exposure headers
 
-#### Validacao de token revogado no edge
+#### Revoked Token Validation at the Edge
 
-No `access_by_lua_block`, o edge:
+In `access_by_lua_block`, the edge:
 
-- preserva `login` e `register` como rotas publicas;
-- exige Bearer token nas rotas privadas de `api/v1`;
-- extrai a parte secreta do token Sanctum depois do separador `|`;
-- calcula SHA-256 via `resty.sha256`;
-- consulta a blacklist no Redis usando o mesmo database e prefixo do Laravel;
-- responde `401 {"error":"Token revoked"}` quando encontra revogacao.
+- preserves `login` and `register` as public routes;
+- requires Bearer token on private `api/v1` routes;
+- extracts the Sanctum token secret after the `|` separator;
+- calculates SHA-256 via `resty.sha256`;
+- queries the Redis blacklist using the same database and prefix as Laravel;
+- responds `401 {"error":"Token revoked"}` when revocation is found.
 
-### 9.3 Ajustes operacionais importantes no OpenResty
+### 9.3 Important OpenResty Operational Adjustments
 
-Os seguintes ajustes foram necessarios para a integracao funcionar corretamente:
+The following adjustments were necessary for the integration to work correctly:
 
-- logs enviados para `stdout/stderr` em vez de arquivos locais;
-- `resolver 127.0.0.11` para o DNS interno do Docker;
-- rota interna para resposta de token revogado;
-- rota estatica `/nginx-health` para healthcheck do container.
+- logs sent to `stdout/stderr` instead of local files;
+- `resolver 127.0.0.11` for Docker's internal DNS;
+- internal route for revoked token response;
+- static `/nginx-health` route for container healthcheck.
 
-### 9.4 Comportamento de falha
+### 9.4 Failure Behavior
 
-O edge foi desenhado para **fail-open** em varios pontos:
+The edge was designed for **fail-open** at several points:
 
-- se nao conseguir carregar libs Lua necessarias;
-- se nao conseguir conectar ou autenticar no Redis;
-- se nao conseguir consultar a blacklist;
-- se ocorrer erro inesperado na validacao.
+- if it can't load required Lua libs;
+- if it can't connect or authenticate to Redis;
+- if it can't query the blacklist;
+- if an unexpected error occurs during validation.
 
-Isso foi uma escolha operacional para reduzir indisponibilidade por dependencia auxiliar.
+This was an operational choice to reduce unavailability from auxiliary dependencies.
 
-## 10. Integracao PL/Lua no PostgreSQL
+## 10. PL/Lua Integration in PostgreSQL
 
-### 10.1 Build customizado do Postgres
+### 10.1 Custom Postgres Build
 
-Arquivo:
+File:
 
 - `docker/postgres/Dockerfile`
 
-O que foi feito:
+What was done:
 
-- a imagem `postgres` passou a ser buildada localmente;
-- o build instala toolchain, headers do PostgreSQL e Lua 5.4;
-- o `pllua-ng` e compilado e instalado manualmente.
+- the `postgres` image is now built locally;
+- the build installs toolchain, PostgreSQL headers, and Lua 5.4;
+- `pllua-ng` is compiled and installed manually.
 
-Ponto tecnico relevante:
+Relevant technical point:
 
-- o build precisou fixar explicitamente `LUA`, `LUAC`, `LUA_INCDIR` e `LUALIB` para Lua 5.4.
+- the build needed to explicitly fix `LUA`, `LUAC`, `LUA_INCDIR`, and `LUALIB` for Lua 5.4.
 
-### 10.2 Habilitacao da extensao
+### 10.2 Extension Enablement
 
-Arquivos:
+Files:
 
 - `docker/postgres/init/01-extensions-and-schema.sql`
 - `backend/database/migrations/transactional/2026_04_04_000005_add_productivity_score_to_study_sessions_table.php`
 
-Alteracoes:
+Changes:
 
-- `CREATE EXTENSION IF NOT EXISTS pllua` foi adicionado no bootstrap SQL;
-- a migration tambem cria a extensao, para nao depender apenas do init do container.
+- `CREATE EXTENSION IF NOT EXISTS pllua` was added in the SQL bootstrap;
+- the migration also creates the extension, to not depend only on container init.
 
-Essa duplicidade e intencional:
+This duplication is intentional:
 
-- o init SQL cobre banco novo;
-- a migration cobre ambientes em que o volume ja existia.
+- SQL init covers new databases;
+- the migration covers environments where the volume already existed.
 
-### 10.3 `productivity_score` em `study_sessions`
+### 10.3 `productivity_score` in `study_sessions`
 
-Arquivo:
+File:
 
 - `backend/database/migrations/transactional/2026_04_04_000005_add_productivity_score_to_study_sessions_table.php`
 
-O que foi adicionado:
+What was added:
 
-- coluna `productivity_score` em `study_sessions`;
-- funcao `public.calculate_study_session_productivity_score()` em PL/Lua;
-- trigger `trg_study_session_productivity_score`;
-- backfill para linhas existentes.
+- `productivity_score` column in `study_sessions`;
+- `public.calculate_study_session_productivity_score()` function in PL/Lua;
+- `trg_study_session_productivity_score` trigger;
+- backfill for existing rows.
 
-Regra aplicada:
+Applied rule:
 
-- sessoes muito curtas recebem peso menor;
-- sessoes medias recebem peso padrao ou levemente maior;
-- sessoes longas recebem multiplicador maior.
+- very short sessions receive less weight;
+- medium sessions receive default or slightly higher weight;
+- long sessions receive a higher multiplier.
 
-Comportamento defensivo:
+Defensive behavior:
 
-- se a logica Lua falhar, o trigger cai para valor seguro no proprio registro.
+- if the Lua logic fails, the trigger falls back to a safe value on the record itself.
 
-### 10.4 Adaptacao ao repositorio real
+### 10.4 Adaptation to the Real Repository
 
-A proposta original previa uso de outra estrutura analitica, mas a implementacao final foi adaptada ao estado real do projeto:
+The original proposal anticipated using another analytical structure, but the final implementation was adapted to the actual state of the project:
 
-- o score ficou em `public.study_sessions`;
-- a trigger opera sobre a tabela transacional que efetivamente existe no repositorio.
+- the score went into `public.study_sessions`;
+- the trigger operates on the transactional table that actually exists in the repository.
 
-## 11. Ajustes de infraestrutura no Docker Compose
+## 11. Docker Compose Infrastructure Adjustments
 
-Arquivo:
+File:
 
 - `docker-compose.yml`
 
-Alteracoes relevantes:
+Relevant changes:
 
-- `nginx` passou a usar build local em OpenResty;
-- `postgres` passou a usar build local com PL/Lua;
-- `nginx` recebeu variaveis de Redis necessarias para a consulta da blacklist;
-- servicos PHP passaram a receber senha e porta do Redis;
-- o `nginx` passou a ter healthcheck em `/nginx-health`;
-- foi criado um volume novo para a variante de Postgres com `pllua`.
+- `nginx` now uses a local build on OpenResty;
+- `postgres` now uses a local build with PL/Lua;
+- `nginx` received necessary Redis variables for blacklist queries;
+- PHP services now receive Redis password and port;
+- `nginx` now has a healthcheck on `/nginx-health`;
+- a new volume was created for the Postgres variant with `pllua`.
 
-### 11.1 Nota de seguranca sobre compose
+### 11.1 Security Note on Compose
 
-O compose atual continua orientado a **desenvolvimento local**.
+The current compose remains oriented to **local development**.
 
-Isso significa:
+This means:
 
-- valores padrao e fallbacks de ambiente nao devem ser reutilizados em producao;
-- a documentacao deve sempre referenciar variaveis, nao valores;
-- qualquer endurecimento para producao precisa mover segredos para mecanismo apropriado de secret management.
+- default values and environment fallbacks should not be reused in production;
+- documentation should always reference variables, not values;
+- any production hardening needs to move secrets to an appropriate secret management mechanism.
 
-## 12. Testes adicionados e validacao executada
+## 12. Added Tests and Executed Validation
 
-### 12.1 Testes adicionados
+### 12.1 Added Tests
 
-Pasta:
+Folder:
 
 - `backend/tests/Feature/LuaScripts/`
 
-Arquivos:
+Files:
 
 - `JobDedupTest.php`
 - `SlidingWindowTest.php`
 - `StreakTest.php`
 
-### 12.2 O que cada teste cobre
+### 12.2 What Each Test Covers
 
 #### `JobDedupTest`
 
-Valida:
+Validates:
 
-- primeiro lock permitido;
-- segunda chamada imediata bloqueada;
-- comportamento apos TTL, respeitando tambem a unicidade do job.
+- first lock allowed;
+- second immediate call blocked;
+- behavior after TTL, also respecting job uniqueness.
 
 #### `SlidingWindowTest`
 
-Valida:
+Validates:
 
-- request dentro do limite;
-- request bloqueado com `429`;
-- request voltando a ser permitido apos reset da janela.
+- request within limit;
+- request blocked with `429`;
+- request allowed again after window reset.
 
 #### `StreakTest`
 
-Valida:
+Validates:
 
-- primeira sessao;
-- dia consecutivo;
-- quebra de streak;
-- repeticao no mesmo dia.
+- first session;
+- consecutive day;
+- streak break;
+- same-day repetition.
 
-### 12.3 Resultado observado
+### 12.3 Observed Result
 
-A suite focada em Lua foi executada em container e passou:
+The Lua-focused test suite was executed in a container and passed:
 
-- `10` testes aprovados;
-- `27` assertions aprovadas.
+- `10` tests approved;
+- `27` assertions approved.
 
-### 12.4 Validacoes operacionais feitas
+### 12.4 Executed Operational Validations
 
-Foram validados em runtime:
+Validated at runtime:
 
-- build do Postgres com `pllua`;
-- extensao `pllua` ativa no banco;
-- migration do `productivity_score` executada;
-- `nginx` saudavel;
-- rotas publicas de auth preservadas;
-- bloqueio `401` em rota privada sem token;
-- bloqueio `403` do WAF por user-agent suspeito;
-- revogacao de token refletida no edge com `{"error":"Token revoked"}`.
+- Postgres build with `pllua`;
+- `pllua` extension active in the database;
+- `productivity_score` migration executed;
+- `nginx` healthy;
+- public auth routes preserved;
+- `401` block on private route without token;
+- `403` WAF block by suspicious user-agent;
+- token revocation reflected at the edge with `{"error":"Token revoked"}`.
 
-## 13. Revisao tecnica e riscos residuais
+## 13. Technical Review and Residual Risks
 
-Durante a revisao, os seguintes pontos exigiram atencao ou correcao:
+During the review, the following points required attention or correction:
 
-### 13.1 Pontos que foram corrigidos durante a validacao
+### 13.1 Points Corrected During Validation
 
-- trigger PL/Lua inicialmente usava API incorreta de trigger e foi ajustada para a sintaxe real do `pllua`;
-- build do `pllua-ng` precisou de configuracao explicita para Lua 5.4;
-- OpenResty precisou de `resolver` Docker para consultar `redis`;
-- a validacao do token revogado precisou alinhar:
-  - database Redis;
-  - prefixo Redis do Laravel;
-  - hash da parte secreta do token Sanctum;
-  - biblioteca correta de SHA-256 no OpenResty;
-- a healthcheck do `nginx` foi movida para uma rota estatica propria do proxy.
+- PL/Lua trigger initially used incorrect trigger API and was adjusted to `pllua`'s actual syntax;
+- `pllua-ng` build needed explicit configuration for Lua 5.4;
+- OpenResty needed Docker `resolver` to query `redis`;
+- revoked token validation needed alignment:
+  - Redis database;
+  - Laravel Redis prefix;
+  - Sanctum token secret hash;
+  - correct SHA-256 library in OpenResty;
+- `nginx` healthcheck was moved to a static route on the proxy itself.
 
-### 13.2 Riscos que ainda merecem observacao futura
+### 13.2 Risks That Still Warrant Future Observation
 
-- a estrategia de **fail-open** e operacionalmente resiliente, mas deliberadamente permissiva em falhas auxiliares;
-- o `postgres` customizado usa `user: "0:0"` no compose local por compatibilidade com volume, o que nao deve ser tratado como desenho ideal para producao;
-- a blacklist de token depende de Redis disponivel e coerencia entre prefixo/database do Laravel e do edge;
-- a logica de WAF e propositalmente simples e nao substitui protecao especializada.
+- the **fail-open** strategy is operationally resilient but deliberately permissive on auxiliary failures;
+- the custom `postgres` uses `user: "0:0"` in local compose for volume compatibility, which should not be treated as ideal production design;
+- token blacklist depends on Redis availability and consistency between Laravel and edge prefix/database;
+- WAF logic is intentionally simple and does not replace specialized protection.
 
-## 14. Arquivos novos ou alterados por area
+## 14. New or Changed Files by Area
 
 ### Redis Lua
 
@@ -573,26 +573,26 @@ Durante a revisao, os seguintes pontos exigiram atencao ou correcao:
 - `backend/app/Services/StreakService.php`
 - `backend/app/Http/Middleware/SlidingWindowRateLimit.php`
 
-### Autenticacao e tokens
+### Authentication and Tokens
 
 - `backend/app/Modules/Auth/Services/TokenService.php`
 - `backend/app/Modules/Auth/Services/AuthService.php`
 - `backend/app/Http/Controllers/V1/AuthController.php`
 
-### Sessao de estudo e analytics
+### Study Session and Analytics
 
 - `backend/app/Listeners/StudySession/DispatchMetricsRecalculation.php`
 - `backend/app/Models/StudySession.php`
 - `backend/app/Http/Resources/StudySessionResource.php`
 - `backend/database/migrations/transactional/2026_04_04_000005_add_productivity_score_to_study_sessions_table.php`
 
-### Bootstrap e rotas
+### Bootstrap and Routes
 
 - `backend/bootstrap/app.php`
 - `backend/bootstrap/providers.php`
 - `backend/routes/api.php`
 
-### Infraestrutura
+### Infrastructure
 
 - `docker/nginx/Dockerfile`
 - `docker/nginx/nginx.conf`
@@ -601,50 +601,50 @@ Durante a revisao, os seguintes pontos exigiram atencao ou correcao:
 - `docker/postgres/init/01-extensions-and-schema.sql`
 - `docker-compose.yml`
 
-### Testes
+### Tests
 
 - `backend/tests/Feature/LuaScripts/JobDedupTest.php`
 - `backend/tests/Feature/LuaScripts/SlidingWindowTest.php`
 - `backend/tests/Feature/LuaScripts/StreakTest.php`
 
-## 15. Guia de estudo recomendado
+## 15. Recommended Study Guide
 
-Para entender essa integracao com boa ordem pedagogica, a sequencia recomendada e:
+To understand this integration with good pedagogical order, the recommended sequence is:
 
-1. Ler este documento inteiro.
-2. Ler os tres scripts em `redis-scripts/`.
-3. Ler `RedisLuaService` e `RedisScriptServiceProvider`.
-4. Ler `SlidingWindowRateLimit` e `DispatchMetricsRecalculation`.
-5. Ler `TokenService`, `AuthService` e `AuthController`.
-6. Ler a migration do `productivity_score`.
-7. Ler `docker/nginx/conf.d/studytrack.conf`.
-8. Ler os testes em `backend/tests/Feature/LuaScripts/`.
+1. Read this entire document.
+2. Read the three scripts in `redis-scripts/`.
+3. Read `RedisLuaService` and `RedisScriptServiceProvider`.
+4. Read `SlidingWindowRateLimit` and `DispatchMetricsRecalculation`.
+5. Read `TokenService`, `AuthService`, and `AuthController`.
+6. Read the `productivity_score` migration.
+7. Read `docker/nginx/conf.d/studytrack.conf`.
+8. Read the tests in `backend/tests/Feature/LuaScripts/`.
 
-Essa ordem ajuda a entender primeiro o comportamento atomico, depois a integracao na aplicacao, depois a infraestrutura e por fim a prova automatizada.
+This order helps understand atomic behavior first, then application integration, then infrastructure, and finally automated proof.
 
-## 16. Conclusao
+## 16. Conclusion
 
-A integracao Lua adicionou tres capacidades novas ao projeto:
+The Lua integration added three new capabilities to the project:
 
-- **atomicidade e eficiencia no Redis** para deduplicacao, throttling e streak;
-- **controle de borda no OpenResty** para seguranca, headers e blacklist de tokens;
-- **logica derivada no PostgreSQL com PL/Lua** para `productivity_score`.
+- **atomicity and efficiency in Redis** for deduplication, throttling, and streak;
+- **edge control in OpenResty** for security, headers, and token blacklist;
+- **derived logic in PostgreSQL with PL/Lua** for `productivity_score`.
 
-O resultado final nao foi apenas um conjunto de scripts isolados. A implementacao passou a fazer parte do fluxo real da aplicacao, com:
+The final result was not just a set of isolated scripts. The implementation became part of the application's real flow, with:
 
 - bootstrap;
 - middlewares;
 - listeners;
-- autenticacao;
-- infraestrutura Docker;
-- testes automatizados;
-- validacao em runtime.
+- authentication;
+- Docker infrastructure;
+- automated tests;
+- runtime validation.
 
-Como referencia de estudo, este documento deve ser mantido sincronizado sempre que houver mudanca em:
+As a study reference, this document should be kept synchronized whenever there are changes to:
 
-- scripts Lua;
-- contrato de blacklist de tokens;
-- estrategia de rate limit;
-- trigger de `productivity_score`;
-- imagem de `nginx` ou `postgres`;
-- variaveis de ambiente relevantes para Redis e edge.
+- Lua scripts;
+- token blacklist contract;
+- rate limit strategy;
+- `productivity_score` trigger;
+- `nginx` or `postgres` image;
+- environment variables relevant to Redis and edge.

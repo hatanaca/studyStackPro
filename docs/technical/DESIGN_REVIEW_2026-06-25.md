@@ -1,155 +1,155 @@
-# Revisão de Design — Frontend StudyTrackPro
+# Design Review — StudyTrackPro Frontend
 
-**Data**: 2026-06-25  
-**Escopo**: Design system, componentes, views, consistência visual, acessibilidade
-
----
-
-## Resumo
-
-O design system está **bem estruturado** com tokens consistentes, suporte a dark mode, e boa acessibilidade. As melhorias abaixo são de polish e consistência, não de refatoração.
+**Date**: 2026-06-25
+**Scope**: Design system, components, views, visual consistency, accessibility
 
 ---
 
-## 1. Paleta de Cores — Contraste e Consistência
+## Summary
 
-### 1.1 Fundo muito frio no light mode
-- **Arquivo**: `frontend/src/assets/styles/variables.css:22`
-- **Problema**: `--color-bg: #d0dce9` é um azul-cinza frio que pode causar fadiga visual em uso prolongado
-- **Recomendação**: Considerar um tom mais neutro: `#f1f5f9` (slate-100) ou `#f8fafc` (slate-50)
-- **Prioridade**: MÉDIA
-
-### 1.2 Texto secundário com token não utilizado
-- **Arquivo**: `frontend/src/assets/styles/variables.css:20`
-- **Problema**: `--color-text-secondary: #334155` existe mas raramente é usado — `--color-text-muted` domina
-- **Recomendação**: Consolidar em um único token ou definir uso claro (secondary = hover states, muted = labels)
-- **Prioridade**: BAIXA
+The design system is **well-structured** with consistent tokens, dark mode support, and good accessibility. The improvements below are for polish and consistency, not refactoring.
 
 ---
 
-## 2. Login — Oportunidades de Melhoria Visual
+## 1. Color Palette — Contrast and Consistency
 
-### 2.1 Título genérico "StudyTrack Pro"
-- **Arquivo**: `frontend/src/views/auth/LoginView.vue:43`
-- **Problema**: `<h1>StudyTrack Pro</h1>` não usa `font-display` e parece placeholder
-- **Recomendação**: Adicionar gradiente no título + ícone decorativo, ou usar o logo em vez de texto
+### 1.1 Very Cold Background in Light Mode
+- **File**: `frontend/src/assets/styles/variables.css:22`
+- **Issue**: `--color-bg: #d0dce9` is a cold blue-gray that may cause visual fatigue during prolonged use
+- **Recommendation**: Consider a more neutral tone: `#f1f5f9` (slate-100) or `#f8fafc` (slate-50)
+- **Priority**: MEDIUM
 
-### 2.2 Botões OAuth sem identidade visual
-- **Arquivo**: `frontend/src/views/auth/LoginView.vue:139-168`
-- **Problema**: Botões Google/Discord usam `var(--color-bg-card)` — perdem identidade das marcas
-- **Recomendação**: Google button com borda sutil `#4285F4`, Discord com `#5865F2` em hover
-
----
-
-## 3. Sidebar — Micro-interações
-
-### 3.1 Logo sem animação de colapso
-- **Arquivo**: `frontend/src/components/layout/AppSidebar.vue:500-508`
-- **Problema**: Logo desaparece abruptamente ao colapsar (opacity 0 + width 0)
-- **Recomendação**: Adicionar `transition: opacity` com delay para suavizar
-
-### 3.2 Link hover com translateX pode causar layout shift
-- **Arquivo**: `frontend/src/components/layout/AppSidebar.vue:831`
-- **Problema**: `transform: translateX(var(--spacing-2xs))` (2px) em hover pode causar micro-jitter
-- **Recomendação**: Usar `padding-left` em vez de transform, ou aumentar o gap para compensar
+### 1.2 Secondary Text with Unused Token
+- **File**: `frontend/src/assets/styles/variables.css:20`
+- **Issue**: `--color-text-secondary: #334155` exists but is rarely used — `--color-text-muted` dominates
+- **Recommendation**: Consolidate into a single token or define clear usage (secondary = hover states, muted = labels)
+- **Priority**: LOW
 
 ---
 
-## 4. Dashboard — Layout e Visual
+## 2. Login — Visual Improvement Opportunities
 
-### 4.1 Background do dashboard content com mixin opaco
-- **Arquivo**: `frontend/src/views/Dashboard/DashboardView.vue:329`
-- **Problema**: `background: color-mix(in srgb, var(--color-bg-soft) 40%, var(--color-bg))` — mix complexo
-- **Recomendação**: Simplificar para `var(--color-bg-card)` ou criar token dedicado
+### 2.1 Generic Title "StudyTrack Pro"
+- **File**: `frontend/src/views/auth/LoginView.vue:43`
+- **Issue**: `<h1>StudyTrack Pro</h1>` doesn't use `font-display` and looks like a placeholder
+- **Recommendation**: Add gradient to title + decorative icon, or use the logo instead of text
 
-### 4.2 Stakent style com muitas variáveis globais
-- **Arquivo**: `frontend/src/assets/styles/variables.css:296-317`
-- **Problema**: `[data-theme='dark'] .app-layout.stakent-style` redefine ~15 variáveis — difícil de manter
-- **Recomendação**: Extrair para um arquivo CSS separado ou usar CSS custom properties scoped
-
----
-
-## 5. Componentes UI — Consistência
-
-### 5.1 EmptyState border com mix complexo
-- **Arquivo**: `frontend/src/assets/styles/variables.css:145`
-- **Problema**: `--empty-state-border: 1px solid color-mix(...)` — 3 inputs para 1 border
-- **Recomendação**: Simplificar para `1px dashed var(--color-primary)` ou `1px solid var(--color-border)`
-
-### 5.2 Form inputs com muitos tokens
-- **Arquivo**: `frontend/src/assets/styles/variables.css:168-187`
-- **Problema**: 18 tokens para form inputs — sobrecarga cognitiva
-- **Recomendação**: Manter apenas: bg, border, border-focus, border-error, radius, height
+### 2.2 OAuth Buttons Without Visual Identity
+- **File**: `frontend/src/views/auth/LoginView.vue:139-168`
+- **Issue**: Google/Discord buttons use `var(--color-bg-card)` — lose brand identity
+- **Recommendation**: Google button with subtle `#4285F4` border, Discord with `#5865F2` on hover
 
 ---
 
-## 6. Acessibilidade — Gaps
+## 3. Sidebar — Micro-interactions
 
-### 6.1 Touch targets podem estar abaixo de 44px
-- **Arquivo**: `frontend/src/components/layout/AppSidebar.vue:817`
-- **Problema**: `min-height: 2.25rem` (36px) nos links da sidebar — abaixo do WCAG 2.5.5 (44px)
-- **Recomendação**: Aumentar para `min-height: var(--touch-target-min)` (2.75rem = 44px)
+### 3.1 Logo Without Collapse Animation
+- **File**: `frontend/src/components/layout/AppSidebar.vue:500-508`
+- **Issue**: Logo disappears abruptly when collapsing (opacity 0 + width 0)
+- **Recommendation**: Add `transition: opacity` with delay to smooth it
 
-### 6.2 Skip link ausente
-- **Problema**: Não há "Skip to content" link para navegação por teclado
-- **Recomendação**: Adicionar `<a href="#main" class="sr-only focus:not-sr-only">Pular para conteúdo</a>` no início do body
+### 3.2 Link Hover with translateX May Cause Layout Shift
+- **File**: `frontend/src/components/layout/AppSidebar.vue:831`
+- **Issue**: `transform: translateX(var(--spacing-2xs))` (2px) on hover may cause micro-jitter
+- **Recommendation**: Use `padding-left` instead of transform, or increase gap to compensate
 
 ---
 
-## 7. Performance Visual
+## 4. Dashboard — Layout and Visual
 
-### 7.1 Skeleton loaders com borda desnecessária
-- **Arquivo**: `frontend/src/views/Dashboard/DashboardView.vue:497-504`
-- **Problema**: `.kpi-card-skeleton` tem `border: 1px solid var(--color-border)` — desnecessário para placeholder
-- **Recomendação**: Remover borda em skeletons — só background + radius
+### 4.1 Dashboard Content Background with Opaque Mixin
+- **File**: `frontend/src/views/Dashboard/DashboardView.vue:329`
+- **Issue**: `background: color-mix(in srgb, var(--color-bg-soft) 40%, var(--color-bg))` — complex mix
+- **Recommendation**: Simplify to `var(--color-bg-card)` or create a dedicated token
 
-### 7.2 Muitas media queries duplicadas
-- **Arquivo**: `frontend/src/views/Dashboard/DashboardView.vue`
-- **Problema**: `@media (min-width: 640px)` aparece 2x, `@media (min-width: 1024px)` aparece 2x
-- **Recomendação**: Consolidar em uma media query por breakpoint
+### 4.2 Stakent Style with Too Many Global Variables
+- **File**: `frontend/src/assets/styles/variables.css:296-317`
+- **Issue**: `[data-theme='dark'] .app-layout.stakent-style` redefines ~15 variables — hard to maintain
+- **Recommendation**: Extract to a separate CSS file or use scoped CSS custom properties
+
+---
+
+## 5. UI Components — Consistency
+
+### 5.1 EmptyState Border with Complex Mix
+- **File**: `frontend/src/assets/styles/variables.css:145`
+- **Issue**: `--empty-state-border: 1px solid color-mix(...)` — 3 inputs for 1 border
+- **Recommendation**: Simplify to `1px dashed var(--color-primary)` or `1px solid var(--color-border)`
+
+### 5.2 Form Inputs with Too Many Tokens
+- **File**: `frontend/src/assets/styles/variables.css:168-187`
+- **Issue**: 18 tokens for form inputs — cognitive overload
+- **Recommendation**: Keep only: bg, border, border-focus, border-error, radius, height
+
+---
+
+## 6. Accessibility — Gaps
+
+### 6.1 Touch Targets May Be Below 44px
+- **File**: `frontend/src/components/layout/AppSidebar.vue:817`
+- **Issue**: `min-height: 2.25rem` (36px) on sidebar links — below WCAG 2.5.5 (44px)
+- **Recommendation**: Increase to `min-height: var(--touch-target-min)` (2.75rem = 44px)
+
+### 6.2 Missing Skip Link
+- **Issue**: No "Skip to content" link for keyboard navigation
+- **Recommendation**: Add `<a href="#main" class="sr-only focus:not-sr-only">Skip to content</a>` at the beginning of body
+
+---
+
+## 7. Visual Performance
+
+### 7.1 Skeleton Loaders with Unnecessary Border
+- **File**: `frontend/src/views/Dashboard/DashboardView.vue:497-504`
+- **Issue**: `.kpi-card-skeleton` has `border: 1px solid var(--color-border)` — unnecessary for placeholder
+- **Recommendation**: Remove border from skeletons — only background + radius
+
+### 7.2 Too Many Duplicate Media Queries
+- **File**: `frontend/src/views/Dashboard/DashboardView.vue`
+- **Issue**: `@media (min-width: 640px)` appears 2x, `@media (min-width: 1024px)` appears 2x
+- **Recommendation**: Consolidate into one media query per breakpoint
 
 ---
 
 ## 8. Dark Mode — Gaps
 
-### 8.1 Stakent style sem scrollbar customizada
-- **Arquivo**: `frontend/src/assets/styles/variables.css:319-370`
-- **Problema**: Scrollbar customizada só para `[data-theme='dark']` — não cobre `.stakent-style`
-- **Recomendação**: Adicionar `.stakent-style ::-webkit-scrollbar` com cores roxas
+### 8.1 Stakent Style Without Custom Scrollbar
+- **File**: `frontend/src/assets/styles/variables.css:319-370`
+- **Issue**: Custom scrollbar only for `[data-theme='dark']` — doesn't cover `.stakent-style`
+- **Recommendation**: Add `.stakent-style ::-webkit-scrollbar` with purple colors
 
-### 8.2 Gradient mesh não visível em dark mode
-- **Arquivo**: `frontend/src/assets/styles/variables.css:263-265`
-- **Problema**: `--gradient-mesh` em dark mode usa tons muito escuros — quase invisível
-- **Recomendação**: Aumentar opacidade ou usar tons mais claros
-
----
-
-## Prioridades de Implementação
-
-### Alta (fazer primeiro)
-1. Aumentar touch targets na sidebar para 44px
-2. Simplificar form input tokens (reduzir de 18 para ~8)
-3. Adicionar skip link para acessibilidade
-
-### Média (próximo sprint)
-4. Revisar paleta light mode (fundo menos frio)
-5. Melhorar visual dos botões OAuth no login
-6. Consolidar media queries duplicadas no Dashboard
-
-### Baixa (quando possível)
-7. Simplificar empty state border
-8. Adicionar scrollbar customizada para stakent
-9. Melhorar visibilidade do gradient mesh em dark mode
+### 8.2 Gradient Mesh Not Visible in Dark Mode
+- **File**: `frontend/src/assets/styles/variables.css:263-265`
+- **Issue**: `--gradient-mesh` in dark mode uses very dark tones — almost invisible
+- **Recommendation**: Increase opacity or use lighter tones
 
 ---
 
-## Notas Positivas
+## Implementation Priorities
 
-- ✅ Design tokens bem organizados e documentados
-- ✅ Dark mode completo com overrides consistentes
-- ✅ `prefers-reduced-motion` respeitado
-- ✅ Focus-visible com `--shadow-focus` em todos os componentes interativos
-- ✅ Sidebar com animações suaves de colapso
-- ✅ Componentes UI reutilizáveis bem estruturados
-- ✅ PageView com breadcrumb, header e actions slots
-- ✅ Dashboard com lazy loading de widgets pesados
+### High (Do First)
+1. Increase touch targets in sidebar to 44px
+2. Simplify form input tokens (reduce from 18 to ~8)
+3. Add skip link for accessibility
+
+### Medium (Next Sprint)
+4. Review light mode palette (less cold background)
+5. Improve OAuth button visuals on login
+6. Consolidate duplicate media queries in Dashboard
+
+### Low (When Possible)
+7. Simplify empty state border
+8. Add custom scrollbar for stakent
+9. Improve gradient mesh visibility in dark mode
+
+---
+
+## Positive Notes
+
+- ✅ Well-organized and documented design tokens
+- ✅ Complete dark mode with consistent overrides
+- ✅ `prefers-reduced-motion` respected
+- ✅ Focus-visible with `--shadow-focus` on all interactive components
+- ✅ Sidebar with smooth collapse animations
+- ✅ Well-structured reusable UI components
+- ✅ PageView with breadcrumb, header, and action slots
+- ✅ Dashboard with lazy loading of heavy widgets

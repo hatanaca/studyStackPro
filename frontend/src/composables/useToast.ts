@@ -43,9 +43,5 @@ export function useToast() {
     success,
     error,
     info,
-    /** @deprecated Use PrimeVue Toast; mantido para compatibilidade. */
-    toasts: [] as { id: number; message: string; type: string }[],
-    /** @deprecated Use PrimeVue Toast; mantido para compatibilidade. */
-    dismiss: () => {},
   }
 }

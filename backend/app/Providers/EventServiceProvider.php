@@ -12,7 +12,6 @@ use App\Events\StudySession\StudySessionCreated;
 use App\Events\StudySession\StudySessionDeleted;
 use App\Events\StudySession\StudySessionUpdated;
 use App\Listeners\Analytics\BroadcastMetricsUpdate;
-use App\Listeners\Analytics\UpdateCacheWithFreshData;
 use App\Listeners\StudySession\BroadcastMetricsRecalculating;
 use App\Listeners\StudySession\BroadcastSessionEnded;
 use App\Listeners\StudySession\BroadcastSessionStarted;
@@ -20,6 +19,7 @@ use App\Listeners\StudySession\DispatchMetricsRecalculation;
 use App\Listeners\StudySession\InvalidateSessionCache;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use SocialiteProviders\Discord\DiscordExtendSocialite;
+use SocialiteProviders\LinkedIn\LinkedInExtendSocialite;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 
 class EventServiceProvider extends ServiceProvider
@@ -43,11 +43,11 @@ class EventServiceProvider extends ServiceProvider
             BroadcastMetricsRecalculating::class,
         ],
         MetricsRecalculated::class => [
-            UpdateCacheWithFreshData::class,
             BroadcastMetricsUpdate::class,
         ],
         SocialiteWasCalled::class => [
             DiscordExtendSocialite::class,
+            LinkedInExtendSocialite::class,
         ],
     ];
 

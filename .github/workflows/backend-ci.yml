@@ -48,7 +48,7 @@ jobs:
 
       - name: Create cache directory
         working-directory: backend
-        run: mkdir -p bootstrap/cache
+        run: mkdir -p bootstrap/cache storage/framework/views storage/framework/cache storage/framework/sessions storage/logs
 
       - name: Install dependencies
         working-directory: backend

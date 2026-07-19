@@ -1,43 +1,43 @@
-# Migração para PrimeVue
+# PrimeVue Migration
 
-## Concluído
+## Completed
 
-- **Configuração**: PrimeVue 4 + tema Aura + primeicons em `main.ts`.
-- **Toast**: `useToast()` passou a usar o Toast do PrimeVue; componente `<Toast />` em `App.vue`.
-- **SessionList**: `Button`, `Dialog` (substituem BaseButton, BaseModal).
+- **Configuration**: PrimeVue 4 + Aura theme + primeicons in `main.ts`.
+- **Toast**: `useToast()` now uses PrimeVue's Toast; `<Toast />` component in `App.vue`.
+- **SessionList**: `Button`, `Dialog` (replacing BaseButton, BaseModal).
 - **LogSessionForm**: `Button` (PrimeVue).
-- **PageView**: `Breadcrumb` (substitui BaseBreadcrumb); tipo `BreadcrumbItem` exportado em `PageView.vue`.
+- **PageView**: `Breadcrumb` (replacing BaseBreadcrumb); `BreadcrumbItem` type exported in `PageView.vue`.
 - **TechnologySessionsView**: `Breadcrumb`, `Card`, `Button`.
 
-## Mapeamento de componentes
+## Component Mapping
 
-| Componente antigo   | PrimeVue              | Observações |
-|---------------------|------------------------|-------------|
-| BaseButton          | Button                 | `label`, `severity` (primary/secondary/danger), `variant="outlined"`, `size="small"`, `:loading` |
-| BaseModal           | Dialog                 | `v-model:visible`, `header`, `modal`, `@hide` |
-| BaseToast           | Toast + useToast()     | Já migrado via composable |
-| BaseBreadcrumb      | Breadcrumb             | `:model="items"` (array com `{ label, to? }`) |
-| BaseCard            | Card                   | Slots: `#title`, `#content` (default) |
-| BaseInput           | InputText              | `v-model`, `placeholder` |
-| BaseBadge           | Tag                    | `:value`, `severity` |
-| BaseTabs            | Tabs                   | TabList + TabPanels + Tab + TabPanel |
-| BaseDateRangePicker | DatePicker             | `selectionMode="range"`, `v-model` |
-| BasePagination      | Paginator              | `:rows`, `:totalRecords`, `@page` |
-| BaseProgress        | ProgressBar            | `:value` |
-| SkeletonLoader      | Skeleton               | `width`, `height` |
-| ErrorCard           | Message                | `severity="error"`, slot ou `content` |
-| EmptyState          | Message                | `severity="info"` ou Panel com ícone/texto |
-| BaseDropdown        | Menu / Select          | Conforme uso (menu de opções ou select) |
-| BaseAccordion       | Accordion              | AccordionPanel + AccordionHeader + AccordionContent |
-| ConfirmDialog       | ConfirmDialog          | useConfirm() + `<ConfirmDialog />` |
-| FormSection         | Fieldset               | `legend` |
-| BaseAvatar          | Avatar                 | `image` ou slot |
-| SectionHeader       | —                      | Manter ou usar Divider + título |
-| ThemeToggle         | Button                 | `icon="pi pi-moon"` / `"pi pi-sun"` |
+| Old Component | PrimeVue | Notes |
+|---------------|----------|-------|
+| BaseButton | Button | `label`, `severity` (primary/secondary/danger), `variant="outlined"`, `size="small"`, `:loading` |
+| BaseModal | Dialog | `v-model:visible`, `header`, `modal`, `@hide` |
+| BaseToast | Toast + useToast() | Already migrated via composable |
+| BaseBreadcrumb | Breadcrumb | `:model="items"` (array with `{ label, to? }`) |
+| BaseCard | Card | Slots: `#title`, `#content` (default) |
+| BaseInput | InputText | `v-model`, `placeholder` |
+| BaseBadge | Tag | `:value`, `severity` |
+| BaseTabs | Tabs | TabList + TabPanels + Tab + TabPanel |
+| BaseDateRangePicker | DatePicker | `selectionMode="range"`, `v-model` |
+| BasePagination | Paginator | `:rows`, `:totalRecords`, `@page` |
+| BaseProgress | ProgressBar | `:value` |
+| SkeletonLoader | Skeleton | `width`, `height` |
+| ErrorCard | Message | `severity="error"`, slot or `content` |
+| EmptyState | Message | `severity="info"` or Panel with icon/text |
+| BaseDropdown | Menu / Select | Depending on usage (options menu or select) |
+| BaseAccordion | Accordion | AccordionPanel + AccordionHeader + AccordionContent |
+| ConfirmDialog | ConfirmDialog | useConfirm() + `<ConfirmDialog />` |
+| FormSection | Fieldset | `legend` |
+| BaseAvatar | Avatar | `image` or slot |
+| SectionHeader | — | Keep or use Divider + title |
+| ThemeToggle | Button | `icon="pi pi-moon"` / `"pi pi-sun"` |
 
-## Arquivos que ainda usam componentes antigos
+## Files Still Using Old Components
 
-Substituir imports e template conforme o mapeamento acima:
+Replace imports and template according to the mapping above:
 
 - `DashboardView.vue` — SkeletonLoader, ErrorCard, EmptyState
 - `SessionDetailView.vue` — BaseBadge, BaseButton, ErrorCard, KeyValueList, SkeletonLoader
@@ -58,13 +58,13 @@ Substituir imports e template conforme o mapeamento acima:
 - `TechnologyDetailMural.vue` — BaseButton
 - `TechnologyDetailReminders.vue` — BaseButton
 - `FilterBar.vue` — BaseButton, BaseInput, BaseDateRangePicker
-- `ConfirmDialog.vue` — BaseModal, BaseButton (substituir por PrimeVue ConfirmDialog)
+- `ConfirmDialog.vue` — BaseModal, BaseButton (replace with PrimeVue ConfirmDialog)
 - `AppSidebar.vue` / `AppTopBar.vue` / `AppMenuDropdown.vue` — ThemeToggle
 - `TechDistributionWidget.vue` — SkeletonLoader
 - `TimeSeriesWidget.vue` — EmptyState, SkeletonLoader
 - `HeatmapWidget.vue` — SkeletonLoader
 - `WeeklyComparisonWidget.vue` — SkeletonLoader
-- `KpiCards.vue` — StatCard (manter ou virar Card)
+- `KpiCards.vue` — StatCard (keep or convert to Card)
 - `GoalsWidget.vue` — BaseCard, BaseProgress, BaseButton
 - `LogSessionWidget.vue` — BaseCard
 - `TechnologyStudyWidget.vue` — BaseCard
@@ -73,27 +73,27 @@ Substituir imports e template conforme o mapeamento acima:
 - `SearchInput.vue` — BaseInput
 - `GoalCard.vue` — BaseCard, BaseProgress, BaseButton
 
-## Uso do ConfirmDialog (PrimeVue)
+## ConfirmDialog Usage (PrimeVue)
 
 ```ts
-// main.ts ou App.vue: registrar ConfirmDialog e ConfirmationService
+// main.ts or App.vue: register ConfirmDialog and ConfirmationService
 import ConfirmationService from 'primevue/confirmationservice'
 import ConfirmDialog from 'primevue/confirmdialog'
 app.use(ConfirmationService)
 app.component('ConfirmDialog', ConfirmDialog)
 
-// No componente:
+// In the component:
 import { useConfirm } from 'primevue/useconfirm'
 const confirm = useConfirm()
 confirm.require({
-  message: 'Tem certeza?',
-  header: 'Confirmação',
+  message: 'Are you sure?',
+  header: 'Confirmation',
   accept: () => { /* ok */ },
   reject: () => { /* cancel */ }
 })
 ```
 
-## Referência
+## Reference
 
 - [PrimeVue 4](https://primevue.org/)
-- [Tema Aura](https://primevue.org/theming/#aura) (já configurado)
+- [Aura Theme](https://primevue.org/theming/#aura) (already configured)

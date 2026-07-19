@@ -67,4 +67,54 @@ app.use(VueViewer, {
     zIndex: 12000,
   },
 })
+
+// Sentry: production error tracking (free tier: 5K errors/month)
+if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
+  import('@sentry/vue').then((Sentry) => {
+    Sentry.init({
+      app,
+      dsn: import.meta.env.VITE_SENTRY_DSN,
+      integrations: [
+        Sentry.browserTracingIntegration({ router }),
+      ],
+      tracesSampleRate: 0.1,
+      environment: import.meta.env.MODE,
+    })
+  }).catch(() => { /* chunk fail — Sentry indisponível */ })
+}
+
+// Global error handler: Sentry in production, console in development
+app.config.errorHandler = (err, _instance, info) => {
+  if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
+    import('@sentry/vue').then((Sentry) => {
+      Sentry.captureException(err instanceof Error ? err : new Error(String(err)), {
+        tags: { source: 'vue.errorHandler', info },
+      })
+    }).catch(() => {})
+  } else if (import.meta.env.DEV) {
+    console.error('[Global Error]', err, info)
+  }
+}
+
+// Capture unhandled errors not caught by Vue's errorHandler
+window.addEventListener('error', (event) => {
+  if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
+    import('@sentry/vue').then((Sentry) => {
+      Sentry.captureException(event.error || new Error(event.message), {
+        tags: { source: 'window.onerror' },
+      })
+    }).catch(() => {})
+  }
+})
+
+window.addEventListener('unhandledrejection', (event) => {
+  if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
+    import('@sentry/vue').then((Sentry) => {
+      Sentry.captureException(event.reason, {
+        tags: { source: 'unhandledrejection' },
+      })
+    }).catch(() => {})
+  }
+})
+
 app.mount('#app')

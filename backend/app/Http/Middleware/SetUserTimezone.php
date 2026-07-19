@@ -5,16 +5,17 @@ namespace App\Http\Middleware;
 use Closure;
 use DateTimeZone;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\Response;
 
-/** Middleware que define app.timezone conforme timezone do usuário autenticado. */
 class SetUserTimezone
 {
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
         if ($user && $user->timezone && $this->isValidTimezone($user->timezone)) {
-            config(['app.timezone' => $user->timezone]);
+            // Armazenar timezone no request para uso local (não mutar Carbon global)
+            $request->attributes->set('user_timezone', $user->timezone);
         }
 
         return $next($request);

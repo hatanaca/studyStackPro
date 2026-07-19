@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:8080'
 const TEST_EMAIL = `e2e-session-${Date.now()}@example.com`
-const TEST_PASSWORD = 'TestPassword123!'
+const TEST_PASSWORD = process.env.E2E_TEST_PASSWORD || 'TestPassword123!'
 
 test.describe('Study Sessions Flow', () => {
   test.beforeAll(async ({ browser }) => {

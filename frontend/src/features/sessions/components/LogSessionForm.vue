@@ -105,47 +105,9 @@ onBeforeUnmount(() => {
 
 function onStudytrackReminderRemoved(ev: Event) {
   const d = (ev as CustomEvent<{ technologyId?: string; text?: string }>).detail
-  // #region agent log
-  fetch('http://127.0.0.1:7251/ingest/086e8d00-457e-4a30-82b0-abf450d19c28', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '4b11d9' },
-    body: JSON.stringify({
-      sessionId: '4b11d9',
-      location: 'LogSessionForm.vue:onStudytrackReminderRemoved',
-      message: 'reminder removed (registrar sessão)',
-      data: {
-        hasDetail: !!d,
-        tidMatch: d?.technologyId === technologyId.value,
-        techId: technologyId.value,
-        eventTech: d?.technologyId,
-      },
-      timestamp: Date.now(),
-      hypothesisId: 'H2',
-    }),
-  }).catch(() => {})
-  // #endregion
   if (!d?.technologyId || !d.text?.trim()) return
   if (d.technologyId !== technologyId.value) return
-  const before = notes.value
   notes.value = stripNotesLinesMatching(notes.value, d.text)
-  // #region agent log
-  fetch('http://127.0.0.1:7251/ingest/086e8d00-457e-4a30-82b0-abf450d19c28', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '4b11d9' },
-    body: JSON.stringify({
-      sessionId: '4b11d9',
-      location: 'LogSessionForm.vue:afterStripNotes',
-      message: 'observações após strip',
-      data: {
-        beforeLen: before.length,
-        afterLen: notes.value.length,
-        changed: before !== notes.value,
-      },
-      timestamp: Date.now(),
-      hypothesisId: 'H2',
-    }),
-  }).catch(() => {})
-  // #endregion
 }
 
 function validate(): boolean {

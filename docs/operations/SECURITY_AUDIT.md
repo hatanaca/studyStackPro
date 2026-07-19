@@ -1,65 +1,65 @@
-# Auditoria de segurança — StudyTrack Pro
+# Security Audit — StudyTrack Pro
 
-**Data do relatório original:** 2026-03-11  
-**Última revisão documental:** alinhada ao código no repositório (Laravel 11, Sanctum, Docker/OpenResty).
+**Original report date:** 2026-03-11
+**Last document review:** aligned with repository code (Laravel 11, Sanctum, Docker/OpenResty).
 
-Este ficheiro resume **riscos típicos** e o que **já está refletido no código** versus o que depende **sempre do ambiente** (`.env` de produção, TLS, segredos).
-
----
-
-## 1. Estado no código (referência)
-
-| Tema | Onde verificar | Comportamento esperado no repo |
-|------|----------------|--------------------------------|
-| CORS | `backend/config/cors.php` | Sem fallback para `*` quando `CORS_ALLOWED_ORIGINS` está vazio |
-| Tokens Sanctum | `backend/config/sanctum.php` | `expiration` definido (ex.: `1440` minutos) |
-| Rate limit login/register | `backend/app/Providers/AppServiceProvider.php` | Limiters `login` (3/min IP) e `register` (5/min IP) |
-| Rate limit API | `backend/routes/api.php` | Grupos `throttle:*` e `throttle.sliding` em mutações de sessões |
-| Fail-open Lua | `backend/config/services.php` | `rate_limit.fail_open` (env `RATE_LIMIT_FAIL_OPEN`) |
-| Horizon | `AppServiceProvider` + `config/app.php` | Acesso por `HORIZON_ADMIN_EMAILS` |
-| Borda HTTP | `docker/nginx/conf.d/studytrack.conf` | OpenResty + headers; validação de token revogado (ver `DOCUMENTACAO_TECNICA_LUA.md`) |
+This file summarizes **typical risks** and what **is already reflected in the code** versus what **always depends on the environment** (production `.env`, TLS, secrets).
 
 ---
 
-## 2. Depende exclusivamente de produção / deploy
+## 1. State in Code (Reference)
 
-Estes pontos **não** ficam “corrigidos” só com o código versionado:
-
-| Risco | Mitigação |
-|-------|-----------|
-| `APP_DEBUG=true` em produção | `APP_DEBUG=false` no `.env` do servidor |
-| URLs em HTTP | `APP_URL`, `REVERB_SCHEME`/`wss`, certificados TLS |
-| Senhas fracas | `DB_PASSWORD`, `REDIS_PASSWORD` fortes; `requirepass` no Redis |
-| CORS aberto | `CORS_ALLOWED_ORIGINS` com origens reais (sem `*`) |
-| Segredos no Git | Nunca commitar `.env` com valores reais |
-| Dependências vulneráveis | `composer audit`, `npm audit` no CI e localmente |
-
-Passo a passo: [DEPLOY_SECURITY_PASSO_A_PASSO.md](DEPLOY_SECURITY_PASSO_A_PASSO.md).
+| Topic | Where to Check | Expected Behavior in Repo |
+|-------|----------------|---------------------------|
+| CORS | `backend/config/cors.php` | No fallback to `*` when `CORS_ALLOWED_ORIGINS` is empty |
+| Sanctum Tokens | `backend/config/sanctum.php` | `expiration` defined (e.g., `1440` minutes) |
+| Login/Register Rate Limit | `backend/app/Providers/AppServiceProvider.php` | `login` (3/min IP) and `register` (5/min IP) limiters |
+| API Rate Limit | `backend/routes/api.php` | `throttle:*` and `throttle.sliding` groups on session mutations |
+| Lua Fail-open | `backend/config/services.php` | `rate_limit.fail_open` (env `RATE_LIMIT_FAIL_OPEN`) |
+| Horizon | `AppServiceProvider` + `config/app.php` | Access via `HORIZON_ADMIN_EMAILS` |
+| HTTP Edge | `docker/nginx/conf.d/studytrack.conf` | OpenResty + headers; revoked token validation (see `DOCUMENTACAO_TECNICA_LUA.md`) |
 
 ---
 
-## 3. OWASP — leitura rápida (2023)
+## 2. Exclusively Depends on Production / Deploy
 
-| ID | Tema | Notas para este projeto |
-|----|------|-------------------------|
-| A01 | Controlo de acesso | Ownership em serviços; Horizon restrito por email; canais WS privados |
-| A02 | Falhas criptográficas | HTTPS em produção; tokens com expiração; Redis autenticado |
-| A03 | Injeção | Eloquent + Form Requests; manter validação em novos endpoints |
-| A04 | Design inseguro | Revisar decisões “fail-open” no edge e no rate limit Lua |
-| A05 | Configuração incorreta | `.env` de produção, headers TLS, debug desligado |
-| A06 | Componentes vulneráveis | Auditorias Composer/npm periódicas |
-| A07 | Falhas de autenticação | Throttles em login/register; Sanctum |
-| A09 | Logging / monitorização | `LogApiRequests`, health checks; evoluir para agregação centralizada |
+These points **cannot** be "fixed" just by versioned code:
 
----
+| Risk | Mitigation |
+|------|------------|
+| `APP_DEBUG=true` in production | `APP_DEBUG=false` in server `.env` |
+| HTTP URLs | `APP_URL`, `REVERB_SCHEME`/`wss`, TLS certificates |
+| Weak passwords | Strong `DB_PASSWORD`, `REDIS_PASSWORD`; `requirepass` on Redis |
+| Open CORS | `CORS_ALLOWED_ORIGINS` with real origins (no `*`) |
+| Secrets in Git | Never commit `.env` with real values |
+| Vulnerable dependencies | `composer audit`, `npm audit` in CI and locally |
 
-## 4. Ações recomendadas (contínuas)
-
-1. Manter [DEPLOY_SECURITY_PASSO_A_PASSO.md](DEPLOY_SECURITY_PASSO_A_PASSO.md) sincronizado com o que o servidor realmente usa.  
-2. Rodar `composer audit` e `npm audit` antes de releases.  
-3. Rever periodicamente `docs/technical/DOCUMENTACAO_TECNICA_LUA.md` após mudanças em OpenResty/Redis/PL-Lua.  
-4. Registar incidentes e correções em [SECURITY_FIXES_COMPLETED.md](SECURITY_FIXES_COMPLETED.md) (sem expor segredos).
+Step-by-step: [DEPLOY_SECURITY_PASSO_A_PASSO.md](DEPLOY_SECURITY_PASSO_A_PASSO.md).
 
 ---
 
-**Resumo:** o repositório inclui várias **defesas em profundidade** no código; **produção segura** exige `.env`, TLS, Redis e políticas de deploy corretas — não deployar com valores de exemplo.
+## 3. OWASP — Quick Reference (2023)
+
+| ID | Topic | Notes for This Project |
+|----|-------|------------------------|
+| A01 | Broken Access Control | Ownership in services; Horizon restricted by email; private WS channels |
+| A02 | Cryptographic Failures | HTTPS in production; tokens with expiration; authenticated Redis |
+| A03 | Injection | Eloquent + Form Requests; maintain validation on new endpoints |
+| A04 | Insecure Design | Review "fail-open" decisions at the edge and in Lua rate limit |
+| A05 | Security Misconfiguration | Production `.env`, TLS headers, debug disabled |
+| A06 | Vulnerable Components | Periodic Composer/npm audits |
+| A07 | Authentication Failures | Throttles on login/register; Sanctum |
+| A09 | Logging / Monitoring | `LogApiRequests`, health checks; evolve toward centralized aggregation |
+
+---
+
+## 4. Recommended Actions (Ongoing)
+
+1. Keep [DEPLOY_SECURITY_PASSO_A_PASSO.md](DEPLOY_SECURITY_PASSO_A_PASSO.md) synchronized with what the server actually uses.
+2. Run `composer audit` and `npm audit` before releases.
+3. Periodically review `docs/technical/DOCUMENTACAO_TECNICA_LUA.md` after OpenResty/Redis/PL-Lua changes.
+4. Log incidents and fixes in [SECURITY_FIXES_COMPLETED.md](SECURITY_FIXES_COMPLETED.md) (without exposing secrets).
+
+---
+
+**Summary:** the repository includes several **defense-in-depth** measures in the code; **secure production** requires correct `.env`, TLS, Redis, and deploy policies — do not deploy with example values.

@@ -5,6 +5,7 @@ import Dialog from 'primevue/dialog'
 import LogSessionForm from './LogSessionForm.vue'
 import type { SessionSavedPayload } from './LogSessionForm.vue'
 import { useAnalyticsStore } from '@/stores/analytics.store'
+import { handleError } from '@/utils/handleError'
 
 const analyticsStore = useAnalyticsStore()
 const showDialog = ref(false)
@@ -16,11 +17,11 @@ function onSuccess(payload: SessionSavedPayload) {
     color: payload.technologyColor,
   })
 
-  analyticsStore.fetchDashboard(true).catch(() => {})
-  analyticsStore.fetchHeatmap().catch(() => {})
-  analyticsStore.fetchWeekly().catch(() => {})
+  analyticsStore.fetchDashboard(true).catch(handleError('fetchDashboard'))
+  analyticsStore.fetchHeatmap().catch(handleError('fetchHeatmap'))
+  analyticsStore.fetchWeekly().catch(handleError('fetchWeekly'))
   if (analyticsStore.selectedPeriod) {
-    analyticsStore.fetchTimeSeries(analyticsStore.selectedPeriod).catch(() => {})
+    analyticsStore.fetchTimeSeries(analyticsStore.selectedPeriod).catch(handleError('fetchTimeSeries'))
   }
   showDialog.value = false
 }

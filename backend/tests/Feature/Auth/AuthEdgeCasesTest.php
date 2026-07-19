@@ -22,8 +22,8 @@ class AuthEdgeCasesTest extends TestCase
         $response = $this->withHeaders($this->spaHeaders())->postJson('/api/v1/auth/register', [
             'name' => 'Duplicate',
             'email' => 'existing@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
         ]);
 
         $response->assertStatus(422);
@@ -34,7 +34,7 @@ class AuthEdgeCasesTest extends TestCase
         $response = $this->withHeaders($this->spaHeaders())->postJson('/api/v1/auth/register', [
             'name' => 'Test',
             'email' => 'test@example.com',
-            'password' => 'password123',
+            'password' => 'Password123',
             'password_confirmation' => 'different',
         ]);
 
@@ -52,7 +52,7 @@ class AuthEdgeCasesTest extends TestCase
     {
         $response = $this->withHeaders($this->spaHeaders())->postJson('/api/v1/auth/login', [
             'email' => 'nonexistent@example.com',
-            'password' => 'password123',
+            'password' => 'Password123',
         ]);
 
         $response->assertStatus(401);
@@ -89,14 +89,14 @@ class AuthEdgeCasesTest extends TestCase
 
     public function test_change_password_rejects_wrong_current_password(): void
     {
-        $user = User::factory()->create(['password' => 'password123']);
+        $user = User::factory()->create(['password' => 'Password123']);
         $token = $user->createToken('api-token')->plainTextToken;
 
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/v1/auth/change-password', [
                 'current_password' => 'wrong',
-                'password' => 'newpassword123',
-                'password_confirmation' => 'newpassword123',
+                'password' => 'newPassword123',
+                'password_confirmation' => 'newPassword123',
             ]);
 
         $response->assertStatus(422);
@@ -104,14 +104,14 @@ class AuthEdgeCasesTest extends TestCase
 
     public function test_change_password_with_correct_password_succeeds(): void
     {
-        $user = User::factory()->create(['password' => 'password123']);
+        $user = User::factory()->create(['password' => 'Password123']);
         $token = $user->createToken('api-token')->plainTextToken;
 
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/v1/auth/change-password', [
-                'current_password' => 'password123',
-                'password' => 'newpassword456',
-                'password_confirmation' => 'newpassword456',
+                'current_password' => 'Password123',
+                'password' => 'NewPassword456',
+                'password_confirmation' => 'NewPassword456',
             ]);
 
         $response->assertStatus(200);
@@ -140,8 +140,8 @@ class AuthEdgeCasesTest extends TestCase
         $response = $this->withHeaders($this->spaHeaders())->postJson('/api/v1/auth/register', [
             'name' => 'Full Test',
             'email' => 'full@test.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
             'timezone' => 'America/Sao_Paulo',
         ]);
 

@@ -1,28 +1,28 @@
-﻿# Lista de verificação — segurança (deploy)
+# Verification Checklist — Security (Deploy)
 
-Use este ficheiro como **roteiro manual** no servidor ou no pipeline de release. Não substitui o código: confirme sempre os ficheiros no Git.
+Use this file as a **manual script** on the server or in the release pipeline. It does not replace the code: always confirm files in Git.
 
-> **Importante:** Não commite `.env` de produção nem exemplos com segredos reais. Gere valores com `openssl rand` e `php artisan key:generate`.
+> **Important:** Do not commit production `.env` or examples with real secrets. Generate values with `openssl rand` and `php artisan key:generate`.
 
 ---
 
-## Antes de ir a produção
+## Before Going to Production
 
 - [ ] `APP_ENV=production`, `APP_DEBUG=false`
-- [ ] `APP_URL` com `https://`
-- [ ] `CORS_ALLOWED_ORIGINS` com origens explícitas (sem `*`)
-- [ ] `DB_PASSWORD` e `REDIS_PASSWORD` fortes; `requirepass` no Redis alinhado
-- [ ] `HORIZON_ADMIN_EMAILS` definido
-- [ ] `config/cors.php` e `config/sanctum.php` como na versão atual do repositório
-- [ ] TLS terminado no proxy (Nginx/OpenResty) e redirect HTTP → HTTPS
-- [ ] `composer audit` e `npm audit` sem vulnerabilidades críticas não tratadas
+- [ ] `APP_URL` with `https://`
+- [ ] `CORS_ALLOWED_ORIGINS` with explicit origins (no `*`)
+- [ ] `DB_PASSWORD` and `REDIS_PASSWORD` strong; `requirepass` in Redis aligned
+- [ ] `HORIZON_ADMIN_EMAILS` defined
+- [ ] `config/cors.php` and `config/sanctum.php` match current repository version
+- [ ] TLS terminated at the proxy (Nginx/OpenResty) and HTTP → HTTPS redirect
+- [ ] `composer audit` and `npm audit` with no unhandled critical vulnerabilities
 
 ---
 
-## Ficheiros de referência no repo
+## Reference Files in Repo
 
-| Área | Caminho |
-|------|---------|
+| Area | Path |
+|------|------|
 | CORS | `backend/config/cors.php` |
 | Sanctum | `backend/config/sanctum.php` |
 | Rate limits | `backend/app/Providers/AppServiceProvider.php`, `backend/routes/api.php` |
@@ -31,10 +31,10 @@ Use este ficheiro como **roteiro manual** no servidor ou no pipeline de release.
 
 ---
 
-## Documentação relacionada
+## Related Documentation
 
-- [SECURITY_AUDIT.md](SECURITY_AUDIT.md) — visão geral e OWASP
-- [DEPLOY_SECURITY_PASSO_A_PASSO.md](DEPLOY_SECURITY_PASSO_A_PASSO.md) — passos
-- [SECURITY_FIXES_COMPLETED.md](SECURITY_FIXES_COMPLETED.md) — registo de alterações (sem segredos)
+- [SECURITY_AUDIT.md](SECURITY_AUDIT.md) — overview and OWASP
+- [DEPLOY_SECURITY_PASSO_A_PASSO.md](DEPLOY_SECURITY_PASSO_A_PASSO.md) — step-by-step
+- [SECURITY_FIXES_COMPLETED.md](SECURITY_FIXES_COMPLETED.md) — change log (no secrets)
 
-**Pontuação “antes/depois” ou chaves geradas** não devem ser copiadas deste repositório para o ambiente real — são apenas ilustrativas se aparecerem em histórico antigo.
+**"Before/after" scores or generated keys** should not be copied from this repository to the real environment — they are illustrative only if they appear in old history.

@@ -1,31 +1,31 @@
-﻿# Correções aplicadas (histórico resumido)
+# Applied Fixes (Summary History)
 
-Notas sobre problemas que já foram tratados no **StudyTrack Pro**. Para o estado atual do código, prefira os testes (`make test`) e a documentação técnica em [../technical/DOCUMENTACAO_TECNICA.md](../technical/DOCUMENTACAO_TECNICA.md).
+Notes on issues that have already been handled in **StudyTrack Pro**. For the current state of the code, prefer tests (`make test`) and technical documentation at [../technical/DOCUMENTACAO_TECNICA.md](../technical/DOCUMENTACAO_TECNICA.md).
 
 ---
 
-## Stack (referência)
+## Stack (Reference)
 
-- **Backend:** Laravel 11, PHP 8.2+, PostgreSQL 16, Redis 7, Sanctum, Reverb, Horizon  
-- **Frontend:** Vue 3, Vite 5, TypeScript  
+- **Backend:** Laravel 11, PHP 8.2+, PostgreSQL 16, Redis 7, Sanctum, Reverb, Horizon
+- **Frontend:** Vue 3, Vite 5, TypeScript
 - **Infra:** Docker Compose, OpenResty (Nginx), PHP-FPM, Node (dev)
 
 ---
 
-## Itens já abordados no repositório (exemplos)
+## Items Already Addressed in the Repository (Examples)
 
-1. **Seeders / PostgreSQL** — Ajustes em seeders para respeitar `NOT NULL` e utilizadores de demonstração (ver `backend/database/seeders/`).
-2. **Horizon** — `Laravel\Horizon\HorizonServiceProvider` registado em `backend/config/app.php` quando Horizon está instalado.
-3. **Encoding UTF-8** — Ficheiros PHP do projeto devem estar em UTF-8 (acentos em mensagens e seeders).
-4. **CORS, Sanctum, throttles** — Ver `backend/config/cors.php`, `backend/config/sanctum.php`, `AppServiceProvider`, `routes/api.php`.
-5. **Métricas / filas** — `RecalculateMetricsJob` na fila `metrics`; supervisão em `config/horizon.php`.
+1. **Seeders / PostgreSQL** — Adjustments to seeders to respect `NOT NULL` and demo users (see `backend/database/seeders/`).
+2. **Horizon** — `Laravel\Horizon\HorizonServiceProvider` registered in `backend/config/app.php` when Horizon is installed.
+3. **UTF-8 Encoding** — Project PHP files must be UTF-8 (accents in messages and seeders).
+4. **CORS, Sanctum, throttles** — See `backend/config/cors.php`, `backend/config/sanctum.php`, `AppServiceProvider`, `routes/api.php`.
+5. **Metrics / queues** — `RecalculateMetricsJob` on the `metrics` queue; supervision in `config/horizon.php`.
 
 ---
 
-## Onde acompanhar novas correções
+## Where to Track New Fixes
 
-- Commits e PRs no Git  
-- [ERROS-CORRIGIDOS.md](ERROS-CORRIGIDOS.md) (se mantido)  
-- Testes de feature em `backend/tests/Feature/`
+- Commits and PRs in Git
+- [ERROS-CORRIGIDOS.md](ERROS-CORRIGIDOS.md) (if maintained)
+- Feature tests in `backend/tests/Feature/`
 
-*Versões antigas deste ficheiro continham blocos de código com formatação corrompida; o conteúdo foi condensado para evitar informação incorreta ou ilegível.*
+*Older versions of this file contained code blocks with corrupted formatting; the content was condensed to avoid incorrect or illegible information.*

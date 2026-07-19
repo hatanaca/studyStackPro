@@ -5,7 +5,6 @@ namespace App\Jobs;
 use App\Events\Analytics\MetricsRecalculated;
 use App\Models\User;
 use App\Modules\Analytics\Aggregators\MetricsAggregator;
-use App\Modules\Analytics\Services\AnalyticsService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -48,7 +47,7 @@ class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
         $this->onQueue('metrics');
     }
 
-    public function handle(MetricsAggregator $aggregator, AnalyticsService $analyticsService): void
+    public function handle(MetricsAggregator $aggregator): void
     {
         $user = User::find($this->userId);
         if (! $user) {
@@ -64,10 +63,15 @@ class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
             $aggregator->recalculateDailyMinutes($this->userId, $timezone);
         });
 
-        Cache::tags(['analytics', "analytics:user:{$this->userId}"])->flush();
-        $dashboardData = $analyticsService->getDashboardData($this->userId);
-
-        event(new MetricsRecalculated($this->userId, $dashboardData));
+        try {
+            Cache::tags(['analytics', "analytics:user:{$this->userId}"])->flush();
+            event(new MetricsRecalculated($this->userId));
+        } catch (\Throwable $e) {
+            Log::warning('Post-recalc cache flush or broadcast failed', [
+                'userId' => $this->userId,
+                'exception' => $e,
+            ]);
+        }
     }
 
     /** Callback de falha: log para debug */
@@ -76,7 +80,7 @@ class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
         Log::error('RecalculateMetricsJob failed', [
             'userId' => $this->userId,
             'attempt' => $this->attempts(),
-            'error' => $e->getMessage(),
+            'exception' => $e,
         ]);
     }
 }

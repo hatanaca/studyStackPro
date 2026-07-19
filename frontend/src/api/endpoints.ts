@@ -8,6 +8,7 @@ export const ENDPOINTS = {
     login: '/auth/login',
     register: '/auth/register',
     logout: '/auth/logout',
+    oauthComplete: '/auth/oauth-complete',
     me: '/auth/me',
     updateProfile: '/auth/me',
     changePassword: '/auth/change-password',
@@ -43,5 +44,14 @@ export const ENDPOINTS = {
     search: '/youtube/search',
     videos: '/youtube/videos',
     playlists: '/youtube/playlists',
+  },
+  linkedin: {
+    status: '/linkedin/status',
+    share: '/linkedin/share',
+    disconnect: '/linkedin/disconnect',
+  },
+  code: {
+    execute: '/code/execute',
+    languages: '/code/languages',
   },
 } as const

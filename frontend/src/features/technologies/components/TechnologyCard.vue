@@ -25,15 +25,16 @@ const subtitle = computed(() => {
 
 <template>
   <article
+    v-if="technology"
     class="tech-card-v2"
-    :style="{ '--tech-color': technology.color }"
+    :style="{ '--tech-color': technology.color ?? 'var(--color-primary)' }"
     @mouseenter="prefetchTechnologyDetailView"
   >
     <div class="tech-card-v2__accent" aria-hidden="true" />
     <div class="tech-card-v2__body">
       <div class="tech-card-v2__head">
-        <h3 class="tech-card-v2__title">{{ technology.name }}</h3>
-        <span class="tech-card-v2__slug" :title="technology.slug">{{ technology.slug }}</span>
+        <h3 class="tech-card-v2__title">{{ technology?.name ?? 'Sem nome' }}</h3>
+        <span class="tech-card-v2__slug" :title="technology?.slug">{{ technology?.slug }}</span>
       </div>
       <p class="tech-card-v2__desc">{{ subtitle }}</p>
       <div class="tech-card-v2__actions">
@@ -42,7 +43,7 @@ const subtitle = computed(() => {
           size="md"
           class="tech-card-v2__primary"
           type="button"
-          @click="router.push({ name: 'technology-detail', params: { id: technology.id } })"
+          @click="technology?.id && router.push({ name: 'technology-detail', params: { id: technology.id } })"
         >
           Sessões &amp; Detalhes
         </BaseButton>

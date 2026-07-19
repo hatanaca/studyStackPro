@@ -21,8 +21,8 @@ class AuthTest extends TestCase
         $response = $this->withHeaders($this->spaHeaders())->postJson('/api/v1/auth/register', [
             'name' => 'John Doe',
             'email' => 'john@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
         ]);
 
         $response->assertStatus(201)
@@ -44,12 +44,12 @@ class AuthTest extends TestCase
     {
         User::factory()->create([
             'email' => 'john@example.com',
-            'password' => 'password123',
+            'password' => 'Password123',
         ]);
 
         $response = $this->withHeaders($this->spaHeaders())->postJson('/api/v1/auth/login', [
             'email' => 'john@example.com',
-            'password' => 'password123',
+            'password' => 'Password123',
         ]);
 
         $response->assertStatus(200)
