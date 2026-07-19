@@ -1,80 +1,64 @@
-import { computed, onMounted, onUnmounted, watch } from 'vue'
-import { useSessionsStore } from '@/stores/sessions.store'
+import { ref, computed, onUnmounted } from 'vue'
+import { sessionsApi } from '@/api/modules/sessions.api'
+import type { StudySession } from '@/types/domain.types'
 
-/** Intervalo do timer em ms (atualização a cada segundo) */
-const POLL_INTERVAL_MS = 1000
+// Singleton compartilhado entre todos os consumidores
+let activeSession = ref<StudySession | null>(null)
+let elapsedSeconds = ref(0)
+let timerInterval: ReturnType<typeof setInterval> | null = null
+let consumerCount = 0
 
-/**
- * Composables do timer de sessão ativa.
- * Busca sessão ativa no mount, incrementa elapsedSeconds a cada segundo.
- * Retorna activeSession, elapsedSeconds, formattedTime, fetchActive.
- */
-export function useSessionTimer() {
-  const store = useSessionsStore()
-  let intervalId: ReturnType<typeof setInterval> | null = null
-  let baseTimestamp: number | null = null
-  let baseElapsed = 0
-  let isTicking = false
-
-  function startTicking() {
-    if (isTicking) return
-    stopTicking()
-    isTicking = true
-    baseTimestamp = Date.now()
-    baseElapsed = store.elapsedSeconds
-    intervalId = setInterval(() => {
-      if (baseTimestamp !== null) {
-        const drift = Math.floor((Date.now() - baseTimestamp) / 1000)
-        store.setElapsedSeconds(baseElapsed + drift)
-      }
-    }, POLL_INTERVAL_MS)
-  }
-
-  function stopTicking() {
-    if (intervalId) {
-      clearInterval(intervalId)
-      intervalId = null
+function startTimer() {
+  if (timerInterval) return
+  timerInterval = setInterval(() => {
+    if (activeSession.value?.started_at) {
+      const start = new Date(activeSession.value.started_at).getTime()
+      elapsedSeconds.value = Math.floor((Date.now() - start) / 1000)
     }
-    baseTimestamp = null
-    isTicking = false
-  }
+  }, 1000)
+}
 
-  async function fetchActive() {
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+}
+
+function formatTime(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+export function useSessionTimer() {
+  consumerCount++
+
+  async function refresh() {
     try {
-      const session = await store.fetchActiveSession()
-      if (session) {
-        startTicking()
+      const { data } = await sessionsApi.getActive()
+      activeSession.value = data?.data ?? null
+      if (activeSession.value) {
+        startTimer()
       } else {
-        stopTicking()
+        stopTimer()
       }
     } catch {
-      stopTicking()
+      activeSession.value = null
+      stopTimer()
     }
   }
 
-  // Reage a mudanças da sessão ativa originadas por WebSocket (setActiveSession/clearActiveSession).
-  // onMounted só cobre o carregamento inicial; este watch cobre eventos assíncronos posteriores.
-  watch(
-    () => store.activeSession,
-    (session, prevSession) => {
-      if (session && !prevSession) {
-        startTicking()
-      } else if (!session && prevSession) {
-        stopTicking()
-      }
+  onUnmounted(() => {
+    consumerCount--
+    if (consumerCount <= 0) {
+      stopTimer()
+      consumerCount = 0
     }
-  )
-
-  onMounted(() => {
-    void fetchActive()
   })
-  onUnmounted(() => stopTicking())
 
-  return {
-    activeSession: computed(() => store.activeSession),
-    elapsedSeconds: computed(() => store.elapsedSeconds),
-    formattedTime: computed(() => store.formattedTimer),
-    fetchActive,
-    refresh: fetchActive,
-  }
+  const formattedTime = computed(() => formatTime(elapsedSeconds.value))
+
+  return { activeSession, elapsedSeconds, formattedTime, refresh }
 }

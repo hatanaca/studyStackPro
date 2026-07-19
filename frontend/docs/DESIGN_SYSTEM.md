@@ -1,48 +1,48 @@
-# Design System – StudyTrack Pro
+# Design System — StudyTrack Pro
 
-Este documento descreve os tokens de design e padrões de UI usados no frontend Vue.
-
----
-
-## 1. Cores
-
-### Cores base (tema claro)
-| Token | Uso |
-|-------|-----|
-| `--color-text` | Texto principal |
-| `--color-text-muted` | Texto secundário, legendas |
-| `--color-bg` | Fundo da página |
-| `--color-bg-soft` | Fundo de áreas suaves (hover, chips) |
-| `--color-bg-card` | Fundo de cards e superfícies elevadas |
-| `--color-primary` | Ações principais, links, destaque |
-| `--color-primary-hover` | Hover em botão primário |
-| `--color-primary-soft` | Fundo de destaque suave |
-| `--color-border` | Bordas e divisórias |
-| `--color-focus-ring` | Anel de foco (acessibilidade) |
-
-### Cores semânticas
-| Token | Uso |
-|-------|-----|
-| `--color-success` | Sucesso, confirmação |
-| `--color-success-soft` | Fundo de mensagem de sucesso |
-| `--color-warning` | Aviso |
-| `--color-warning-soft` | Fundo de aviso |
-| `--color-error` | Erro, destruição |
-| `--color-error-soft` | Fundo de erro |
-| `--color-info` | Informação neutra |
-| `--color-info-soft` | Fundo de info |
+This document describes the design tokens and UI patterns used in the Vue frontend.
 
 ---
 
-## 2. Gradientes
-- `--gradient-primary`: botões e destaques (azul → índigo).
-- `--gradient-accent`: destaques secundários (verde → azul).
-- `--gradient-mesh`: fundo sutil da área principal (layout).
+## 1. Colors
+
+### Base Colors (Light Theme)
+| Token | Usage |
+|-------|-------|
+| `--color-text` | Main text |
+| `--color-text-muted` | Secondary text, captions |
+| `--color-bg` | Page background |
+| `--color-bg-soft` | Soft area background (hover, chips) |
+| `--color-bg-card` | Card and elevated surface background |
+| `--color-primary` | Primary actions, links, highlights |
+| `--color-primary-hover` | Primary button hover |
+| `--color-primary-soft` | Soft highlight background |
+| `--color-border` | Borders and dividers |
+| `--color-focus-ring` | Focus ring (accessibility) |
+
+### Semantic Colors
+| Token | Usage |
+|-------|-------|
+| `--color-success` | Success, confirmation |
+| `--color-success-soft` | Success message background |
+| `--color-warning` | Warning |
+| `--color-warning-soft` | Warning background |
+| `--color-error` | Error, destructive |
+| `--color-error-soft` | Error background |
+| `--color-info` | Neutral information |
+| `--color-info-soft` | Info background |
 
 ---
 
-## 3. Espaçamento
-Escala base em `rem`:
+## 2. Gradients
+- `--gradient-primary`: buttons and highlights (blue → indigo).
+- `--gradient-accent`: secondary highlights (green → blue).
+- `--gradient-mesh`: subtle main area background (layout).
+
+---
+
+## 3. Spacing
+Base scale in `rem`:
 - `--spacing-2xs`: 0.125rem
 - `--spacing-xs`: 0.25rem
 - `--spacing-sm`: 0.5rem
@@ -54,81 +54,81 @@ Escala base em `rem`:
 
 ---
 
-## 4. Tipografia
-- **Fonte**: `--font-sans` (Inter + system-ui).
-- **Tamanhos**: `--text-xs` (0.75rem) até `--text-3xl` (1.875rem).
-- Preferir tokens em vez de valores fixos para manter consistência.
+## 4. Typography
+- **Font**: `--font-sans` (Inter + system-ui).
+- **Sizes**: `--text-xs` (0.75rem) to `--text-3xl` (1.875rem).
+- Prefer tokens over fixed values to maintain consistency.
 
 ---
 
-## 5. Raios e sombras
-- **Raios**: `--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-xl`.
-- **Sombras**: `--shadow-sm`, `--shadow-md`, `--shadow-lg`, `--shadow-card-hover`.
-- **Dropdown**: `--dropdown-shadow` para menus suspensos.
+## 5. Border Radius and Shadows
+- **Radius**: `--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-xl`.
+- **Shadows**: `--shadow-sm`, `--shadow-md`, `--shadow-lg`, `--shadow-card-hover`.
+- **Dropdown**: `--dropdown-shadow` for dropdown menus.
 
 ---
 
 ## 6. Motion
-- **Durações**: `--duration-fast` (150ms), `--duration-normal` (250ms), `--duration-slow` (400ms).
+- **Durations**: `--duration-fast` (150ms), `--duration-normal` (250ms), `--duration-slow` (400ms).
 - **Easing**: `--ease-out-expo`, `--ease-in-out`.
-- Respeitar `prefers-reduced-motion` nos estilos globais.
+- Respect `prefers-reduced-motion` in global styles.
 
 ---
 
-## 7. Breakpoints (media queries)
-| Nome | Largura |
-|------|---------|
-| xs   | 480px   |
-| sm   | 640px   |
-| md   | 768px   |
-| lg   | 1024px  |
-| xl   | 1280px  |
+## 7. Breakpoints (Media Queries)
+| Name | Width |
+|------|-------|
+| xs   | 480px |
+| sm   | 640px |
+| md   | 768px |
+| lg   | 1024px |
+| xl   | 1280px |
 
 ---
 
-## 8. Componentes base (UI)
-- **BaseCard**: container com título opcional e slot de ações.
-- **BaseButton**: variantes primary, secondary, ghost, danger, outline; tamanhos sm, md, lg.
-- **BaseInput**: campo de texto com label e mensagem de erro.
-- **BaseModal**: overlay com blur; animação de escala no conteúdo.
-- **BaseToast**: notificações temporárias.
-- **BaseBadge**: rótulos e contadores.
-- **BaseAvatar**: imagem ou iniciais; tamanhos sm, md, lg, xl.
-- **BaseTooltip**: dica ao hover/foco; posições top, bottom, left, right.
-- **BaseTabs**: abas (variantes line, pill, enclosed).
-- **BaseProgress**: barra de progresso (primary, success, warning, error); opção indeterminada.
-- **BaseDropdown**: menu suspenso com slot trigger e conteúdo.
-- **BaseAccordion**: itens expansíveis.
-- **EmptyState**: estado vazio com ícone, título, descrição e ação opcional.
-- **SkeletonLoader**: placeholder de carregamento.
-- **ErrorCard**: mensagem de erro com retry.
-- **ThemeToggle**: alternância tema claro/escuro.
+## 8. Base Components (UI)
+- **BaseCard**: container with optional title and action slot.
+- **BaseButton**: primary, secondary, ghost, danger, outline variants; sm, md, lg sizes.
+- **BaseInput**: text field with label and error message.
+- **BaseModal**: overlay with blur; scale animation on content.
+- **BaseToast**: temporary notifications.
+- **BaseBadge**: labels and counters.
+- **BaseAvatar**: image or initials; sm, md, lg, xl sizes.
+- **BaseTooltip**: hover/focus hint; top, bottom, left, right positions.
+- **BaseTabs**: tabs (line, pill, enclosed variants).
+- **BaseProgress**: progress bar (primary, success, warning, error); indeterminate option.
+- **BaseDropdown**: dropdown menu with trigger and content slot.
+- **BaseAccordion**: expandable items.
+- **EmptyState**: empty state with icon, title, description, and optional action.
+- **SkeletonLoader**: loading placeholder.
+- **ErrorCard**: error message with retry.
+- **ThemeToggle**: light/dark theme switch.
 
 ---
 
-## 9. Utilitários CSS (`utilities.css`)
-Classes para margin/padding (m-0..m-5, mt-*, p-*, gap-*), tipografia (text-xs, font-bold, etc.), display e flex (flex, items-center, justify-between), largura/altura (w-full, min-h-screen), posição (relative, absolute, z-10), bordas e radius (rounded-lg, border), sombras (shadow-md), overflow, cursor, opacidade, transições (transition, transition-colors), acessibilidade (sr-only) e visibilidade responsiva (hide-xs, show-md). Container com max-width responsivo.
+## 9. CSS Utilities (`utilities.css`)
+Classes for margin/padding (m-0..m-5, mt-*, p-*, gap-*), typography (text-xs, font-bold, etc.), display and flex (flex, items-center, justify-between), width/height (w-full, min-h-screen), position (relative, absolute, z-10), borders and radius (rounded-lg, border), shadows (shadow-md), overflow, cursor, opacity, transitions (transition, transition-colors), accessibility (sr-only) and responsive visibility (hide-xs, show-md). Container with responsive max-width.
 
 ---
 
-## 10. Animações e transições
-- **fade**: opacidade.
+## 10. Animations and Transitions
+- **fade**: opacity.
 - **slide**: translateX.
-- **fade-up**: entrada de baixo (opacidade + translateY).
-- **modal**: overlay fade + conteúdo com scale.
-- **tooltip-fade**: usado pelo BaseTooltip.
-- **accordion**: usado pelo BaseAccordion.
-- **dropdown**: usado pelo BaseDropdown.
+- **fade-up**: bottom entry (opacity + translateY).
+- **modal**: overlay fade + content with scale.
+- **tooltip-fade**: used by BaseTooltip.
+- **accordion**: used by BaseAccordion.
+- **dropdown**: used by BaseDropdown.
 
 ---
 
-## 11. Tema escuro
-Ativado com `[data-theme='dark']` no `<html>`. Todas as variáveis de cor, gradiente, sombra e glass são redefinidas para o tema escuro. Scrollbars customizadas para ambos os temas.
+## 11. Dark Theme
+Activated with `[data-theme='dark']` on `<html>`. All color, gradient, shadow, and glass variables are redefined for the dark theme. Custom scrollbars for both themes.
 
 ---
 
-## 12. Acessibilidade
-- Contorno visível com `:focus-visible` usando `--color-primary`.
-- Uso de `role`, `aria-label`, `aria-expanded`, `aria-selected` nos componentes interativos.
-- Suporte a teclado (Tab, Enter, Escape) em modais e dropdowns.
-- Respeito a `prefers-reduced-motion` para reduzir animações.
+## 12. Accessibility
+- Visible outline with `:focus-visible` using `--color-primary`.
+- Use of `role`, `aria-label`, `aria-expanded`, `aria-selected` on interactive components.
+- Keyboard support (Tab, Enter, Escape) in modals and dropdowns.
+- Respect `prefers-reduced-motion` to reduce animations.

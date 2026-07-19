@@ -41,7 +41,7 @@ class YouTubeController extends Controller
 
             return $this->success($result);
         } catch (\Throwable $e) {
-            Log::error('YouTube search error', ['message' => $e->getMessage()]);
+            Log::error('YouTube search error', ['exception' => $e, 'query' => $validated['q'] ?? null]);
 
             return $this->error('Falha ao buscar vídeos. Tente novamente.', 'YOUTUBE_ERROR', null, 502);
         }
@@ -73,7 +73,7 @@ class YouTubeController extends Controller
 
             return $this->success($result);
         } catch (\Throwable $e) {
-            Log::error('YouTube videos error', ['message' => $e->getMessage()]);
+            Log::error('YouTube videos error', ['exception' => $e, 'ids' => $ids]);
 
             return $this->error('Falha ao buscar detalhes dos vídeos.', 'YOUTUBE_ERROR', null, 502);
         }
@@ -97,7 +97,7 @@ class YouTubeController extends Controller
 
             return $this->success($result);
         } catch (\Throwable $e) {
-            Log::error('YouTube playlists error', ['message' => $e->getMessage()]);
+            Log::error('YouTube playlists error', ['exception' => $e, 'user_id' => $user->id]);
 
             return $this->error('Falha ao buscar playlists. Token pode ter expirado. Faça login novamente.', 'YOUTUBE_ERROR', null, 502);
         }

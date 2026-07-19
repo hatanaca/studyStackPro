@@ -4,21 +4,9 @@
  */
 
 /**
- * Escapa entidades HTML para prevenir XSS.
- */
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
-}
-
-/**
  * Cria HTML sandboxed para renderizar código HTML.
  * O código do usuário é inserido diretamente (permitido no contexto de preview).
- * O iframe usa sandbox="allow-same-origin" para restringir scripts.
+ * O iframe usa sandbox="allow-scripts" para restringir scripts.
  */
 export function createSandboxedHTML(code: string): string {
   return `<!DOCTYPE html>
@@ -82,7 +70,7 @@ export function renderInSandbox(
     container.innerHTML = ''
 
     const iframe = document.createElement('iframe')
-    iframe.setAttribute('sandbox', 'allow-same-origin')
+    iframe.setAttribute('sandbox', 'allow-scripts')
     iframe.setAttribute('title', `Preview ${type.toUpperCase()}`)
     iframe.style.width = '100%'
     iframe.style.height = '100%'

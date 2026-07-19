@@ -87,7 +87,8 @@ class TechnologyServiceTest extends TestCase
     public function test_deactivate_sets_is_active_false_and_invalidates_cache(): void
     {
         $tech = Mockery::mock(Technology::class);
-        $tech->shouldReceive('update')->once()->with(['is_active' => false]);
+        $tech->shouldReceive('forceFill')->once()->with(['is_active' => false])->andReturnSelf();
+        $tech->shouldReceive('save')->once();
 
         $this->repository
             ->shouldReceive('findForUser')

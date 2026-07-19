@@ -4,14 +4,11 @@ namespace Tests\Unit\Services;
 
 use App\Modules\CodeExecution\Services\CodeExecutionService;
 use App\Modules\CodeExecution\Services\DockerSandboxService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
 
 class CodeExecutionServiceTest extends TestCase
 {
-    use RefreshDatabase;
-
     private CodeExecutionService $service;
 
     private DockerSandboxService $sandbox;
@@ -78,14 +75,11 @@ class CodeExecutionServiceTest extends TestCase
                 'executionTime' => 50,
             ]);
 
-        $result = $this->service->execute(new \App\Modules\CodeExecution\DTOs\CodeExecutionDTO(
-            code: '<?php echo "hello";',
-            language: 'php',
-            userId: 'user-1',
-        ));
+        $result = $this->service->execute('<?php echo "hello";', 'php');
 
-        $this->assertTrue($result['success']);
-        $this->assertEquals('hello', $result['output']);
+        $this->assertInstanceOf(\App\Modules\CodeExecution\DTOs\ExecutionResultDTO::class, $result);
+        $this->assertTrue($result->success);
+        $this->assertEquals('hello', $result->output);
     }
 
     public function test_execute_javascript_does_not_use_sandbox(): void
@@ -96,12 +90,9 @@ class CodeExecutionServiceTest extends TestCase
 
         // JavaScript runs client-side, so execute() should return
         // a result indicating it should run on the client
-        $result = $this->service->execute(new \App\Modules\CodeExecution\DTOs\CodeExecutionDTO(
-            code: 'console.log("hello")',
-            language: 'javascript',
-            userId: 'user-1',
-        ));
+        $result = $this->service->execute('console.log("hello")', 'javascript');
 
+        $this->assertIsArray($result);
         $this->assertArrayHasKey('executor', $result);
         $this->assertEquals('client', $result['executor']);
     }

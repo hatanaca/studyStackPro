@@ -38,11 +38,18 @@ export function useConfirm() {
     isOpen.value = false
   }
 
+  function handleClose() {
+    if (resolveFn) resolveFn(false)
+    resolveFn = null
+    isOpen.value = false
+  }
+
   return {
     isOpen,
     options,
     open,
     confirm,
     cancel,
+    handleClose,
   }
 }

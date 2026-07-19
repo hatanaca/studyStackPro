@@ -1,153 +1,109 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import axios from 'axios'
+import { useAuthStore, getStoredToken } from '@/stores/auth.store'
 import router from '@/router'
-import { useAuthStore } from '@/stores/auth.store'
 
-/** Base URL da API (v1). Usa VITE_API_URL ou string vazia para same-origin. */
-const baseURL = `${import.meta.env.VITE_API_URL || ''}/api/v1`
-
-/** Formato de erro da API (Laravel: success: false, error: { message }). */
-interface ApiErrorBody {
-  error?: { message?: string }
-  message?: string
-}
-
-/** Extrai o body da resposta de erro (se AxiosError com response.data) */
-function getErrorBody(error: unknown): ApiErrorBody | undefined {
-  if (error && typeof error === 'object' && 'response' in error) {
-    const response = (error as AxiosError<ApiErrorBody>).response
-    const data = response?.data
-    if (data && typeof data === 'object') return data
-  }
-  return undefined
-}
-
-/** Extrai mensagem de erro da resposta da API (formato { success: false, error: { message } }). */
-export function getApiErrorMessage(error: unknown): string {
-  if (
-    error &&
-    typeof error === 'object' &&
-    'code' in error &&
-    (error as { code?: string }).code === 'ECONNABORTED'
-  ) {
-    return 'Tempo esgotado ao contactar o servidor. Tente novamente.'
-  }
-  const data = getErrorBody(error)
-  if (data) {
-    const msg = data.error?.message ?? data.message
-    if (typeof msg === 'string') return msg
-  }
-  return 'Erro na comunicação com o servidor.'
-}
-
-/**
- * Cliente Axios para a API. Cookies de sessão Sanctum (withCredentials).
- * Interceptor: evita pedidos (exceto /auth/me) enquanto há cache de utilizador mas a sessão ainda não foi validada.
- */
-const DEFAULT_REQUEST_TIMEOUT_MS = 60_000
-
-export const apiClient = axios.create({
-  baseURL,
-  timeout: DEFAULT_REQUEST_TIMEOUT_MS,
-  withCredentials: true,
-  /** Em SPA com API noutro origin, força envio de X-XSRF-TOKEN quando o cookie XSRF-TOKEN é legível. */
-  withXSRFToken: true,
-  headers: {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-  },
-})
-
-/** Erro síncrono quando há cache de utilizador mas a sessão ainda não foi validada (evita 401 em cascata). */
 export const SESSION_NOT_READY = 'SESSION_NOT_READY'
 
-function joinAxiosUrl(baseURL: string, url: string): string {
-  const b = String(baseURL ?? '').replace(/\/+$/, '')
-  const u = String(url ?? '')
-    .replace(/^\/+/, '')
-    .split('?')[0]
-  if (!u) return b
-  if (!b) return `/${u}`
-  return `${b}/${u}`
-}
-
-/**
- * Corresponde GET …/auth/me e …/auth/logout após juntar baseURL + url (evita bloquear fetchMe do guard).
- */
-function isAllowedBeforeSessionReady(config: InternalAxiosRequestConfig): boolean {
-  const method = String(config.method ?? 'get').toLowerCase()
-  const path = joinAxiosUrl(String(config.baseURL ?? ''), String(config.url ?? '')).replace(
-    /\/+/g,
-    '/'
-  )
-  if (method === 'get' && /\/auth\/me$/i.test(path)) return true
-  if (/\/auth\/logout/i.test(path)) return true
-  return false
-}
+const apiClient = axios.create({
+  baseURL: `${import.meta.env.VITE_API_URL || ''}/api/v1`,
+  withCredentials: true,
+  headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+  withXSRFToken: true,
+})
 
 apiClient.interceptors.request.use((config) => {
-  const authStore = useAuthStore()
-  if (authStore.user && !authStore.sessionValidated && !isAllowedBeforeSessionReady(config)) {
-    const err = new Error(SESSION_NOT_READY) as Error & { __sessionNotReady?: true }
-    err.__sessionNotReady = true
-    return Promise.reject(err)
+  if (config.method === 'get') {
+    config.params = { ...config.params, _t: Date.now() }
+  }
+  const token = getStoredToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
   }
   return config
 })
 
 type ToastFn = (msg: string, type?: 'success' | 'error' | 'info') => void
-
 let toastFn: ToastFn | null = null
+export function setApiToast(fn: ToastFn) { toastFn = fn }
 
-export function setApiToast(fn: ToastFn) {
-  toastFn = fn
+let lastUnauthorizedRoute = ''
+let lastUnauthorizedTime = 0
+const UNAUTHORIZED_DEBOUNCE_MS = 300
+
+function getApiErrorMessage(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.error?.message
+      ?? error.response?.data?.message
+      ?? error.message
+  }
+  if (
+    typeof error === 'object' && error !== null
+    && 'response' in error
+  ) {
+    const resp = (error as { response?: { data?: Record<string, unknown> } }).response
+    const data = resp?.data
+    if (data && typeof data === 'object') {
+      const errorMsg = data.error
+      if (errorMsg && typeof errorMsg === 'object' && 'message' in errorMsg) {
+        return (errorMsg as { message: string }).message
+      }
+      if (typeof data.message === 'string') {
+        return data.message
+      }
+    }
+  }
+  return 'Erro na comunicação com o servidor.'
 }
-
-let handlingUnauthorized = false
 
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (
-      error &&
-      typeof error === 'object' &&
-      (error as { __sessionNotReady?: boolean }).__sessionNotReady
-    ) {
-      return Promise.reject(error)
-    }
+    if (error?.__sessionNotReady) return Promise.reject(error)
 
     const status = error.response?.status
     const reqUrl = String(error.config?.url ?? '')
 
     if (status === 401) {
-      if (
-        reqUrl.includes('/auth/login') ||
-        reqUrl.includes('/auth/register') ||
-        reqUrl.includes('auth/logout') ||
-        handlingUnauthorized
-      ) {
+      if (reqUrl.includes('/auth/login') || reqUrl.includes('/auth/register') || reqUrl.includes('auth/logout')) {
         return Promise.reject(error)
       }
-      handlingUnauthorized = true
+      const routeName = router.currentRoute.value.name as string
+      const now = Date.now()
+      if (lastUnauthorizedRoute === routeName && now - lastUnauthorizedTime < UNAUTHORIZED_DEBOUNCE_MS) {
+        return Promise.reject(error)
+      }
+      lastUnauthorizedRoute = routeName
+      lastUnauthorizedTime = now
       try {
         useAuthStore().clearSessionLocally()
-        if (router.currentRoute.value.name !== 'login') {
+        if (routeName !== 'login') {
           await router.push({ name: 'login' })
         }
-      } finally {
-        setTimeout(() => {
-          handlingUnauthorized = false
-        }, 300)
-      }
+      } catch { /* ignore navigation errors */ }
     } else if (status === 429) {
-      const message =
-        getApiErrorMessage(error) || 'Muitas requisições. Aguarde um momento e tente novamente.'
-      if (toastFn) {
-        toastFn(message, 'error')
-      } else if (import.meta.env.DEV) {
-        console.warn('[API] Rate limit (429):', message)
+      const message = getApiErrorMessage(error) || 'Muitas requisições. Aguarde um momento e tente novamente.'
+      if (toastFn) toastFn(message, 'error')
+    } else if (status && status >= 500) {
+      const message = getApiErrorMessage(error) || 'Erro interno do servidor.'
+      if (toastFn) toastFn(message, 'error')
+
+      // Capture 5xx API errors in Sentry for visibility
+      if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
+        import('@sentry/vue').then((Sentry) => {
+          Sentry.captureException(error, {
+            tags: { api_error: 'true', status: String(status) },
+            extra: { url: reqUrl, method: error.config?.method },
+          })
+        }).catch(() => {})
       }
     }
 
     return Promise.reject(error)
   }
 )
+
+export function getApiErrorMessageExport(error: unknown): string {
+  return getApiErrorMessage(error)
+}
+
+export { apiClient, getApiErrorMessage }

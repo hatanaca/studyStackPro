@@ -1,306 +1,306 @@
-# Documentacao Tecnica do StudyTrack Pro
+# StudyTrack Pro Technical Documentation
 
-## 1. Objetivo deste documento
+## 1. Purpose of This Document
 
-Este documento consolida, em um unico lugar, a explicacao tecnica do projeto `StudyTrack Pro` com base no estado atual do repositorio. O foco aqui nao e marketing nem onboarding rapido: a proposta e descrever com profundidade como o sistema esta organizado, quais tecnologias utiliza, como os componentes se relacionam, quais fluxos operacionais existem, como a infraestrutura foi montada e quais pontos de atencao aparecem no codigo e na configuracao.
+This document consolidates, in a single place, the technical explanation of the `StudyTrack Pro` project based on the current state of the repository. The focus here is not marketing or quick onboarding: the proposal is to describe in depth how the system is organized, what technologies it uses, how components relate, what operational flows exist, how the infrastructure was built, and what attention points appear in the code and configuration.
 
-O material foi estruturado para servir a pelo menos quatro usos:
+The material was structured to serve at least four uses:
 
-- entendimento arquitetural do sistema como um todo;
-- aceleracao de onboarding tecnico;
-- apoio a manutencao, refatoracao e auditoria;
-- referencia para evolucoes futuras e alinhamento entre frontend, backend e infraestrutura.
+- architectural understanding of the system as a whole;
+- technical onboarding acceleration;
+- support for maintenance, refactoring, and auditing;
+- reference for future evolutions and alignment between frontend, backend, and infrastructure.
 
-## 2. Escopo e fonte das informacoes
+## 2. Scope and Source of Information
 
-As informacoes deste documento foram derivadas da leitura do proprio repositorio, especialmente dos seguintes arquivos e areas:
+The information in this document was derived from reading the repository itself, especially from the following files and areas:
 
 - `README.md`
-- `docs/README.md` e `docs/technical/*`
+- `docs/README.md` and `docs/technical/*`
 - `Makefile`
 - `docker-compose.yml`
 - `backend/README.md`
 - `backend/composer.json`
 - `frontend/README.md`
 - `frontend/package.json`
-- estrutura de codigo em `backend/app`, `backend/routes`, `backend/config`, `backend/database`
-- estrutura de codigo em `frontend/src`
-- arquivos de CI em `.github/workflows`
-- configuracoes de hooks em `.husky`
-- configuracoes Docker em `docker/`
+- code structure in `backend/app`, `backend/routes`, `backend/config`, `backend/database`
+- code structure in `frontend/src`
+- CI files in `.github/workflows`
+- hook configurations in `.husky`
+- Docker configurations in `docker/`
 
-Quando houver divergencia entre documentacao existente e implementacao observada no codigo, este documento prioriza o comportamento aparente do codigo e registra a divergencia como ponto de atencao.
+When there is a discrepancy between existing documentation and observed implementation in the code, this document prioritizes the apparent behavior of the code and records the discrepancy as an attention point.
 
-## 3. Visao geral do produto
+## 3. Product Overview
 
-`StudyTrack Pro` e uma plataforma full-stack para acompanhamento de estudos e produtividade. O sistema permite que usuarios registrem sessoes de estudo, associem essas sessoes a tecnologias especificas, acompanhem indicadores consolidados em um dashboard, visualizem distribuicoes por tecnologia, heatmaps de atividade e outros dados derivados.
+`StudyTrack Pro` is a full-stack platform for study and productivity tracking. The system allows users to log study sessions, associate these sessions with specific technologies, view consolidated indicators on a dashboard, view distributions by technology, activity heatmaps, and other derived data.
 
-Em termos de proposta tecnica, o projeto combina:
+In terms of technical proposal, the project combines:
 
-- uma SPA moderna em Vue 3 com TypeScript;
-- uma API REST em Laravel 11;
-- persistencia transacional em PostgreSQL;
-- cache, filas e pub/sub em Redis;
-- processamento assincrono de metricas via jobs;
-- atualizacao quase em tempo real via WebSocket;
-- empacotamento e execucao local por Docker Compose.
+- a modern SPA in Vue 3 with TypeScript;
+- a REST API in Laravel 11;
+- transactional persistence in PostgreSQL;
+- cache, queues, and pub/sub in Redis;
+- asynchronous metrics processing via jobs;
+- near real-time updates via WebSocket;
+- local packaging and execution via Docker Compose.
 
-O repositorio tambem demonstra preocupacoes comuns de aplicacoes reais:
+The repository also demonstrates common concerns of real applications:
 
-- separacao de responsabilidades entre camadas;
-- uso de filas para trabalho pesado;
-- ambiente de desenvolvimento conteinerizado;
-- lint, testes e type-check automatizados;
-- workflow de CI para frontend e backend;
-- hooks de pre-commit para reduzir regressao de qualidade.
+- separation of responsibilities between layers;
+- use of queues for heavy work;
+- containerized development environment;
+- lint, tests, and automated type-check;
+- CI workflow for frontend and backend;
+- pre-commit hooks to reduce quality regression.
 
-## 4. Estrutura macro do repositorio
+## 4. Repository Macro Structure
 
-O projeto nao usa workspaces Node, NX, Turborepo ou outra ferramenta de monorepo orientada a pacotes. Em vez disso, adota um repositorio unico que agrega tres grandes blocos:
+The project does not use Node workspaces, NX, Turborepo, or other package-oriented monorepo tools. Instead, it adopts a single repository that aggregates three major blocks:
 
-### 4.1 Aplicacoes principais
+### 4.1 Main Applications
 
-- `backend/`: aplicacao Laravel 11 responsavel pela API, autenticacao, persistencia, filas, broadcasting e logica de negocio central.
-- `frontend/`: aplicacao Vue 3 responsavel pela interface web, navegacao, gerenciamento de estado local, consumo da API e experiencia do usuario.
+- `backend/`: Laravel 11 application responsible for the API, authentication, persistence, queues, broadcasting, and central business logic.
+- `frontend/`: Vue 3 application responsible for the web interface, navigation, local state management, API consumption, and user experience.
 
-### 4.2 Infraestrutura e automacao
+### 4.2 Infrastructure and Automation
 
-- `docker/`: Dockerfiles, OpenResty (proxy), Redis, Postgres (imagem com PL/Lua quando aplicavel) e imagens auxiliares.
-- `docker-compose.yml`: sobe a stack principal.
-- `docker-compose.dev.yml`: adiciona utilitarios de desenvolvimento, como pgAdmin e Mailpit.
-- `redis-scripts/`: scripts Lua (`job_dedup`, `sliding_window`, `streak_update`) montados nos containers PHP/Horizon/Reverb conforme compose.
-- `Makefile`: camada de automacao para setup, execucao, migracoes, testes e acesso aos containers.
+- `docker/`: Dockerfiles, OpenResty (proxy), Redis, Postgres (image with PL/Lua when applicable) and auxiliary images.
+- `docker-compose.yml`: starts the main stack.
+- `docker-compose.dev.yml`: adds development utilities such as pgAdmin and Mailpit.
+- `redis-scripts/`: Lua scripts (`job_dedup`, `sliding_window`, `streak_update`) mounted in PHP/Horizon/Reverb containers per compose.
+- `Makefile`: automation layer for setup, execution, migrations, tests, and container access.
 
-### 4.3 Governanca e qualidade
+### 4.3 Governance and Quality
 
-- `.github/workflows/`: CI de backend, frontend e pipeline de imagens.
-- `.husky/`: hooks de git.
-- `commitlint.config.js`: padrao de mensagens de commit.
-- `README.md`, `backend/README.md`, `frontend/README.md`, `docker/README.md`: documentacao existente.
+- `.github/workflows/`: backend, frontend, and image pipeline CI.
+- `.husky/`: git hooks.
+- `commitlint.config.js`: commit message pattern.
+- `README.md`, `backend/README.md`, `frontend/README.md`, `docker/README.md`: existing documentation.
 
-## 5. Arquitetura de alto nivel
+## 5. High-Level Architecture
 
-Do ponto de vista arquitetural, o sistema e um monolito full-stack separado por camadas e por contexto de dominio.
+From an architectural perspective, the system is a full-stack monolith separated by layers and domain context.
 
-### 5.1 Visao resumida
+### 5.1 Summary View
 
-1. O usuario interage com a SPA em `frontend/`.
-2. A SPA consome a API em `backend/` por HTTP, em geral sob `/api/v1`.
-3. O backend processa a requisicao, persiste dados no PostgreSQL e usa Redis para cache, filas e comunicacao de tempo real.
-4. Alteracoes relevantes, como criacao, atualizacao ou encerramento de sessoes, disparam eventos.
-5. Listeners e jobs atualizam metricas derivadas e limpam caches.
-6. Eventos broadcastados notificam o frontend, que atualiza partes do dashboard sem recarga completa.
+1. The user interacts with the SPA in `frontend/`.
+2. The SPA consumes the API in `backend/` via HTTP, generally under `/api/v1`.
+3. The backend processes the request, persists data in PostgreSQL, and uses Redis for cache, queues, and real-time communication.
+4. Relevant changes, such as creating, updating, or ending sessions, dispatch events.
+5. Listeners and jobs update derived metrics and clear caches.
+6. Broadcast events notify the frontend, which updates parts of the dashboard without a full reload.
 
-### 5.2 Estilo arquitetural do backend
+### 5.2 Backend Architectural Style
 
-O backend mistura caracteristicas de:
+The backend mixes characteristics of:
 
-- API REST tradicional;
-- modularizacao por dominio;
-- padrao service layer;
-- repositorios para encapsular acesso a dados;
-- fluxo orientado a eventos para processos derivados.
+- traditional REST API;
+- domain modularization;
+- service layer pattern;
+- repositories to encapsulate data access;
+- event-driven flow for derived processes.
 
-Isso significa que o projeto nao concentra tudo em controllers ou models. Em vez disso:
+This means the project does not concentrate everything in controllers or models. Instead:
 
-- controllers recebem a requisicao e delegam;
-- form requests validam entrada;
-- services concentram regras de negocio;
-- repositories isolam consultas e persistencia;
-- events/listeners/jobs lidam com efeitos colaterais e processamento posterior.
+- controllers receive the request and delegate;
+- form requests validate input;
+- services concentrate business rules;
+- repositories isolate queries and persistence;
+- events/listeners/jobs handle side effects and post-processing.
 
-### 5.3 Estilo arquitetural do frontend
+### 5.3 Frontend Architectural Style
 
-O frontend usa uma SPA classica baseada em Vue 3, com:
+The frontend uses a classic SPA based on Vue 3, with:
 
-- roteamento no cliente via `vue-router`;
-- estado global via Pinia;
-- cache e sincronizacao de dados de servidor via TanStack Vue Query;
-- componentes reutilizaveis de UI e layout;
-- composables para comportamento compartilhado;
-- componentes por feature para regras de apresentacao de dominio.
+- client-side routing via `vue-router`;
+- global state via Pinia;
+- server data cache and synchronization via TanStack Vue Query;
+- reusable UI and layout components;
+- composables for shared behavior;
+- feature-based components for domain presentation rules.
 
-## 6. Stack tecnologica
+## 6. Technology Stack
 
-## 6.1 Frontend
+### 6.1 Frontend
 
-- `Vue 3`: base da interface.
-- `TypeScript`: tipagem estatica.
-- `Vite 5`: build, dev server e pipeline de frontend.
-- `vue-router`: roteamento.
-- `Pinia`: estado global.
-- `@tanstack/vue-query`: cache e sincronizacao de dados de servidor.
-- `@tanstack/vue-virtual`: virtualizacao de listas longas onde aplicavel.
-- `Axios`: cliente HTTP.
-- `jspdf`: export PDF no cliente onde implementado.
-- `PrimeVue`: biblioteca de componentes.
-- `@primeuix/themes`: tema visual.
-- `primeicons`: icones.
-- `apexcharts` e `vue3-apexcharts`: graficos principais (inclui heatmap via ApexCharts).
-- `laravel-echo` e `pusher-js`: integracao com broadcasting/Reverb.
-- `Zod`: validacao de schemas em pontos do client.
-- `Vitest`, `happy-dom`, `@vue/test-utils`: testes.
-- `ESLint`, `Prettier`, `vue-tsc`: qualidade e verificacao estatica.
+- `Vue 3`: interface base.
+- `TypeScript`: static typing.
+- `Vite 5`: build, dev server, and frontend pipeline.
+- `vue-router`: routing.
+- `Pinia`: global state.
+- `@tanstack/vue-query`: server data cache and synchronization.
+- `@tanstack/vue-virtual`: long list virtualization where applicable.
+- `Axios`: HTTP client.
+- `jspdf`: client-side PDF export where implemented.
+- `PrimeVue`: component library.
+- `@primeuix/themes`: visual theme.
+- `primeicons`: icons.
+- `apexcharts` and `vue3-apexcharts`: main charts (includes heatmap via ApexCharts).
+- `laravel-echo` and `pusher-js`: broadcasting/Reverb integration.
+- `Zod`: schema validation at client points.
+- `Vitest`, `happy-dom`, `@vue/test-utils`: testing.
+- `ESLint`, `Prettier`, `vue-tsc`: quality and static verification.
 
-## 6.2 Backend
+### 6.2 Backend
 
 - `PHP ^8.2`
 - `Laravel 11`
-- `Laravel Sanctum`: tokens de autenticacao.
-- `Laravel Reverb`: servidor e integracao de WebSocket.
-- `Laravel Horizon`: supervisao e execucao de filas.
-- `PostgreSQL 16`: persistencia principal.
-- `Redis 7`: cache, filas, sessao e suporte a realtime.
-- `PHPUnit 11`: testes.
-- `Larastan/PHPStan`: analise estatica.
-- `Laravel Pint`: formatacao.
+- `Laravel Sanctum`: authentication tokens.
+- `Laravel Reverb`: WebSocket server and integration.
+- `Laravel Horizon`: queue supervision and execution.
+- `PostgreSQL 16`: main persistence.
+- `Redis 7`: cache, queues, sessions, and real-time support.
+- `PHPUnit 11`: testing.
+- `Larastan/PHPStan`: static analysis.
+- `Laravel Pint`: formatting.
 
-## 6.3 Infraestrutura
+### 6.3 Infrastructure
 
-- `Docker` e `Docker Compose`
+- `Docker` and `Docker Compose`
 - `Nginx`
-- `pgAdmin` no ambiente de desenvolvimento estendido
-- `Mailpit` no ambiente de desenvolvimento estendido
-- `GitHub Actions` para CI/CD
+- `pgAdmin` in extended development environment
+- `Mailpit` in extended development environment
+- `GitHub Actions` for CI/CD
 
-## 7. Frontend em detalhe
+## 7. Frontend in Detail
 
-## 7.1 Papel do frontend
+### 7.1 Role of the Frontend
 
-O frontend e a camada de interacao do usuario. Ele nao replica toda a logica de negocio do backend, mas possui responsabilidades importantes:
+The frontend is the user interaction layer. It does not replicate all of the backend's business logic, but has important responsibilities:
 
-- gestao da sessao autenticada no navegador;
-- renderizacao do dashboard e das views de dominio;
-- roteamento e controle de acesso na interface;
-- consumo e cache dos dados retornados pela API;
-- apresentacao de graficos e indicadores;
-- interacoes em tempo real por WebSocket;
-- persistencias locais especificas, como goals frontend-only.
+- managing the authenticated session in the browser;
+- rendering the dashboard and domain views;
+- routing and access control in the interface;
+- consuming and caching data returned by the API;
+- presenting charts and indicators;
+- real-time interactions via WebSocket;
+- specific local persistence, such as frontend-only goals.
 
-## 7.2 Ponto de entrada
+### 7.2 Entry Points
 
-Os pontos mais importantes do bootstrap do frontend sao:
+The most important frontend bootstrap points are:
 
 - `frontend/index.html`
 - `frontend/src/main.ts`
 - `frontend/src/App.vue`
 
-Em `index.html`, a aplicacao define o documento HTML base, idioma `pt-BR`, carrega fontes e prepara o mount do app.
+In `index.html`, the application defines the base HTML document, `pt-BR` language, loads fonts, and prepares the app mount.
 
-Em `main.ts`, a aplicacao:
+In `main.ts`, the application:
 
-- cria a instancia Vue;
-- registra Pinia;
-- registra Vue Query;
-- registra o router;
-- configura PrimeVue e servicos de UI, como toast e confirm dialog;
-- aplica tema inicial com base em `localStorage`;
-- importa estilos globais.
+- creates the Vue instance;
+- registers Pinia;
+- registers Vue Query;
+- registers the router;
+- configures PrimeVue and UI services like toast and confirm dialog;
+- applies initial theme based on `localStorage`;
+- imports global styles.
 
-Em `App.vue`, a app monta:
+In `App.vue`, the app mounts:
 
 - `RouterView`;
-- sistema de toast;
-- dialogo de confirmacao;
-- inicializacao de integracao entre erros de API e notificacoes visuais.
+- toast system;
+- confirmation dialog;
+- initialization of API error and visual notification integration.
 
-## 7.3 Roteamento
+### 7.3 Routing
 
-O roteamento esta centralizado em `frontend/src/router/`.
+Routing is centralized in `frontend/src/router/`.
 
-Arquivos importantes:
+Important files:
 
 - `router/index.ts`
 - `router/guards.ts`
 - `router/routes/*.routes.ts`
 
-### 7.3.1 Estrategia de rotas
+#### 7.3.1 Route Strategy
 
-O frontend organiza rotas publicas e protegidas:
+The frontend organizes public and protected routes:
 
-- publicas: login e registro;
-- protegidas: dashboard, sessoes, tecnologias, goals, export, settings, reports, help, profile.
+- public: login and registration;
+- protected: dashboard, sessions, technologies, goals, export, settings, reports, help, profile.
 
-As rotas protegidas sao agrupadas sob o layout principal. Isso permite reaproveitar barra lateral, top bar, shell visual e integracoes globais.
+Protected routes are grouped under the main layout. This allows reusing the sidebar, top bar, visual shell, and global integrations.
 
-### 7.3.2 Guard de autenticacao
+#### 7.3.2 Authentication Guard
 
-O guard verifica:
+The guard checks:
 
-- se a rota exige autenticacao;
-- se existe token local;
-- se o usuario ja foi carregado;
-- se deve buscar `me` antes de entrar;
-- se o usuario autenticado esta tentando acessar rota guest.
+- if the route requires authentication;
+- if a local token exists;
+- if the user has been loaded;
+- if `me` should be fetched before entering;
+- if the authenticated user is trying to access a guest route.
 
-Ha uma preocupacao visivel com evitar chamadas redundantes de `fetchMe`, usando um mecanismo de serializacao para impedir rajadas de requisicoes iguais durante a navegacao inicial.
+There is a visible concern with avoiding redundant `fetchMe` calls, using a serialization mechanism to prevent bursts of identical requests during initial navigation.
 
-## 7.4 Gerenciamento de estado
+### 7.4 State Management
 
-O projeto combina dois mecanismos complementares:
+The project combines two complementary mechanisms:
 
-- `Pinia` para estado global de interface e sessao;
-- `TanStack Query` para dados remotos e invalidacao/cache.
+- `Pinia` for interface and session global state;
+- `TanStack Query` for remote data and invalidation/cache.
 
-### 7.4.1 Stores principais
+#### 7.4.1 Main Stores
 
-- `auth.store.ts`: token, usuario, login, register, logout, `fetchMe`, persistencia em `localStorage`.
-- `ui.store.ts`: tema, sidebar, configuracoes visuais e comportamento responsivo.
-- `sessions.store.ts`: dados de sessoes e timer em execucao.
-- `analytics.store.ts`: metricas, dashboard, series temporais, heatmap e sinalizacao de recalculo.
-- `technologies.store.ts`: lista de tecnologias, busca e CRUD com TTL local.
-- `goals.store.ts`: metas do usuario persistidas localmente.
-- `notifications.store.ts`: notificacoes em memoria.
+- `auth.store.ts`: token, user, login, register, logout, `fetchMe`, `localStorage` persistence.
+- `ui.store.ts`: theme, sidebar, visual settings, and responsive behavior.
+- `sessions.store.ts`: session data and running timer.
+- `analytics.store.ts`: metrics, dashboard, time series, heatmap, and recalculation signaling.
+- `technologies.store.ts`: technology list, search, and CRUD with local TTL.
+- `goals.store.ts`: user goals persisted locally.
+- `notifications.store.ts`: in-memory notifications.
 
-### 7.4.2 Uso de Vue Query
+#### 7.4.2 Vue Query Usage
 
-Vue Query aparece como camada de sincronizacao seletiva. Em vez de colocar todo o consumo da API dentro dele, o projeto o utiliza de forma focada em pontos de maior valor, como dashboard, lista de sessoes e tecnologias.
+Vue Query appears as a selective synchronization layer. Instead of putting all API consumption inside it, the project uses it in a focused way at higher-value points like dashboard, session list, and technologies.
 
-Essa estrategia produz um meio-termo:
+This strategy produces a middle ground:
 
-- Pinia segue util para estado de sessao, UI e composicao local;
-- Query assume cache, invalida e lifecycle de dados remotos especificos.
+- Pinia remains useful for session, UI, and local composition state;
+- Query handles cache, invalidation, and lifecycle of specific remote data.
 
-O efeito pratico e positivo, mas requer disciplina para evitar que um mesmo dominio tenha dados em mais de uma fonte e acabe dessincronizado.
+The practical effect is positive, but requires discipline to avoid the same domain having data in more than one source and ending up out of sync.
 
-## 7.5 Organizacao de componentes
+### 7.5 Component Organization
 
-O frontend separa componentes por camada de responsabilidade.
+The frontend separates components by responsibility layer.
 
-### 7.5.1 `components/layout`
+#### 7.5.1 `components/layout`
 
-Responsavel pelo shell da aplicacao:
+Responsible for the application shell:
 
 - `AppLayout`
 - `AppSidebar`
 - `AppTopBar`
-- wrappers de pagina
+- page wrappers
 
-Essa camada cuida de estrutura, navegacao e integracoes globais, como inicializacao do WebSocket no contexto autenticado.
+This layer handles structure, navigation, and global integrations, such as WebSocket initialization in the authenticated context.
 
-### 7.5.2 `components/ui`
+#### 7.5.2 `components/ui`
 
-Funciona como um design system local, com wrappers e componentes genericos:
+Functions as a local design system, with wrappers and generic components:
 
-- botoes;
+- buttons;
 - inputs;
 - cards;
 - modal;
-- tabela base;
-- estados vazios;
+- base table;
+- empty states;
 - skeletons;
-- toggles de tema;
-- componentes de erro.
+- theme toggles;
+- error components.
 
-Essa abordagem reduz repeticao e ajuda a padronizar interacoes visuais.
+This approach reduces repetition and helps standardize visual interactions.
 
-### 7.5.3 `components/charts`
+#### 7.5.3 `components/charts`
 
-Encapsula graficos de linha, barra, pizza, donut e heatmap. Essa camada existe para impedir que cada view precise conhecer detalhes de configuracao de bibliotecas de grafico.
+Encapsulates line, bar, pie, donut, and heatmap charts. This layer exists to prevent each view from needing to know chart library configuration details.
 
-### 7.5.4 `features/*`
+#### 7.5.4 `features/*`
 
-As features agrupam componentes, composables e comportamentos ligados ao dominio:
+Features group components, composables, and behaviors related to the domain:
 
 - auth
 - dashboard
@@ -309,50 +309,50 @@ As features agrupam componentes, composables e comportamentos ligados ao dominio
 - goals
 - notifications
 
-Essa estrutura aproxima a interface da linguagem do negocio e facilita evolucao por contexto funcional.
+This structure brings the interface closer to the business language and facilitates evolution by functional context.
 
-## 7.6 Views e modulos funcionais
+### 7.6 Views and Functional Modules
 
-As views em `frontend/src/views/` representam telas de navegacao. Entre os modulos visiveis estao:
+The views in `frontend/src/views/` represent navigation screens. Among the visible modules are:
 
-- autenticacao;
+- authentication;
 - dashboard;
-- sessoes;
-- tecnologias;
+- sessions;
+- technologies;
 - goals;
-- exportacao;
-- configuracoes;
-- relatorios;
-- perfil;
-- ajuda.
+- export;
+- settings;
+- reports;
+- profile;
+- help.
 
-O sistema de sessoes inclui, alem da listagem, modos voltados a foco e detalhe por tecnologia. Isso sugere que o frontend foi desenhado nao apenas para CRUD puro, mas para apoiar a rotina de estudo como experiencia de uso.
+The session system includes, beyond listing, focus and technology detail modes. This suggests the frontend was designed not just for pure CRUD, but to support the study routine as a user experience.
 
-## 7.7 Cliente HTTP
+### 7.7 HTTP Client
 
-O cliente central de API esta em `frontend/src/api/client.ts`.
+The central API client is in `frontend/src/api/client.ts`.
 
-### 7.7.1 Responsabilidades principais
+#### 7.7.1 Main Responsibilities
 
-- definir `baseURL` da API;
-- injetar token Bearer nas requisicoes;
-- tratar `401` globalmente;
-- tratar `429` com feedback visual;
-- centralizar interpretacao de mensagem de erro.
+- define the API `baseURL`;
+- inject Bearer token in requests;
+- handle `401` globally;
+- handle `429` with visual feedback;
+- centralize error message interpretation.
 
-### 7.7.2 Comportamento em erro
+#### 7.7.2 Error Behavior
 
-Quando recebe `401`, o cliente:
+When receiving `401`, the client:
 
-- limpa a sessao local;
-- evita loops em paginas de autenticacao;
-- redireciona para login.
+- clears the local session;
+- avoids loops on authentication pages;
+- redirects to login.
 
-Quando recebe `429`, a interface pode exibir toast, melhorando o feedback de rate limit.
+When receiving `429`, the interface can display a toast, improving rate limit feedback.
 
-### 7.7.3 Organizacao dos endpoints
+#### 7.7.3 Endpoint Organization
 
-As rotas da API sao encapsuladas em:
+API routes are encapsulated in:
 
 - `api/endpoints.ts`
 - `api/queryKeys.ts`
@@ -362,490 +362,488 @@ As rotas da API sao encapsuladas em:
 - `api/modules/analytics.api.ts`
 - `api/modules/goals.api.ts`
 
-Um detalhe importante e que `goals.api.ts` nao aponta para backend; ele implementa persistencia local. Isso confirma que a feature de metas, no estado atual do repositorio, e frontend-only.
+An important detail is that `goals.api.ts` does not point to the backend; it implements local persistence. This confirms that the goals feature, in the current state of the repository, is frontend-only.
 
-## 7.8 Formularios e validacao
+### 7.8 Forms and Validation
 
-O frontend usa uma combinacao de estrategias:
+The frontend uses a combination of strategies:
 
-- validacoes manuais em formularios;
-- composables utilitarios de validacao;
-- `BaseInput` com suporte a exibicao de erro;
-- Zod para parse de algumas respostas da API.
+- manual validations in forms;
+- utility validation composables;
+- `BaseInput` with error display support;
+- Zod for parsing some API responses.
 
-Essa estrategia funciona, mas nao representa um modelo unificado para todos os formularios. Em outras palavras, o projeto possui uma base de validacao, porem sem um framework unico dominante para toda a experiencia de forms.
+This strategy works but does not represent a unified model for all forms. In other words, the project has a validation base, but without a single dominant framework for the entire forms experience.
 
-## 7.9 Estilizacao e design system
+### 7.9 Styling and Design System
 
-O frontend usa:
+The frontend uses:
 
-- CSS global em `assets/styles/main.css`;
-- tokens em `assets/styles/variables.css`;
-- PrimeVue como base de componentes;
-- tema Aura com suporte a modo escuro;
-- dataset `data-theme` para alternancia light/dark.
+- global CSS in `assets/styles/main.css`;
+- tokens in `assets/styles/variables.css`;
+- PrimeVue as the component base;
+- Aura theme with dark mode support;
+- `data-theme` dataset for light/dark switching.
 
-Essa combinacao indica um design system hibrido:
+This combination indicates a hybrid design system:
 
-- parte vem do PrimeVue;
-- parte vem de componentes internos;
-- parte vem de tokens CSS locais.
+- part comes from PrimeVue;
+- part comes from internal components;
+- part comes from local CSS tokens.
 
-Do ponto de vista de arquitetura visual, isso e positivo, porque o projeto nao depende apenas da aparencia padrao da biblioteca e consegue padronizar identidade visual.
+From a visual architecture perspective, this is positive, because the project does not depend solely on the library's default appearance and can standardize visual identity.
 
-## 7.10 Tempo real
+### 7.10 Real-Time
 
-O realtime do frontend e baseado em:
+The frontend real-time is based on:
 
 - `laravel-echo`
 - `pusher-js`
-- configuracao de Reverb
-- canal privado por usuario
+- Reverb configuration
+- private channel per user
 
-O composable `useWebSocket` conecta ao canal `dashboard.{userId}` e escuta eventos ligados a:
+The `useWebSocket` composable connects to the `dashboard.{userId}` channel and listens to events related to:
 
-- atualizacao de metricas;
-- inicio de recalc;
-- inicio de sessao;
-- encerramento de sessao.
+- metrics updates;
+- recalculation start;
+- session start;
+- session end.
 
-Isso permite que o dashboard responda a mudancas originadas no backend sem polling constante como estrategia principal. O projeto, entretanto, preve fallback quando o WebSocket falha, o que melhora resiliencia.
+This allows the dashboard to respond to changes originated in the backend without constant polling as the main strategy. The project, however, provides fallback when WebSocket fails, which improves resilience.
 
-## 7.11 Build, testes e qualidade no frontend
+### 7.11 Build, Tests, and Quality in Frontend
 
-Os scripts principais do `frontend/package.json` cobrem:
+The main scripts in `frontend/package.json` cover:
 
-- desenvolvimento: `npm run dev`
+- development: `npm run dev`
 - build: `npm run build`
 - preview: `npm run preview`
-- testes: `npm run test`, `npm run test:run`, `npm run test:coverage`
+- tests: `npm run test`, `npm run test:run`, `npm run test:coverage`
 - type-check: `npm run type-check`
 - lint: `npm run lint`
-- formatacao: `npm run format`
+- formatting: `npm run format`
 
-Pontos relevantes:
+Relevant points:
 
-- o build usa `vue-tsc -b` antes do `vite build`, o que fortalece a verificacao de tipos;
-- o lint esta configurado com `--fix`, inclusive no script principal, o que e conveniente localmente, mas menos ideal em CI;
-- o projeto possui `vite.config.analyze.ts`, indicando preocupacao com bundle analysis.
+- the build uses `vue-tsc -b` before `vite build`, which strengthens type verification;
+- lint is configured with `--fix`, including in the main script, which is convenient locally but less ideal in CI;
+- the project has `vite.config.analyze.ts`, indicating concern with bundle analysis.
 
-## 7.12 Pontos tecnicos de atencao no frontend
+### 7.12 Technical Attention Points in Frontend
 
-- coexistencia de Pinia e Vue Query exige cuidado para evitar dupla fonte de verdade;
-- goals continuam locais e nao sincronizados com servidor;
-- notificacoes estao em memoria, sem backend dedicado;
-- Zod valida apenas alguns fluxos;
-- graficos concentram-se em ApexCharts; manter configuracoes de tema alinhadas evita inconsistencia visual;
-- composables legados em `src/composables/` ainda expoem `@deprecated` apontando para equivalentes em `features/*`.
+- coexistence of Pinia and Vue Query requires care to avoid dual source of truth;
+- goals remain local and not synchronized with server;
+- notifications are in memory, without dedicated backend;
+- Zod only validates some flows;
+- charts concentrate on ApexCharts; keeping theme configurations aligned prevents visual inconsistency;
+- legacy composables in `src/composables/` still expose `@deprecated` pointing to equivalents in `features/*`.
 
-## 8. Backend em detalhe
+## 8. Backend in Detail
 
-## 8.1 Papel do backend
+### 8.1 Role of the Backend
 
-O backend concentra a logica central do sistema. Ele responde por:
+The backend concentrates the central logic of the system. It is responsible for:
 
-- autenticacao e emissao de tokens;
-- CRUD de tecnologias;
-- CRUD e controle de sessoes de estudo;
-- calculo e entrega de analytics;
+- authentication and token issuance;
+- technology CRUD;
+- study session CRUD and control;
+- analytics calculation and delivery;
 - rate limiting;
 - health checks;
-- broadcasting para atualizacoes em tempo real;
-- orquestracao de jobs e listeners;
-- persistencia principal do dominio.
+- broadcasting for real-time updates;
+- job and listener orchestration;
+- main domain persistence.
 
-## 8.2 Entrada e bootstrap
+### 8.2 Entry and Bootstrap
 
-Os pontos de bootstrap mais importantes sao:
+The most important bootstrap points are:
 
 - `backend/public/index.php`
 - `backend/bootstrap/app.php`
 - `backend/bootstrap/providers.php`
 
-### 8.2.1 `public/index.php`
+#### 8.2.1 `public/index.php`
 
-E o ponto de entrada HTTP da aplicacao Laravel. Ele carrega o framework, verifica estado de manutencao, inicializa o app e entrega a requisicao ao kernel moderno do Laravel 11.
+It is the HTTP entry point of the Laravel application. It loads the framework, checks maintenance state, initializes the app, and delivers the request to the modern Laravel 11 kernel.
 
-### 8.2.2 `bootstrap/app.php`
+#### 8.2.2 `bootstrap/app.php`
 
-Nesse projeto, esse arquivo concentra customizacoes importantes:
+In this project, this file concentrates important customizations:
 
-- registro de rotas web, api, console e channels;
-- configuracao de middleware da API;
-- preferencia por renderizacao JSON quando apropriado;
-- ajustes de compatibilidade para sinais de processo.
+- registration of web, api, console, and channels routes;
+- API middleware configuration;
+- preference for JSON rendering when appropriate;
+- compatibility adjustments for process signals.
 
-Isso mostra que o bootstrap nao esta apenas no padrao minimo do framework; ele foi usado para consolidar comportamento transversal.
+This shows that the bootstrap is not just the framework's minimum standard; it was used to consolidate cross-cutting behavior.
 
-## 8.3 Modularizacao por dominio
+### 8.3 Domain Modularization
 
-A pasta `backend/app/Modules/` mostra um recorte claro por contexto:
+The `backend/app/Modules/` folder shows a clear cut by context:
 
 - `Auth`
 - `StudySessions`
 - `Technologies`
 - `Analytics`
 
-Cada modulo possui subpastas como:
+Each module has subfolders like:
 
 - `Services`
 - `Repositories`
 - `Contracts`
 - `DTOs`
 
-Essa divisao e importante porque evita que todo o sistema fique orientado apenas a controllers e models. O codigo expressa o dominio por modulos, o que ajuda escalabilidade de manutencao.
+This division is important because it prevents the entire system from being oriented only to controllers and models. The code expresses the domain through modules, which helps maintenance scalability.
 
-## 8.4 Controllers, requests e resources
+### 8.4 Controllers, Requests, and Resources
 
-As camadas HTTP principais ficam em `backend/app/Http/`.
+The main HTTP layers are in `backend/app/Http/`.
 
-### 8.4.1 Controllers
+#### 8.4.1 Controllers
 
-Os controllers versionados em `Controllers/V1` organizam a superficie publica da API. Eles sao finos, o que indica uma decisao consciente de evitar concentrar regra de negocio na camada HTTP.
+The versioned controllers in `Controllers/V1` organize the API's public surface. They are thin, which indicates a conscious decision to avoid concentrating business logic in the HTTP layer.
 
-Principais controllers em `Controllers/V1`:
+Main controllers in `Controllers/V1`:
 
 - `AuthController`
 - `StudySessionController`
 - `TechnologyController`
 - `AnalyticsController`
 
-O `HealthController` fica em `App\Http\Controllers\` (fora de `V1`) e atende `GET /api/health` em `routes/api.php`. O Laravel tambem expoe `GET /up` (configurado em `bootstrap/app.php`) como health minimo do framework.
+The `HealthController` is in `App\Http\Controllers\` (outside `V1`) and serves `GET /api/health` in `routes/api.php`. Laravel also exposes `GET /up` (configured in `bootstrap/app.php`) as the framework's minimal health check.
 
-### 8.4.2 Form Requests
+#### 8.4.2 Form Requests
 
-A validacao de entrada fica em `Http/Requests`, seguindo o padrao Laravel. O beneficio disso e separar:
+Input validation is in `Http/Requests`, following the Laravel pattern. The benefit is separating:
 
-- parse e validacao de input;
-- regras de negocio;
-- serializacao de resposta.
+- input parsing and validation;
+- business rules;
+- response serialization.
 
-### 8.4.3 API Resources
+#### 8.4.3 API Resources
 
-Resources ajudam a padronizar a estrutura da resposta. Alem disso, o projeto usa um trait de resposta para formar contratos JSON consistentes de sucesso e erro.
+Resources help standardize response structure. Additionally, the project uses a response trait to form consistent JSON success and error contracts.
 
-## 8.5 Middleware
+### 8.5 Middleware
 
-Middlewares customizados observados:
+Observed custom middlewares:
 
 - `EnsureJsonResponse`
 - `SetUserTimezone`
 - `LogApiRequests`
-- `SlidingWindowRateLimit` (alias `throttle.sliding` em `bootstrap/app.php`, usado em rotas de mutacao de sessoes; em falha do script Lua, comportamento controlado por `services.rate_limit.fail_open` — ver middleware e `DOCUMENTACAO_TECNICA_LUA.md`)
+- `SlidingWindowRateLimit` (alias `throttle.sliding` in `bootstrap/app.php`, used on session mutation routes; on Lua script failure, behavior controlled by `services.rate_limit.fail_open` — see middleware and `DOCUMENTACAO_TECNICA_LUA.md`)
 
-### 8.5.1 `EnsureJsonResponse`
+#### 8.5.1 `EnsureJsonResponse`
 
-Forca ou favorece comportamento de API JSON, reduzindo risco de respostas HTML inesperadas em fluxos de cliente SPA.
+Forces or favors JSON API behavior, reducing the risk of unexpected HTML responses in SPA client flows.
 
-### 8.5.2 `SetUserTimezone`
+#### 8.5.2 `SetUserTimezone`
 
-Ajusta a timezone da aplicacao por usuario autenticado quando a informacao esta disponivel. Isso e uma preocupacao de UX relevante, pois evita inconsistencias de horarios em serializacao e leitura de dados.
+Adjusts the application timezone per authenticated user when the information is available. This is a relevant UX concern, as it avoids time inconsistencies in data serialization and reading.
 
-### 8.5.3 `LogApiRequests`
+#### 8.5.3 `LogApiRequests`
 
-Registra informacoes de requisicao e resposta, incluindo duracao. E um componente importante de observabilidade basica.
+Logs request and response information, including duration. It is an important component of basic observability.
 
-## 8.6 Rotas
+### 8.6 Routes
 
-As rotas principais ficam em:
+Main routes are in:
 
 - `backend/routes/api.php`
 - `backend/routes/web.php`
 - `backend/routes/channels.php`
 - `backend/routes/console.php`
 
-### 8.6.1 API versionada e health
+#### 8.6.1 Versioned API and Health
 
-As rotas de negocio estao sob `v1`, resultando em `GET/POST/... /api/v1/...` (prefixo `api` do Laravel + grupo `v1` em `routes/api.php`).
+Business routes are under `v1`, resulting in `GET/POST/... /api/v1/...` (Laravel's `api` prefix + `v1` group in `routes/api.php`).
 
-O endpoint de health da aplicacao esta **fora** do grupo `v1`: `GET /api/health` (`HealthController`).
+The application's health endpoint is **outside** the `v1` group: `GET /api/health` (`HealthController`).
 
-Em `routes/web.php` existe tambem `GET /health` apontando para o mesmo controller (util quando o front da API responde na raiz do host). Alem disso, `GET /up` e o health check padrao registrado no bootstrap do Laravel 11.
+In `routes/web.php` there is also `GET /health` pointing to the same controller (useful when the API front responds at the host root). Additionally, `GET /up` is the default health check registered in the Laravel 11 bootstrap.
 
-Grupos funcionais em `/api/v1`:
+Functional groups in `/api/v1`:
 
-- autenticacao;
-- tecnologias;
-- sessoes de estudo;
+- authentication;
+- technologies;
+- study sessions;
 - analytics;
 
-Canais de broadcasting autenticados permanecem em `routes/channels.php`.
+Authenticated broadcasting channels remain in `routes/channels.php`.
 
-### 8.6.2 Canais privados
+#### 8.6.2 Private Channels
 
-O canal `dashboard.{userId}` garante que o usuario so possa assinar o proprio fluxo. Isso e coerente com o desenho do dashboard em tempo real por usuario.
+The `dashboard.{userId}` channel ensures the user can only subscribe to their own flow. This is consistent with the real-time dashboard design per user.
 
-### 8.6.3 Scheduler
+#### 8.6.3 Scheduler
 
-`routes/console.php` define tarefas agendadas, incluindo geracao de resumo semanal e limpeza de filas antigas. Essa escolha centraliza automacoes programadas dentro do backend em vez de depender apenas de orquestracao externa.
+`routes/console.php` defines scheduled tasks, including weekly summary generation and old queue cleanup. This choice centralizes scheduled automations within the backend instead of depending only on external orchestration.
 
-## 8.7 Services
+### 8.7 Services
 
-Os services representam o coracao da logica de negocio.
+Services represent the heart of business logic.
 
-### 8.7.1 AuthService e TokenService
+#### 8.7.1 AuthService and TokenService
 
-O `AuthService` concentra registro, login, usuario atual, atualizacao de perfil e troca de senha. A revogacao e blacklist de tokens Sanctum foram centralizadas no `TokenService` (`App\Modules\Auth\Services\TokenService`), usado em logout, revogacao em massa, login e troca de senha — inclusive alinhado a validacao de tokens no edge (OpenResty), conforme `DOCUMENTACAO_TECNICA_LUA.md`.
+The `AuthService` concentrates registration, login, current user, profile update, and password change. Sanctum token revocation and blacklisting have been centralized in `TokenService` (`App\Modules\Auth\Services\TokenService`), used in logout, mass revocation, login, and password change — also aligned with token validation at the edge (OpenResty), as documented in `DOCUMENTACAO_TECNICA_LUA.md`.
 
-### 8.7.2 StudySessionService
+#### 8.7.2 StudySessionService
 
-Controla a vida util das sessoes:
+Controls the lifecycle of sessions:
 
-- criacao;
-- listagem;
-- detalhe;
-- atualizacao;
-- encerramento;
-- exclusao;
-- verificacao de propriedade do recurso.
+- creation;
+- listing;
+- detail;
+- update;
+- ending;
+- deletion;
+- resource ownership verification.
 
-Tambem e o ponto em que sessoes disparam eventos que abastecem todo o pipeline de metricas e atualizacoes.
+It is also the point where sessions dispatch events that feed the entire metrics and updates pipeline.
 
-### 8.7.3 TechnologyService
+#### 8.7.3 TechnologyService
 
-Cuida do CRUD de tecnologias do usuario. Em vez de remover fisicamente, aparenta adotar uma logica de desativacao, o que preserva historico e reduz risco de quebrar referencias.
+Handles user technology CRUD. Instead of physically removing, it appears to adopt a deactivation logic, which preserves history and reduces the risk of breaking references.
 
-### 8.7.4 AnalyticsService
+#### 8.7.4 AnalyticsService
 
-Entrega os dados consolidados para:
+Delivers consolidated data for:
 
 - dashboard;
-- metricas agregadas;
-- series temporais;
-- comparativos semanais;
+- aggregated metrics;
+- time series;
+- weekly comparisons;
 - heatmap;
-- exportacao;
-- recalc manual.
+- export;
+- manual recalculation.
 
-Esse modulo representa a camada analitica do sistema e trabalha em parceria com cache, repositorios, jobs e tabelas derivadas.
+This module represents the analytical layer of the system and works in partnership with cache, repositories, jobs, and derived tables.
 
-## 8.8 Repositories e contratos
+### 8.8 Repositories and Contracts
 
-O backend usa interfaces e implementacoes concretas para acesso a dados. A injecao das dependencias e centralizada em `RepositoryServiceProvider`.
+The backend uses interfaces and concrete implementations for data access. Dependency injection is centralized in `RepositoryServiceProvider`.
 
-Beneficios dessa abordagem:
+Benefits of this approach:
 
-- reduz acoplamento direto entre service e Eloquent;
-- facilita substituicao de implementacao;
-- melhora testabilidade;
-- organiza queries em um lugar consistente.
+- reduces direct coupling between service and Eloquent;
+- facilitates implementation substitution;
+- improves testability;
+- organizes queries in a consistent place.
 
-O custo e maior numero de arquivos e uma camada a mais de abstracao, mas o projeto parece assumir esse custo em troca de clareza estrutural.
+The cost is more files and an additional abstraction layer, but the project appears to accept this cost in exchange for structural clarity.
 
-## 8.9 Models e camada de persistencia
+### 8.9 Models and Persistence Layer
 
-Models principais:
+Main models:
 
 - `User`
 - `Technology`
 - `StudySession`
 - `BaseModel`
 
-Caracteristicas observadas:
+Observed characteristics:
 
-- uso de UUID como chave primaria;
-- serializacao padronizada de datas;
-- relacionamentos de usuario com tecnologias e sessoes;
-- uso de traits de apoio.
+- use of UUID as primary key;
+- standardized date serialization;
+- user relationships with technologies and sessions;
+- use of support traits.
 
-Essas escolhas favorecem interoperabilidade e ajudam a evitar exposicao de ids incrementais.
+These choices favor interoperability and help prevent exposure of incremental IDs.
 
-## 8.10 Banco de dados
+### 8.10 Database
 
-## 8.10.1 Tecnologia e estrategia
+#### 8.10.1 Technology and Strategy
 
-O sistema usa PostgreSQL 16 com uma ideia arquitetural importante: separacao por schema.
+The system uses PostgreSQL 16 with an important architectural idea: schema separation.
 
-### 8.10.2 Schema `public`
+#### 8.10.2 `public` Schema
 
-Concentra dados transacionais principais, como:
+Concentrates main transactional data, such as:
 
-- usuarios;
-- tecnologias;
-- sessoes de estudo;
-- tokens pessoais;
-- estruturas ligadas ao uso diario da aplicacao.
+- users;
+- technologies;
+- study sessions;
+- personal tokens;
+- structures related to daily application usage.
 
-### 8.10.3 Schema `analytics`
+#### 8.10.3 `analytics` Schema
 
-Concentra dados derivados e agregados, como:
+Concentrates derived and aggregated data, such as:
 
-- metricas de usuario;
-- metricas por tecnologia;
-- minutos diarios;
-- resumos semanais.
+- user metrics;
+- per-technology metrics;
+- daily minutes;
+- weekly summaries.
 
-Essa separacao e valiosa porque isola melhor o que e transacional do que e analitico. Na pratica, isso aproxima o desenho de uma estrategia inspirada em CQRS, mesmo sem adotar CQRS formal completo.
+This separation is valuable because it better isolates what is transactional from what is analytical. In practice, this brings the design closer to a CQRS-inspired strategy, even without adopting full formal CQRS.
 
-### 8.10.4 Migrations
+#### 8.10.4 Migrations
 
-As migrations nao se resumem a um unico diretorio. O projeto carrega conjuntos separados, incluindo:
+The migrations are not limited to a single directory. The project loads separate sets, including:
 
-- migrations padrao;
-- migrations transacionais;
-- migrations de analytics.
+- standard migrations;
+- transactional migrations;
+- analytics migrations.
 
-Isso reforca a ideia de organizacao por tipo de dado e responsabilidade.
+This reinforces the idea of organization by data type and responsibility.
 
-### 8.10.5 Regras de integridade
+#### 8.10.5 Integrity Rules
 
-Pelo que o codigo indica, o banco tambem participa da garantia de consistencia, com funcoes, triggers, indices e restricoes. Um exemplo importante e a protecao contra mais de uma sessao ativa simultanea para o mesmo usuario.
+From what the code indicates, the database also participates in ensuring consistency, with functions, triggers, indexes, and constraints. An important example is the protection against more than one simultaneous active session for the same user.
 
-## 8.11 Autenticacao e autorizacao
+### 8.11 Authentication and Authorization
 
-## 8.11.1 Autenticacao
+#### 8.11.1 Authentication
 
-O sistema usa `Laravel Sanctum` com tokens pessoais. As rotas protegidas exigem `auth:sanctum`.
+The system uses `Laravel Sanctum` with personal tokens. Protected routes require `auth:sanctum`.
 
-Fluxos principais:
+Main flows:
 
-- registro;
+- registration;
 - login;
-- usuario atual;
+- current user;
 - logout;
-- revogacao de tokens;
-- alteracao de senha.
+- token revocation;
+- password change.
 
-## 8.11.2 Autorizacao
+#### 8.11.2 Authorization
 
-Nao ha evidencia forte de uso extensivo de `Policies` como mecanismo principal. Em vez disso, parte significativa da autorizacao ocorre de forma imperativa em services ou consultas filtradas por `user_id`.
+There is no strong evidence of extensive use of `Policies` as the main mechanism. Instead, a significant part of authorization occurs imperatively in services or queries filtered by `user_id`.
 
-Isso funciona, mas gera dois efeitos de manutencao:
+This works, but generates two maintenance effects:
 
-- a logica de ownership fica espalhada;
-- a semantica de erro pode variar entre modulos.
+- ownership logic is scattered;
+- error semantics may vary between modules.
 
-De fato, um ponto observado e a diferenca entre respostas `403` e `404` dependendo do tipo de recurso e do modulo.
+Indeed, an observed point is the difference between `403` and `404` responses depending on the resource type and module.
 
-## 8.12 Eventos, listeners e jobs
+### 8.12 Events, Listeners, and Jobs
 
-Este e um dos aspectos mais interessantes do projeto.
+This is one of the most interesting aspects of the project.
 
-### 8.12.1 Eventos
+#### 8.12.1 Events
 
-Eventos representam mudancas de estado importantes, especialmente em sessoes de estudo e metricas.
+Events represent important state changes, especially in study sessions and metrics.
 
-### 8.12.2 Listeners
+#### 8.12.2 Listeners
 
-Listeners reagem a esses eventos para:
+Listeners react to these events to:
 
-- invalidar cache;
-- disparar recalc de metricas;
-- acionar broadcast;
-- acoplar fluxos secundarios sem poluir o service principal.
+- invalidate cache;
+- trigger metrics recalculation;
+- trigger broadcast;
+- couple secondary flows without polluting the main service.
 
-### 8.12.3 Jobs
+#### 8.12.3 Jobs
 
-Jobs observados incluem:
+Observed jobs include:
 
 - `RecalculateMetricsJob`
 - `GenerateWeeklySummaryJob`
 
-O `RecalculateMetricsJob` e particularmente central, porque traduz alteracoes transacionais em atualizacao das tabelas analiticas. O uso de delay curto sugere tentativa de agrupar mudancas proximas e reduzir recalc em excesso.
+The `RecalculateMetricsJob` is particularly central because it translates transactional changes into analytics table updates. The use of short delay suggests an attempt to batch nearby changes and reduce excessive recalculation.
 
-### 8.12.4 Valor arquitetural dessa camada
+#### 8.12.4 Architectural Value of This Layer
 
-Essa arquitetura produz beneficios claros:
+This architecture produces clear benefits:
 
-- menor tempo de resposta para operacoes do usuario;
-- desacoplamento entre write path e processamento derivado;
-- possibilidade de evoluir analytics sem reescrever fluxo HTTP principal;
-- melhor suporte a tempo real.
+- lower response time for user operations;
+- decoupling between write path and derived processing;
+- ability to evolve analytics without rewriting the main HTTP flow;
+- better real-time support.
 
-## 8.13 Cache
+### 8.13 Cache
 
-O projeto usa Redis com cache taggeado. Isso e relevante porque:
+The project uses Redis with tagged cache. This is relevant because:
 
-- dashboards e metricas costumam ser caros para recalcular;
-- invalidacao por usuario e mais simples quando as chaves sao agrupadas por tags;
-- a API pode responder com menor custo em leituras repetidas.
+- dashboards and metrics are often expensive to recalculate;
+- per-user invalidation is simpler when keys are grouped by tags;
+- the API can respond with lower cost on repeated reads.
 
-Esse desenho indica preocupacao com performance desde cedo, o que faz sentido em um dominio com agregacoes e visualizacoes frequentes.
+This design indicates concern with performance from early on, which makes sense in a domain with frequent aggregations and visualizations.
 
-## 8.14 Health checks e observabilidade
+### 8.14 Health Checks and Observability
 
-O `HealthController` testa dependencias como:
+The `HealthController` tests dependencies such as:
 
-- banco;
+- database;
 - Redis;
-- fila;
-- endpoint ou conectividade de WebSocket.
+- queue;
+- WebSocket endpoint or connectivity.
 
-Esse tipo de endpoint ajuda em:
+This type of endpoint helps in:
 
-- diagnostico operacional;
-- healthchecks de container;
-- integracao com proxy ou orquestradores.
+- operational diagnostics;
+- container health checks;
+- proxy or orchestrator integration.
 
-Somado ao middleware de log e aos logs de erro em jobs, o projeto possui uma camada inicial de observabilidade operacional.
+Combined with the log middleware and error logs in jobs, the project has an initial layer of operational observability.
 
-## 8.15 Tratamento de excecoes
+### 8.15 Exception Handling
 
-O projeto possui um `Handler` customizado para respostas JSON. Casos tratados incluem:
+The project has a custom `Handler` for JSON responses. Handled cases include:
 
-- erro de validacao;
-- autenticacao;
-- autorizacao;
+- validation error;
+- authentication;
+- authorization;
 - model not found;
-- concorrencia de sessao;
-- API exception customizada;
-- certos erros de banco;
+- session concurrency;
+- custom API exception;
+- certain database errors;
 - rate limit;
-- fallback para erro interno.
+- internal error fallback.
 
-Isso melhora a previsibilidade do contrato de resposta da API e ajuda o frontend a interpretar falhas de forma mais consistente.
+This improves the predictability of the API's response contract and helps the frontend interpret failures more consistently.
 
-## 8.16 Rate limiting
+### 8.16 Rate Limiting
 
-Limitadores nomeados definidos em `AppServiceProvider` (`RateLimiter::for`):
+Named limiters defined in `AppServiceProvider` (`RateLimiter::for`):
 
+| Name | Behavior (Reference) |
+|------|----------------------|
+| `login` | 3 req/min per IP |
+| `register` | 5 req/min per IP |
+| `sensitive` | 5 req/min per authenticated user (or IP) |
+| `search` | 120 req/min per user (or IP) |
+| `recalculate` | 2 req/min per user (or IP) |
+| `export` | 30 req/min per user (or IP) |
+| `health` | 300 req/min per IP |
 
-| Nome          | Comportamento (referencia)                |
-| ------------- | ----------------------------------------- |
-| `login`       | 3 req/min por IP                          |
-| `register`    | 5 req/min por IP                          |
-| `sensitive`   | 5 req/min por usuario autenticado (ou IP) |
-| `search`      | 120 req/min por usuario (ou IP)           |
-| `recalculate` | 2 req/min por usuario (ou IP)             |
-| `export`      | 30 req/min por usuario (ou IP)            |
-| `health`      | 300 req/min por IP                        |
+Authenticated read routes use `throttle:60,1` (60 req/min). The generic write group in `api.php` uses `throttle:30,1` (30 req/min) where applicable.
 
+Study session routes (`start`, `end`, `store`, `update`, `destroy`) additionally use `throttle.sliding` (`SlidingWindowRateLimit` middleware) with per-route limits defined in `routes/api.php`, supported by `redis-scripts/sliding_window.lua`.
 
-Rotas autenticadas de leitura usam `throttle:60,1` (60 req/min). O grupo de escrita generico em `api.php` usa `throttle:30,1` (30 req/min) onde aplicavel.
+The source of truth is `backend/app/Providers/AppServiceProvider.php` and `backend/routes/api.php`.
 
-Rotas de sessao de estudo (`start`, `end`, `store`, `update`, `destroy`) usam adicionalmente `throttle.sliding` (middleware `SlidingWindowRateLimit`) com limites por rota definidos em `routes/api.php`, apoiados em `redis-scripts/sliding_window.lua`.
+### 8.17 Tests and Quality in Backend
 
-A fonte de verdade e `backend/app/Providers/AppServiceProvider.php` e `backend/routes/api.php`.
-
-## 8.17 Testes e qualidade no backend
-
-O backend conta com:
+The backend has:
 
 - PHPUnit;
 - Larastan/PHPStan;
 - Pint.
 
-Cobertura observada (estrutura em `backend/tests`):
+Observed coverage (structure in `backend/tests`):
 
-- Feature: autenticacao, sessoes, analytics, seguranca (rate limit, injecao), contratos JSON (`Feature/Contract`), health, Lua (dedup, sliding window, streak), excecoes;
-- Unit: eventos, listeners, jobs, middleware;
-- PHPUnit + Larastan + Pint no CI (`backend-ci.yml`).
+- Feature: authentication, sessions, analytics, security (rate limit, injection), JSON contracts (`Feature/Contract`), health, Lua (dedup, sliding window, streak), exceptions;
+- Unit: events, listeners, jobs, middleware;
+- PHPUnit + Larastan + Pint in CI (`backend-ci.yml`).
 
-Essa distribuicao sugere foco em fluxos principais do dominio, embora nao seja possivel afirmar cobertura percentual total apenas pela estrutura.
+This distribution suggests focus on main domain flows, although it is not possible to assert total percentage coverage solely from the structure.
 
-## 8.18 Pontos tecnicos de atencao no backend
+### 8.18 Technical Attention Points in Backend
 
-- autorizacao distribuida entre services/queries em vez de centralizada em policies;
-- semantica inconsistente entre `403` e `404` para ownership;
-- mais de um endpoint de health (`/up`, `/api/health`, `/health` em web) — util para probes distintos, mas exige clareza em runbooks;
-- painel Horizon dependente de contexto `web`, o que pode exigir fluxo especifico de acesso;
-- necessidade de garantir que arquivos sensiveis e artefatos locais nao sejam versionados indevidamente.
+- authorization distributed across services/queries instead of centralized in policies;
+- inconsistent semantics between `403` and `404` for ownership;
+- more than one health endpoint (`/up`, `/api/health`, `/health` in web) — useful for distinct probes, but requires clarity in runbooks;
+- Horizon panel dependent on `web` context, which may require a specific access flow;
+- need to ensure sensitive files and local artifacts are not improperly versioned.
 
-## 9. Infraestrutura e operacao
+## 9. Infrastructure and Operations
 
-## 9.1 Docker Compose
+### 9.1 Docker Compose
 
-O arquivo `docker-compose.yml` sobe a stack principal com os servicos:
+The `docker-compose.yml` file starts the main stack with services:
 
 - `nginx`
 - `php-fpm`
@@ -856,58 +854,58 @@ O arquivo `docker-compose.yml` sobe a stack principal com os servicos:
 - `postgres`
 - `redis`
 
-### 9.1.1 Nginx
+#### 9.1.1 Nginx
 
-Atua como reverse proxy e ponto publico de entrada. Faz roteamento para:
+Acts as reverse proxy and public entry point. Routes to:
 
-- API Laravel;
-- frontend estatico;
+- Laravel API;
+- static frontend;
 - WebSocket;
 - Horizon;
 - health endpoint.
 
-Tambem define gzip e cabecalhos de seguranca, o que mostra preocupacao inicial com entrega e exposicao externa.
+It also defines gzip and security headers, which shows initial concern with delivery and external exposure.
 
-### 9.1.2 PHP-FPM
+#### 9.1.2 PHP-FPM
 
-Container da aplicacao Laravel para atendimento HTTP via Nginx.
+Laravel application container for HTTP handling via Nginx.
 
-### 9.1.3 Reverb
+#### 9.1.3 Reverb
 
-Processo dedicado para o servidor de WebSocket.
+Dedicated process for the WebSocket server.
 
-### 9.1.4 Horizon
+#### 9.1.4 Horizon
 
-Container dedicado a processamento e supervisao de filas.
+Container dedicated to queue processing and supervision.
 
-### 9.1.5 Scheduler
+#### 9.1.5 Scheduler
 
-Executa `schedule:work`, permitindo que tarefas programadas do Laravel sejam processadas continuamente.
+Runs `schedule:work`, allowing Laravel's scheduled tasks to be processed continuously.
 
-### 9.1.6 Node
+#### 9.1.6 Node
 
-Container de desenvolvimento do frontend. Ele expõe a porta 5173 e roda `npm install` seguido de `npm run dev`. E importante notar que esse container e claramente orientado a ambiente de desenvolvimento e nao a entrega final estavel do frontend em producao.
+Frontend development container. It exposes port 5173 and runs `npm install` followed by `npm run dev`. It is important to note that this container is clearly oriented to the development environment and not to the final stable frontend delivery in production.
 
-### 9.1.7 Postgres
+#### 9.1.7 Postgres
 
-Banco principal, sem exposicao de porta publica no compose base, o que melhora seguranca local por padrao.
+Main database, without public port exposure in the base compose, which improves default local security.
 
-### 9.1.8 Redis
+#### 9.1.8 Redis
 
-Servico de cache e infraestrutura, tambem sem exposicao publica por padrao.
+Cache and infrastructure service, also without public exposure by default.
 
-## 9.2 Ambiente dev expandido
+### 9.2 Expanded Dev Environment
 
-`docker-compose.dev.yml` adiciona ferramentas auxiliares, como:
+`docker-compose.dev.yml` adds auxiliary tools such as:
 
 - `pgAdmin`
 - `Mailpit`
 
-Isso facilita depuracao e operacao em ambiente local.
+This facilitates debugging and operations in the local environment.
 
-## 9.3 Makefile
+### 9.3 Makefile
 
-O `Makefile` encapsula tarefas comuns:
+The `Makefile` encapsulates common tasks:
 
 - `setup`
 - `dev`
@@ -924,190 +922,190 @@ O `Makefile` encapsula tarefas comuns:
 - `lint`
 - `logs`
 
-Isso e importante porque padroniza comandos e reduz dependencia de memoria operacional do desenvolvedor.
+This is important because it standardizes commands and reduces the developer's operational memory dependency.
 
-## 9.4 CI/CD
+### 9.4 CI/CD
 
-O projeto possui tres workflows principais:
+The project has three main workflows:
 
-### 9.4.1 `backend-ci.yml`
+#### 9.4.1 `backend-ci.yml`
 
-Executa instalacao, migracoes, testes, Pint e PHPStan.
+Executes installation, migrations, tests, Pint, and PHPStan.
 
-### 9.4.2 `frontend-ci.yml`
+#### 9.4.2 `frontend-ci.yml`
 
-Executa instalacao, type-check, testes, lint e build.
+Executes installation, type-check, tests, lint, and build.
 
-### 9.4.3 `deploy.yml`
+#### 9.4.3 `deploy.yml`
 
-Constrói imagens Docker para backend e frontend e as publica, com estrutura preparada para evolucao de deploy automatizado.
+Builds Docker images for backend and frontend and publishes them, with a structure prepared for automated deploy evolution.
 
-## 9.5 Hooks de git e padrao de commits
+### 9.5 Git Hooks and Commit Pattern
 
-Em `.husky` e `commitlint.config.js`, o repositorio padroniza:
+In `.husky` and `commitlint.config.js`, the repository standardizes:
 
-- validacao de mensagem de commit;
-- execucao de checagens antes do commit.
+- commit message validation;
+- pre-commit check execution.
 
-No pre-commit, o fluxo mistura verificacao de backend e frontend. Isso ajuda a impedir commits com problemas triviais de formato ou consistencia.
+In pre-commit, the flow mixes backend and frontend verification. This helps prevent commits with trivial format or consistency issues.
 
-## 10. Fluxos importantes do sistema
+## 10. Important System Flows
 
-## 10.1 Fluxo de autenticacao
+### 10.1 Authentication Flow
 
-1. O usuario envia credenciais pela SPA.
-2. O frontend chama o endpoint de login.
-3. O backend valida e gera token Sanctum.
-4. O frontend persiste token e dados basicos do usuario.
-5. Guards passam a liberar rotas autenticadas.
-6. O cliente HTTP adiciona Bearer token nas proximas requisicoes.
+1. The user sends credentials through the SPA.
+2. The frontend calls the login endpoint.
+3. The backend validates and generates a Sanctum token.
+4. The frontend persists the token and basic user data.
+5. Guards begin to release authenticated routes.
+6. The HTTP client adds Bearer token to subsequent requests.
 
-## 10.2 Fluxo de criacao/encerramento de sessao
+### 10.2 Session Creation/Ending Flow
 
-1. O usuario cria ou inicia uma sessao pelo frontend.
-2. O backend persiste a sessao.
-3. O modulo de sessoes emite evento de dominio.
-4. Listeners invalidam cache e agendam recalc de metricas.
-5. O job recalcula agregados.
-6. O backend publica evento de metrics atualizadas.
-7. O frontend recebe o evento e atualiza dashboard/estado visivel.
+1. The user creates or starts a session through the frontend.
+2. The backend persists the session.
+3. The session module dispatches a domain event.
+4. Listeners invalidate cache and schedule metrics recalculation.
+5. The job recalculates aggregates.
+6. The backend publishes an updated metrics event.
+7. The frontend receives the event and updates the visible dashboard/state.
 
-## 10.3 Fluxo de analytics
+### 10.3 Analytics Flow
 
-1. O frontend solicita dashboard ou outros recortes analiticos.
-2. O backend consulta cache ou repositorio analitico.
-3. Se necessario, dados agregados sao lidos do schema `analytics`.
-4. A resposta retorna com payload consolidado para consumo da UI.
+1. The frontend requests the dashboard or other analytical views.
+2. The backend queries cache or the analytics repository.
+3. If necessary, aggregated data is read from the `analytics` schema.
+4. The response returns with a consolidated payload for UI consumption.
 
-## 10.4 Fluxo de exportacao
+### 10.4 Export Flow
 
-1. O usuario solicita export com periodo.
-2. O backend consulta recortes analiticos e retorna JSON exportavel.
-3. O frontend oferece a experiencia de download/consumo.
+1. The user requests an export with a period.
+2. The backend queries analytical views and returns exportable JSON.
+3. The frontend provides the download/consumption experience.
 
-## 11. Modelo conceitual de dados
+## 11. Conceptual Data Model
 
-Mesmo sem listar todas as colunas e constraints do banco, o dominio central pode ser entendido por essas entidades:
+Even without listing all database columns and constraints, the central domain can be understood through these entities:
 
-### 11.1 Usuario
+### 11.1 User
 
-Representa o dono da conta e da linha do tempo de estudos.
+Represents the account owner and the study timeline owner.
 
-Relacionamentos aparentes:
+Apparent relationships:
 
-- um usuario possui varias tecnologias;
-- um usuario possui varias sessoes;
-- um usuario possui metricas derivadas;
-- um usuario pode possuir varios tokens de acesso.
+- a user has many technologies;
+- a user has many sessions;
+- a user has derived metrics;
+- a user can have many access tokens.
 
-### 11.2 Tecnologia
+### 11.2 Technology
 
-Representa um eixo de categorizacao do estudo, como linguagem, framework, ferramenta ou tema. E usada tanto no CRUD do usuario quanto na composicao de metricas por tecnologia.
+Represents a categorization axis of study, such as language, framework, tool, or topic. It is used both in user CRUD and in per-technology metrics composition.
 
-### 11.3 Sessao de estudo
+### 11.3 Study Session
 
-Representa uma unidade de tempo estudado. Pode estar ativa ou encerrada, se associa a um usuario e a uma tecnologia, e serve como evento transacional base para analytics.
+Represents a unit of studied time. It can be active or ended, is associated with a user and a technology, and serves as the base transactional event for analytics.
 
-### 11.4 Metricas derivadas
+### 11.4 Derived Metrics
 
-Representam visoes consolidadas do uso:
+Represent consolidated views of usage:
 
-- total por usuario;
-- distribuicao por tecnologia;
-- minutos diarios;
-- resumo semanal;
-- series temporais e heatmaps.
+- per-user totals;
+- per-technology distribution;
+- daily minutes;
+- weekly summary;
+- time series and heatmaps.
 
-Essas estruturas nao substituem as sessoes; elas existem para acelerar leitura, dashboard e relatorios.
+These structures do not replace sessions; they exist to accelerate reading, dashboard, and reports.
 
-## 12. Seguranca, resiliencia e operacao
+## 12. Security, Resilience, and Operations
 
-## 12.1 Pontos positivos observados
+### 12.1 Observed Positive Points
 
-- autenticacao por token no backend;
-- canais privados para realtime;
-- Redis e Postgres nao expostos publicamente no compose base;
-- tratamento padronizado de excecoes JSON;
-- rate limiting por grupo funcional;
-- logs de API e de jobs;
-- healthcheck para componentes criticos;
-- separacao de cargas sincrona e assincrona.
+- token authentication on backend;
+- private channels for real-time;
+- Redis and Postgres not publicly exposed in base compose;
+- standardized JSON exception handling;
+- rate limiting by functional group;
+- API and job logs;
+- healthcheck for critical components;
+- separation of synchronous and asynchronous loads.
 
-## 12.2 Pontos que merecem endurecimento ou revisao
+### 12.2 Points That Require Hardening or Review
 
-- consolidar modelo de autorizacao, preferencialmente com semantica uniforme;
-- revisar a estrategia de acesso ao Horizon em diferentes ambientes;
-- avaliar se goals devem continuar frontend-only;
-- conferir se links do README apontam para caminhos atuais (indice em `docs/README.md`).
+- consolidate authorization model, preferably with uniform semantics;
+- review Horizon access strategy in different environments;
+- evaluate whether goals should remain frontend-only;
+- check if README links point to current paths (index in `docs/README.md`).
 
-## 13. Divergencias e lacunas documentais observadas
+## 13. Documented Divergences and Gaps
 
-Pontos a manter sincronizados entre codigo e texto:
+Points to keep synchronized between code and text:
 
-- goals como feature do produto com persistencia apenas no frontend (ver `docs/operations/GOALS-FRONTEND-ONLY.md`);
-- documentacao dispersa em `docs/`, READMEs por pacote e `frontend/docs/` — o indice central e `docs/README.md`.
+- goals as a product feature with persistence only in the frontend (see `docs/operations/GOALS-FRONTEND-ONLY.md`);
+- scattered documentation in `docs/`, package READMEs, and `frontend/docs/` — the central index is `docs/README.md`.
 
-Este arquivo consolida a visao tecnica; detalhes de Lua, borda HTTP e Postgres estao em `DOCUMENTACAO_TECNICA_LUA.md` na mesma pasta.
+This file consolidates the technical view; details on Lua, HTTP edge, and Postgres are in `DOCUMENTACAO_TECNICA_LUA.md` in the same folder.
 
-## 14. Avaliacao tecnica geral do projeto
+## 14. General Technical Project Assessment
 
-Em termos de maturidade estrutural, o projeto mostra um nivel acima do basico para um portfolio ou produto em crescimento. Os sinais mais fortes disso sao:
+In terms of structural maturity, the project shows a level above basic for a portfolio or growing product. The strongest signs of this are:
 
-- separacao clara entre dominios;
-- uso de camada de services e repositories;
-- analytics desacoplado do write path principal;
-- uso de cache com invalidacao orientada a usuario;
-- comunicacao em tempo real por eventos;
-- stack de desenvolvimento conteinerizada;
-- CI para frontend e backend;
-- preocupacao com tipagem, lint e testes.
+- clear separation between domains;
+- use of service and repository layers;
+- analytics decoupled from the main write path;
+- cache usage with user-oriented invalidation;
+- real-time communication via events;
+- containerized development stack;
+- CI for frontend and backend;
+- concern with typing, lint, and tests.
 
-Ao mesmo tempo, ainda ha sinais tipicos de um sistema em evolucao:
+At the same time, there are still typical signs of an evolving system:
 
-- inconsistencias documentais;
-- coexistencia de abordagens em algumas camadas do frontend;
-- autorizacao ainda nao totalmente centralizada;
-- feature de goals ainda local;
-- alguns componentes de infra e deploy com carater de base preparada, mas nao necessariamente finalizada para operacao produtiva completa.
+- documentation inconsistencies;
+- coexistence of approaches in some frontend layers;
+- authorization not yet fully centralized;
+- goals feature still local;
+- some infrastructure and deploy components with a prepared base character, but not necessarily finalized for full productive operation.
 
-## 15. Recomendacoes de evolucao documental
+## 15. Documentation Evolution Recommendations
 
-Como proximos passos de documentacao, faria sentido criar ou consolidar:
+As next documentation steps, it would make sense to create or consolidate:
 
-- um diagrama de arquitetura de contexto e containers;
-- um documento de modelo de dados com tabelas e relacoes;
-- um catalogo de eventos do sistema;
-- um guia de deploy/operacao realmente sincronizado com o repositorio atual;
-- uma matriz de ownership e autorizacao por endpoint;
-- uma especificacao de contratos da API baseada no comportamento real.
+- a context and container architecture diagram;
+- a data model document with tables and relationships;
+- a system event catalog;
+- a deploy/operations guide actually synchronized with the current repository;
+- an ownership and authorization matrix per endpoint;
+- an API contract specification based on actual behavior.
 
-## 16. Conclusao
+## 16. Conclusion
 
-`StudyTrack Pro` e um sistema full-stack bem estruturado, com separacao consistente entre interface, API, persistencia, jobs e realtime. O projeto foi desenhado para registrar estudo, derivar metricas e apresentar visualizacoes ricas, sustentando essa experiencia com uma base tecnica moderna: Vue 3 no frontend, Laravel 11 no backend, PostgreSQL para dados, Redis para infraestrutura de suporte, e Docker para padronizacao local.
+`StudyTrack Pro` is a well-structured full-stack system with consistent separation between interface, API, persistence, jobs, and real-time. The project was designed to log study, derive metrics, and present rich visualizations, sustaining this experience with a modern technical base: Vue 3 on the frontend, Laravel 11 on the backend, PostgreSQL for data, Redis for support infrastructure, and Docker for local standardization.
 
-O valor tecnico mais evidente do projeto esta na combinacao entre:
+The most evident technical value of the project lies in the combination of:
 
-- dominio claro;
-- backend modularizado;
-- pipeline de analytics desacoplado;
-- frontend organizado por features;
-- suporte a atualizacao em tempo real;
-- preocupacoes reais com qualidade, observabilidade e operacao.
+- clear domain;
+- modularized backend;
+- decoupled analytics pipeline;
+- frontend organized by features;
+- real-time update support;
+- real concerns with quality, observability, and operations.
 
-Como documento de referencia, este arquivo deve ser mantido alinhado sempre que houver alteracao relevante em arquitetura, infra, modelo de dados, contratos de API ou estrategia de execucao.
+As a reference document, this file should be kept aligned whenever there are relevant changes in architecture, infrastructure, data model, API contracts, or execution strategy.
 
-## 17. Documento complementar da integracao Lua
+## 17. Complementary Lua Integration Document
 
-As alteracoes recentes de Redis Lua, OpenResty e PL/Lua foram documentadas separadamente em:
+Recent Redis Lua, OpenResty, and PL/Lua changes were documented separately in:
 
 - `docs/technical/DOCUMENTACAO_TECNICA_LUA.md`
 
-Esse arquivo complementar detalha:
+This complementary file details:
 
-- scripts Lua adicionados;
-- integracoes Laravel e Redis;
-- comportamento do edge em OpenResty;
-- trigger PL/Lua no PostgreSQL;
-- ajustes de Docker e compose;
-- testes e validacoes executadas;
-- cuidados de seguranca e riscos residuais.
+- added Lua scripts;
+- Laravel and Redis integrations;
+- edge behavior in OpenResty;
+- PL/Lua trigger in PostgreSQL;
+- Docker and compose adjustments;
+- executed tests and validations;
+- security concerns and residual risks.

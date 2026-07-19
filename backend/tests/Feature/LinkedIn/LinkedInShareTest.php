@@ -24,7 +24,7 @@ class LinkedInShareTest extends TestCase
 
     public function test_status_returns_disconnected_when_no_linkedin(): void
     {
-        $response = $this->withBearerToken($this->token)
+        $response = $this->withToken($this->token)
             ->getJson('/api/v1/linkedin/status');
 
         $response->assertOk()
@@ -46,7 +46,7 @@ class LinkedInShareTest extends TestCase
             ]),
         ]);
 
-        $response = $this->withBearerToken($this->token)
+        $response = $this->withToken($this->token)
             ->getJson('/api/v1/linkedin/status');
 
         $response->assertOk()
@@ -67,7 +67,7 @@ class LinkedInShareTest extends TestCase
 
     public function test_share_returns_forbidden_when_not_connected(): void
     {
-        $response = $this->withBearerToken($this->token)
+        $response = $this->withToken($this->token)
             ->postJson('/api/v1/linkedin/share', [
                 'text' => 'Teste',
             ]);
@@ -83,7 +83,7 @@ class LinkedInShareTest extends TestCase
     {
         $this->user->update(['linkedin_id' => 'linkedin-123']);
 
-        $response = $this->withBearerToken($this->token)
+        $response = $this->withToken($this->token)
             ->postJson('/api/v1/linkedin/share', []);
 
         $response->assertUnprocessable();
@@ -93,7 +93,7 @@ class LinkedInShareTest extends TestCase
     {
         $this->user->update(['linkedin_id' => 'linkedin-123']);
 
-        $response = $this->withBearerToken($this->token)
+        $response = $this->withToken($this->token)
             ->postJson('/api/v1/linkedin/share', [
                 'text' => str_repeat('a', 3001),
             ]);
@@ -114,7 +114,7 @@ class LinkedInShareTest extends TestCase
             ], 201),
         ]);
 
-        $response = $this->withBearerToken($this->token)
+        $response = $this->withToken($this->token)
             ->postJson('/api/v1/linkedin/share', [
                 'text' => 'Estudei Laravel e Vue.js hoje!',
             ]);
@@ -144,7 +144,7 @@ class LinkedInShareTest extends TestCase
             ], 401),
         ]);
 
-        $response = $this->withBearerToken($this->token)
+        $response = $this->withToken($this->token)
             ->postJson('/api/v1/linkedin/share', [
                 'text' => 'Teste',
             ]);
@@ -165,7 +165,7 @@ class LinkedInShareTest extends TestCase
             'linkedin_token_expires_at' => now()->addDays(30),
         ]);
 
-        $response = $this->withBearerToken($this->token)
+        $response = $this->withToken($this->token)
             ->postJson('/api/v1/linkedin/disconnect');
 
         $response->assertOk();

@@ -1,28 +1,28 @@
-# Variáveis de ambiente
+# Environment Variables
 
-Use os arquivos `.env.example` como base e copie para `.env` no primeiro setup (`make setup` faz isso).
+Use the `.env.example` files as a base and copy them to `.env` for the first setup (`make setup` does this).
 
 ## Backend (`backend/.env.example`)
 
-| Variável | Uso |
-|----------|-----|
-| `APP_*` | Nome, ambiente, key, debug, URL da aplicação |
-| `DB_*` | Conexão PostgreSQL (host, porta, database, usuário, senha) |
-| `REDIS_*`, `CACHE_STORE`, `QUEUE_CONNECTION`, `SESSION_DRIVER` | Redis para cache, filas e sessão |
-| `REVERB_*` | Laravel Reverb (WebSocket): app key, host, porta, scheme |
-| `SANCTUM_STATEFUL_DOMAINS` | Domínios para cookies de autenticação |
-| `CORS_ALLOWED_ORIGINS` | Origens permitidas para CORS (ex.: `http://localhost:5173`) |
-| `HORIZON_ADMIN_EMAILS` | Emails (separados por vírgula) que podem acessar o dashboard do Horizon |
-| `RATE_LIMIT_FAIL_OPEN` | Quando `true`, falha do rate limit deslizante (Lua) permite seguir o request (ver `config/services.php`) |
+| Variable | Usage |
+|----------|-------|
+| `APP_*` | Name, environment, key, debug, application URL |
+| `DB_*` | PostgreSQL connection (host, port, database, user, password) |
+| `REDIS_*`, `CACHE_STORE`, `QUEUE_CONNECTION`, `SESSION_DRIVER` | Redis for cache, queues, and sessions |
+| `REVERB_*` | Laravel Reverb (WebSocket): app key, host, port, scheme |
+| `SANCTUM_STATEFUL_DOMAINS` | Domains for authentication cookies |
+| `CORS_ALLOWED_ORIGINS` | Allowed origins for CORS (e.g., `http://localhost:5173`) |
+| `HORIZON_ADMIN_EMAILS` | Emails (comma-separated) that can access the Horizon dashboard |
+| `RATE_LIMIT_FAIL_OPEN` | When `true`, sliding rate limit (Lua) failure allows the request to proceed (see `config/services.php`) |
 
-O ficheiro `backend/.env.example` inclui também chaves `VITE_*` para alinhar builds em Docker ou documentação do monorepo. **O build do Vite lê sobretudo `frontend/.env` / `frontend/.env.example`** — mantenha os valores coerentes entre ambos se usar variáveis duplicadas.
+The `backend/.env.example` file also includes `VITE_*` keys to align builds in Docker or monorepo documentation. **The Vite build primarily reads from `frontend/.env` / `frontend/.env.example`** — keep values consistent between both if using duplicated variables.
 
 ## Frontend (`frontend/.env.example`)
 
-| Variável | Uso |
-|----------|-----|
-| `VITE_API_URL` | URL base da API (vazio = proxy relativo em dev) |
-| `VITE_REVERB_ENABLED` | `true`/`false` para ativar/desativar WebSocket |
-| `VITE_REVERB_HOST`, `VITE_REVERB_PORT`, `VITE_REVERB_SCHEME`, `VITE_REVERB_APP_KEY` | Conexão com o servidor Reverb |
+| Variable | Usage |
+|----------|-------|
+| `VITE_API_URL` | API base URL (empty = relative proxy in dev) |
+| `VITE_REVERB_ENABLED` | `true`/`false` to enable/disable WebSocket |
+| `VITE_REVERB_HOST`, `VITE_REVERB_PORT`, `VITE_REVERB_SCHEME`, `VITE_REVERB_APP_KEY` | Reverb server connection |
 
-Depois de alterar variáveis no backend que o frontend usa, é necessário rebuild do frontend (`npm run build`) para que as `VITE_*` sejam embutidas.
+After changing backend variables that the frontend uses, a frontend rebuild (`npm run build`) is required so that `VITE_*` values are embedded.

@@ -5,6 +5,7 @@ use App\Http\Controllers\V1\AnalyticsController;
 use App\Http\Controllers\V1\AuthController;
 use App\Http\Controllers\V1\CodeExecutionController;
 use App\Http\Controllers\V1\LinkedInController;
+use App\Http\Controllers\V1\OAuthController;
 use App\Http\Controllers\V1\StudySessionController;
 use App\Http\Controllers\V1\TechnologyController;
 use App\Http\Controllers\V1\YouTubeController;
@@ -24,6 +25,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
     Route::post('auth/register', [AuthController::class, 'register'])
         ->middleware('throttle:register');
     Route::post('auth/login', [AuthController::class, 'login'])
+        ->middleware('throttle:login');
+    Route::post('auth/oauth-complete', [OAuthController::class, 'oauthComplete'])
         ->middleware('throttle:login');
 
     // OAuth Routes movidas para web.php — precisam de sessão web completa

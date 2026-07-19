@@ -16,8 +16,8 @@ class TokenLifecycleTest extends TestCase
             ->postJson('/api/v1/auth/register', [
                 'name' => 'Token User',
                 'email' => 'token@test.com',
-                'password' => 'password123',
-                'password_confirmation' => 'password123',
+                'password' => 'Password123',
+                'password_confirmation' => 'Password123',
             ]);
 
         $response->assertStatus(201);
@@ -27,13 +27,13 @@ class TokenLifecycleTest extends TestCase
     public function test_login_returns_valid_token(): void
     {
         $user = User::factory()->create([
-            'password' => bcrypt('password123'),
+            'password' => bcrypt('Password123'),
         ]);
 
         $response = $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])
             ->postJson('/api/v1/auth/login', [
                 'email' => $user->email,
-                'password' => 'password123',
+                'password' => 'Password123',
             ]);
 
         $response->assertStatus(200);
@@ -45,7 +45,7 @@ class TokenLifecycleTest extends TestCase
     public function test_login_revokes_old_tokens(): void
     {
         $user = User::factory()->create([
-            'password' => bcrypt('password123'),
+            'password' => bcrypt('Password123'),
         ]);
 
         $oldToken = $user->createToken('old-token');
@@ -53,7 +53,7 @@ class TokenLifecycleTest extends TestCase
         $response = $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])
             ->postJson('/api/v1/auth/login', [
                 'email' => $user->email,
-                'password' => 'password123',
+                'password' => 'Password123',
             ]);
 
         $response->assertStatus(200);
@@ -113,8 +113,8 @@ class TokenLifecycleTest extends TestCase
         $response = $this->withHeader('Authorization', 'Bearer '.$token->plainTextToken)
             ->postJson('/api/v1/auth/change-password', [
                 'current_password' => 'old-password',
-                'password' => 'new-password-123',
-                'password_confirmation' => 'new-password-123',
+                'password' => 'NewPassword123',
+                'password_confirmation' => 'NewPassword123',
             ]);
 
         $response->assertStatus(200);

@@ -22,7 +22,7 @@ class RateLimitTest extends TestCase
         parent::setUp();
         $this->user = User::factory()->create([
             'email' => 'ratelimit@test.com',
-            'password' => 'password123',
+            'password' => 'Password123',
         ]);
         $this->token = $this->user->createToken('api-token')->plainTextToken;
     }
@@ -54,8 +54,8 @@ class RateLimitTest extends TestCase
             $response = $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])->postJson('/api/v1/auth/register', [
                 'name' => 'User '.$i,
                 'email' => "user{$i}@test.com",
-                'password' => 'password123',
-                'password_confirmation' => 'password123',
+                'password' => 'Password123',
+                'password_confirmation' => 'Password123',
             ]);
 
             if ($response->getStatusCode() === 429) {

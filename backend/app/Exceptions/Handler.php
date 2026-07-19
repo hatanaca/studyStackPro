@@ -16,6 +16,19 @@ use Throwable;
 
 class Handler extends ExceptionHandler
 {
+    /**
+     * Exceções 4xx que são comportamento normal — não devem poluir os logs de erro.
+     */
+    protected $dontReport = [
+        \Illuminate\Auth\AuthenticationException::class,
+        \Illuminate\Auth\Access\AuthorizationException::class,
+        \Illuminate\Database\Eloquent\ModelNotFoundException::class,
+        \Symfony\Component\HttpKernel\Exception\NotFoundHttpException::class,
+        \Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException::class,
+        \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException::class,
+        \Illuminate\Validation\ValidationException::class,
+    ];
+
     protected $dontFlash = [
         'current_password',
         'password',
@@ -25,7 +38,9 @@ class Handler extends ExceptionHandler
     public function register(): void
     {
         $this->reportable(function (Throwable $e) {
-            //
+            if (app()->bound('sentry')) {
+                \Sentry\Laravel\Integration::captureUnhandledException($e);
+            }
         });
     }
 
@@ -72,7 +87,7 @@ class Handler extends ExceptionHandler
                 ], 405),
                 default => response()->json([
                     'success' => false,
-                    'error' => ['code' => 'INTERNAL_ERROR', 'message' => config('app.debug') && app()->isLocal() ? $e->getMessage() : 'Erro interno.'],
+                    'error' => ['code' => 'INTERNAL_ERROR', 'message' => 'Erro interno.'],
                 ], 500),
             };
         }

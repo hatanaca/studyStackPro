@@ -28,7 +28,7 @@ class SetUserTimezoneTest extends TestCase
         $middleware = new SetUserTimezone;
         $middleware->handle($request, fn () => new Response('OK'));
 
-        $this->assertEquals('America/Sao_Paulo', config('app.timezone'));
+        $this->assertEquals('America/Sao_Paulo', $request->attributes->get('user_timezone'));
     }
 
     public function test_does_not_change_timezone_for_guest(): void

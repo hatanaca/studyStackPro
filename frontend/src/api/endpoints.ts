@@ -8,6 +8,7 @@ export const ENDPOINTS = {
     login: '/auth/login',
     register: '/auth/register',
     logout: '/auth/logout',
+    oauthComplete: '/auth/oauth-complete',
     me: '/auth/me',
     updateProfile: '/auth/me',
     changePassword: '/auth/change-password',

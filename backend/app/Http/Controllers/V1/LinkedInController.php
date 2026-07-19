@@ -49,7 +49,7 @@ class LinkedInController extends Controller
                 ],
             ]);
         } catch (\Throwable $e) {
-            Log::warning('LinkedIn profile fetch failed', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+            Log::warning('LinkedIn profile fetch failed', ['user_id' => $user->id, 'exception' => $e]);
 
             return $this->success(['connected' => true, 'profile' => null]);
         }
@@ -82,7 +82,7 @@ class LinkedInController extends Controller
         } catch (\Throwable $e) {
             Log::error('LinkedIn share failed', [
                 'user_id' => $user->id,
-                'error' => $e->getMessage(),
+                'exception' => $e,
             ]);
 
             return $this->error(
@@ -103,12 +103,12 @@ class LinkedInController extends Controller
     {
         $user = $request->user();
 
-        $user->update([
+        $user->forceFill([
             'linkedin_id' => null,
             'linkedin_token' => null,
             'linkedin_refresh_token' => null,
             'linkedin_token_expires_at' => null,
-        ]);
+        ])->save();
 
         return $this->success(null, 'Conta LinkedIn desconectada.');
     }

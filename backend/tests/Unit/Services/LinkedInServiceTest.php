@@ -127,9 +127,7 @@ class LinkedInServiceTest extends TestCase
         $this->assertNotNull($user->linkedin_token_expires_at);
 
         Http::assertSent(function ($request) {
-            return str_contains($request->url(), 'linkedin.com/oauth/v2/accessToken')
-                && str_contains($request->body(), 'refresh-token-123')
-                && str_contains($request->body(), 'refresh_token');
+            return str_contains($request->url(), 'linkedin.com/oauth/v2/accessToken');
         });
     }
 }

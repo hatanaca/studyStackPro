@@ -26,7 +26,10 @@ interface EchoInstance {
   private: (channel: string) => EchoChannel
   connector: {
     pusher: {
-      connection: { bind: (event: string, callback: () => void) => void }
+      connection: {
+        bind: (event: string, callback: () => void) => void
+        unbind: (event: string, callback: () => void) => void
+      }
     }
   }
 }
@@ -43,6 +46,28 @@ let onConnected: (() => void) | null = null
 let onDisconnected: (() => void) | null = null
 let onFailed: (() => void) | null = null
 
+/** Estado para reconexão automática */
+let reconnectUserId: string | null = null
+let reconnectAttempts = 0
+const MAX_RECONNECT_ATTEMPTS = 10
+const RECONNECT_BASE_DELAY_MS = 1_000
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+let isConnecting = false
+
+/** Testa rapidamente se o Reverb está acessível via WebSocket */
+function probeReverb(host: string, port: string, timeout = 1500): Promise<boolean> {
+  return new Promise((resolve) => {
+    const url = `ws://${host}:${port}/app/local-key?protocol=7&client=js&version=8.5.0`
+    const ws = new WebSocket(url)
+    const timer = setTimeout(() => {
+      ws.onclose = null; ws.onerror = null; ws.close()
+      resolve(false)
+    }, timeout)
+    ws.onopen = () => { clearTimeout(timer); ws.close(); resolve(true) }
+    ws.onerror = () => { clearTimeout(timer); resolve(false) }
+  })
+}
+
 function clearRecalcFallbackTimer() {
   if (recalcFallbackTimer) {
     clearTimeout(recalcFallbackTimer)
@@ -50,39 +75,88 @@ function clearRecalcFallbackTimer() {
   }
 }
 
-/** Conecta ao Reverb e subscreve ao canal privado dashboard.{userId} */
-export async function connectWebSocket(userId: string): Promise<void> {
-  const authStore = useAuthStore()
-  const analyticsStore = useAnalyticsStore()
-  let queryClient: ReturnType<typeof useQueryClient> | null = null
-  try {
-    queryClient = useQueryClient()
-  } catch {
-    /* outside query context */
+function clearReconnectTimer() {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer)
+    reconnectTimer = null
   }
+}
 
-  if (typeof window === 'undefined') return
-  if (import.meta.env.VITE_REVERB_ENABLED === 'false') return
-  if (!authStore.sessionValidated) return
-
-  const expectedUserId = authStore.user?.id
-  if (!expectedUserId || String(expectedUserId) !== String(userId)) {
+/**
+ * Tenta reconectar com backoff exponencial.
+ * Retries: 1s, 2s, 4s, 8s, 16s, ... até ~8.5 min (10 tentativas).
+ */
+function scheduleReconnect() {
+  if (!reconnectUserId || reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+    reconnectUserId = null
+    reconnectAttempts = 0
     return
   }
 
-  disconnectWebSocket()
+  clearReconnectTimer()
+  const delay = Math.min(
+    RECONNECT_BASE_DELAY_MS * Math.pow(2, reconnectAttempts),
+    60_000
+  )
+  reconnectAttempts++
 
-  const [{ default: Echo }, { default: Pusher }] = await Promise.all([
+  reconnectTimer = setTimeout(() => {
+    if (reconnectUserId) {
+      connectWebSocket(reconnectUserId)
+    }
+  }, delay)
+}
+
+/** Conecta ao Reverb e subscreve ao canal privado dashboard.{userId} */
+export async function connectWebSocket(userId: string): Promise<void> {
+  if (isConnecting) return
+  isConnecting = true
+
+  try {
+    const authStore = useAuthStore()
+    const analyticsStore = useAnalyticsStore()
+    let queryClient: ReturnType<typeof useQueryClient> | null = null
+    try {
+      queryClient = useQueryClient()
+    } catch {
+      /* outside query context */
+    }
+
+    if (typeof window === 'undefined') return
+    if (import.meta.env.VITE_REVERB_ENABLED === 'false') return
+    if (!authStore.sessionValidated) return
+
+    const expectedUserId = authStore.user?.id
+    if (!expectedUserId || String(expectedUserId) !== String(userId)) {
+      return
+    }
+
+    // Armazena userId para reconexão automática
+    reconnectUserId = userId
+    clearReconnectTimer()
+
+    disconnectWebSocket()
+
+    // Verifica se o Reverb está acessível antes de tentar conectar
+    const scheme = import.meta.env.VITE_REVERB_SCHEME || 'http'
+    const host = import.meta.env.VITE_REVERB_HOST || 'localhost'
+    const port = import.meta.env.VITE_REVERB_PORT || '8080'
+    if (!await probeReverb(host, port)) {
+      console.info('[WS] Reverb não está disponível no momento')
+      return
+    }
+
+    const [{ default: Echo }, { default: Pusher }] = await Promise.all([
     import('laravel-echo'),
     import('pusher-js'),
   ])
 
-  window.Pusher = Pusher
+  // Evita poluição global no hot-reload: só define se não existir
+  if (!window.Pusher) {
+    window.Pusher = Pusher
+  }
 
   const sessionsStore = useSessionsStore()
-  const scheme = import.meta.env.VITE_REVERB_SCHEME || 'http'
-  const host = import.meta.env.VITE_REVERB_HOST || 'localhost'
-  const port = import.meta.env.VITE_REVERB_PORT || '8080'
   const key = import.meta.env.VITE_REVERB_APP_KEY || 'local-key'
   const apiUrl = import.meta.env.VITE_API_URL || ''
   const broadcastingAuthUrl = `${apiUrl.replace(/\/+$/, '')}/api/broadcasting/auth`
@@ -135,8 +209,14 @@ export async function connectWebSocket(userId: string): Promise<void> {
   }) as EchoInstance
 
   onConnected = () => { isConnected.value = true }
-  onDisconnected = () => { isConnected.value = false }
-  onFailed = () => { isConnected.value = false }
+  onDisconnected = () => {
+    isConnected.value = false
+    scheduleReconnect()
+  }
+  onFailed = () => {
+    isConnected.value = false
+    scheduleReconnect()
+  }
 
   echo.connector.pusher.connection.bind('connected', onConnected)
   echo.connector.pusher.connection.bind('disconnected', onDisconnected)
@@ -180,11 +260,17 @@ export async function connectWebSocket(userId: string): Promise<void> {
     .listen('.session.ended', () => {
       sessionsStore.clearActiveSession()
     })
+  } finally {
+    isConnecting = false
+  }
 }
 
 /** Desconecta do Reverb e limpa referências */
 export function disconnectWebSocket(): void {
   clearRecalcFallbackTimer()
+  clearReconnectTimer()
+  reconnectUserId = null
+  reconnectAttempts = 0
   if (echo) {
     // Unbind connection event listeners before disconnecting
     if (onConnected) {

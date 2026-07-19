@@ -1,19 +1,10 @@
 <?php
-
-// Fallback para constantes de sinal quando pcntl não está disponível (ex: ambientes Docker sem pcntl)
-// Valores POSIX padrão Linux: SIGINT=2, SIGTERM=15, SIGTSTP=20 (macOS também usa 20 via POSIX)
-if (! defined('SIGINT')) {
-    define('SIGINT', 2);
-}
-if (! defined('SIGTERM')) {
-    define('SIGTERM', 15);
-}
-if (! defined('SIGTSTP')) {
-    define('SIGTSTP', 20);
-}
-
+if (! defined('SIGINT')) { define('SIGINT', 2); }
+if (! defined('SIGTERM')) { define('SIGTERM', 15); }
+if (! defined('SIGTSTP')) { define('SIGTSTP', 20); }
 use App\Http\Middleware\EnsureJsonResponse;
 use App\Http\Middleware\LogApiRequests;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetUserTimezone;
 use App\Http\Middleware\SlidingWindowRateLimit;
 use Illuminate\Foundation\Application;
@@ -29,44 +20,25 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
-    ->withProviders([
-        ServiceProvider::class,
-    ])
+    ->withProviders([ServiceProvider::class])
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->alias([
-            'throttle.sliding' => SlidingWindowRateLimit::class,
-        ]);
-
+        $middleware->alias(['throttle.sliding' => SlidingWindowRateLimit::class]);
         $middleware->statefulApi();
-
-        if (env('APP_ENV') === 'testing') {
-            $middleware->validateCsrfTokens(except: [
-                'api/*',
-                'sanctum/*',
-            ]);
-        }
-
-        // Atrás de Nginx / load balancer: necessário para URL HTTPS, rate limit por IP real e cookies seguros.
-        $trusted = env('TRUSTED_PROXIES');
-        if (is_string($trusted) && trim($trusted) !== '') {
-            $trimmed = trim($trusted);
+        // API routes usam Bearer tokens ou Sanctum SPA (cookie), não CSRF de formulário.
+        $middleware->validateCsrfTokens(except: ['api/*', 'sanctum/*']);
+        $trustedProxies = env('TRUSTED_PROXIES');
+        if (is_string($trustedProxies) && trim($trustedProxies) !== '') {
+            $trimmed = trim($trustedProxies);
             if ($trimmed === '*') {
                 $middleware->trustProxies(at: '*');
             } else {
-                $at = array_values(array_filter(array_map('trim', explode(',', $trusted))));
-                if ($at !== []) {
-                    $middleware->trustProxies(at: $at);
-                }
+                $at = array_values(array_filter(array_map('trim', explode(',', $trustedProxies))));
+                if ($at !== []) { $middleware->trustProxies(at: $at); }
             }
         }
-
-        $middleware->api(prepend: [
-            EnsureJsonResponse::class,
-        ]);
-        $middleware->api(append: [
-            SetUserTimezone::class,
-            LogApiRequests::class,
-        ]);
+        $middleware->append(SecurityHeaders::class);
+        $middleware->api(prepend: [EnsureJsonResponse::class]);
+        $middleware->api(append: [SetUserTimezone::class, LogApiRequests::class]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->shouldRenderJsonWhen(fn ($request, $e) => $request->expectsJson());

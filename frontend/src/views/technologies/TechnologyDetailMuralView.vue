@@ -15,6 +15,6 @@ const id = computed(() => route.params.id as string)
 
 <style scoped>
 .tech-detail-subpage {
-  max-width: 100%;
+  width: 100%;
 }
 </style>

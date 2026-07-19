@@ -1,84 +1,84 @@
-# Checklist e exemplos de prompt
+# Checklist and Prompt Examples
 
-- **Debug (quando algo quebra):** use o checklist rápido e o prompt de diagnóstico em [DEBUG-CHECKLIST-E-PROMPT.md](DEBUG-CHECKLIST-E-PROMPT.md).
-- **Throttles da API:** tabela no final deste arquivo.
-- **Variáveis de ambiente:** `docs/ENV-VARS.md` e `backend/.env.example` / `frontend/.env.example`.
-- **WebSocket:** canais privados `dashboard.{userId}`; eventos `.session.started`, `.session.ended`, `.metrics.updated`, `.metrics.recalculating`. O frontend espera `session.technology.slug` em `.session.started` e `dashboard` (objeto DashboardData) em `.metrics.updated`.
+- **Debug (when something breaks):** use the quick checklist and diagnostic prompt in [DEBUG-CHECKLIST-E-PROMPT.md](DEBUG-CHECKLIST-E-PROMPT.md).
+- **API Throttles:** table at the end of this file.
+- **Environment Variables:** `docs/ENV-VARS.md` and `backend/.env.example` / `frontend/.env.example`.
+- **WebSocket:** private channels `dashboard.{userId}`; events `.session.started`, `.session.ended`, `.metrics.updated`, `.metrics.recalculating`. The frontend expects `session.technology.slug` in `.session.started` and `dashboard` (DashboardData object) in `.metrics.updated`.
 
-## Checklist antes de entregar
+## Pre-Delivery Checklist
 
-Use este checklist ao implementar ou revisar mudanças no StudyTrackPro.
+Use this checklist when implementing or reviewing changes in StudyTrackPro.
 
 ### Backend (Laravel)
 
-- [ ] Controller thin (delega ao Service; sem lógica de negócio)
-- [ ] Validação em Form Request (nunca no controller ou service)
-- [ ] Acesso ao banco apenas via Repository (interface em `Contracts/` + binding)
-- [ ] DTO com propriedades `readonly` quando aplicável
-- [ ] Eventos nomeados no passado; disparados pelo Service
-- [ ] Listeners rápidos (invalidação de cache ou dispatch de Job)
-- [ ] Job com `ShouldBeUnique` quando for recálculo/operação idempotente
-- [ ] Nova rota com rate limiting em `api.php` (auth, search, sensitive, export, recalculate, health)
-- [ ] Cache com tags para invalidação granular
-- [ ] Broadcast WebSocket: canal autorizado em `channels.php`
-- [ ] Feature test cobrindo o fluxo HTTP; Unit test para Service quando fizer sentido
-- [ ] Contrato de API (payload + Resource) alinhado ao frontend
+- [ ] Thin controller (delegates to Service; no business logic)
+- [ ] Validation in Form Request (never in controller or service)
+- [ ] Database access only via Repository (interface in `Contracts/` + binding)
+- [ ] DTO with `readonly` properties when applicable
+- [ ] Events named in past tense; dispatched by Service
+- [ ] Fast Listeners (cache invalidation or Job dispatch)
+- [ ] Job with `ShouldBeUnique` for recalculation/idempotent operations
+- [ ] New route with rate limiting in `api.php` (auth, search, sensitive, export, recalculate, health)
+- [ ] Cache with tags for granular invalidation
+- [ ] WebSocket broadcast: authorized channel in `channels.php`
+- [ ] Feature test covering the HTTP flow; Unit test for Service when applicable
+- [ ] API contract (payload + Resource) aligned with frontend
 
 ### Frontend (Vue)
 
-- [ ] Tipos em `types/`; chamadas HTTP via módulos em `api/`
-- [ ] Store/composable não chama API inexistente (ex.: Goals é só localStorage)
-- [ ] Tratamento de erro e estados loading/vazio
-- [ ] Acessibilidade (aria, labels, contraste)
+- [ ] Types in `types/`; HTTP calls via modules in `api/`
+- [ ] Store/composable doesn't call non-existent APIs (e.g., Goals is localStorage only)
+- [ ] Error handling and loading/empty states
+- [ ] Accessibility (aria, labels, contrast)
 
-### Geral
+### General
 
-- [ ] Migrations: não alterar já executadas; novas em `transactional/` ou `analytics/`
-- [ ] README e docs atualizados se a mudança afetar setup ou decisões
-- [ ] Coleção Postman atualizada se houver novo endpoint
+- [ ] Migrations: don't modify already-executed ones; new ones in `transactional/` or `analytics/`
+- [ ] README and docs updated if the change affects setup or decisions
+- [ ] Postman collection updated if there's a new endpoint
 
 ---
 
-## Exemplos de uso do prompt
+## Prompt Usage Examples
 
-Use estes exemplos ao pedir tarefas para o Composer (agentes do projeto).
+Use these examples when requesting tasks for the Composer (project agents).
 
 ### Backend
 
-- *"Implementa endpoint GET /analytics/export com parâmetros start e end (data), validação de intervalo máximo 366 dias e Form Request."*
-- *"Adiciona rate limit específico para a rota de export: 30 req/min por usuário."*
-- *"Garante que o evento SessionStarted envie o slug da tecnologia no payload para o frontend."*
-- *"Unifica os seeders: um único usuário de demo (dev@) com techs e sessões; Documenta a ordem no DatabaseSeeder."*
+- *"Implement GET /analytics/export endpoint with start and end (date) parameters, max interval validation of 366 days, and Form Request."*
+- *"Add specific rate limit for the export route: 30 req/min per user."*
+- *"Ensure the SessionStarted event sends the technology slug in the payload for the frontend."*
+- *"Unify the seeders: a single demo user (dev@) with techs and sessions; document the order in DatabaseSeeder."*
 
 ### Frontend
 
-- *"Ajusta o useWebSocket para usar o slug da tecnologia vindo do backend em vez de usar o id no lugar do slug."*
-- *"Documenta que Goals é apenas frontend (localStorage) e que não existe API de goals; atualiza o README."*
+- *"Adjust useWebSocket to use the technology slug from the backend instead of using the id in place of the slug."*
+- *"Document that Goals is frontend-only (localStorage) and that there's no goals API; update the README."*
 
-### Full-stack / integração
+### Full-stack / Integration
 
-- *"Inclui o endpoint GET /analytics/export na coleção Postman com descrição dos parâmetros e throttle."*
-- *"Adiciona Feature test para o export (auth, estrutura da resposta, validação de parâmetros e intervalo máximo)."*
-- *"Adiciona Unit test para o AnalyticsService.getExportData delegando ao repositório."*
+- *"Include the GET /analytics/export endpoint in the Postman collection with parameter description and throttle."*
+- *"Add Feature test for the export (auth, response structure, parameter validation, and max interval)."*
+- *"Add Unit test for AnalyticsService.getExportData delegating to the repository."*
 
-### Documentação e qualidade
+### Documentation and Quality
 
-- *"Cria um checklist (testes, contratos, migrations, README) e exemplos de prompt para os agentes em docs/."*
-- *"Documenta os throttles da API (auth, search, sensitive, export, recalculate, health) em um arquivo de referência."*
+- *"Create a checklist (tests, contracts, migrations, README) and prompt examples for the agents in docs/."*
+- *"Document the API throttles (auth, search, sensitive, export, recalculate, health) in a reference file."*
 
 ---
 
-## Referência de throttles (API)
+## Throttle Reference (API)
 
-| Nome       | Uso                          | Limite        |
-|-----------|------------------------------|---------------|
-| `login`   | POST login (`api.php`)       | 3/min por IP  |
-| `register`| POST register                | 5/min por IP  |
-| `sensitive` | Alteração de senha, etc.   | 5/min por user |
-| `search`  | Busca de tecnologias, sessão ativa | 120/min por user |
-| `export`  | Export de analytics          | 30/min por user |
-| `recalculate` | Recálculo de métricas    | 2/min por user |
-| `health`  | Healthcheck                  | 300/min por IP |
-| `throttle.sliding` | Mutação de sessões (Lua) | Ver `routes/api.php` |
-| Padrão (60,1) | Leitura geral           | 60/min por user |
-| Padrão (30,1) | Escrita (sessões, techs, etc.) | 30/min por user |
+| Name | Usage | Limit |
+|------|-------|-------|
+| `login` | POST login (`api.php`) | 3/min per IP |
+| `register` | POST register | 5/min per IP |
+| `sensitive` | Password change, etc. | 5/min per user |
+| `search` | Technology search, active session | 120/min per user |
+| `export` | Analytics export | 30/min per user |
+| `recalculate` | Metrics recalculation | 2/min per user |
+| `health` | Healthcheck | 300/min per IP |
+| `throttle.sliding` | Session mutations (Lua) | See `routes/api.php` |
+| Default (60,1) | General reads | 60/min per user |
+| Default (30,1) | Writes (sessions, techs, etc.) | 30/min per user |

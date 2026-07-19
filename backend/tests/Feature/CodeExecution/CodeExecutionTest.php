@@ -42,7 +42,7 @@ class CodeExecutionTest extends TestCase
 
     public function test_execute_validates_code_required(): void
     {
-        $response = $this->withBearerToken($this->token)
+        $response = $this->withToken($this->token)
             ->postJson('/api/v1/code/execute', [
                 'language' => 'javascript',
             ]);
@@ -52,7 +52,7 @@ class CodeExecutionTest extends TestCase
 
     public function test_execute_validates_language_required(): void
     {
-        $response = $this->withBearerToken($this->token)
+        $response = $this->withToken($this->token)
             ->postJson('/api/v1/code/execute', [
                 'code' => 'echo "hello"',
             ]);
@@ -62,7 +62,7 @@ class CodeExecutionTest extends TestCase
 
     public function test_execute_validates_language_enum(): void
     {
-        $response = $this->withBearerToken($this->token)
+        $response = $this->withToken($this->token)
             ->postJson('/api/v1/code/execute', [
                 'code' => 'echo "hello"',
                 'language' => 'invalid_lang',
@@ -73,7 +73,7 @@ class CodeExecutionTest extends TestCase
 
     public function test_execute_validates_code_max_length(): void
     {
-        $response = $this->withBearerToken($this->token)
+        $response = $this->withToken($this->token)
             ->postJson('/api/v1/code/execute', [
                 'code' => str_repeat('a', 10001),
                 'language' => 'javascript',
@@ -84,7 +84,7 @@ class CodeExecutionTest extends TestCase
 
     public function test_execute_javascript_returns_client_executor(): void
     {
-        $response = $this->withBearerToken($this->token)
+        $response = $this->withToken($this->token)
             ->postJson('/api/v1/code/execute', [
                 'code' => 'console.log("hello")',
                 'language' => 'javascript',
@@ -99,7 +99,7 @@ class CodeExecutionTest extends TestCase
 
     public function test_execute_lua_returns_client_executor(): void
     {
-        $response = $this->withBearerToken($this->token)
+        $response = $this->withToken($this->token)
             ->postJson('/api/v1/code/execute', [
                 'code' => 'print("hello")',
                 'language' => 'lua',
@@ -114,7 +114,7 @@ class CodeExecutionTest extends TestCase
 
     public function test_execute_html_returns_client_executor(): void
     {
-        $response = $this->withBearerToken($this->token)
+        $response = $this->withToken($this->token)
             ->postJson('/api/v1/code/execute', [
                 'code' => '<html><body><h1>Hello</h1></body></html>',
                 'language' => 'html',
@@ -140,7 +140,7 @@ class CodeExecutionTest extends TestCase
             ]);
         $this->app->instance(DockerSandboxService::class, $sandbox);
 
-        $response = $this->withBearerToken($this->token)
+        $response = $this->withToken($this->token)
             ->postJson('/api/v1/code/execute', [
                 'code' => '<?php echo "hello";',
                 'language' => 'php',
@@ -149,19 +149,19 @@ class CodeExecutionTest extends TestCase
         $response->assertOk()
             ->assertJson([
                 'success' => true,
-                'data' => ['executor' => 'backend'],
+                'data' => ['success' => true, 'output' => 'hello'],
             ]);
     }
 
     public function test_languages_returns_supported_list(): void
     {
-        $response = $this->withBearerToken($this->token)
+        $response = $this->withToken($this->token)
             ->getJson('/api/v1/code/languages');
 
         $response->assertOk()
             ->assertJsonStructure([
-                'success' => true,
-                'data' => [],
+                'success',
+                'data',
             ]);
 
         $languages = $response->json('data');

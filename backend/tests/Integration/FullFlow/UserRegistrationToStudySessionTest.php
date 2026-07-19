@@ -29,8 +29,8 @@ class UserRegistrationToStudySessionTest extends TestCase
             ->postJson('/api/v1/auth/register', [
                 'name' => 'Integration User',
                 'email' => 'integration@test.com',
-                'password' => 'password123',
-                'password_confirmation' => 'password123',
+                'password' => 'Password123',
+                'password_confirmation' => 'Password123',
             ]);
 
         $response->assertStatus(201);
@@ -40,7 +40,7 @@ class UserRegistrationToStudySessionTest extends TestCase
         $response = $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])
             ->postJson('/api/v1/auth/login', [
                 'email' => 'integration@test.com',
-                'password' => 'password123',
+                'password' => 'Password123',
             ]);
 
         $response->assertStatus(200);

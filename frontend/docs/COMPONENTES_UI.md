@@ -1,133 +1,133 @@
-# Componentes UI – Referência
+# UI Components — Reference
 
-Lista dos componentes base e de feature disponíveis no StudyTrack Pro.
+List of base and feature components available in StudyTrack Pro.
 
 ---
 
 ## Base (components/ui)
 
 ### BaseCard
-Container com título opcional e slot de ações.
+Container with optional title and action slot.
 - **Props**: `title?`
 - **Slots**: default, `actions`
 
 ### BaseButton
-Botão com variantes e tamanhos.
+Button with variants and sizes.
 - **Props**: `type`, `variant` (primary | secondary | ghost | danger | outline), `size` (sm | md | lg), `disabled`
 - **Slots**: default
 
 ### BaseInput
-Campo de texto com label e erro.
+Text field with label and error.
 - **Props**: `modelValue`, `label`, `placeholder`, `type`, `error`, `disabled`, etc.
-- **Slots**: default (conteúdo extra após o input)
+- **Slots**: default (extra content after the input)
 
 ### BaseModal
-Overlay com blur e conteúdo centralizado; animação de escala.
+Overlay with blur and centered content; scale animation.
 - **Props**: `show`, `title?`
 - **Emits**: `close`
 - **Slots**: default
 
 ### BaseToast
-Sistema de notificações temporárias (usado via useToast).
+Temporary notification system (used via useToast).
 
 ### BaseBadge
-Rótulo ou contador pequeno.
+Small label or counter.
 
 ### BaseAvatar
-Avatar por imagem ou iniciais.
+Avatar by image or initials.
 - **Props**: `src?`, `alt?`, `name?`, `size` (sm | md | lg | xl), `backgroundColor?`
 
 ### BaseTooltip
-Tooltip ao hover/foco.
+Tooltip on hover/focus.
 - **Props**: `content`, `placement` (top | bottom | left | right), `delay`, `disabled`
 - **Slots**: default (trigger)
 
 ### BaseTabs
-Abas com conteúdo único (um painel por vez).
-- **Props**: `tabs` (array de { id, label, disabled? }), `modelValue`, `align`, `variant` (line | pill | enclosed)
-- **Slots**: default com slot props `activeId`, `activeTab`
+Tabs with single content (one panel at a time).
+- **Props**: `tabs` (array of { id, label, disabled? }), `modelValue`, `align`, `variant` (line | pill | enclosed)
+- **Slots**: default with slot props `activeId`, `activeTab`
 
 ### BaseProgress
-Barra de progresso.
+Progress bar.
 - **Props**: `value`, `max`, `size`, `variant`, `showLabel`, `label`, `indeterminate`
 
 ### BaseDropdown
-Menu suspenso.
+Dropdown menu.
 - **Props**: `align` (left | right | center), `disabled`, `closeOnClickOutside`
-- **Slots**: `trigger`, default (conteúdo do painel)
+- **Slots**: `trigger`, default (panel content)
 
 ### BaseAccordion
-Itens expansíveis.
-- **Props**: `items` (array de { id, title, description?, disabled? }), `multiple`, `defaultOpen`
-- **Slots**: nome = item.id para cada painel
+Expandable items.
+- **Props**: `items` (array of { id, title, description?, disabled? }), `multiple`, `defaultOpen`
+- **Slots**: name = item.id for each panel
 
 ### BaseDataTable
-Tabela com ordenação e slots por coluna.
+Table with sorting and column slots.
 - **Props**: `columns`, `data`, `rowKey`, `loading`, `sortBy`, `sortOrder`, `emptyMessage`, `striped`, `bordered`, `compact`
 - **Emits**: `update:sortBy`, `update:sortOrder`, `row-click`
-- **Slots**: nome da coluna = slotName na coluna para célula customizada
+- **Slots**: column name = slotName in column for custom cell
 
 ### BaseStepper
-Indicador de etapas (wizard).
+Step indicator (wizard).
 - **Props**: `steps`, `currentStepId`, `allowStepClick`, `orientation` (horizontal | vertical)
 - **Emits**: `step-click`
 
 ### BasePagination
-Controles de paginação.
+Pagination controls.
 - **Props**: `page`, `totalPages`, `totalItems?`, `pageSize?`, `showFirstLast`, `maxVisible`
 - **Emits**: `update:page`
 
 ### BaseDateRangePicker
-Seletor de intervalo de datas (dois inputs date).
+Date range selector (two date inputs).
 - **Props**: `modelValue` ({ start, end }), `minDate`, `maxDate`, `placeholderStart`, `placeholderEnd`, `disabled`
 - **Emits**: `update:modelValue`
 
 ### BaseBreadcrumb
-Navegação em migalhas.
-- **Props**: `items` (array de { label, to?, href? })
+Breadcrumb navigation.
+- **Props**: `items` (array of { label, to?, href? })
 
 ### FormSection
-Seção de formulário com título e descrição.
+Form section with title and description.
 - **Props**: `title`, `description?`, `grouped?`
 - **Slots**: default, `description`
 
 ### EmptyState
-Estado vazio com ícone, título, descrição e ação.
+Empty state with icon, title, description, and action.
 - **Props**: `title`, `description?`, `icon?`, `actionLabel?`, `hideAction?`
 - **Emits**: `action`
 - **Slots**: `description`, `action`
 
 ### StatCard
-Card de estatística com label, valor, ícone e tendência.
+Statistics card with label, value, icon, and trend.
 - **Props**: `label`, `value`, `icon?`, `variant?`, `trend?`, `trendLabel?`
 
 ### SkeletonLoader
-Placeholder de carregamento (largura/altura customizáveis).
+Loading placeholder (customizable width/height).
 
 ### ErrorCard
-Mensagem de erro com botão de retry.
+Error message with retry button.
 
 ### ThemeToggle
-Alternância de tema claro/escuro; variante `sidebar` para fundo escuro.
+Light/dark theme switch; `sidebar` variant for dark background.
 
 ---
 
 ## Charts (components/charts)
 
-- **LineChart**, **BarChart**, **PieChart**, **DonutChart**: wrappers para ApexCharts (vue3-apexcharts).
-- **HeatmapChart**: heatmap de atividade por dia.
+- **LineChart**, **BarChart**, **PieChart**, **DonutChart**: wrappers for ApexCharts (vue3-apexcharts).
+- **HeatmapChart**: activity heatmap by day.
 
 ---
 
 ## Layout
 
-- **AppLayout**: layout principal com sidebar e área de conteúdo.
-- **AppSidebar**: navegação lateral (desktop: auto-hide; mobile: drawer).
-- **AuthLayout**: layout para login/registro.
+- **AppLayout**: main layout with sidebar and content area.
+- **AppSidebar**: side navigation (desktop: auto-hide; mobile: drawer).
+- **AuthLayout**: layout for login/registration.
 
 ---
 
 ## Features
 
-Componentes por domínio em `features/*/components/`.
-Ex.: dashboard (KpiCards, TodaySummaryCard, GoalsWidget, …), sessions (LogSessionForm, SessionCard, …), technologies (TechnologyCard, TechnologyForm, …), goals (GoalCard, GoalForm, GoalList), notifications (NotificationCenter).
+Domain components in `features/*/components/`.
+E.g., dashboard (KpiCards, TodaySummaryCard, GoalsWidget, ...), sessions (LogSessionForm, SessionCard, ...), technologies (TechnologyCard, TechnologyForm, ...), goals (GoalCard, GoalForm, GoalList), notifications (NotificationCenter).

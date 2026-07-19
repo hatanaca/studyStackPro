@@ -8,6 +8,7 @@ import CodeTerminal from '@/features/code-terminal/components/CodeTerminal.vue'
     :breadcrumb="[{ label: 'Dashboard', to: '/' }, { label: 'Terminal' }]"
     title="Code Terminal"
     subtitle="Pratique código em um ambiente isolado e seguro."
+    narrow
   >
     <CodeTerminal />
   </PageView>

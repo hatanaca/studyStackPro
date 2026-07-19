@@ -24,6 +24,7 @@ Route::prefix('api/v1/auth')->middleware([
     AddQueuedCookiesToResponse::class,
     StartSession::class,
     ShareErrorsFromSession::class,
+    'throttle:10,1',
 ])->name('v1.auth.')->group(function () {
     Route::get('/{provider}', [OAuthController::class, 'redirect'])
         ->where('provider', 'google|discord|linkedin')

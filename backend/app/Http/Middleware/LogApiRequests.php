@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Http\Middleware;
-
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -12,19 +10,13 @@ class LogApiRequests
     public function handle(Request $request, Closure $next): Response
     {
         $request->attributes->set('_request_start', microtime(true));
-
         return $next($request);
     }
-
-    /**
-     * Logs after the response has been sent to the client,
-     * avoiding I/O overhead on the critical path.
-     */
     public function terminate(Request $request, Response $response): void
     {
         $start = $request->attributes->get('_request_start', microtime(true));
-
-        Log::channel('single')->info('API Request', [
+        // Nunca logar $request->all() — contém dados sensíveis (senhas, tokens)
+        Log::info('API Request', [
             'method' => $request->method(),
             'path' => $request->path(),
             'user_id' => $request->user()?->id,

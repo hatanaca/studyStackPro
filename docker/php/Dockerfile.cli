@@ -7,6 +7,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     libicu-dev \
     libzip-dev \
     libonig-dev \
+    gosu \
     $PHPIZE_DEPS \
     && rm -rf /var/lib/apt/lists/*
 
@@ -23,9 +24,11 @@ RUN pecl install redis && docker-php-ext-enable redis
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 
 COPY php.ini /usr/local/etc/php/conf.d/custom.ini
+COPY entrypoint-cli.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 WORKDIR /var/www/html
 
 RUN chown -R www-data:www-data /var/www/html
 
-USER www-data
+ENTRYPOINT ["entrypoint.sh"]

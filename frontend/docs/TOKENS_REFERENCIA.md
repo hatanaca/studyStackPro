@@ -1,61 +1,61 @@
-# Referência de tokens de design
+# Design Token Reference
 
-Lista completa das variáveis CSS disponíveis no projeto e exemplos de uso.
+Complete list of CSS variables available in the project and usage examples.
 
 ---
 
-## Cores – texto e fundo
+## Colors — Text and Background
 
-| Token | Descrição | Uso típico |
-|-------|-----------|------------|
-| `--color-text` | Texto principal | Corpo de texto, títulos |
-| `--color-text-muted` | Texto secundário | Legendas, placeholders, hints |
-| `--color-bg` | Fundo da página | body, main |
-| `--color-bg-soft` | Fundo suave | Hover, chips, áreas destacadas |
-| `--color-bg-card` | Fundo de cards | Cards, modais, dropdowns |
-| `--color-primary` | Cor primária | Botões, links, destaques |
-| `--color-primary-hover` | Hover primário | Estado hover em botão primário |
-| `--color-primary-soft` | Fundo primário suave | Badges, avatares de iniciais |
-| `--color-border` | Bordas | Divisórias, inputs, cards |
-| `--color-focus-ring` | Anel de foco | outline em :focus-visible |
+| Token | Description | Typical Usage |
+|-------|-------------|---------------|
+| `--color-text` | Main text | Body text, headings |
+| `--color-text-muted` | Secondary text | Captions, placeholders, hints |
+| `--color-bg` | Page background | body, main |
+| `--color-bg-soft` | Soft background | Hover, chips, highlighted areas |
+| `--color-bg-card` | Card background | Cards, modals, dropdowns |
+| `--color-primary` | Primary color | Buttons, links, highlights |
+| `--color-primary-hover` | Primary hover | Hover state on primary button |
+| `--color-primary-soft` | Soft primary background | Badges, initial avatars |
+| `--color-border` | Borders | Dividers, inputs, cards |
+| `--color-focus-ring` | Focus ring | outline on :focus-visible |
 
-Exemplo:
+Example:
 ```css
-.meu-titulo { color: var(--color-text); }
-.meu-hint { color: var(--color-text-muted); }
-.meu-card { background: var(--color-bg-card); border: 1px solid var(--color-border); }
+.my-title { color: var(--color-text); }
+.my-hint { color: var(--color-text-muted); }
+.my-card { background: var(--color-bg-card); border: 1px solid var(--color-border); }
 ```
 
 ---
 
-## Cores semânticas
+## Semantic Colors
 
-| Token | Descrição |
-|-------|------------|
-| `--color-success` | Sucesso, confirmação |
-| `--color-success-soft` | Fundo de mensagem de sucesso |
-| `--color-warning` | Aviso |
-| `--color-warning-soft` | Fundo de aviso |
-| `--color-error` | Erro, destruição |
-| `--color-error-soft` | Fundo de erro |
-| `--color-info` | Informação |
-| `--color-info-soft` | Fundo de info |
-
----
-
-## Gradientes
-
-| Token | Descrição |
-|-------|------------|
-| `--gradient-primary` | Gradiente primário (azul → índigo) |
-| `--gradient-accent` | Gradiente de destaque (verde → azul) |
-| `--gradient-mesh` | Fundo mesh da área principal |
+| Token | Description |
+|-------|-------------|
+| `--color-success` | Success, confirmation |
+| `--color-success-soft` | Success message background |
+| `--color-warning` | Warning |
+| `--color-warning-soft` | Warning background |
+| `--color-error` | Error, destructive |
+| `--color-error-soft` | Error background |
+| `--color-info` | Information |
+| `--color-info-soft` | Info background |
 
 ---
 
-## Espaçamento
+## Gradients
 
-| Token | Valor (rem) |
+| Token | Description |
+|-------|-------------|
+| `--gradient-primary` | Primary gradient (blue → indigo) |
+| `--gradient-accent` | Accent gradient (green → blue) |
+| `--gradient-mesh` | Main area mesh background |
+
+---
+
+## Spacing
+
+| Token | Value (rem) |
 |-------|-------------|
 | `--spacing-2xs` | 0.125 |
 | `--spacing-xs` | 0.25 |
@@ -66,82 +66,82 @@ Exemplo:
 | `--spacing-2xl` | 2.5 |
 | `--spacing-3xl` | 3 |
 
-Use em margin, padding e gap para consistência.
+Use in margin, padding, and gap for consistency.
 
 ---
 
-## Raios (border-radius)
+## Border Radius
 
-| Token | Uso |
-|-------|-----|
-| `--radius-sm` | Chips, badges pequenos |
-| `--radius-md` | Inputs, botões |
-| `--radius-lg` | Cards, modais |
-| `--radius-xl` | Cards grandes, seções |
+| Token | Usage |
+|-------|-------|
+| `--radius-sm` | Chips, small badges |
+| `--radius-md` | Inputs, buttons |
+| `--radius-lg` | Cards, modals |
+| `--radius-xl` | Large cards, sections |
 
 ---
 
-## Sombras
+## Shadows
 
-| Token | Uso |
-|-------|-----|
-| `--shadow-sm` | Leve elevação |
+| Token | Usage |
+|-------|-------|
+| `--shadow-sm` | Light elevation |
 | `--shadow-md` | Cards, dropdowns |
-| `--shadow-lg` | Modais, overlays |
-| `--shadow-card-hover` | Estado hover de card |
-| `--dropdown-shadow` | Painel de dropdown |
+| `--shadow-lg` | Modals, overlays |
+| `--shadow-card-hover` | Card hover state |
+| `--dropdown-shadow` | Dropdown panel |
 
 ---
 
-## Tipografia
+## Typography
 
-| Token | Tamanho | Uso |
-|-------|---------|-----|
-| `--font-sans` | Família | Fonte principal |
-| `--text-xs` | 0.75rem | Legendas, hints |
-| `--text-sm` | 0.875rem | Texto secundário, botões |
-| `--text-base` | 1rem | Corpo |
-| `--text-lg` | 1.125rem | Subtítulos |
-| `--text-xl` | 1.25rem | Títulos de seção |
-| `--text-2xl` | 1.5rem | Títulos de página |
-| `--text-3xl` | 1.875rem | Hero, destaque |
+| Token | Size | Usage |
+|-------|------|-------|
+| `--font-sans` | Family | Main font |
+| `--text-xs` | 0.75rem | Captions, hints |
+| `--text-sm` | 0.875rem | Secondary text, buttons |
+| `--text-base` | 1rem | Body |
+| `--text-lg` | 1.125rem | Subtitles |
+| `--text-xl` | 1.25rem | Section headings |
+| `--text-2xl` | 1.5rem | Page headings |
+| `--text-3xl` | 1.875rem | Hero, highlight |
 
 ---
 
 ## Motion
 
-| Token | Valor | Uso |
-|-------|--------|-----|
-| `--ease-out-expo` | cubic-bezier(0.16, 1, 0.3, 1) | Entradas, animações |
-| `--ease-in-out` | cubic-bezier(0.4, 0, 0.2, 1) | Transições suaves |
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--ease-out-expo` | cubic-bezier(0.16, 1, 0.3, 1) | Entries, animations |
+| `--ease-in-out` | cubic-bezier(0.4, 0, 0.2, 1) | Smooth transitions |
 | `--duration-fast` | 150ms | Hover, focus |
-| `--duration-normal` | 250ms | Transições de estado |
-| `--duration-slow` | 400ms | Entrada de conteúdo |
+| `--duration-normal` | 250ms | State transitions |
+| `--duration-slow` | 400ms | Content entry |
 
 ---
 
-## Componentes específicos
+## Component-Specific
 
-| Token | Uso |
-|-------|-----|
-| `--sidebar-width` | Largura da sidebar |
-| `--input-height-sm/md/lg` | Altura de inputs |
-| `--avatar-size-sm/md/lg/xl` | Tamanhos de avatar |
-| `--tooltip-offset` | Distância do tooltip ao trigger |
-| `--glass-bg` | Fundo glass (backdrop) |
-| `--glass-border` | Borda glass |
-
----
-
-## Tema escuro
-
-Todos os tokens acima são redefinidos em `[data-theme='dark']`. Não use cores fixas em componentes; sempre prefira variáveis para que o tema escuro funcione.
+| Token | Usage |
+|-------|-------|
+| `--sidebar-width` | Sidebar width |
+| `--input-height-sm/md/lg` | Input heights |
+| `--avatar-size-sm/md/lg/xl` | Avatar sizes |
+| `--tooltip-offset` | Tooltip distance from trigger |
+| `--glass-bg` | Glass background (backdrop) |
+| `--glass-border` | Glass border |
 
 ---
 
-## Breakpoints (media queries)
+## Dark Theme
 
-Não são variáveis CSS; use valores fixos ou constantes JS:
+All tokens above are redefined in `[data-theme='dark']`. Don't use fixed colors in components; always prefer variables so the dark theme works.
+
+---
+
+## Breakpoints (Media Queries)
+
+These are not CSS variables; use fixed values or JS constants:
 
 - 480px (xs)
 - 640px (sm)
@@ -149,7 +149,7 @@ Não são variáveis CSS; use valores fixos ou constantes JS:
 - 1024px (lg)
 - 1280px (xl)
 
-Exemplo:
+Example:
 ```css
 @media (min-width: 768px) {
   .sidebar { width: var(--sidebar-width); }

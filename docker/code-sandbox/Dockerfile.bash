@@ -1,6 +1,7 @@
-FROM alpine:3.19
+FROM alpine:3.21
 
-RUN apk add --no-cache bash
+# Atualiza pacotes base para corrigir CVEs conhecidas
+RUN apk upgrade --no-cache && apk add --no-cache bash
 
 WORKDIR /sandbox
 

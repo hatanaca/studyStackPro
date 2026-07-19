@@ -1,57 +1,57 @@
-# Documentação operacional — StudyTrack Pro
+# Operations Documentation — StudyTrack Pro
 
-Índice da pasta `docs/operations/`: deploy, segurança, checklists e histórico. Para visão técnica completa do código, use [../technical/DOCUMENTACAO_TECNICA.md](../technical/DOCUMENTACAO_TECNICA.md).
-
----
-
-## Para desenvolvedores
-
-| Documento | Descrição |
-|-----------|-----------|
-| [CHECKLIST-E-PROMPTS.md](CHECKLIST-E-PROMPTS.md) | Checklist de entrega e referências de prompt |
-| [ENV-VARS.md](ENV-VARS.md) | Variáveis de ambiente (backend, frontend, raiz) |
-| [GOALS-FRONTEND-ONLY.md](GOALS-FRONTEND-ONLY.md) | Metas (Goals) apenas no frontend; sem API de persistência |
-| [AGENTS.md](AGENTS.md) | Orientações para agentes / automação |
+Index for the `docs/operations/` folder: deploy, security, checklists, and history. For a complete technical view of the code, use [../technical/DOCUMENTACAO_TECNICA.md](../technical/DOCUMENTACAO_TECNICA.md).
 
 ---
 
-## Deploy e segurança
+## For Developers
 
-| Documento | Descrição |
-|-----------|-----------|
-| [DEPLOY_SECURITY_PASSO_A_PASSO.md](DEPLOY_SECURITY_PASSO_A_PASSO.md) | Checklist de segurança em produção |
-| [SECURITY_AUDIT.md](SECURITY_AUDIT.md) | Auditoria / riscos vs código vs produção |
-| [SECURITY_FIXES_COMPLETED.md](SECURITY_FIXES_COMPLETED.md) | Registo de correções (sem segredos) |
-| [VERIFICATION_CHECKLIST.md](VERIFICATION_CHECKLIST.md) | Checklist manual antes do deploy |
-
----
-
-## Debug e engenharia reversa
-
-| Documento | Descrição |
-|-----------|-----------|
-| [DEBUG-CHECKLIST-E-PROMPT.md](DEBUG-CHECKLIST-E-PROMPT.md) | Checklist de debug |
-| [DEBUG_ARQUITETURA.md](DEBUG_ARQUITETURA.md) | Arquitetura para depuração |
-| [CHECKLIST-ENGENHARIA-REVERSA.md](CHECKLIST-ENGENHARIA-REVERSA.md) | Engenharia reversa do projeto |
+| Document | Description |
+|----------|-------------|
+| [CHECKLIST-E-PROMPTS.md](CHECKLIST-E-PROMPTS.md) | Delivery checklist and prompt references |
+| [ENV-VARS.md](ENV-VARS.md) | Environment variables (backend, frontend, root) |
+| [GOALS-FRONTEND-ONLY.md](GOALS-FRONTEND-ONLY.md) | Goals frontend-only; no persistence API |
+| [AGENTS.md](AGENTS.md) | Agent / automation guidance |
 
 ---
 
-## Verificação e histórico
+## Deploy and Security
 
-| Documento | Descrição |
-|-----------|-----------|
-| [ERROS-CORRIGIDOS.md](ERROS-CORRIGIDOS.md) | Histórico de correções |
-| [FIXES_APPLIED.md](FIXES_APPLIED.md) | Resumo histórico de fixes no repo |
-| [anotacoes.md](anotacoes.md) | Anotações diversas |
-
----
-
-## Prompts para agentes (IA)
-
-Os ficheiros de prompt foram movidos para **[../agents/](../agents/)** para não duplicar conteúdo.
+| Document | Description |
+|----------|-------------|
+| [DEPLOY_SECURITY_PASSO_A_PASSO.md](DEPLOY_SECURITY_PASSO_A_PASSO.md) | Production security checklist |
+| [SECURITY_AUDIT.md](SECURITY_AUDIT.md) | Audit / risks vs code vs production |
+| [SECURITY_FIXES_COMPLETED.md](SECURITY_FIXES_COMPLETED.md) | Fix log (no secrets) |
+| [VERIFICATION_CHECKLIST.md](VERIFICATION_CHECKLIST.md) | Pre-deploy manual checklist |
 
 ---
 
-## Coleção Postman
+## Debug and Reverse Engineering
 
-Ficheiro: **[../api/StudyTrack_API_Collection.postman.json](../api/StudyTrack_API_Collection.postman.json)**
+| Document | Description |
+|----------|-------------|
+| [DEBUG-CHECKLIST-E-PROMPT.md](DEBUG-CHECKLIST-E-PROMPT.md) | Debug checklist |
+| [DEBUG_ARQUITETURA.md](DEBUG_ARQUITETURA.md) | Architecture for debugging |
+| [CHECKLIST-ENGENHARIA-REVERSA.md](CHECKLIST-ENGENHARIA-REVERSA.md) | Project reverse engineering |
+
+---
+
+## Verification and History
+
+| Document | Description |
+|----------|-------------|
+| [ERROS-CORRIGIDOS.md](ERROS-CORRIGIDOS.md) | Fix history |
+| [FIXES_APPLIED.md](FIXES_APPLIED.md) | Repository fix summary |
+| [anotacoes.md](anotacoes.md) | Miscellaneous notes |
+
+---
+
+## Agent Prompts (AI)
+
+The prompt files have been moved to **[../agents/](../agents/)** to avoid content duplication.
+
+---
+
+## Postman Collection
+
+File: **[../api/StudyTrack_API_Collection.postman.json](../api/StudyTrack_API_Collection.postman.json)**

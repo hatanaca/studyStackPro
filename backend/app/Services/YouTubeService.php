@@ -65,7 +65,6 @@ class YouTubeService
             if ($response->failed()) {
                 Log::warning('YouTube search failed', [
                     'status' => $response->status(),
-                    'body' => $response->body(),
                 ]);
                 throw new RequestException($response);
             }
@@ -149,7 +148,6 @@ class YouTubeService
         if ($response->failed()) {
             Log::warning('YouTube playlists failed', [
                 'status' => $response->status(),
-                'body' => $response->body(),
             ]);
             throw new RequestException($response);
         }

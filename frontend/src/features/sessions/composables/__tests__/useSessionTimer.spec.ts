@@ -1,6 +1,5 @@
 import { setActivePinia, createPinia } from 'pinia'
 import { useSessionTimer } from '@/features/sessions/composables/useSessionTimer'
-import { useSessionsStore } from '@/stores/sessions.store'
 
 vi.mock('@/api/modules/sessions.api', () => ({
   sessionsApi: {
@@ -20,7 +19,6 @@ describe('useSessionTimer', () => {
     expect(timer.activeSession).toBeDefined()
     expect(timer.elapsedSeconds).toBeDefined()
     expect(timer.formattedTime).toBeDefined()
-    expect(typeof timer.fetchActive).toBe('function')
     expect(typeof timer.refresh).toBe('function')
   })
 
@@ -39,33 +37,27 @@ describe('useSessionTimer', () => {
     expect(timer.activeSession.value).toBeNull()
   })
 
-  it('elapsedSeconds reflects store state', () => {
-    const store = useSessionsStore()
-    const timer = useSessionTimer()
-
-    store.setElapsedSeconds(120)
-    expect(timer.elapsedSeconds.value).toBe(120)
-  })
-
-  it('formattedTime reflects store formatted timer', () => {
-    const store = useSessionsStore()
-    const timer = useSessionTimer()
-
-    store.setElapsedSeconds(3661)
-    expect(timer.formattedTime.value).toBe('01:01:01')
-  })
-
-  it('activeSession reflects store active session', () => {
-    const store = useSessionsStore()
-    const timer = useSessionTimer()
-
+  it('refresh fetches active session from API', async () => {
     const mockSession = { id: 's1', started_at: '2026-01-01T00:00:00Z' }
-    store.setActiveSession(mockSession as never)
+    vi.mocked((await import('@/api/modules/sessions.api')).sessionsApi.getActive).mockResolvedValue({
+      data: { success: true, data: mockSession },
+    })
+
+    const timer = useSessionTimer()
+    await timer.refresh()
+
     expect(timer.activeSession.value).toEqual(mockSession)
   })
 
-  it('refresh is an alias for fetchActive', () => {
+  it('refresh calls API to fetch active session', async () => {
+    const { sessionsApi } = await import('@/api/modules/sessions.api')
+    vi.mocked(sessionsApi.getActive).mockResolvedValue({
+      data: { success: true, data: null },
+    })
+
     const timer = useSessionTimer()
-    expect(timer.refresh).toBe(timer.fetchActive)
+    await timer.refresh()
+
+    expect(sessionsApi.getActive).toHaveBeenCalledOnce()
   })
 })

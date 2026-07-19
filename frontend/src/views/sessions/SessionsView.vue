@@ -69,6 +69,7 @@ function onViewSessionList(technologyId: string) {
     :breadcrumb="[{ label: 'Dashboard', to: '/' }, { label: 'Sessões' }]"
     title="Sessões"
     subtitle="Histórico de sessões de estudo e atalhos por tecnologia."
+    narrow
   >
     <template #hint>
       Clique em uma tecnologia abaixo para filtrar o histórico ou acessar o detalhe.

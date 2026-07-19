@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">📚 StudyTrack Pro</h1>
   <p align="center">
-    <em>Plataforma full-stack para desenvolvedores e estudantes acompanharem sessões de estudo e métricas de produtividade</em>
+    <em>Full-stack platform for developers and students to track study sessions and productivity metrics</em>
   </p>
 </p>
 
@@ -22,47 +22,47 @@
 
 <p align="center">
   <a href="#features">Features</a> •
-  <a href="#arquitetura">Arquitetura</a> •
-  <a href="#stack-tecnológica">Stack</a> •
-  <a href="#instalação">Instalação</a> •
-  <a href="#comandos">Comandos</a> •
-  <a href="#documentação">Docs</a>
+  <a href="#architecture">Architecture</a> •
+  <a href="#tech-stack">Stack</a> •
+  <a href="#installation">Installation</a> •
+  <a href="#commands">Commands</a> •
+  <a href="#documentation">Docs</a>
 </p>
 
 ---
 
-## Sobre o projeto
+## About the Project
 
-**StudyTrack Pro** é uma aplicação full-stack para **desenvolvedores e estudantes** registrarem sessões de estudo, visualizar métricas de produtividade e manter consistência em rotinas de aprendizado.
+**StudyTrack Pro** is a full-stack application for **developers and students** to log study sessions, visualize productivity metrics, and maintain consistency in learning routines.
 
-**Para quem:** desenvolvedores autodidatas, participantes de bootcamps e quem busca medir evolução técnica.
+**Target audience:** self-taught developers, bootcamp participants, and anyone looking to measure technical growth.
 
-**Por quê:** portfólio full-stack demonstrando arquitetura event-driven, cache distribuído, TypeScript, WebSocket em tempo real e boas práticas.
+**Why:** full-stack portfolio demonstrating event-driven architecture, distributed cache, TypeScript, real-time WebSocket, and best practices.
 
 ---
 
 ## Features
 
-| Feature | Descrição |
-|---------|-----------|
-| ⏱️ **Sessões de estudo** | Registro manual ou timer em tempo real. Vincule sessões a tecnologias. |
-| 📊 **Dashboard** | KPIs (horas totais, sessões, streak), gráficos de séries temporais e distribuição por tecnologia. |
-| 🔥 **Heatmap** | Visualização de atividade por dia/semana (estilo GitHub). |
-| 💻 **Tecnologias** | CRUD de tecnologias (nome, cor, ícone). Busca para autocomplete. |
-| 🎯 **Metas** | Defina metas de horas/semana. Persistência em localStorage. |
-| 📤 **Exportação** | Exporte dados de analytics em JSON para período customizado. |
-| 🌙 **Tema escuro** | Suporte a dark mode e tema customizável. |
-| ⚡ **Tempo real** | Dashboard atualiza via WebSocket (Laravel Reverb) quando sessões mudam. |
-| 🔐 **Autenticação** | Registro, login, tokens Sanctum. Gestão de dispositivos. |
+| Feature | Description |
+|---------|-------------|
+| ⏱️ **Study Sessions** | Manual logging or real-time timer. Link sessions to technologies. |
+| 📊 **Dashboard** | KPIs (total hours, sessions, streak), time-series charts, and technology distribution. |
+| 🔥 **Heatmap** | Activity visualization by day/week (GitHub-style). |
+| 💻 **Technologies** | CRUD for technologies (name, color, icon). Autocomplete search. |
+| 🎯 **Goals** | Set weekly hour goals. Persistence in localStorage. |
+| 📤 **Export** | Export analytics data as JSON for a custom date range. |
+| 🌙 **Dark Theme** | Dark mode support and customizable theme. |
+| ⚡ **Real-time** | Dashboard updates via WebSocket (Laravel Reverb) when sessions change. |
+| 🔐 **Authentication** | Registration, login, Sanctum tokens. Device management. |
 
 ---
 
-## Arquitetura
+## Architecture
 
 ```mermaid
 graph TB
     subgraph Frontend["Frontend (Vue 3 + TypeScript)"]
-        A[Componentes] --> B[Stores - Pinia]
+        A[Components] --> B[Stores - Pinia]
         B --> C[API Client - Axios]
         C --> D[TanStack Query Cache]
     end
@@ -75,7 +75,7 @@ graph TB
         H --> J[Broadcast - Reverb]
     end
 
-    subgraph Data["Dados"]
+    subgraph Data["Data"]
         K[(PostgreSQL)]
         L[(Redis)]
     end
@@ -87,24 +87,24 @@ graph TB
     D --> A
 ```
 
-### Fluxo de Métricas
+### Metrics Flow
 
-1. **Sessão criada/atualizada/deletada** → Event → Listener
-2. **RecalculateMetricsJob** em fila `metrics` (delay 2s para agrupar)
-3. **Job**: recalcula `user_metrics`, `technology_metrics`, `daily_minutes` em transação
-4. **Flush cache** analytics do usuário
-5. **Event `MetricsRecalculated`** → frontend recebe via Reverb
+1. **Session created/updated/deleted** → Event → Listener
+2. **RecalculateMetricsJob** on `metrics` queue (2s delay to batch)
+3. **Job**: recalculates `user_metrics`, `technology_metrics`, `daily_minutes` in a transaction
+4. **Flush** user analytics cache
+5. **Event `MetricsRecalculated`** → frontend receives via Reverb
 
-### Schemas PostgreSQL
+### PostgreSQL Schemas
 
-| Schema | Conteúdo | Uso |
-|--------|----------|-----|
-| `public` | users, technologies, study_sessions | Transacional (writes) |
-| `analytics` | user_metrics, technology_metrics, daily_minutes | Analítico (reads) |
+| Schema | Content | Usage |
+|--------|---------|-------|
+| `public` | users, technologies, study_sessions | Transactional (writes) |
+| `analytics` | user_metrics, technology_metrics, daily_minutes | Analytics (reads) |
 
 ---
 
-## Stack Tecnológica
+## Tech Stack
 
 <table>
 <tr>
@@ -118,10 +118,10 @@ graph TB
 - Vue 3.5 (Composition API)
 - TypeScript 5.4
 - Vite 6
-- Pinia (estado)
+- Pinia (state)
 - TanStack Query (cache)
 - PrimeVue (UI)
-- ApexCharts (gráficos)
+- ApexCharts (charts)
 - Axios (HTTP)
 - Laravel Echo (WebSocket)
 
@@ -132,7 +132,7 @@ graph TB
 - PHP 8.2+
 - Laravel Sanctum (auth)
 - Laravel Reverb (WebSocket)
-- Laravel Horizon (filas)
+- Laravel Horizon (queues)
 - Eloquent ORM
 - Form Requests
 - API Resources
@@ -143,9 +143,9 @@ graph TB
 - PostgreSQL 16
 - Redis 7
 - Docker & Compose
-- OpenResty (proxy Lua)
+- OpenResty (Lua proxy)
 - GitHub Actions (CI/CD)
-- CodeQL (segurança)
+- CodeQL (security)
 - Dependabot (deps)
 
 </td>
@@ -154,138 +154,138 @@ graph TB
 
 ---
 
-## Instalação
+## Installation
 
-### Pré-requisitos
+### Prerequisites
 
-- **Docker** e **Docker Compose**
+- **Docker** and **Docker Compose**
 - **Git**
 
-### Setup rápido
+### Quick Setup
 
 ```bash
 # 1. Clone
 git clone https://github.com/hatanaca/studyStackPro.git
 cd studyStackPro
 
-# 2. Configure variáveis
+# 2. Configure environment variables
 make setup
 
-# 3. Suba os containers
+# 3. Start containers
 make dev
 
-# 4. Primeiro uso: key, migrations e seed
+# 4. First run: generate key, run migrations and seed
 make shell-php
 php artisan key:generate
 php artisan migrate:fresh --seed
 exit
 
-# 5. Build do frontend
+# 5. Build frontend
 cd frontend && npm install && npm run build && cd ..
 
-# 6. Acesse
+# 6. Access
 # API + SPA: http://localhost
 # Frontend dev: http://localhost:5173
 # Health: http://localhost/api/health
 # Horizon: http://localhost/horizon
 ```
 
-### Ambientes
+### Environments
 
-| Serviço | URL | Descrição |
-|---------|-----|-----------|
-| **API + SPA** | `http://localhost` | Aplicação principal |
+| Service | URL | Description |
+|---------|-----|-------------|
+| **API + SPA** | `http://localhost` | Main application |
 | **Frontend Dev** | `http://localhost:5173` | Vite HMR |
-| **Health API** | `http://localhost/api/health` | Status do sistema |
-| **Horizon** | `http://localhost/horizon` | Dashboard de filas |
-| **pgAdmin** | `http://localhost:5050` | Admin PostgreSQL (dev) |
-| **Mailpit** | `http://localhost:8025` | Captura de emails (dev) |
+| **Health API** | `http://localhost/api/health` | System status |
+| **Horizon** | `http://localhost/horizon` | Queue dashboard |
+| **pgAdmin** | `http://localhost:5050` | PostgreSQL admin (dev) |
+| **Mailpit** | `http://localhost:8025` | Email capture (dev) |
 
 ---
 
-## Comandos
+## Commands
 
-| Comando | Descrição |
-|---------|-----------|
-| `make setup` | Cria arquivos `.env` (primeira vez) |
-| `make dev` | Sobe todos os serviços Docker |
-| `make stop` | Para os containers |
-| `make shell-php` | Shell no container PHP |
-| `make shell-vue` | Shell no container Node |
-| `make migrate` | Roda migrations |
+| Command | Description |
+|---------|-------------|
+| `make setup` | Creates `.env` files (first time) |
+| `make dev` | Starts all Docker services |
+| `make stop` | Stops containers |
+| `make shell-php` | Shell into PHP container |
+| `make shell-vue` | Shell into Node container |
+| `make migrate` | Runs migrations |
 | `make fresh` | migrate:fresh --seed |
-| `make test` | Testes backend + frontend |
-| `make logs` | Logs de todos os containers |
+| `make test` | Runs backend + frontend tests |
+| `make logs` | Logs from all containers |
 
 ---
 
-## Estrutura
+## Project Structure
 
 ```
 studyTrackPro/
 ├── backend/                 # Laravel 12 API
 │   ├── app/
-│   │   ├── Events/          # Eventos de domínio
+│   │   ├── Events/          # Domain events
 │   │   ├── Jobs/            # RecalculateMetricsJob
-│   │   ├── Listeners/       # Invalidar cache, broadcast
+│   │   ├── Listeners/       # Cache invalidation, broadcast
 │   │   ├── Modules/         # Auth, Sessions, Technologies, Analytics
 │   │   └── Http/            # Controllers, Middleware, Requests, Resources
 │   ├── database/migrations/ # transactional/ + analytics/
 │   └── routes/api.php       # /api/v1/*
 ├── frontend/                # Vue 3 SPA
 │   └── src/
-│       ├── api/             # Cliente HTTP e módulos
+│       ├── api/             # HTTP client and modules
 │       ├── components/      # UI components
-│       ├── features/        # Módulos por domínio
+│       ├── features/        # Domain modules
 │       ├── stores/          # Pinia stores
 │       ├── composables/     # useToast, useWebSocket, etc.
 │       └── views/           # Dashboard, Sessions, Technologies
 ├── docker/                  # OpenResty, PHP, Postgres, Redis
 ├── redis-scripts/           # Lua: dedup, sliding_window, streak
-├── docs/                    # Documentação consolidada
+├── docs/                    # Consolidated documentation
 └── Makefile
 ```
 
 ---
 
-## Documentação
+## Documentation
 
-| Documento | Descrição |
-|-----------|-----------|
-| [backend/README.md](backend/README.md) | API, endpoints, rate limits, convenções |
-| [frontend/README.md](frontend/README.md) | Stack, estrutura, scripts, design system |
-| [docker/README.md](docker/README.md) | Serviços Docker, proxy, configuração |
-| [docs/README.md](docs/README.md) | Índice de toda a documentação |
-| [Postman Collection](docs/api/StudyTrack_API_Collection.postman.json) | Coleção da API v1 |
+| Document | Description |
+|----------|-------------|
+| [backend/README.md](backend/README.md) | API, endpoints, rate limits, conventions |
+| [frontend/README.md](frontend/README.md) | Stack, structure, scripts, design system |
+| [docker/README.md](docker/README.md) | Docker services, proxy, configuration |
+| [docs/README.md](docs/README.md) | Full documentation index |
+| [Postman Collection](docs/api/StudyTrack_API_Collection.postman.json) | API v1 collection |
 
 ---
 
-## Variáveis de Ambiente
+## Environment Variables
 
-- **Raiz:** `.env.example` → `.env`
+- **Root:** `.env.example` → `.env`
 - **Backend:** `backend/.env.example` → `backend/.env`
 - **Frontend:** `frontend/.env.example` → `frontend/.env`
 
-> ⚠️ Em produção: `APP_DEBUG=false`, HTTPS, senhas fortes. Ver [docs/operations/DEPLOY_SECURITY_PASSO_A_PASSO.md](docs/operations/DEPLOY_SECURITY_PASSO_A_PASSO.md).
+> ⚠️ In production: `APP_DEBUG=false`, HTTPS, strong passwords. See [docs/operations/DEPLOY_SECURITY_PASSO_A_PASSO.md](docs/operations/DEPLOY_SECURITY_PASSO_A_PASSO.md).
 
 ---
 
-## Contribuindo
+## Contributing
 
-1. Fork o projeto
-2. Crie uma branch (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -m 'feat: adicionar nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
-5. Abra um Pull Request
+1. Fork the project
+2. Create a branch (`git checkout -b feature/new-feature`)
+3. Commit your changes (`git commit -m 'feat: add new feature'`)
+4. Push to the branch (`git push origin feature/new-feature`)
+5. Open a Pull Request
 
 ---
 
-## Licença
+## License
 
-Uso educacional e portfólio.
+Educational and portfolio use.
 
 ---
 
 <p align="center">
-  Feito com ❤️ por <a href="https://github.com/hatanaca">Thiago Hatanaka</a>
+  Made with ❤️ by <a href="https://github.com/hatanaca">Thiago Hatanaka</a>
 </p>

@@ -12,7 +12,7 @@ return [
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['Content-Type', 'X-Requested-With', 'Authorization', 'X-XSRF-TOKEN', 'X-CSRF-TOKEN', 'Accept'],
     'exposed_headers' => [],
-    'max_age' => 0,
+    'max_age' => 86400,
     // Cookies de sessão Sanctum (SPA): só com pelo menos uma origem válida (ignora entradas vazias).
-    'supports_credentials' => $allowedOrigins !== [],
+    'supports_credentials' => count($allowedOrigins) > 0,
 ];

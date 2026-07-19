@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, reactive, onMounted, watch } from 'vue'
+import { computed, ref, reactive, onMounted, onBeforeUnmount, watch } from 'vue'
 import { usePlayerStore } from '@/stores/player.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
@@ -37,6 +37,7 @@ const playerStyle = computed(() => {
 const STORAGE_POS_KEY = 'studytrack_miniplayer_pos'
 const pos = reactive({ x: 0, y: 0 })
 let dragging = false, dragStartX = 0, dragStartY = 0, posStartX = 0, posStartY = 0
+let seekResetTimer: ReturnType<typeof setTimeout> | null = null
 const containerRef = ref<HTMLElement | null>(null)
 
 function clampPos() {
@@ -73,9 +74,19 @@ function onDragEnd() {
   document.removeEventListener('touchmove', onDragMove); document.removeEventListener('touchend', onDragEnd)
 }
 
+function onResize() {
+  isMobile.value = window.innerWidth <= 768
+}
+
 onMounted(() => {
   if (hasGoogleAccount.value) player.fetchPlaylists()
-  window.addEventListener('resize', () => { isMobile.value = window.innerWidth <= 768 })
+  window.addEventListener('resize', onResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', onResize)
+  onDragEnd()
+  if (seekResetTimer) { clearTimeout(seekResetTimer); seekResetTimer = null }
 })
 watch(hasGoogleAccount, (v) => { if (v) player.fetchPlaylists() })
 
@@ -94,7 +105,8 @@ function onSeekChange(e: Event) {
   seekPercent.value = v
   isSeeking.value = false
   // Reset após seek para não re-enviar
-  setTimeout(() => { seekPercent.value = -1 }, 500)
+  if (seekResetTimer) clearTimeout(seekResetTimer)
+  seekResetTimer = setTimeout(() => { seekPercent.value = -1; seekResetTimer = null }, 500)
 }
 
 function onPlayerStateChange(s: number) {
@@ -158,7 +170,7 @@ function formatTime(sec: number) {
       <div class="mini-player__handle" @mousedown="onDragStart" @touchstart="onDragStart" @dblclick.stop="player.toggleExpand()">
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" class="mini-player__drag-icon"><circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>
         <span class="mini-player__header-title">{{ player.mode === 'search' ? 'Busca' : player.mode === 'favorites' ? 'Favoritos' : 'Playlists' }}</span>
-        <button v-if="player.mode === 'playlists' && player.selectedPlaylist" class="mini-player__btn-icon" :title="player.isFavorite(player.selectedPlaylist.id) ? 'Salvo' : 'Salvar playlist'" @click.stop="player.addToFavorites()">
+        <button v-if="player.mode === 'playlists' && player.selectedPlaylist" class="mini-player__btn-icon" :class="{ 'mini-player__btn-icon--active': player.isFavorite(player.selectedPlaylist.id) }" :title="player.isFavorite(player.selectedPlaylist.id) ? 'Salvo' : 'Salvar playlist'" @click.stop="player.addToFavorites()">
           <svg v-if="player.isFavorite(player.selectedPlaylist.id)" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="var(--color-primary)" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
           <svg v-else xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </button>
@@ -267,13 +279,13 @@ function formatTime(sec: number) {
       <div v-if="player.mode === 'favorites'" class="mini-player__section">
         <div v-if="!player.favorites.length" class="mini-player__msg">Nenhuma playlist salva.</div>
         <div v-else class="mini-player__search-results">
-          <button v-for="fav in player.favorites" :key="fav.playlistId" class="mini-player__search-item" @click="player.selectFavorite(fav)">
+          <div v-for="fav in player.favorites" :key="fav.playlistId" class="mini-player__search-item" role="button" tabindex="0" @click="player.selectFavorite(fav)" @keydown.enter="player.selectFavorite(fav)">
             <img v-if="fav.thumbnail" :src="fav.thumbnail" class="mini-player__search-thumb" alt="" />
             <span class="mini-player__search-title">{{ fav.title }}</span>
             <button class="mini-player__remove-fav" aria-label="Remover" @click.stop="player.removeFavorite(fav.playlistId)">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
             </button>
-          </button>
+          </div>
         </div>
       </div>
     </div>
@@ -405,11 +417,13 @@ function formatTime(sec: number) {
 .mini-player__search-results { display: flex; flex-direction: column; gap: 2px; }
 .mini-player__search-item { display: flex; align-items: center; gap: 8px; padding: 6px; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--color-text); cursor: pointer; text-align: left; font-size: 11px; transition: background .15s; font-family: inherit; width: 100%; }
 .mini-player__search-item:hover { background: color-mix(in srgb, var(--color-bg-soft) 80%, var(--color-text) 20%); }
-.mini-player__search-item--active { background: var(--color-primary-soft); color: var(--color-primary); }
-.mini-player__search-thumb { width: 44px; height: 30px; object-fit: cover; border-radius: var(--radius-md); flex-shrink: 0; }
+.mini-player__search-item--active { background: var(--color-primary-soft); color: var(--color-primary); box-shadow: inset 2px 0 0 var(--color-primary); }
+.mini-player__search-thumb { width: 44px; height: 30px; object-fit: cover; border-radius: var(--radius-md); flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
 .mini-player__search-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mini-player__remove-fav { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 50%; flex-shrink: 0; transition: background .15s; color: var(--color-error); }
-.mini-player__remove-fav:hover { background: var(--color-error-soft); }
+.mini-player__remove-fav { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 50%; flex-shrink: 0; transition: background .2s, transform .15s; color: var(--color-error); opacity: 0; }
+.mini-player__search-item:hover .mini-player__remove-fav,
+.mini-player__search-item--active .mini-player__remove-fav { opacity: 0.7; }
+.mini-player__remove-fav:hover { opacity: 1 !important; background: var(--color-error-soft); transform: scale(1.15); }
 
 @keyframes pulse-dot { 0%,100%{opacity:1;box-shadow:0 0 6px color-mix(in srgb, var(--color-primary) 25%, transparent)} 50%{opacity:.4;box-shadow:0 0 2px color-mix(in srgb, var(--color-primary) 25%, transparent)} }
 @keyframes album-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
@@ -541,4 +555,16 @@ function formatTime(sec: number) {
   }
 }
 .yt-player-wrapper { position: fixed; top: -9999px; left: -9999px; width: 0; height: 0; pointer-events: none; overflow: hidden; }
+
+/* --- Transição expand/collapse --- */
+.mp-scale-enter-active { animation: mp-in .2s ease-out; }
+.mp-scale-leave-active { animation: mp-out .15s ease-in; }
+@keyframes mp-in {
+  from { opacity: 0; transform: scale(.92) translateY(-8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes mp-out {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to   { opacity: 0; transform: scale(.95) translateY(-4px); }
+}
 </style>

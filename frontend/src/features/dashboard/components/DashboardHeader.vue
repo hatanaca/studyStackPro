@@ -5,6 +5,7 @@ import { useDashboard } from '@/features/dashboard/composables/useDashboard'
 import Button from 'primevue/button'
 import NotificationCenter from '@/features/notifications/components/NotificationCenter.vue'
 import ShareButton from '@/features/share/components/ShareButton.vue'
+import { handleError } from '@/utils/handleError'
 
 const analyticsStore = useAnalyticsStore()
 const { fetchDashboard } = useDashboard()
@@ -39,7 +40,7 @@ async function handleRefresh() {
     analyticsStore.fetchTimeSeries('7d'),
     analyticsStore.fetchTimeSeries('30d'),
     analyticsStore.fetchTimeSeries('90d'),
-  ]).catch(() => {})
+  ]).catch(handleError('DashboardHeader-refresh'))
 }
 </script>
 

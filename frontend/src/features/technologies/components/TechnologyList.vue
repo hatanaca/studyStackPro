@@ -141,14 +141,15 @@ defineExpose({ openCreate })
       message="Não foi possível carregar a lista de tecnologias."
       :on-retry="() => technologiesQuery.refetch()"
     />
-    <div v-else-if="store.technologies.length" class="technology-list__grid">
-      <TechnologyCard
-        v-for="t in store.technologies"
-        :key="t.id"
-        :technology="t"
-        @edit="openEdit"
-        @delete="handleDelete"
-      />
+    <div v-else-if="store.technologies?.length" class="technology-list__grid">
+      <template v-for="t in store.technologies" :key="t?.id ?? 'empty'">
+        <TechnologyCard
+          v-if="t"
+          :technology="t"
+          @edit="openEdit"
+          @delete="handleDelete"
+        />
+      </template>
     </div>
     <EmptyState
       v-else

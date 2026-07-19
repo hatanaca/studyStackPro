@@ -12,6 +12,7 @@ import { Canvas, PencilBrush, Rect, Circle, Triangle, Line, IText, Textbox, Imag
 import { useCanvasStore } from '../store/canvas.store'
 import { setFabricCanvas } from './canvasInstance'
 import type { CanvasTool } from '../types/canvas.types'
+import { handleError } from '@/utils/handleError'
 
 const MURAL_PREFIX = 'studytrack.mural.'
 
@@ -91,7 +92,7 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
     c.on('path:created', () => saveHistory())
 
     store.canvasReady = true
-    setFabricCanvas({ value: _canvas } as any)
+    setFabricCanvas(_canvas ? { value: _canvas } as any : null)
     saveHistory()
 
     let resizeTimer: ReturnType<typeof setTimeout> | null = null
@@ -122,7 +123,7 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
       _canvas?.renderAll()
       isRestoringHistory = false
       store.updateHistory(historyIndex, history.length)
-    })
+    }).catch(() => { isRestoringHistory = false })
   }
 
   /**
@@ -137,7 +138,7 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
       _canvas?.renderAll()
       isRestoringHistory = false
       store.updateHistory(historyIndex, history.length)
-    })
+    }).catch(() => { isRestoringHistory = false })
   }
 
   /**
@@ -280,7 +281,7 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
       _canvas!.setActiveObject(img)
       img.setCoords()
       _canvas!.renderAll()
-    })
+    }).catch(handleError('useCanvas-loadImage'))
   }
 
   /**
@@ -362,7 +363,7 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
   function fromJSON(json: any) {
     if (!_canvas) return
     isRestoringHistory = true
-    _canvas.loadFromJSON(json).then(() => { _canvas?.renderAll(); isRestoringHistory = false; saveHistory() })
+    _canvas.loadFromJSON(json).then(() => { _canvas?.renderAll(); isRestoringHistory = false; saveHistory() }).catch(() => { isRestoringHistory = false })
   }
   /**
    * @description Exporta o canvas como Data URL (base64).
@@ -500,14 +501,14 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
   /**
    * @description Dispara o download do canvas como arquivo SVG vetorial.
    */
-  function downloadSVG() { const s = toSVG(); if (s) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([s], { type: 'image/svg+xml' })); a.download = 'canvas.svg'; a.click() } }
+  function downloadSVG() { const s = toSVG(); if (s) { const url = URL.createObjectURL(new Blob([s], { type: 'image/svg+xml' })); const a = document.createElement('a'); a.href = url; a.download = 'canvas.svg'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 100) } }
 
   /**
    * @description Dispara o download do estado do canvas como arquivo JSON formatado.
    */
-  function downloadJSON() { const j = JSON.stringify(toJSON(), null, 2); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([j], { type: 'application/json' })); a.download = 'canvas.json'; a.click() }
+  function downloadJSON() { const j = JSON.stringify(toJSON(), null, 2); const url = URL.createObjectURL(new Blob([j], { type: 'application/json' })); const a = document.createElement('a'); a.href = url; a.download = 'canvas.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 100) }
 
-  onBeforeUnmount(() => { resizeObserver?.disconnect(); _canvas?.dispose(); _canvas = null })
+  onBeforeUnmount(() => { resizeObserver?.disconnect(); resizeObserver = null; _canvas?.dispose(); _canvas = null; setFabricCanvas(null as any) })
 
   return {
     canvas: fabricCanvas,

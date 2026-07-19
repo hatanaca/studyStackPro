@@ -24,7 +24,6 @@ class Technology extends BaseModel
         'color',
         'icon',
         'description',
-        'is_active',
     ];
 
     /** Casts de atributos */

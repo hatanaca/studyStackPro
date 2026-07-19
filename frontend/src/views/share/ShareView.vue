@@ -3,14 +3,13 @@ import { ref, computed } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { linkedinApi } from '@/api/modules/linkedin.api'
 import { queryKeys } from '@/api/queryKeys'
-import { useAuthStore } from '@/stores/auth.store'
 import { useToast } from '@/composables/useToast'
 import Button from 'primevue/button'
 import Textarea from 'primevue/textarea'
 import Skeleton from 'primevue/skeleton'
+import PageView from '@/components/layout/PageView.vue'
 import type { LinkedInStatus } from '@/types/domain.types'
 
-const authStore = useAuthStore()
 const toast = useToast()
 const queryClient = useQueryClient()
 
@@ -61,7 +60,7 @@ const disconnectMutation = useMutation({
 })
 
 function handleConnect() {
-  const apiOrigin = import.meta.env.VITE_API_URL
+  const apiOrigin = String(import.meta.env.VITE_API_URL ?? '')
   window.location.href = `${apiOrigin}/api/v1/auth/linkedin`
 }
 
@@ -76,14 +75,13 @@ function handleDisconnect() {
 </script>
 
 <template>
+  <PageView
+    :breadcrumb="[{ label: 'Dashboard', to: '/' }, { label: 'Compartilhar' }]"
+    title="Compartilhar no LinkedIn"
+    subtitle="Compartilhe seus estudos com sua rede profissional."
+    narrow
+  >
   <div class="share-page">
-    <header class="share-page__header">
-      <h1 class="share-page__title">Compartilhar no LinkedIn</h1>
-      <p class="share-page__desc">
-        Compartilhe seus estudos com sua rede profissional.
-      </p>
-    </header>
-
     <!-- Loading state -->
     <div v-if="statusLoading" class="share-page__loading">
       <Skeleton width="100%" height="12rem" borderRadius="var(--radius-lg)" />
@@ -161,13 +159,12 @@ function handleDisconnect() {
       </div>
     </div>
   </div>
+  </PageView>
 </template>
 
 <style scoped>
 .share-page {
-  max-width: 42rem;
-  margin: 0 auto;
-  padding: var(--spacing-xl);
+  padding: 0;
 }
 
 .share-page__header {

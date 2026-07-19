@@ -44,7 +44,6 @@ class DockerSandboxService
             $result = match ($language) {
                 'php', 'laravel' => $this->executePhp($code, $language),
                 'sql' => $this->executeSql($code),
-                'bash' => $this->executeBash($code),
                 default => ['success' => false, 'output' => '', 'error' => "Linguagem '{$language}' não suportada no sandbox."],
             };
 
@@ -60,7 +59,7 @@ class DockerSandboxService
             return [
                 'success' => false,
                 'output' => '',
-                'error' => 'Erro interno na execução: '.$e->getMessage(),
+                'error' => 'Erro interno na execução do sandbox.',
                 'executionTime' => (int) ((microtime(true) - $startTime) * 1000),
             ];
         }
@@ -99,7 +98,7 @@ class DockerSandboxService
 
         try {
             $process = Process::fromShellCommandline(sprintf(
-                'docker run --rm --network none --memory=%s --cpus=0.5 --read-only --tmpfs /tmp:size=10m -v %s:/tmp/code.php:ro %s php /tmp/code.php',
+                'docker run --rm --network none --memory=%s --cpus=0.5 --read-only --pids-limit 50 --user nobody --security-opt no-new-privileges --tmpfs /tmp:size=10m -v %s:/tmp/code.php:ro %s php /tmp/code.php',
                 self::MEMORY_LIMIT,
                 escapeshellarg($tmpFile),
                 $image
@@ -124,31 +123,7 @@ class DockerSandboxService
 
         try {
             $process = Process::fromShellCommandline(sprintf(
-                'docker run --rm --network none --memory=%s --cpus=0.5 --read-only --tmpfs /tmp:size=10m -v %s:/tmp/query.sql:ro code-sandbox-sql sqlite3 :memory: < /tmp/query.sql',
-                self::MEMORY_LIMIT,
-                escapeshellarg($tmpFile)
-            ));
-
-            $process->setTimeout(self::TIMEOUT);
-            $process->run();
-
-            return $this->parseProcessOutput($process);
-        } finally {
-            $this->removeTempFile($tmpFile);
-        }
-    }
-
-    /**
-     * Executa script Bash em container Docker.
-     * Código é montado via bind mount para evitar injeção de shell.
-     */
-    private function executeBash(string $code): array
-    {
-        $tmpFile = $this->createTempFile($code, 'bash');
-
-        try {
-            $process = Process::fromShellCommandline(sprintf(
-                'docker run --rm --network none --memory=%s --cpus=0.5 --read-only --tmpfs /tmp:size=10m -v %s:/tmp/script.sh:ro code-sandbox-bash bash /tmp/script.sh',
+                'docker run --rm --network none --memory=%s --cpus=0.5 --read-only --pids-limit 50 --user nobody --security-opt no-new-privileges --tmpfs /tmp:size=10m -v %s:/tmp/query.sql:ro code-sandbox-sql sqlite3 :memory: < /tmp/query.sql',
                 self::MEMORY_LIMIT,
                 escapeshellarg($tmpFile)
             ));

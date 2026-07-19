@@ -13,7 +13,7 @@ class RateLimitBypassTest extends TestCase
     public function test_rate_limit_applies_to_login(): void
     {
         $user = User::factory()->create([
-            'password' => bcrypt('password123'),
+            'password' => bcrypt('Password123'),
         ]);
 
         // Make multiple rapid login attempts with wrong password
@@ -38,7 +38,7 @@ class RateLimitBypassTest extends TestCase
     public function test_different_rate_limiters_are_independent(): void
     {
         $user = User::factory()->create([
-            'password' => bcrypt('password123'),
+            'password' => bcrypt('Password123'),
         ]);
 
         // Exhaust the login rate limiter (3 per minute)
@@ -55,8 +55,8 @@ class RateLimitBypassTest extends TestCase
             ->postJson('/api/v1/auth/register', [
                 'name' => 'New User',
                 'email' => 'newuser@test.com',
-                'password' => 'password123',
-                'password_confirmation' => 'password123',
+                'password' => 'Password123',
+                'password_confirmation' => 'Password123',
             ]);
 
         // Register should not be affected by login rate limits
@@ -66,7 +66,7 @@ class RateLimitBypassTest extends TestCase
     public function test_rate_limit_resets_after_minute(): void
     {
         $user = User::factory()->create([
-            'password' => bcrypt('password123'),
+            'password' => bcrypt('Password123'),
         ]);
 
         // Exhaust the rate limit (3 per minute)

@@ -44,6 +44,7 @@ export function useFocusTrap(container: Ref<HTMLElement | null>, active: Ref<boo
     if (focusables.length > 0) {
       focusables[0].focus()
     }
+    document.removeEventListener('keydown', trapFocus)
     document.addEventListener('keydown', trapFocus)
   }
 

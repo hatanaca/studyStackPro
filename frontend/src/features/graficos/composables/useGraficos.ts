@@ -43,7 +43,8 @@ export function useGraficos() {
   })
 
   const timeSeriesForChart = computed(() => {
-    const sorted = [...timeSeriesData.value].sort((a, b) => a.date.localeCompare(b.date))
+    const clean = timeSeriesData.value.filter((d): d is DailyMinute => d != null && typeof d.date === 'string')
+    const sorted = [...clean].sort((a, b) => a.date.localeCompare(b.date))
     return {
       labels: sorted.map((d) => {
         const date = new Date(d.date + 'T12:00:00')
@@ -54,7 +55,8 @@ export function useGraficos() {
   })
 
   const weeklyForChart = computed(() => {
-    const sorted = [...weeklyData.value].sort((a, b) => a.week_start.localeCompare(b.week_start))
+    const clean = weeklyData.value.filter((w): w is WeeklySummary => w != null && typeof w.week_start === 'string')
+    const sorted = [...clean].sort((a, b) => a.week_start.localeCompare(b.week_start))
     return {
       labels: sorted.map((w) => {
         const date = new Date(w.week_start + 'T12:00:00')

@@ -1,100 +1,100 @@
-# Rotação de Secrets — StudyTrackPro
+# Secrets Rotation — StudyTrackPro
 
-## Contexto
+## Context
 
-Em 2026-06-25, uma revisão de segurança identificou que os seguintes secrets estavam expostos no repositório (commitados em `backend/.env.example` e `backend/.env.production.example`):
+On 2026-06-25, a security review identified that the following secrets were exposed in the repository (committed in `backend/.env.example` and `backend/.env.production.example`):
 
 - Google OAuth Client ID + Secret
 - Discord OAuth Client ID + Secret + Bot Token
 - YouTube Data API Key
 - Bot API Secret
 
-**Estes tokens estão comprometidos e devem ser rotacionados antes de qualquer deploy.**
+**These tokens are compromised and must be rotated before any deploy.**
 
 ---
 
-## Pré-requisitos
+## Prerequisites
 
-- Conta Google (para YouTube/Google OAuth)
-- Conta Discord com acesso ao Developer Portal
-- Acesso ao repositório para atualizar os `.env`
+- Google account (for YouTube/Google OAuth)
+- Discord account with Developer Portal access
+- Repository access to update `.env` files
 
 ---
 
-## Passo 1 — Google (YouTube + OAuth)
+## Step 1 — Google (YouTube + OAuth)
 
-### 1.1 Acessar o Console
-1. Acesse [https://console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials)
-2. Selecione o projeto associado ao app
+### 1.1 Access the Console
+1. Go to [https://console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials)
+2. Select the project associated with the app
 
-### 1.2 Revogar OAuth Client antigo
-1. Em **Credentials**, localize o "OAuth 2.0 Client ID" com Client ID `356749384049-...`
-2. Clique nele → **Delete** (lixeira no canto superior)
-3. Confirme a exclusão
+### 1.2 Revoke Old OAuth Client
+1. In **Credentials**, find the "OAuth 2.0 Client ID" with Client ID `356749384049-...`
+2. Click on it → **Delete** (trash icon in the upper right)
+3. Confirm deletion
 
-### 1.3 Criar novo OAuth Client
-1. Clique em **+ CREATE CREDENTIALS** → **OAuth client ID**
+### 1.3 Create New OAuth Client
+1. Click **+ CREATE CREDENTIALS** → **OAuth client ID**
 2. Application type: **Web application**
-3. Nome: `StudyTrackPro` (ou similar)
-4. **Authorized redirect URIs** → adicione:
+3. Name: `StudyTrackPro` (or similar)
+4. **Authorized redirect URIs** → add:
    - `http://localhost:8080/api/v1/auth/google/callback` (dev)
-   - `https://seu-dominio.com/api/v1/auth/google/callback` (prod)
-5. Clique em **Create**
-6. Anote o **Client ID** e **Client Secret** gerados
+   - `https://yourdomain.com/api/v1/auth/google/callback` (prod)
+5. Click **Create**
+6. Note the generated **Client ID** and **Client Secret**
 
-### 1.4 Revogar API Key antiga (YouTube)
-1. Em **Credentials**, localize a API Key com valor `AIzaSyCmVLRCyuVog...`
-2. Clique nela → **Delete**
-3. Crie nova: **+ CREATE CREDENTIALS** → **API key**
-4. Restrinja a key em **API restrictions** → YouTube Data API v3
-5. Anote a nova API Key
+### 1.4 Revoke Old API Key (YouTube)
+1. In **Credentials**, find the API Key with value `AIzaSyCmVLRCyuVog...`
+2. Click on it → **Delete**
+3. Create new: **+ CREATE CREDENTIALS** → **API key**
+4. Restrict the key in **API restrictions** → YouTube Data API v3
+5. Note the new API Key
 
-### 1.5 Atualizar consent screen (se necessário)
-1. Vai em **OAuth consent screen**
-2. Atualize os URIs de redirecionamento se necessário
-3. Salve
+### 1.5 Update Consent Screen (If Needed)
+1. Go to **OAuth consent screen**
+2. Update redirect URIs if needed
+3. Save
 
 ---
 
-## Passo 2 — Discord (OAuth + Bot)
+## Step 2 — Discord (OAuth + Bot)
 
-### 2.1 Acessar o Developer Portal
-1. Acesse [https://discord.com/developers/applications](https://discord.com/developers/applications)
-2. Localize o app com Application ID `<OLD_DISCORD_APP_ID>`
+### 2.1 Access the Developer Portal
+1. Go to [https://discord.com/developers/applications](https://discord.com/developers/applications)
+2. Find the app with Application ID `<OLD_DISCORD_APP_ID>`
 
-### 2.2 Revogar app antigo
-1. Clique no app → **General** → **Delete Application** (botão no final)
-2. Confirme com o nome do app
+### 2.2 Revoke Old App
+1. Click on the app → **General** → **Delete Application** (button at the bottom)
+2. Confirm with the app name
 
-### 2.3 Criar novo app
-1. Clique em **New Application**
-2. Nome: `StudyTrackPro` (ou similar)
-3. Anote o novo **Application ID**
+### 2.3 Create New App
+1. Click **New Application**
+2. Name: `StudyTrackPro` (or similar)
+3. Note the new **Application ID**
 
-### 2.4 Configurar OAuth2
-1. Vai em **OAuth2** → **General**
-2. **Redirects** → adicione:
+### 2.4 Configure OAuth2
+1. Go to **OAuth2** → **General**
+2. **Redirects** → add:
    - `http://localhost:8080/api/v1/auth/discord/callback` (dev)
-   - `https://seu-dominio.com/api/v1/auth/discord/callback` (prod)
-3. **Scopes**: marque `identify`, `email`, `guilds`
-4. Anote o novo **Client ID** e **Client Secret**
+   - `https://yourdomain.com/api/v1/auth/discord/callback` (prod)
+3. **Scopes**: check `identify`, `email`, `guilds`
+4. Note the new **Client ID** and **Client Secret**
 
-### 2.5 Criar novo Bot
-1. Vai em **Bot** → **Reset Token**
-2. Anote o novo **Bot Token**
-3. Em **Privileged Gateway Intents**, ative:
-   - ✅ MESSAGE CONTENT INTENT (se necessário para ler mensagens)
-4. Em **Bot Permissions**, marque: `Send Messages`, `Read Message History`, `View Channels`
+### 2.5 Create New Bot
+1. Go to **Bot** → **Reset Token**
+2. Note the new **Bot Token**
+3. In **Privileged Gateway Intents**, enable:
+   - ✅ MESSAGE CONTENT INTENT (if needed to read messages)
+4. In **Bot Permissions**, check: `Send Messages`, `Read Message History`, `View Channels`
 
-### 2.6 Convidar o bot para servidores
-1. Vai em **OAuth2** → **URL Generator**
+### 2.6 Invite Bot to Servers
+1. Go to **OAuth2** → **URL Generator**
 2. Scopes: `bot`
 3. Bot Permissions: `Send Messages`, `Read Message History`, `View Channels`
-4. Copie a URL gerada e abra no navegador para convidar o bot
+4. Copy the generated URL and open it in a browser to invite the bot
 
 ---
 
-## Passo 3 — Atualizar variáveis de ambiente
+## Step 3 — Update Environment Variables
 
 ### 3.1 Dev (`backend/.env`)
 
@@ -103,22 +103,22 @@ cd backend
 nano .env
 ```
 
-Substitua:
+Replace:
 
 ```
-GOOGLE_CLIENT_ID=<novo-client-id>
-GOOGLE_CLIENT_SECRET=<novo-client-secret>
+GOOGLE_CLIENT_ID=<new-client-id>
+GOOGLE_CLIENT_SECRET=<new-client-secret>
 
-DISCORD_CLIENT_ID=<novo-application-id>
-DISCORD_CLIENT_SECRET=<novo-client-secret>
-DISCORD_BOT_TOKEN=<novo-bot-token>
+DISCORD_CLIENT_ID=<new-application-id>
+DISCORD_CLIENT_SECRET=<new-client-secret>
+DISCORD_BOT_TOKEN=<new-bot-token>
 
-YOUTUBE_API_KEY=<nova-api-key>
+YOUTUBE_API_KEY=<new-api-key>
 
-BOT_API_SECRET=<gere-novo-com: openssl rand -hex 32>
+BOT_API_SECRET=<generate with: openssl rand -hex 32>
 ```
 
-### 3.2 Produção (`backend/.env.production`)
+### 3.2 Production (`backend/.env.production`)
 
 ```bash
 cd backend
@@ -126,64 +126,64 @@ cp .env.production.example .env.production
 nano .env.production
 ```
 
-Preencha TODOS os campos (não deixe nenhum vazio):
+Fill in ALL fields (don't leave any empty):
 
 ```
 APP_NAME=StudyTrackPro
 APP_ENV=production
-APP_KEY=<gere-com: php artisan key:generate>
+APP_KEY=<generate with: php artisan key:generate>
 APP_DEBUG=false
-APP_URL=https://seu-dominio.com
+APP_URL=https://yourdomain.com
 
 TRUSTED_PROXIES=*
 
-DB_HOST=<host-do-banco>
-DB_DATABASE=<nome-do-banco>
-DB_USERNAME=<usuario>
-DB_PASSWORD=<senha-forte>
+DB_HOST=<database-host>
+DB_DATABASE=<database-name>
+DB_USERNAME=<user>
+DB_PASSWORD=<strong-password>
 
-REDIS_HOST=<host-do-redis>
-REDIS_PASSWORD=<senha-forte>
+REDIS_HOST=<redis-host>
+REDIS_PASSWORD=<strong-password>
 
-REVERB_APP_KEY=<gere-com: openssl rand -hex 32>
-REVERB_APP_SECRET=<gere-com: openssl rand -hex 32>
-REVERB_HOST=seu-dominio.com
+REVERB_APP_KEY=<generate with: openssl rand -hex 32>
+REVERB_APP_SECRET=<generate with: openssl rand -hex 32>
+REVERB_HOST=yourdomain.com
 REVERB_PORT=443
 REVERB_SCHEME=https
 
-VITE_API_URL=https://seu-dominio.com
-VITE_REVERB_HOST=seu-dominio.com
+VITE_API_URL=https://yourdomain.com
+VITE_REVERB_HOST=yourdomain.com
 VITE_REVERB_PORT=443
 
-SANCTUM_STATEFUL_DOMAINS=seu-dominio.com
-SESSION_DOMAIN=.seu-dominio.com
+SANCTUM_STATEFUL_DOMAINS=yourdomain.com
+SESSION_DOMAIN=.yourdomain.com
 
-CORS_ALLOWED_ORIGINS=https://app.seu-dominio.com
+CORS_ALLOWED_ORIGINS=https://app.yourdomain.com
 
-GOOGLE_CLIENT_ID=<novo-client-id>
-GOOGLE_CLIENT_SECRET=<novo-client-secret>
-GOOGLE_REDIRECT_URI=https://seu-dominio.com/api/v1/auth/google/callback
+GOOGLE_CLIENT_ID=<new-client-id>
+GOOGLE_CLIENT_SECRET=<new-client-secret>
+GOOGLE_REDIRECT_URI=https://yourdomain.com/api/v1/auth/google/callback
 
-DISCORD_CLIENT_ID=<novo-application-id>
-DISCORD_CLIENT_SECRET=<novo-client-secret>
-DISCORD_REDIRECT_URI=https://seu-dominio.com/api/v1/auth/discord/callback
+DISCORD_CLIENT_ID=<new-application-id>
+DISCORD_CLIENT_SECRET=<new-client-secret>
+DISCORD_REDIRECT_URI=https://yourdomain.com/api/v1/auth/discord/callback
 
-FRONTEND_URL=https://app.seu-dominio.com
+FRONTEND_URL=https://app.yourdomain.com
 
-YOUTUBE_API_KEY=<nova-api-key>
+YOUTUBE_API_KEY=<new-api-key>
 ```
 
-### 3.3 Gerar senhas fortes
+### 3.3 Generate Strong Passwords
 
 ```bash
-# Senha do banco
+# Database password
 openssl rand -base64 32
 
-# Senha do Redis
+# Redis password
 openssl rand -hex 32
 
 # Reverb keys
-openssl rand -hex 32  # repita 2x (APP_KEY e APP_SECRET)
+openssl rand -hex 32  # repeat 2x (APP_KEY and APP_SECRET)
 
 # Bot API Secret
 openssl rand -hex 32
@@ -191,48 +191,48 @@ openssl rand -hex 32
 
 ---
 
-## Passo 4 — Verificar
+## Step 4 — Verify
 
 ### 4.1 Dev
 ```bash
 docker compose up -d
-# Acesse http://localhost:8080
-# Teste login com Google e Discord
+# Access http://localhost:8080
+# Test login with Google and Discord
 ```
 
-### 4.2 Produção
+### 4.2 Production
 ```bash
 make prod-build
 make prod-up
-# Verifique logs: docker compose logs php-fpm
-# Teste login em https://seu-dominio.com
+# Check logs: docker compose logs php-fpm
+# Test login at https://yourdomain.com
 ```
 
-### 4.3 Checklist pós-rotação
-- [ ] Google OAuth login funciona
-- [ ] Discord OAuth login funciona
-- [ ] YouTube search funciona
-- [ ] Discord chat (bot mensagens) funciona
-- [ ] Nenhum erro de "invalid_client" ou "unauthorized" nos logs
-- [ ] `.env.example` e `.env.production.example` contêm apenas placeholders
+### 4.3 Post-Rotation Checklist
+- [ ] Google OAuth login works
+- [ ] Discord OAuth login works
+- [ ] YouTube search works
+- [ ] Discord chat (bot messages) works
+- [ ] No "invalid_client" or "unauthorized" errors in logs
+- [ ] `.env.example` and `.env.production.example` contain only placeholders
 
 ---
 
 ## Troubleshooting
 
-| Erro | Causa | Solução |
-|------|-------|---------|
-| `invalid_client` no Google | Client Secret errado ou revogado | Verifique se copiou o Client Secret correto |
-| `redirect_uri_mismatch` | URI de callback não confere | Adicione TODOS os URIs no Google/Discord Console |
-| Discord bot não responde | Bot não está no servidor | Convide o bot via URL Generator |
-| YouTube search 403 | API Key inválida ou quota excedida | Verifique a API Key e as APIs habilitadas |
-| `BOT_API_SECRET` mismatch | Backend e bot usam secret diferente | Use o mesmo valor no backend e no bot |
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `invalid_client` on Google | Wrong or revoked Client Secret | Verify you copied the correct Client Secret |
+| `redirect_uri_mismatch` | Callback URI doesn't match | Add ALL URIs in Google/Discord Console |
+| Discord bot not responding | Bot not in the server | Invite the bot via URL Generator |
+| YouTube search 403 | Invalid API Key or quota exceeded | Check the API Key and enabled APIs |
+| `BOT_API_SECRET` mismatch | Backend and bot use different secret | Use the same value in backend and bot |
 
 ---
 
-## Notas
+## Notes
 
-- O `BOT_API_SECRET` deve ser o mesmo no backend (`.env`) e no bot Discord
-- Em dev, os URIs usam `http://localhost:8080` (porta do nginx)
-- Em prod, use `https://` com o domínio real
-- Nunca commite os `.env` ou `.env.production` — estão no `.gitignore`
+- The `BOT_API_SECRET` must be the same in the backend (`.env`) and in the Discord bot
+- In dev, URIs use `http://localhost:8080` (nginx port)
+- In prod, use `https://` with the real domain
+- Never commit `.env` or `.env.production` — they are in `.gitignore`

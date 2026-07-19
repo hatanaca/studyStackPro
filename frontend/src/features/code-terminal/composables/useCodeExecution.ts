@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { codeExecutionApi } from '@/api/modules/code-execution.api'
+import { executeLua } from '../utils/lua-executor'
 import type { ProgrammingLanguage, CodeExecutionResult, TerminalEntry } from '../types/code-terminal.types'
 
 /**
@@ -84,23 +85,16 @@ export function useCodeExecution() {
   }
 
   /**
-   * Executa código Lua via Web Worker (placeholder — usar Fengari quando disponível).
+   * Executa código Lua via Fengari (Lua VM em JavaScript).
    */
-  function executeLua(code: string): Promise<CodeExecutionResult> {
-    // Por enquanto, retorna erro indicando que Lua precisa de Fengari
-    return Promise.resolve({
-      success: false,
-      output: '',
-      error: 'Execução de Lua ainda não disponível. Use JavaScript para testar.',
-      executionTime: 0,
-      language: 'lua',
-    })
+  function executeLuaCode(code: string): Promise<CodeExecutionResult> {
+    return executeLua(code)
   }
 
   /**
    * Executa código HTML/CSS em iframe sandboxed.
    */
-  function executeHTML(code: string, language: 'html' | 'css'): Promise<CodeExecutionResult> {
+  function executeHTML(_code: string, language: 'html' | 'css'): Promise<CodeExecutionResult> {
     // HTML/CSS são renderizados no componente, não aqui
     return Promise.resolve({
       success: true,
@@ -125,7 +119,7 @@ export function useCodeExecution() {
           result = await executeJS(code)
           break
         case 'lua':
-          result = await executeLua(code)
+          result = await executeLuaCode(code)
           break
         case 'html':
         case 'css':

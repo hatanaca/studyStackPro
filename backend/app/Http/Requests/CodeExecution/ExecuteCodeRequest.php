@@ -15,7 +15,7 @@ class ExecuteCodeRequest extends FormRequest
     {
         return [
             'code' => ['required', 'string', 'max:10000'],
-            'language' => ['required', 'string', 'in:javascript,php,lua,html,css,sql,laravel,bash'],
+            'language' => ['required', 'string', 'in:javascript,php,lua,html,css,sql,laravel'],
         ];
     }
 }

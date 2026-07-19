@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Log;
  *
  * Gerencia publicação de posts (ugcPosts), perfil do usuário,
  * e renovação de access tokens via refresh token.
+ *
+ * Nota: Acessa atributos OAuth (linkedin_id, tokens) via getAttributes()
+ * para evitar MissingAttributeException quando o model é carregado
+ * com select() parcial ou após serialização.
  */
 class LinkedInService
 {
@@ -24,12 +28,18 @@ class LinkedInService
     /** Scope necessário para postar em nome do membro. */
     private const SHARE_SCOPE = 'w_member_social';
 
+    /** Retorna atributo do model sem lançar MissingAttributeException. */
+    private function attr(User $user, string $key): mixed
+    {
+        return $user->getAttributes()[$key] ?? null;
+    }
+
     /**
      * Verifica se o usuário tem conta LinkedIn conectada.
      */
     public function isConnected(User $user): bool
     {
-        return filled($user->linkedin_id);
+        return filled($this->attr($user, 'linkedin_id'));
     }
 
     /**
@@ -41,9 +51,15 @@ class LinkedInService
      */
     public function getProfile(User $user): array
     {
+        $token = $this->attr($user, 'linkedin_token');
+        // Sem token não é possível obter perfil
+        if (! $token) {
+            throw new \RuntimeException('LinkedIn token não disponível.');
+        }
+
         $response = Http::timeout(10)
             ->retry(2, 200)
-            ->withToken($user->linkedin_token)
+            ->withToken($token)
             ->get(self::API_BASE.'/me');
 
         $response->throw();
@@ -60,7 +76,13 @@ class LinkedInService
      */
     public function sharePost(User $user, LinkedInPostDTO $dto): array
     {
-        $author = 'urn:li:person:'.$user->linkedin_id;
+        $linkedinId = $this->attr($user, 'linkedin_id');
+        $token = $this->attr($user, 'linkedin_token');
+        if (! $linkedinId || ! $token) {
+            throw new \RuntimeException('LinkedIn não conectado — token ou ID ausente.');
+        }
+
+        $author = 'urn:li:person:'.$linkedinId;
 
         $payload = [
             'author' => $author,
@@ -103,11 +125,16 @@ class LinkedInService
      */
     public function refreshToken(User $user): void
     {
+        $refreshToken = $this->attr($user, 'linkedin_refresh_token');
+        if (! $refreshToken) {
+            throw new \RuntimeException('LinkedIn refresh token não disponível.');
+        }
+
         $response = Http::asForm()
             ->timeout(10)
             ->post(self::OAUTH_TOKEN_URL, [
                 'grant_type' => 'refresh_token',
-                'refresh_token' => $user->linkedin_refresh_token,
+                'refresh_token' => $refreshToken,
                 'client_id' => config('services.linkedin.client_id'),
                 'client_secret' => config('services.linkedin.client_secret'),
             ]);
@@ -118,7 +145,7 @@ class LinkedInService
 
         $user->update([
             'linkedin_token' => $data['access_token'],
-            'linkedin_refresh_token' => $data['refresh_token'] ?? $user->linkedin_refresh_token,
+            'linkedin_refresh_token' => $data['refresh_token'] ?? $this->attr($user, 'linkedin_refresh_token'),
             'linkedin_token_expires_at' => now()->addSeconds($data['expires_in']),
         ]);
 

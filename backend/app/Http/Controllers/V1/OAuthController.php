@@ -1,73 +1,127 @@
 <?php
-
 namespace App\Http\Controllers\V1;
-
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Modules\Auth\Services\SocialAuthService;
+use App\Traits\HasApiResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
 
-/**
- * Controlador de autenticação OAuth (Google, Discord).
- *
- * Redireciona para o provider e processa o callback,
- * iniciando sessão web (cookie Sanctum SPA) como o AuthController::login().
- */
 class OAuthController extends Controller
 {
+    use HasApiResponse;
+
     public function __construct(private SocialAuthService $socialAuthService) {}
 
-    /**
-     * Redireciona para o provider OAuth.
-     */
     public function redirect(string $provider): RedirectResponse
     {
         if (! in_array($provider, ['google', 'discord', 'linkedin'], true)) {
             abort(400, 'Provider inválido.');
         }
-
         $driver = Socialite::driver($provider)->stateless();
-
-        // Escopos YouTube para acessar playlists e refresh token offline.
-        // access_type=offline → recebe refresh_token.
-        // prompt=consent → força re-autorização com novos escopos.
         if ($provider === 'google') {
-            $driver->scopes(['https://www.googleapis.com/auth/youtube.readonly']);
-            $driver->with([
-                'access_type' => 'offline',
-                'prompt' => 'consent',
-            ]);
+            // Sem scopes extras — login OAuth básico (openid, profile, email).
+            // O YouTube usa API key separada (YOUTUBE_API_KEY), não o token OAuth.
+            $driver->with(['access_type' => 'offline', 'prompt' => 'consent']);
         }
-
-        return $driver->redirect();
+        // Gera estado CSRF autocontido (criptografado) — não depende de sessão,
+        // sobrevive a cross-port (Vite:5173 → Nginx:8080).
+        $csrfToken = Crypt::encryptString(json_encode(['ts' => time()]));
+        $response = $driver->redirect();
+        $url = $response->getTargetUrl();
+        $url .= (str_contains($url, '?') ? '&' : '?') . 'state=' . urlencode($csrfToken);
+        return redirect($url);
     }
 
-    /**
-     * Processa o callback do provider, inicia sessão web e redireciona para o frontend.
-     */
     public function callback(Request $request, string $provider): RedirectResponse
     {
         if (! in_array($provider, ['google', 'discord', 'linkedin'], true)) {
-            abort(400, 'Provider inválido.');
+            Log::warning('OAuth callback: provider inválido', ['provider' => $provider]);
+            return redirect(config('services.frontend_url').'/login?error=oauth_failed');
         }
-
+        // Valida o estado CSRF assinado (autocontido, sem sessão)
+        $state = $request->input('state');
+        if ($state === null) {
+            Log::warning('OAuth callback: state ausente', ['provider' => $provider]);
+            return redirect(config('services.frontend_url').'/login?error=oauth_failed');
+        }
+        try {
+            $payload = json_decode(Crypt::decryptString($state), true);
+            if (!isset($payload['ts']) || (time() - $payload['ts']) > 600) {
+                Log::warning('OAuth callback: state expirado', ['provider' => $provider]);
+                return redirect(config('services.frontend_url').'/login?error=oauth_failed');
+            }
+        } catch (\Exception $e) {
+            Log::error('OAuth callback: state inválido', ['provider' => $provider, 'error' => $e->getMessage()]);
+            return redirect(config('services.frontend_url').'/login?error=oauth_failed');
+        }
         $frontendUrl = config('services.frontend_url');
-
         try {
             $socialUser = Socialite::driver($provider)->stateless()->user();
-        } catch (\Exception) {
+        } catch (\Exception $e) {
+            Log::error('OAuth callback: Socialite user() failed', [
+                'provider' => $provider,
+                'error' => $e->getMessage(),
+                'class' => get_class($e),
+            ]);
             return redirect($frontendUrl.'/login?error=oauth_failed');
         }
 
-        $user = $this->socialAuthService->handleOAuthUser($socialUser, $provider);
+        try {
+            $user = $this->socialAuthService->handleOAuthUser($socialUser, $provider);
+        } catch (\Throwable $e) {
+            Log::error('OAuth handleOAuthUser failed', ['provider' => $provider, 'exception' => $e]);
+            return redirect($frontendUrl.'/login?error=oauth_failed');
+        }
+        // Token assinado para criar sessão no port do frontend (5173)
+        $token = Crypt::encryptString(json_encode([
+            'user_id' => $user->id,
+            'ts' => time(),
+        ]));
+        return redirect($frontendUrl.'/auth/callback?status=ok&token='.urlencode($token));
+    }
 
-        // Inicia sessão web (cookie HttpOnly) — mesmo padrão do AuthController::login()
-        Auth::guard('web')->login($user);
-        $request->session()->regenerate();
-
-        // Redireciona para o frontend — o cookie de sessão já está definido no domínio da API
-        return redirect($frontendUrl.'/auth/callback?status=ok');
+    /**
+     * Troca o token OAuth assinado por uma sessão web no port do frontend.
+     */
+    public function oauthComplete(Request $request): JsonResponse
+    {
+        $token = $request->input('token');
+        if (!is_string($token) || $token === '') {
+            return $this->error('Token ausente.', 'VALIDATION_ERROR', null, 422);
+        }
+        try {
+            $payload = json_decode(Crypt::decryptString($token), true);
+            if (!$payload || !isset($payload['user_id'], $payload['ts'])) {
+                return $this->error('Token inválido.', 'UNAUTHENTICATED', null, 401);
+            }
+            if (time() - $payload['ts'] > 600) {
+                return $this->error('Token expirado.', 'UNAUTHENTICATED', null, 401);
+            }
+        } catch (\Exception) {
+            return $this->error('Token inválido.', 'UNAUTHENTICATED', null, 401);
+        }
+        $user = User::find($payload['user_id']);
+        if (!$user) {
+            return $this->error('Utilizador não encontrado.', 'NOT_FOUND', null, 404);
+        }
+        try {
+            Auth::guard('web')->login($user);
+        } catch (\Throwable $e) {
+            Log::error('oauthComplete login failed', ['error' => $e->getMessage(), 'class' => get_class($e)]);
+            return $this->error('Falha ao criar sessão.', 'INTERNAL_ERROR', null, 500);
+        }
+        // Gera Bearer token como fallback para autenticação via API
+        $user->tokens()->where('name', 'oauth-token')->delete();
+        $bearer = $user->createToken('oauth-token')->plainTextToken;
+        return $this->success([
+            'user' => new \App\Http\Resources\UserResource($user),
+            'token' => $bearer,
+        ]);
     }
 }

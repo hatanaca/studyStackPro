@@ -21,8 +21,6 @@ export const useCanvasStore = defineStore('canvas', () => {
   const zoom = ref(100)
   /** Dados serializados do objeto selecionado no canvas, ou `null` */
   const selectedObject = ref<any>(null)
-  /** Indica se o canvas está em modo de desenho livre */
-  const isDrawing = ref(false)
   /** Índice atual na pilha de histórico de ações */
   const historyIndex = ref(-1)
   /** Quantidade total de entradas no histórico */
@@ -92,7 +90,6 @@ export const useCanvasStore = defineStore('canvas', () => {
     canRedo,
     zoom,
     selectedObject,
-    isDrawing,
     historyIndex,
     historyLength,
     fillColor,

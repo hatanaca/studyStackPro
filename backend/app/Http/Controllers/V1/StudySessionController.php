@@ -1,155 +1,97 @@
 <?php
-
 namespace App\Http\Controllers\V1;
-
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StudySessions\IndexStudySessionsRequest;
 use App\Http\Requests\StudySessions\StartStudySessionRequest;
 use App\Http\Requests\StudySessions\StoreStudySessionRequest;
 use App\Http\Requests\StudySessions\UpdateStudySessionRequest;
 use App\Http\Resources\StudySessionResource;
-use App\Modules\StudySessions\DTOs\StudySessionDTO;
-use App\Modules\StudySessions\DTOs\StudySessionFilterDTO;
 use App\Modules\StudySessions\Services\StudySessionService;
 use App\Traits\HasApiResponse;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * Controlador de sessões de estudo.
- *
- * Gerencia CRUD de sessões, sessão ativa, início e encerramento. Suporta log manual
- * (store com started_at/ended_at) e modo foco (start/end). Impede sessões concorrentes.
- */
 class StudySessionController extends Controller
 {
     use HasApiResponse;
+    public function __construct(private StudySessionService $studySessionService) {}
 
-    /**
-     * Injeta o StudySessionService para regras de negócio de sessões.
-     */
-    public function __construct(
-        private StudySessionService $studySessionService
-    ) {}
-
-    /**
-     * Lista sessões do usuário com filtros e paginação.
-     * Filtros: tecnologia, período, página, por página.
-     */
     public function index(IndexStudySessionsRequest $request): JsonResponse
     {
-        $filterDto = StudySessionFilterDTO::fromArray($request->validated());
-        $paginator = $this->studySessionService->listForUser($request->user()->id, $filterDto);
-
+        $sessions = $this->studySessionService->listForUser(
+            $request->user()->id,
+            $request->validated()
+        );
         return $this->success(
-            StudySessionResource::collection($paginator->items()),
-            '',
-            200,
-            [
-                'current_page' => $paginator->currentPage(),
-                'last_page' => $paginator->lastPage(),
-                'per_page' => $paginator->perPage(),
-                'total' => $paginator->total(),
+            StudySessionResource::collection($sessions),
+            meta: [
+                'current_page' => $sessions->currentPage(),
+                'last_page' => $sessions->lastPage(),
+                'per_page' => $sessions->perPage(),
+                'total' => $sessions->total(),
             ]
         );
     }
 
-    /**
-     * Cria uma sessão via log manual (posterior ou retroativo).
-     * Aceita started_at, ended_at, notes, mood, focus_score.
-     */
     public function store(StoreStudySessionRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $dto = new StudySessionDTO(
+        $dto = new \App\Modules\StudySessions\DTOs\StudySessionDTO(
             userId: $request->user()->id,
-            technologyId: $validated['technology_id'],
-            startedAt: Carbon::parse($validated['started_at']),
-            endedAt: isset($validated['ended_at']) ? Carbon::parse($validated['ended_at']) : null,
+            technologyId: $validated['technology_id'] ?? null,
+            startedAt: isset($validated['started_at']) ? \Carbon\Carbon::parse($validated['started_at']) : now(),
+            endedAt: isset($validated['ended_at']) ? \Carbon\Carbon::parse($validated['ended_at']) : null,
             notes: $validated['notes'] ?? null,
             mood: $validated['mood'] ?? null,
             focusScore: $validated['focus_score'] ?? null,
-            title: $validated['title'],
+            title: $validated['title'] ?? null,
         );
         $session = $this->studySessionService->create($request->user()->id, $dto);
-
         return $this->success(new StudySessionResource($session->load('technology')), 'Sessão criada.', 201);
     }
 
-    /**
-     * Retorna detalhes de uma sessão específica. Garante que pertence ao usuário.
-     */
-    public function show(Request $request, string $id): JsonResponse
+    public function show(string $id): JsonResponse
     {
-        $session = $this->studySessionService->findForUser($id, $request->user()->id);
-
-        return $this->success(new StudySessionResource($session));
+        $session = $this->studySessionService->findForUser($id, request()->user()->id);
+        return $this->success(new StudySessionResource($session->load('technology')));
     }
 
-    /**
-     * Atualiza uma sessão existente. Validação via UpdateStudySessionRequest.
-     */
     public function update(UpdateStudySessionRequest $request, string $id): JsonResponse
     {
         $session = $this->studySessionService->update($id, $request->user()->id, $request->validated());
-
-        return $this->success(new StudySessionResource($session), 'Sessão atualizada.');
+        return $this->success(new StudySessionResource($session->load('technology')), 'Sessão atualizada.');
     }
 
-    /**
-     * Remove uma sessão. Soft delete ou hard delete conforme regra do service.
-     */
-    public function destroy(Request $request, string $id): JsonResponse
+    public function destroy(string $id): JsonResponse
     {
-        $this->studySessionService->delete($id, $request->user()->id);
-
-        return $this->success(null, 'Sessão deletada.');
+        $this->studySessionService->delete($id, request()->user()->id);
+        return $this->success(null, 'Sessão excluída.');
     }
 
-    /**
-     * Retorna a sessão ativa do usuário (se houver) com elapsed_seconds.
-     * Usado pelo timer em tempo real no frontend.
-     */
     public function active(Request $request): JsonResponse
     {
         $session = $this->studySessionService->getActiveForUser($request->user()->id);
-
         if (! $session) {
             return $this->success(null);
         }
-
         $elapsedSeconds = (int) $session->started_at->diffInSeconds(now());
-
-        return $this->success([
-            ...(new StudySessionResource($session))->toArray(request()),
-            'elapsed_seconds' => $elapsedSeconds,
-        ]);
+        $resource = new StudySessionResource($session);
+        return $this->success(array_merge($resource->resolve($request), ['elapsed_seconds' => $elapsedSeconds]));
     }
 
-    /**
-     * Inicia uma nova sessão de estudo (modo foco).
-     * Lança ConcurrentSessionException se já existir sessão ativa.
-     * technology_id opcional: usa a primeira tecnologia do usuário se omitido.
-     */
     public function start(StartStudySessionRequest $request): JsonResponse
     {
-        $session = $this->studySessionService->start(
-            $request->user(),
-            $request->validated('technology_id')
-        );
-
+        $session = $this->studySessionService->start($request->user(), $request->validated('technology_id'));
         return $this->success(new StudySessionResource($session->load('technology')), 'Sessão iniciada.', 201);
     }
 
-    /**
-     * Encerra uma sessão em andamento. Define ended_at = now().
-     * Retorna 422 se a sessão já estiver finalizada.
-     */
-    public function end(Request $request, string $id): JsonResponse
+    public function end(string $id): JsonResponse
     {
-        $session = $this->studySessionService->end($id, $request->user()->id);
-
-        return $this->success(new StudySessionResource($session), 'Sessão finalizada.');
+        try {
+            $session = $this->studySessionService->end($id, request()->user()->id);
+            return $this->success(new StudySessionResource($session->load('technology')), 'Sessão finalizada.');
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 'VALIDATION_ERROR', null, 422);
+        }
     }
 }

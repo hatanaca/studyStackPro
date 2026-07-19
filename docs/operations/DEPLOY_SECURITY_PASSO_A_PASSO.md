@@ -1,119 +1,119 @@
-# Passo a passo – Segurança em produção (StudyTrackPro)
+# Step-by-Step — Production Security (StudyTrackPro)
 
-Checklist para aplicar as medidas do [SECURITY_AUDIT.md](SECURITY_AUDIT.md) no ambiente de produção.  
-Não commitar `.env` de produção nem senhas no repositório.
+Checklist to apply the measures from [SECURITY_AUDIT.md](SECURITY_AUDIT.md) in the production environment.
+Do not commit production `.env` or passwords to the repository.
 
 ---
 
-## 1. Variáveis de ambiente (backend)
+## 1. Environment Variables (Backend)
 
-No servidor, edite o `.env` de produção (ex.: `backend/.env` ou o que seu deploy usa).
+On the server, edit the production `.env` (e.g., `backend/.env` or whatever your deploy uses).
 
-| Passo | Variável | Ação |
-|-------|----------|------|
-| 1.1 | `APP_ENV` | Defina `production`. |
-| 1.2 | `APP_DEBUG` | Defina `false`. |
-| 1.3 | `APP_URL` | Use HTTPS, ex.: `https://api.seudominio.com`. |
-| 1.4 | `APP_KEY` | Gere com `php artisan key:generate` se ainda não existir. |
-| 1.5 | `CORS_ALLOWED_ORIGINS` | Liste as origens do frontend separadas por vírgula, ex.: `https://app.seudominio.com`. Sem `*`. |
-| 1.6 | `DB_PASSWORD` | Use senha forte. Gere com: `openssl rand -base64 32`. |
-| 1.7 | `REDIS_PASSWORD` | Use senha forte (mesma que `requirepass` no Redis, se usar). Gere com: `openssl rand -base64 32`. |
-| 1.8 | `HORIZON_ADMIN_EMAILS` | Emails (separados por vírgula) que podem acessar `/horizon`. Ex.: `admin@seudominio.com`. |
+| Step | Variable | Action |
+|------|----------|--------|
+| 1.1 | `APP_ENV` | Set to `production`. |
+| 1.2 | `APP_DEBUG` | Set to `false`. |
+| 1.3 | `APP_URL` | Use HTTPS, e.g., `https://api.yourdomain.com`. |
+| 1.4 | `APP_KEY` | Generate with `php artisan key:generate` if it doesn't exist yet. |
+| 1.5 | `CORS_ALLOWED_ORIGINS` | List frontend origins separated by comma, e.g., `https://app.yourdomain.com`. No `*`. |
+| 1.6 | `DB_PASSWORD` | Use a strong password. Generate with: `openssl rand -base64 32`. |
+| 1.7 | `REDIS_PASSWORD` | Use a strong password (same as `requirepass` in Redis, if used). Generate with: `openssl rand -base64 32`. |
+| 1.8 | `HORIZON_ADMIN_EMAILS` | Emails (comma-separated) that can access `/horizon`. E.g., `admin@yourdomain.com`. |
 
 ---
 
 ## 2. Redis
 
-| Passo | Ação |
-|-------|------|
-| 2.1 | Gere uma senha: `openssl rand -base64 32`. |
-| 2.2 | No `.env` do backend, defina `REDIS_PASSWORD=<senha_gerada>`. |
-| 2.3 | Em `docker/redis/redis.conf`, defina `requirepass <mesma_senha>` (ou use variável/secret no seu orchestrator). |
-| 2.4 | Reinicie o Redis após alterar `redis.conf`. |
+| Step | Action |
+|------|--------|
+| 2.1 | Generate a password: `openssl rand -base64 32`. |
+| 2.2 | In backend `.env`, set `REDIS_PASSWORD=<generated_password>`. |
+| 2.3 | In `docker/redis/redis.conf`, set `requirepass <same_password>` (or use a variable/secret in your orchestrator). |
+| 2.4 | Restart Redis after changing `redis.conf`. |
 
 ---
 
-## 3. HTTPS (Nginx / servidor)
+## 3. HTTPS (Nginx / Server)
 
-| Passo | Ação |
-|-------|------|
-| 3.1 | Obtenha certificado SSL (Let’s Encrypt, Cloudflare ou seu provedor). |
-| 3.2 | Configure o Nginx para escutar na porta 443 e usar o certificado. |
-| 3.3 | Redirecione HTTP (80) para HTTPS (301). |
-| 3.4 | No `.env`, `APP_URL` e `VITE_*` devem usar `https://`. |
+| Step | Action |
+|------|--------|
+| 3.1 | Obtain an SSL certificate (Let's Encrypt, Cloudflare, or your provider). |
+| 3.2 | Configure Nginx to listen on port 443 and use the certificate. |
+| 3.3 | Redirect HTTP (80) to HTTPS (301). |
+| 3.4 | In `.env`, `APP_URL` and `VITE_*` should use `https://`. |
 
-**Exemplo de redirecionamento no Nginx (antes do `server` principal):**
+**Nginx redirect example (before the main `server` block):**
 
 ```nginx
 server {
     listen 80;
-    server_name api.seudominio.com;
+    server_name api.yourdomain.com;
     return 301 https://$server_name$request_uri;
 }
 ```
 
 ---
 
-## 4. Headers de segurança (Nginx)
+## 4. Security Headers (Nginx)
 
-Se ainda não estiverem no `server` que serve HTTPS, adicione:
+If they are not yet in the server block serving HTTPS, add:
 
-| Passo | Header | Valor sugerido |
-|-------|--------|----------------|
-| 4.1 | Strict-Transport-Security | `max-age=31536000; includeSubDomains` (só com HTTPS ativo) |
+| Step | Header | Suggested Value |
+|------|--------|-----------------|
+| 4.1 | Strict-Transport-Security | `max-age=31536000; includeSubDomains` (only with HTTPS active) |
 | 4.2 | X-Content-Type-Options | `nosniff` |
 | 4.3 | X-Frame-Options | `SAMEORIGIN` |
 | 4.4 | X-XSS-Protection | `1; mode=block` |
 | 4.5 | Referrer-Policy | `strict-origin-when-cross-origin` |
 | 4.6 | Permissions-Policy | `geolocation=(), microphone=(), camera=()` |
 
-O projeto já inclui vários deles em [docker/nginx/nginx.conf](../../docker/nginx/nginx.conf) e em [docker/nginx/conf.d/studytrack.conf](../../docker/nginx/conf.d/studytrack.conf) (OpenResty). Em produção, ative o HSTS quando o SSL estiver em uso.
+The project already includes several of these in [docker/nginx/nginx.conf](../../docker/nginx/nginx.conf) and [docker/nginx/conf.d/studytrack.conf](../../docker/nginx/conf.d/studytrack.conf) (OpenResty). In production, enable HSTS when SSL is in use.
 
 ---
 
-## 5. Código já corrigido (apenas conferir)
+## 5. Already Fixed in Code (Just Verify)
 
-Não é necessário alterar; só validar que a versão em produção é a atual:
+No changes needed; just confirm that the production version is current:
 
-| Item | Arquivo | Verificação |
-|------|---------|-------------|
-| CORS | `backend/config/cors.php` | `allowed_origins` usa `[]` quando `CORS_ALLOWED_ORIGINS` não está definido. |
-| Sanctum | `backend/config/sanctum.php` | `expiration => 1440` (tokens em 24h). |
-| Rate limit login | `backend/routes/api.php` + `AppServiceProvider` | Rotas de login com `throttle:login` (3 req/min). |
-
----
-
-## 6. Após alterar .env e Redis
-
-| Passo | Comando / ação |
-|-------|----------------|
-| 6.1 | `php artisan config:clear` e `php artisan cache:clear`. |
-| 6.2 | Reiniciar workers (Horizon/queue) para carregar o novo `.env`. |
-| 6.3 | Testar login, uma chamada de API e o dashboard Horizon (com usuário autorizado). |
+| Item | File | Verification |
+|------|------|--------------|
+| CORS | `backend/config/cors.php` | `allowed_origins` uses `[]` when `CORS_ALLOWED_ORIGINS` is not defined. |
+| Sanctum | `backend/config/sanctum.php` | `expiration => 1440` (tokens expire in 24h). |
+| Login Rate Limit | `backend/routes/api.php` + `AppServiceProvider` | Login routes use `throttle:login` (3 req/min). |
 
 ---
 
-## 7. Auditoria de dependências (recomendado)
+## 6. After Changing .env and Redis
 
-No backend e no frontend, rode periodicamente:
+| Step | Command / Action |
+|------|------------------|
+| 6.1 | `php artisan config:clear` and `php artisan cache:clear`. |
+| 6.2 | Restart workers (Horizon/queue) to load the new `.env`. |
+| 6.3 | Test login, an API call, and the Horizon dashboard (with an authorized user). |
+
+---
+
+## 7. Dependency Audit (Recommended)
+
+In both backend and frontend, run periodically:
 
 ```bash
 # Backend
 cd backend && composer audit
 
-# Frontend (pasta frontend)
+# Frontend (frontend folder)
 npm audit
 ```
 
-Corrija vulnerabilidades críticas/altas antes de considerar o deploy seguro.
+Fix critical/high vulnerabilities before considering the deploy secure.
 
 ---
 
-## Resumo rápido
+## Quick Summary
 
-1. **.env produção:** `APP_DEBUG=false`, `APP_URL=https://...`, `CORS_ALLOWED_ORIGINS` definido, senhas fortes (DB e Redis), `HORIZON_ADMIN_EMAILS`.
-2. **Redis:** `requirepass` em `redis.conf` e `REDIS_PASSWORD` no `.env`.
-3. **HTTPS:** Certificado + redirect 80→443; URLs em `.env` com `https://`.
-4. **Nginx:** Headers de segurança (incluindo HSTS quando em HTTPS).
-5. **Código:** CORS, Sanctum e throttle já ajustados; manter código atualizado.
-6. **Depois:** Limpar config/cache, reiniciar workers e rodar `composer audit` / `npm audit`.
+1. **Production .env:** `APP_DEBUG=false`, `APP_URL=https://...`, `CORS_ALLOWED_ORIGINS` defined, strong passwords (DB and Redis), `HORIZON_ADMIN_EMAILS`.
+2. **Redis:** `requirepass` in `redis.conf` and `REDIS_PASSWORD` in `.env`.
+3. **HTTPS:** Certificate + 80→443 redirect; URLs in `.env` with `https://`.
+4. **Nginx:** Security headers (including HSTS when on HTTPS).
+5. **Code:** CORS, Sanctum, and throttle already adjusted; keep code updated.
+6. **After:** Clear config/cache, restart workers, and run `composer audit` / `npm audit`.

@@ -1,85 +1,60 @@
 <?php
-
 namespace App\Modules\CodeExecution\Services;
+use App\Modules\CodeExecution\DTOs\ExecutionResultDTO;
+use App\Modules\CodeExecution\Exceptions\SandboxExecutionException;
+use Illuminate\Support\Facades\Log;
 
-use App\Modules\CodeExecution\DTOs\CodeExecutionDTO;
-
-/**
- * Serviço de execução de código.
- *
- * Orquestra a execução: valida o código, despacha para client (JS/Lua)
- * ou backend (Docker sandbox) conforme a linguagem.
- */
 class CodeExecutionService
 {
-    /** Linguagens que rodam no browser (client-side). */
-    private const CLIENT_LANGUAGES = ['javascript', 'lua', 'html', 'css'];
-
-    /** Máximo de caracteres no código. */
-    private const MAX_CODE_LENGTH = 10000;
-
     public function __construct(
-        private readonly DockerSandboxService $sandbox,
+        private DockerSandboxService $sandboxService
     ) {}
 
-    /**
-     * Retorna lista de linguagens suportadas.
-     *
-     * @return string[]
-     */
+    public function execute(string $code, string $language): ExecutionResultDTO|array
+    {
+        $language = strtolower(trim($language));
+        if (! in_array($language, $this->supportedLanguages(), true)) {
+            throw new SandboxExecutionException("Linguagem '{$language}' não é suportada.");
+        }
+
+        // Linguagens client-side (JS, Lua, HTML, CSS) rodam no navegador, não no sandbox
+        $clientSide = ['javascript', 'lua', 'html', 'css'];
+        if (in_array($language, $clientSide, true)) {
+            return ['executor' => 'client', 'language' => $language, 'code' => $code];
+        }
+
+        $result = $this->sandboxService->run($code, $language);
+        return new ExecutionResultDTO(
+            success: $result['success'],
+            output: $result['output'],
+            error: $result['error'],
+            executionTime: $result['executionTime']
+        );
+    }
+
     public function supportedLanguages(): array
     {
         return ['javascript', 'php', 'lua', 'html', 'css', 'sql', 'laravel', 'bash'];
     }
 
     /**
-     * Valida se o código e a linguagem são aceitáveis.
+     * Valida se o código e a linguagem são aceitáveis para execução.
+     *
+     * @param  string  $code  Código fonte.
+     * @param  string  $language  Linguagem alvo.
+     * @return bool True se código e linguagem são válidos.
      */
     public function validate(string $code, string $language): bool
     {
-        if (blank($code) || strlen($code) > self::MAX_CODE_LENGTH) {
+        if (trim($code) === '') {
             return false;
         }
-
-        return in_array($language, $this->supportedLanguages(), true);
-    }
-
-    /**
-     * Executa código — despacha para client ou backend.
-     *
-     * @return array{success: bool, output: string, error: string|null, executionTime: int, executor: string, language: string}
-     */
-    public function execute(CodeExecutionDTO $dto): array
-    {
-        if (! $this->validate($dto->code, $dto->language)) {
-            return [
-                'success' => false,
-                'output' => '',
-                'error' => 'Código inválido ou linguagem não suportada.',
-                'executionTime' => 0,
-                'executor' => 'none',
-                'language' => $dto->language,
-            ];
+        if (!in_array(strtolower(trim($language)), $this->supportedLanguages(), true)) {
+            return false;
         }
-
-        // Linguagens client-side: retorna instrução para executar no browser
-        if (in_array($dto->language, self::CLIENT_LANGUAGES, true)) {
-            return [
-                'success' => true,
-                'output' => '',
-                'error' => null,
-                'executionTime' => 0,
-                'executor' => 'client',
-                'language' => $dto->language,
-            ];
+        if (strlen($code) > 10000) {
+            return false;
         }
-
-        // Backend: executa via Docker sandbox
-        $result = $this->sandbox->run($dto->code, $dto->language);
-
-        return array_merge($result, [
-            'executor' => 'backend',
-            'language' => $dto->language,
-        ]);
+        return true;
     }
 }

@@ -1,4 +1,7 @@
-FROM sqlite:alpine
+FROM alpine/sqlite
+
+# Atualiza pacotes base para corrigir CVEs
+RUN apk upgrade --no-cache
 
 WORKDIR /sandbox
 

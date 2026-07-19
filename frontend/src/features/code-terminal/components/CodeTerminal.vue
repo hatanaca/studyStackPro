@@ -11,7 +11,7 @@ import type { ProgrammingLanguage } from '../types/code-terminal.types'
 
 const store = useCodeTerminalStore()
 const { execute, clearHistory, isExecuting } = useCodeExecution()
-const { detect } = useLanguageDetection()
+const { detect: _detect } = useLanguageDetection()
 
 const previewContainer = ref<HTMLDivElement>()
 const showPreview = ref(false)

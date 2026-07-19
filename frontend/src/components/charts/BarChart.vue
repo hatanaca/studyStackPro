@@ -318,30 +318,7 @@ const chartOptions = computed<ApexOptions>(() => {
 })
 
 onMounted(() => {
-  const n = props.data?.labels?.length ?? 0
-  // #region agent log
-  fetch('http://127.0.0.1:7251/ingest/086e8d00-457e-4a30-82b0-abf450d19c28', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '4b11d9' },
-    body: JSON.stringify({
-      sessionId: '4b11d9',
-      runId: 'bar-chart',
-      hypothesisId: 'H2',
-      location: 'BarChart.vue:onMounted',
-      message: 'bar chart mount',
-      data: {
-        categories: n,
-        orientation: props.orientation,
-        compact: compactViewport.value,
-        tiny: tinyViewport.value,
-        chartHeight: resolvedChartHeight.value,
-        showDataLabels: props.showDataLabels,
-        hasTitle: !!(props.yAxisTitle || props.xAxisTitle),
-      },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {})
-  // #endregion
+  // Componente montado
 })
 </script>
 

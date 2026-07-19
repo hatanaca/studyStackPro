@@ -44,7 +44,7 @@ class DispatchMetricsRecalculation
                 return;
             }
         } catch (Throwable $exception) {
-            Log::warning('Deduplicação Lua indisponível; seguindo em fail-open para recálculo de métricas.', [
+            Log::warning('Deduplicação Lua indisponível; despachando sem dedup.', [
                 'user_id' => $userId,
                 'error' => $exception->getMessage(),
             ]);

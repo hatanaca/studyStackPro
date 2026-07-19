@@ -15,7 +15,7 @@ class BroadcastMetricsUpdate
 {
     public function handle(MetricsRecalculated $event): void
     {
-        Log::channel('single')->debug('MetricsRecalculated broadcast emitido', [
+        Log::debug('MetricsRecalculated broadcast emitido', [
             'user_id' => $event->userId,
         ]);
     }

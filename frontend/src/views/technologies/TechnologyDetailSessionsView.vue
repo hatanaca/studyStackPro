@@ -20,7 +20,7 @@ const sessionListRef = ref<{ openAddModal: () => void } | null>(null)
 
 <style scoped>
 .tech-detail-subpage {
-  max-width: 100%;
+  width: 100%;
 }
 .tech-detail-subpage__toolbar {
   display: flex;

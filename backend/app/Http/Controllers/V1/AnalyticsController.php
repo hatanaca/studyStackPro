@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Analytics\ExportAnalyticsRequest;
 use App\Http\Requests\Analytics\HeatmapRequest;
 use App\Http\Requests\Analytics\TimeSeriesRequest;
-use App\Http\Resources\DashboardResource;
+// DashboardResource removed - returning array directly
 use App\Modules\Analytics\Services\AnalyticsService;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -36,7 +36,7 @@ class AnalyticsController extends Controller
     {
         $data = $this->analyticsService->getDashboardData($request->user()->id);
 
-        return $this->success(new DashboardResource($data));
+        return $this->success($data);
     }
 
     /**
@@ -51,7 +51,7 @@ class AnalyticsController extends Controller
 
     public function techStats(Request $request): JsonResponse
     {
-        $data = $this->analyticsService->getTechStats($request->user()->id);
+        $data = $this->analyticsService->getTechnologyMetrics($request->user()->id);
 
         return $this->success($data);
     }
@@ -61,7 +61,7 @@ class AnalyticsController extends Controller
      */
     public function timeSeries(TimeSeriesRequest $request): JsonResponse
     {
-        $data = $this->analyticsService->getTimeSeries($request->user()->id, $request->getDays());
+        $data = $this->analyticsService->getTimeSeries30d($request->user()->id);
 
         return $this->success($data);
     }
@@ -71,14 +71,14 @@ class AnalyticsController extends Controller
      */
     public function weekly(Request $request): JsonResponse
     {
-        $data = $this->analyticsService->getWeekly($request->user()->id);
+        $data = $this->analyticsService->getWeeklySummaries($request->user()->id);
 
         return $this->success($data);
     }
 
     public function heatmap(HeatmapRequest $request): JsonResponse
     {
-        $data = $this->analyticsService->getHeatmap($request->user()->id, $request->getYear());
+        $data = $this->analyticsService->getHeatmapData($request->user()->id, $request->getYear() ?? (int) date('Y'));
 
         return $this->success($data);
     }
@@ -101,7 +101,7 @@ class AnalyticsController extends Controller
     {
         $start = $request->validated('start');
         $end = $request->validated('end');
-        $data = $this->analyticsService->getExportData($request->user()->id, $start, $end);
+        $data = $this->analyticsService->getDailyMinutesByRange($request->user()->id, $start, $end);
 
         return $this->success([
             'exported_at' => now()->toIso8601String(),

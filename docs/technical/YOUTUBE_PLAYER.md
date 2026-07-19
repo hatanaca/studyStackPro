@@ -1,36 +1,36 @@
-# YouTube Player — Documentação Técnica
+# YouTube Player — Technical Documentation
 
-> Atualizado em 2026-06-23 após correção de bugs críticos.
+> Updated on 2026-06-23 after critical bug fixes.
 
-## Visão geral
+## Overview
 
-O YouTube Player é um mini-player flutuante que permite buscar e reproduzir vídeos/playlist do YouTube dentro da aplicação. É composto por:
+The YouTube Player is a floating mini-player that allows searching and playing YouTube videos/playlists within the application. It is composed of:
 
-| Componente | Arquivo | Responsabilidade |
-|------------|---------|------------------|
-| `MiniPlayer` | `frontend/src/components/player/MiniPlayer.vue` | UI: barra colapsada, painel expandido, controles, drag |
-| `YouTubeFrame` | `frontend/src/components/player/YouTubeFrame.vue` | Player IFrame API (YT.Player), comunicação com YouTube |
-| `player.store` | `frontend/src/stores/player.store.ts` | Estado global: playlist, search, favoritos, controles |
-| `youtube.store` | `frontend/src/stores/youtube.store.ts` | Store da view de busca (YouTubeSearchView) |
-| `YouTubeSearchView` | `frontend/src/views/videos/YouTubeSearchView.vue` | Página de busca com player embed |
+| Component | File | Responsibility |
+|-----------|------|----------------|
+| `MiniPlayer` | `frontend/src/components/player/MiniPlayer.vue` | UI: collapsed bar, expanded panel, controls, drag |
+| `YouTubeFrame` | `frontend/src/components/player/YouTubeFrame.vue` | Player IFrame API (YT.Player), YouTube communication |
+| `player.store` | `frontend/src/stores/player.store.ts` | Global state: playlist, search, favorites, controls |
+| `youtube.store` | `frontend/src/stores/youtube.store.ts` | Search view store (YouTubeSearchView) |
+| `YouTubeSearchView` | `frontend/src/views/videos/YouTubeSearchView.vue` | Search page with embedded player |
 
-## Fluxo de dados
+## Data Flow
 
 ```
-Usuário (botão) → player.store (isPlaying) → watcher YouTubeFrame → YT.Player.playVideo()
+User (button) → player.store (isPlaying) → watcher YouTubeFrame → YT.Player.playVideo()
                                                                          ↓
 YouTube IFrame → onStateChange → emit('stateChange') → MiniPlayer → store.isPlaying
                                                                          ↓
                                               watcher YouTubeFrame → getPlayerState() guard
-                                              (só envia comando se estado real difere)
+                                              (only sends command if real state differs)
 ```
 
-### Guard anti-loop (crítico)
+### Anti-Loop Guard (Critical)
 
-**Princípio:** `isPlaying` no store = intenção do usuário. YouTubeFrame apenas obedece, nunca escreve de volta.
+**Principle:** `isPlaying` in the store = user intent. YouTubeFrame only obeys, never writes back.
 
 ```typescript
-// YouTubeFrame.vue — watcher apenas envia comando, sem feedback
+// YouTubeFrame.vue — watcher only sends command, no feedback
 watch(() => props.isPlaying, (p) => {
   if (!player || !isReady) return
   if (p) safeCall(() => player!.playVideo())
@@ -39,64 +39,64 @@ watch(() => props.isPlaying, (p) => {
 ```
 
 ```typescript
-// onStateChange — usado APENAS para detectar "ended"
+// onStateChange — used ONLY to detect "ended"
 onStateChange: (e) => {
   if (e.data === 0) { // ended
     if (manualChange) { manualChange = false; return }
     if (props.repeatMode === 'single') { player.seekTo(0, true); player.playVideo(); return }
-    emit('ended') // → MiniPlayer chama nextVideo()
+    emit('ended') // → MiniPlayer calls nextVideo()
   }
 }
 ```
 
-**Por que funciona:** não há ciclo. `isPlaying` é controlado apenas pelo store (ações do usuário). YouTubeFrame recebe o valor via props e envia comandos ao YouTube. O YouTube pode mudar seu estado interno (paused, buffering, ended), mas isso NUNCA volta para o store.
+**Why it works:** there is no cycle. `isPlaying` is controlled only by the store (user actions). YouTubeFrame receives the value via props and sends commands to YouTube. YouTube can change its internal state (paused, buffering, ended), but this NEVER goes back to the store.
 
-**Tentativas anteriores que falharam:**
-1. `getPlayerState()` guard — edge cases onde estado real ≠ esperado
-2. `applyingCommand` flag — não cobria todos os caminhos (ended, erro, buffering)
-3. Checagem de valor no `onPlayerStateChange` — ainda criava ciclo em buffering
+**Previous attempts that failed:**
+1. `getPlayerState()` guard — edge cases where real state ≠ expected
+2. `applyingCommand` flag — didn't cover all paths (ended, error, buffering)
+3. Value check in `onPlayerStateChange` — still created a cycle in buffering
 
-### Guard anti-duplicação (`createGeneration`)
+### Anti-Duplication Guard (`createGeneration`)
 
-`createPlayer()` incrementa um counter `createGeneration` a cada chamada. Callbacks assíncronos de `loadYT` verificam `gen !== createGeneration` e são ignorados se uma nova criação aconteceu. Isso previne players duplicados quando o usuário clica rápido em resultados de busca.
+`createPlayer()` increments a counter `createGeneration` on each call. Async callbacks from `loadYT` check `gen !== createGeneration` and are ignored if a new creation happened. This prevents duplicate players when the user clicks quickly on search results.
 
 ```typescript
 function createPlayer() {
   const gen = ++createGeneration
   // ...destroy old player...
   loadYT(() => {
-    if (gen !== createGeneration) return // callback obsoleto
+    if (gen !== createGeneration) return // obsolete callback
     player = new YT.Player(containerId, config)
   })
 }
 ```
 
-### Time polling
+### Time Polling
 
-O `YouTubeFrame` inicia um `setInterval` de 1s que emite `timeUpdate(time, duration)`. O `MiniPlayer` atualiza `store.currentTime` e `store.duration` (exceto durante seek). A barra de progresso usa o computed `store.progress`.
+The `YouTubeFrame` starts a 1s `setInterval` that emits `timeUpdate(time, duration)`. The `MiniPlayer` updates `store.currentTime` and `store.duration` (except during seek). The progress bar uses the computed `store.progress`.
 
-## Modos do MiniPlayer
+## MiniPlayer Modes
 
-| Modo | Fonte de vídeos | `currentPlaylistId` | `currentVideoId` |
-|------|-----------------|---------------------|-------------------|
-| `playlists` | Playlist do YouTube selecionada | `selectedPlaylist.id` | `null` (player gerencia) |
-| `search` | Resultados de busca | `null` | `searchResults[videoIndex].id.videoId` |
-| `favorites` | Playlists salvas localmente | `selectedPlaylist.id` | `null` |
+| Mode | Video Source | `currentPlaylistId` | `currentVideoId` |
+|------|-------------|---------------------|-------------------|
+| `playlists` | Selected YouTube playlist | `selectedPlaylist.id` | `null` (player manages) |
+| `search` | Search results | `null` | `searchResults[videoIndex].id.videoId` |
+| `favorites` | Locally saved playlists | `selectedPlaylist.id` | `null` |
 
-## Estado persistido (localStorage)
+## Persisted State (localStorage)
 
-| Chave | Conteúdo |
-|-------|----------|
+| Key | Content |
+|-----|---------|
 | `studytrack_miniplayer` | `{ playlist, videoIndex, isPlaying, isExpanded, mode, searchResults }` |
-| `studytrack_miniplayer_pos` | `{ x, y }` posição do painel expandido |
+| `studytrack_miniplayer_pos` | `{ x, y }` expanded panel position |
 | `studytrack_favorites` | `[{ playlistId, title, thumbnail }]` |
 | `studytrack_shuffle` | `"true"` / `"false"` |
 | `studytrack_repeat` | `"none"` / `"playlist"` / `"single"` |
 | `studytrack_volume` | `0-100` |
 
-## Teleport e iframe
+## Teleport and Iframe
 
-O `YouTubeFrame` é renderizado via `<Teleport to="body">` dentro de um wrapper com `clip-path: inset(100%)` (invisível mas funcional). Isso mantém o iframe vivo mesmo quando o MiniPlayer é colapsado.
+The `YouTubeFrame` is rendered via `<Teleport to="body">` inside a wrapper with `clip-path: inset(100%)` (invisible but functional). This keeps the iframe alive even when the MiniPlayer is collapsed.
 
 ```css
 .yt-player-wrapper {
@@ -107,25 +107,25 @@ O `YouTubeFrame` é renderizado via `<Teleport to="body">` dentro de um wrapper 
 }
 ```
 
-## Bugs corrigidos (2026-06-23)
+## Fixed Bugs (2026-06-23)
 
-Ver [ERROS-CORRIGIDOS.md](../operations/ERROS-CORRIGIDOS.md) itens 7-16 para detalhes completos.
+See [ERROS-CORRIGIDOS.md](../operations/ERROS-CORRIGIDOS.md) items 7-16 for full details.
 
-| # | Bug | Impacto |
-|---|-----|---------|
-| 7 | Loop de feedback store ↔ YouTubeFrame | App travava ao clicar qualquer controle |
-| 8 | `isPlaying` nunca ia a `false` | Botão play/pause travado, progresso parado |
-| 9 | `nextVideo`/`prevVideo` sem guarda | Comportamento indefinido sem resultados |
-| 10 | `currentTime`/`duration` não resetavam | Tempo fantasma ao limpar conteúdo |
-| 11 | Memory leak `manualChangeTimer` | Timer rodava após desmontar componente |
-| 12 | `createPlayer` bloqueado por `isCreating` | App travava ao clicar rápido em resultados |
-| 13 | `loadYT` re-registrava callback global | Player nunca ficava pronto em cenários de navegação rápida |
-| 14 | Exceções não capturadas em calls ao player | Crash silencioso quando player destruído assincronamente |
-| 16 | `onPlayerStateChange` causava loop residual | Edge cases de buffering/ended disparavam comandos desnecessários |
-| 17 | Loop persistia (arquitetura bidirecional) | Refatoração para fluxo unidirecional eliminou o ciclo na raiz |
+| # | Bug | Impact |
+|---|-----|--------|
+| 7 | Feedback loop store ↔ YouTubeFrame | App froze when clicking any control |
+| 8 | `isPlaying` never went to `false` | Play/pause button stuck, progress stopped |
+| 9 | `nextVideo`/`prevVideo` without guard | Undefined behavior without results |
+| 10 | `currentTime`/`duration` didn't reset | Ghost time when clearing content |
+| 11 | Memory leak `manualChangeTimer` | Timer ran after component unmounted |
+| 12 | `createPlayer` blocked by `isCreating` | App froze when clicking quickly on results |
+| 13 | `loadYT` re-registered global callback | Player never became ready in fast navigation scenarios |
+| 14 | Uncaptured exceptions in player calls | Silent crash when player destroyed asynchronously |
+| 16 | `onPlayerStateChange` caused residual loop | Buffering/ended edge cases triggered unnecessary commands |
+| 17 | Loop persisted (bidirectional architecture) | Refactoring to unidirectional flow eliminated the cycle at root |
 
-## Limitações conhecidas
+## Known Limitations
 
-- **Duas instâncias de player**: `YouTubeSearchView` cria seu próprio `YT.Player` (player embed grande). Se o MiniPlayer estiver tocando, ambos usam a mesma IFrame API — não há conflito porque são iframes separados, mas o MiniPlayer não pausa quando o embed da view começa.
-- **API key necessária**: Busca e playlists exigem `YOUTUBE_API_KEY` no backend (proxy autenticado).
-- **OAuth Google para playlists**: Playlists do usuário exigem login com Google (OAuth flow em `/api/v1/auth/google`).
+- **Two player instances**: `YouTubeSearchView` creates its own `YT.Player` (large embedded player). If the MiniPlayer is playing, both use the same IFrame API — there is no conflict because they are separate iframes, but the MiniPlayer doesn't pause when the view embed starts.
+- **API key required**: Search and playlists require `YOUTUBE_API_KEY` on the backend (authenticated proxy).
+- **Google OAuth for playlists**: User playlists require Google login (OAuth flow at `/api/v1/auth/google`).

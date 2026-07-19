@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:8080'
 const TEST_EMAIL = `e2e-test-${Date.now()}@example.com`
-const TEST_PASSWORD = 'TestPassword123!'
+const TEST_PASSWORD = process.env.E2E_TEST_PASSWORD || 'TestPassword123!'
 const TEST_NAME = 'E2E Test User'
 
 test.describe('Authentication Flow', () => {
@@ -33,7 +33,7 @@ test.describe('Authentication Flow', () => {
     await page.fill('input[name="password"]', TEST_PASSWORD)
     await page.fill('input[name="password_confirmation"]', TEST_PASSWORD)
     await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/.*(?!auth\/register)/, { timeout: 15000 })
+    await expect(page).toHaveURL(/dashboard|home/, { timeout: 15000 })
   })
 
   test('should login and see dashboard', async ({ page }) => {
@@ -41,7 +41,7 @@ test.describe('Authentication Flow', () => {
     await page.fill('input[type="email"], input[name="email"]', TEST_EMAIL)
     await page.fill('input[type="password"], input[name="password"]', TEST_PASSWORD)
     await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/.*(?!auth\/)/, { timeout: 15000 })
+    await expect(page).toHaveURL(/dashboard|home/, { timeout: 15000 })
   })
 
   test('should logout successfully', async ({ page }) => {
@@ -49,7 +49,7 @@ test.describe('Authentication Flow', () => {
     await page.fill('input[type="email"], input[name="email"]', TEST_EMAIL)
     await page.fill('input[type="password"], input[name="password"]', TEST_PASSWORD)
     await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/.*(?!auth\/)/, { timeout: 15000 })
+    await expect(page).toHaveURL(/dashboard|home/, { timeout: 15000 })
 
     const logoutButton = page.locator('button:has-text("Sair"), a:has-text("Sair"), [data-testid="logout"]')
     if (await logoutButton.isVisible()) {
@@ -63,7 +63,7 @@ test.describe('Authentication Flow', () => {
     await page.fill('input[type="email"], input[name="email"]', TEST_EMAIL)
     await page.fill('input[type="password"], input[name="password"]', TEST_PASSWORD)
     await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/.*(?!auth\/)/, { timeout: 15000 })
+    await expect(page).toHaveURL(/dashboard|home/, { timeout: 15000 })
 
     await page.reload()
     await expect(page).not.toHaveURL(/.*(login|auth)/, { timeout: 10000 })

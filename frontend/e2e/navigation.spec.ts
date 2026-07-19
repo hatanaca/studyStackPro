@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:8080'
 const TEST_EMAIL = `e2e-nav-${Date.now()}@example.com`
-const TEST_PASSWORD = 'TestPassword123!'
+const TEST_PASSWORD = process.env.E2E_TEST_PASSWORD || 'TestPassword123!'
 
 test.describe('Navigation and Layout', () => {
   test.beforeAll(async ({ browser }) => {
@@ -13,7 +13,7 @@ test.describe('Navigation and Layout', () => {
     await page.fill('input[name="password"]', TEST_PASSWORD)
     await page.fill('input[name="password_confirmation"]', TEST_PASSWORD)
     await page.click('button[type="submit"]')
-    await page.waitForURL(/.*(?!auth\/)/, { timeout: 15000 })
+    await page.waitForURL(/dashboard|home/, { timeout: 15000 })
     await page.context().storageState({ path: 'e2e/.auth/nav-user.json' })
     await page.close()
   })
@@ -55,13 +55,12 @@ test.describe('Navigation and Layout', () => {
     await page.goto(`${BASE_URL}/dashboard`)
     const themeToggle = page.locator('[data-testid="theme-toggle"], button:has-text("Tema"), .theme-toggle')
     if (await themeToggle.isVisible({ timeout: 5000 })) {
+      const html = page.locator('html')
+      const themeBefore = await html.getAttribute('data-theme')
       await themeToggle.click()
       await page.waitForTimeout(500)
-      const html = page.locator('html')
-      const hasDarkClass = await html.evaluate((el) =>
-        el.classList.contains('dark') || el.getAttribute('data-theme') === 'dark'
-      )
-      expect(typeof hasDarkClass).toBe('boolean')
+      const themeAfter = await html.getAttribute('data-theme')
+      expect(themeAfter).not.toBe(themeBefore)
     }
   })
 })

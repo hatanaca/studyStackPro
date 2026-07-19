@@ -50,11 +50,6 @@ class LogApiRequestsTest extends TestCase
 
     public function test_terminate_logs_api_request(): void
     {
-        Log::shouldReceive('channel')
-            ->once()
-            ->with('single')
-            ->andReturnSelf();
-
         Log::shouldReceive('info')
             ->once()
             ->with('API Request', Mockery::on(function ($data) {

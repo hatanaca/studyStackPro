@@ -57,7 +57,7 @@ export function useSessionEdit() {
       return
     }
     try {
-      const start = new Date(`${form.date}T12:00:00`)
+      const start = new Date(`${form.date}T00:00:00.000`)
       const end = new Date(start.getTime() + form.duration * 60_000)
       const toISO = (d: Date) => {
         const y = d.getFullYear()

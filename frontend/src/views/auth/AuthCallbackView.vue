@@ -2,6 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
+import { authApi } from '@/api/modules/auth.api'
+import { fetchSanctumCsrfCookie } from '@/api/sanctum'
+import type { User } from '@/types/domain.types'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,7 +14,7 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 
 onMounted(async () => {
-  const { status, error: queryError } = route.query
+  const { status, error: queryError, token } = route.query
 
   if (queryError) {
     error.value = 'Falha na autenticação com o provedor. Tente novamente.'
@@ -25,11 +28,25 @@ onMounted(async () => {
     return
   }
 
+  if (!token || typeof token !== 'string') {
+    error.value = 'Token OAuth ausente. Tente novamente.'
+    loading.value = false
+    return
+  }
+
   try {
-    // O cookie de sessão HttpOnly já foi definido pelo backend no redirect.
-    // fetchMe() valida a sessão e carrega os dados do usuário.
-    await authStore.fetchMe()
-    router.replace({ name: 'dashboard' })
+    // Garante cookie XSRF-TOKEN antes do POST stateful
+    await fetchSanctumCsrfCookie()
+    const { data } = await authApi.oauthComplete(token)
+    if (data.success && data.data) {
+      const { user: u, token: bearerToken } = data.data as { user: User; token?: string }
+      authStore.updateUser(u)
+      authStore.sessionValidated = true
+      if (bearerToken) authStore.storeToken(bearerToken)
+      router.replace({ name: 'dashboard' })
+    } else {
+      error.value = 'Não foi possível validar a sessão. Tente novamente.'
+    }
   } catch {
     error.value = 'Não foi possível validar a sessão. Tente novamente.'
   } finally {

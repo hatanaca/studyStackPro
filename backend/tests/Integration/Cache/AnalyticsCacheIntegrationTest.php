@@ -25,6 +25,9 @@ class AnalyticsCacheIntegrationTest extends TestCase
         parent::setUp();
         Event::fake();
         Queue::fake();
+
+        // Cache com suporte a tags (Redis) para testar invalidação
+        $this->app->make('config')->set('cache.default', 'redis');
         $this->user = User::factory()->create();
         $this->technology = Technology::forceCreate([
             'user_id' => $this->user->id,

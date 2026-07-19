@@ -1,16 +1,16 @@
-# Fluxo completo do projeto StudyTrack Pro
+# StudyTrack Pro Complete Flow
 
-Documentação da **ordem de execução** nos caminhos principais: bootstrap HTTP no Laravel, middleware e rotas da API, bootstrap da SPA Vue (Pinia, Vue Query, Router, PrimeVue), guard de autenticação e interceptors Axios, ciclo de vida do layout e WebSocket (Reverb/Echo), e cadeia de eventos ao criar ou atualizar sessões de estudo até o broadcast em tempo real.
+Documentation of the **execution order** in the main paths: HTTP bootstrap in Laravel, API middleware and routes, Vue SPA bootstrap (Pinia, Vue Query, Router, PrimeVue), authentication guard and Axios interceptors, layout lifecycle and WebSocket (Reverb/Echo), and the event chain from creating or updating study sessions to real-time broadcast.
 
-O repositório é um **monorepo** com [frontend](../../frontend/) (Vue 3 + Vite + Pinia + TanStack Query + PrimeVue + Vue Router + Laravel Echo) e [backend](../../backend/) (Laravel 11 + Sanctum + API REST `v1` + broadcasting Reverb).
+The repository is a **monorepo** with [frontend](../../frontend/) (Vue 3 + Vite + Pinia + TanStack Query + PrimeVue + Vue Router + Laravel Echo) and [backend](../../backend/) (Laravel 11 + Sanctum + REST API `v1` + Reverb broadcasting).
 
 ---
 
-## 1. Visão em camadas
+## 1. Layered View
 
 ```mermaid
 flowchart TB
-  subgraph browser [Navegador]
+  subgraph browser [Browser]
     indexHtml[index.html]
     mainTs[main.ts]
     appVue[App.vue]
@@ -19,10 +19,10 @@ flowchart TB
     axios[apiClient Axios]
     echo[Echo WebSocket]
   end
-  subgraph laravel [Backend Laravel]
+  subgraph laravel [Laravel Backend]
     indexPhp[public/index.php]
     appBootstrap[bootstrap/app.php]
-    pipeline[Middleware API]
+    pipeline[API Middleware]
     controllers[Controllers V1]
     services[Services / Repositories]
     events[Events + Listeners]
@@ -39,170 +39,170 @@ flowchart TB
 
 ---
 
-## 2. Backend: de cada requisição HTTP até o controller
+## 2. Backend: From Each HTTP Request to the Controller
 
-### 2.1 Entrada PHP
+### 2.1 PHP Entry
 
-1. O servidor web aponta o document root para `[backend/public/index.php](../../backend/public/index.php)`.
-2. Define `LARAVEL_START`, opcionalmente carrega **modo manutenção** (`storage/framework/maintenance.php`).
+1. The web server points the document root to `[backend/public/index.php](../../backend/public/index.php)`.
+2. Defines `LARAVEL_START`, optionally loads **maintenance mode** (`storage/framework/maintenance.php`).
 3. `require vendor/autoload.php`.
-4. `(require_once bootstrap/app.php)->handleRequest(Request::capture())` — a instância retornada é `Illuminate\Foundation\Application` configurada em `[backend/bootstrap/app.php](../../backend/bootstrap/app.php)`.
+4. `(require_once bootstrap/app.php)->handleRequest(Request::capture())` — the returned instance is `Illuminate\Foundation\Application` configured in `[backend/bootstrap/app.php](../../backend/bootstrap/app.php)`.
 
-### 2.2 Configuração da aplicação Laravel
+### 2.2 Laravel Application Configuration
 
-Em `[backend/bootstrap/app.php](../../backend/bootstrap/app.php)`:
+In `[backend/bootstrap/app.php](../../backend/bootstrap/app.php)`:
 
-- `Application::configure(basePath: dirname(__DIR__))` cria a aplicação com base no diretório `backend/`.
-- `withRouting(...)` registra:
+- `Application::configure(basePath: dirname(__DIR__))` creates the application based on the `backend/` directory.
+- `withRouting(...)` registers:
   - `web`: `[routes/web.php](../../backend/routes/web.php)`
-  - `api`: `[routes/api.php](../../backend/routes/api.php)` (prefixo típico `/api` do Laravel)
+  - `api`: `[routes/api.php](../../backend/routes/api.php)` (Laravel's typical `/api` prefix)
   - `commands`, `channels`, health `/up`
 - `withMiddleware`:
   - Alias `throttle.sliding` → `SlidingWindowRateLimit`
-  - Grupo **API**:
-    - **prepend**: `EnsureJsonResponse` (força respostas JSON na API)
+  - **API** group:
+    - **prepend**: `EnsureJsonResponse` (forces JSON responses in API)
     - **append**: `SetUserTimezone`, `LogApiRequests`
-- `withExceptions`: respostas JSON quando `$request->expectsJson()`.
+- `withExceptions`: JSON responses when `$request->expectsJson()`.
 
-Ordem conceitual para uma rota `api/`*: middleware global do Laravel → grupo `api` (incluindo os acima) → middleware da rota (`throttle:`*, `auth:sanctum`, etc.) → **Form Request** (se houver) → **método do Controller**.
+Conceptual order for an `api/` route: Laravel global middleware → `api` group (including the above) → route middleware (`throttle:*`, `auth:sanctum`, etc.) → **Form Request** (if any) → **Controller method**.
 
-### 2.3 Rotas da API versionadas
+### 2.3 Versioned API Routes
 
-Em `[backend/routes/api.php](../../backend/routes/api.php)`:
+In `[backend/routes/api.php](../../backend/routes/api.php)`:
 
-- `Broadcast::routes(['middleware' => ['auth:sanctum']])` expõe `**/api/broadcasting/auth`** para o Echo assinar canais privados (o frontend usa isso em `[useWebSocket.ts](../../frontend/src/composables/useWebSocket.ts)`).
-- Grupo `prefix('v1')`: URLs finais como `**/api/v1/...`**.
-- **Público (throttle `login` / `register`)**: `POST auth/register`, `POST auth/login` → `[AuthController](../../backend/app/Http/Controllers/V1/AuthController.php)`.
-- **Autenticado (`auth:sanctum`)**: `GET auth/me`, sessões, tecnologias, analytics, etc. — ver o arquivo para a lista completa de verbos e throttles.
+- `Broadcast::routes(['middleware' => ['auth:sanctum']])` exposes **`/api/broadcasting/auth`** for Echo to subscribe to private channels (the frontend uses this in `[useWebSocket.ts](../../frontend/src/composables/useWebSocket.ts)`).
+- `prefix('v1')` group: final URLs like **`/api/v1/...`**.
+- **Public (throttled `login` / `register`)**: `POST auth/register`, `POST auth/login` → `[AuthController](../../backend/app/Http/Controllers/V1/AuthController.php)`.
+- **Authenticated (`auth:sanctum`)**: `GET auth/me`, sessions, technologies, analytics, etc. — see the file for the complete list of verbs and throttles.
 
-### 2.4 Exemplo: login no servidor
+### 2.4 Example: Server Login
 
 1. `AuthController::login(LoginRequest $request)` (`[AuthController.php](../../backend/app/Http/Controllers/V1/AuthController.php)`).
-2. Monta `LoginDTO` com email, senha e remember.
+2. Builds `LoginDTO` with email, password, and remember.
 3. `$this->authService->login($dto)` (`[AuthService::login](../../backend/app/Modules/Auth/Services/AuthService.php)`):
-  - `Auth::attempt([...])` — se falhar, retorna `null` → controller responde **401** com `HasApiResponse::error`.
-  - Obtém `Auth::user()`.
-  - `$this->tokenService->revokeMany($user->tokens()->get())` — política de sessão única (revoga tokens antigos).
-  - `$user->createToken('api-token')->plainTextToken` — Sanctum.
-4. Resposta `HasApiResponse::success` com `UserResource` + `token` + `token_type: Bearer`.
+   - `Auth::attempt([...])` — if it fails, returns `null` → controller responds **401** with `HasApiResponse::error`.
+   - Gets `Auth::user()`.
+   - `$this->tokenService->revokeMany($user->tokens()->get())` — single session policy (revokes old tokens).
+   - `$user->createToken('api-token')->plainTextToken` — Sanctum.
+4. Response `HasApiResponse::success` with `UserResource` + `token` + `token_type: Bearer`.
 
-### 2.5 Exemplo: `GET /api/v1/auth/me`
+### 2.5 Example: `GET /api/v1/auth/me`
 
-1. Middleware `auth:sanctum` resolve o usuário pelo **Bearer token** no header `Authorization`.
+1. `auth:sanctum` middleware resolves the user by **Bearer token** in the `Authorization` header.
 2. `AuthController::me` → `$this->success(new UserResource($request->user()))`.
 
 ---
 
-## 3. Frontend: bootstrap da SPA (ordem exata em `main.ts`)
+## 3. Frontend: SPA Bootstrap (Exact Order in `main.ts`)
 
-Arquivo `[frontend/src/main.ts](../../frontend/src/main.ts)`:
+File `[frontend/src/main.ts](../../frontend/src/main.ts)`:
 
-1. **Tema inicial**: IIFE lê `localStorage['studytrack.theme']`; aplica `document.documentElement.setAttribute('data-theme', savedTheme)` antes do primeiro paint (alinha com PrimeVue Aura `darkModeSelector: '[data-theme="dark"]'`).
-2. `defaultQueryRetry`: não retenta se erro for `SESSION_NOT_READY` ou HTTP 401/403; caso contrário até 2 tentativas.
+1. **Initial theme**: IIFE reads `localStorage['studytrack.theme']`; applies `document.documentElement.setAttribute('data-theme', savedTheme)` before first paint (aligned with PrimeVue Aura `darkModeSelector: '[data-theme="dark"]'`).
+2. `defaultQueryRetry`: no retry if error is `SESSION_NOT_READY` or HTTP 401/403; otherwise up to 2 attempts.
 3. `new QueryClient({ defaultOptions: { queries: { staleTime: 60s, refetchOnWindowFocus: false, retry } } })`.
-4. `createApp(App)` → instância Vue raiz.
-5. `app.use(createPinia())` — stores Pinia disponíveis (incl. `[auth.store](../../frontend/src/stores/auth.store.ts)`).
+4. `createApp(App)` → root Vue instance.
+5. `app.use(createPinia())` — Pinia stores available (incl. `[auth.store](../../frontend/src/stores/auth.store.ts)`).
 6. `app.use(VueQueryPlugin, { queryClient })` — TanStack Query.
-7. `app.use(router)` — registra `router.beforeEach(setupAuthGuard)` e `afterEach` (título) definidos em `[router/index.ts](../../frontend/src/router/index.ts)`.
+7. `app.use(router)` — registers `router.beforeEach(setupAuthGuard)` and `afterEach` (title) defined in `[router/index.ts](../../frontend/src/router/index.ts)`.
 8. `app.use(PrimeVue, { theme: { preset: Aura, ... } })`, `ConfirmationService`, `ToastService`.
-9. `app.mount('#app')` — monta `[App.vue](../../frontend/src/App.vue)`.
+9. `app.mount('#app')` — mounts `[App.vue](../../frontend/src/App.vue)`.
 
 ### 3.1 `App.vue`
 
-Renderiza em sequência no template:
+Renders in sequence in the template:
 
-- `RouterView` (árvore de rotas).
+- `RouterView` (route tree).
 - `Toast`, `ConfirmDialog` (PrimeVue).
-- `ApiToastInit` — no `onMounted`, chama `setApiToast` em `[api/client.ts](../../frontend/src/api/client.ts)` para o interceptor de **429** poder exibir toast.
+- `ApiToastInit` — on `onMounted`, calls `setApiToast` in `[api/client.ts](../../frontend/src/api/client.ts)` so the **429** interceptor can display a toast.
 
 ---
 
-## 4. Roteamento e guard de autenticação (ordem de execução)
+## 4. Routing and Authentication Guard (Execution Order)
 
-### 4.1 Definição de rotas
+### 4.1 Route Definition
 
 `[frontend/src/router/index.ts](../../frontend/src/router/index.ts)`:
 
-- Rotas públicas: import de `[auth.routes.ts](../../frontend/src/router/routes/auth.routes.ts)` (login/registro, `meta.guest`).
-- Rota pai `path: '/'` com `component: () => import('@/components/layout/AppLayout.vue')` e `meta: { requiresAuth: true }`, filhos: dashboard, sessions, technologies, goals, export, settings, reports, help, profile.
+- Public routes: import from `[auth.routes.ts](../../frontend/src/router/routes/auth.routes.ts)` (login/register, `meta.guest`).
+- Parent route `path: '/'` with `component: () => import('@/components/layout/AppLayout.vue')` and `meta: { requiresAuth: true }`, children: dashboard, sessions, technologies, goals, export, settings, reports, help, profile.
 
 ### 4.2 `beforeEach`: `setupAuthGuard`
 
-`[frontend/src/router/guards.ts](../../frontend/src/router/guards.ts)` — fluxo lógico:
+`[frontend/src/router/guards.ts](../../frontend/src/router/guards.ts)` — logical flow:
 
-1. `useAuthStore()` (Pinia já iniciado no `main.ts`).
-2. Se `to.meta.requiresAuth && !authStore.isAuthenticated` (`isAuthenticated` = `!!token`): `next({ name: 'login' })` e retorna.
-3. Se há `token` mas `!sessionValidated`:
-  - `awaitSessionValidation`: deduplica com `fetchMePromise` — só uma `authStore.fetchMe()` por vez.
-  - `fetchMe` (`[auth.store.ts](../../frontend/src/stores/auth.store.ts)`): `authApi.me()` → Axios → `GET .../auth/me`; sucesso atualiza `user`, `localStorage`, `sessionValidated = true`.
-  - Se após isso `!isAuthenticated` (token limpo por 401): rota protegida → login; senão `next()`.
-4. Se `to.meta.guest && authStore.isAuthenticated`: `next({ name: 'dashboard' })`.
-5. Caso contrário `next()`.
+1. `useAuthStore()` (Pinia already started in `main.ts`).
+2. If `to.meta.requiresAuth && !authStore.isAuthenticated` (`isAuthenticated` = `!!token`): `next({ name: 'login' })` and return.
+3. If there is a `token` but `!sessionValidated`:
+   - `awaitSessionValidation`: deduplicates with `fetchMePromise` — only one `authStore.fetchMe()` at a time.
+   - `fetchMe` (`[auth.store.ts](../../frontend/src/stores/auth.store.ts)`): `authApi.me()` → Axios → `GET .../auth/me`; success updates `user`, `localStorage`, `sessionValidated = true`.
+   - If after that `!isAuthenticated` (token cleared by 401): protected route → login; otherwise `next()`.
+4. If `to.meta.guest && authStore.isAuthenticated`: `next({ name: 'dashboard' })`.
+5. Otherwise `next()`.
 
 ### 4.3 `afterEach`
 
-Atualiza `document.title` com `meta.title` + sufixo "StudyTrack Pro".
+Updates `document.title` with `meta.title` + "StudyTrack Pro" suffix.
 
-### 4.4 Prefetch (opcional, UX)
+### 4.4 Prefetch (Optional, UX)
 
-`[frontend/src/router/prefetch.ts](../../frontend/src/router/prefetch.ts)` exporta funções que fazem `import()` dinâmico das views — tipicamente chamadas no **hover** da sidebar para aquecer chunks antes do clique (não faz parte do núcleo de auth).
+`[frontend/src/router/prefetch.ts](../../frontend/src/router/prefetch.ts)` exports functions that do dynamic `import()` of views — typically called on sidebar **hover** to warm chunks before click (not part of the auth core).
 
 ---
 
-## 5. Cliente HTTP Axios: interceptors e ordem relativa ao guard
+## 5. Axios HTTP Client: Interceptors and Order Relative to Guard
 
 `[frontend/src/api/client.ts](../../frontend/src/api/client.ts)`:
 
 - `apiClient = axios.create({ baseURL: (VITE_API_URL || '') + '/api/v1', ... })`.
 
-**Request interceptor** (roda antes de cada request):
+**Request interceptor** (runs before each request):
 
-1. Lê `useAuthStore()`.
-2. Se `token && !sessionValidated` e a URL **não** for exceção (`GET .../auth/me` ou logout): `Promise.reject(new Error(SESSION_NOT_READY))` — evita rajadas 401 antes do `fetchMe`.
-3. Se há token: `config.headers.Authorization = 'Bearer ' + token`.
+1. Reads `useAuthStore()`.
+2. If `token && !sessionValidated` and the URL is **not** an exception (`GET .../auth/me` or logout): `Promise.reject(new Error(SESSION_NOT_READY))` — prevents 401 bursts before `fetchMe`.
+3. If there is a token: `config.headers.Authorization = 'Bearer ' + token`.
 
 **Response interceptor**:
 
-- Propaga respostas OK.
-- Erros `SESSION_NOT_READY`: rejeita sem logout.
-- **401**: se não for login/register/logout e não estiver em `handlingUnauthorized`, chama `useAuthStore().clearSessionLocally()` (remove token/user, `sessionValidated = false`, `$reset` em sessions store, remove listener `online`), depois `router.push({ name: 'login' })` se necessário.
-- **429**: usa `toastFn` se registrada por `ApiToastInit`.
+- Propagates OK responses.
+- `SESSION_NOT_READY` errors: rejects without logout.
+- **401**: if not login/register/logout and not in `handlingUnauthorized`, calls `useAuthStore().clearSessionLocally()` (removes token/user, `sessionValidated = false`, `$reset` in sessions store, removes `online` listener), then `router.push({ name: 'login' })` if needed.
+- **429**: uses `toastFn` if registered by `ApiToastInit`.
 
-**Módulos API** (ex.: `[auth.api.ts](../../frontend/src/api/modules/auth.api.ts)`) apenas delegam para `apiClient` + `[ENDPOINTS](../../frontend/src/api/endpoints.ts)`.
-
----
-
-## 6. TanStack Query e “sessão validada”
-
-`[frontend/src/composables/useQueryAuthEnabled.ts](../../frontend/src/composables/useQueryAuthEnabled.ts)` — `useQuerySessionEnabled`: retorna computed `authStore.sessionValidated && (condição extra)`.
-
-Exemplo `[useDashboardQuery.ts](../../frontend/src/features/dashboard/composables/useDashboardQuery.ts)`:
-
-- `useQuery` com `queryFn` → `analyticsApi.getDashboard()` → parse `parseDashboardResponse`.
-- `enabled` amarrado à sessão validada — a query **não dispara** até o guard/`fetchMe` confirmar o JWT.
-- `watch` em `query.data` → `analyticsStore.setDashboard(data)` (store como fonte para gráficos/computeds).
+**API modules** (e.g., `[auth.api.ts](../../frontend/src/api/modules/auth.api.ts)`) only delegate to `apiClient` + `[ENDPOINTS](../../frontend/src/api/endpoints.ts)`.
 
 ---
 
-## 7. Layout autenticado: `AppLayout.vue` (ciclo de vida)
+## 6. TanStack Query and "Validated Session"
+
+`[frontend/src/composables/useQueryAuthEnabled.ts](../../frontend/src/composables/useQueryAuthEnabled.ts)` — `useQuerySessionEnabled`: returns computed `authStore.sessionValidated && (extra condition)`.
+
+Example `[useDashboardQuery.ts](../../frontend/src/features/dashboard/composables/useDashboardQuery.ts)`:
+
+- `useQuery` with `queryFn` → `analyticsApi.getDashboard()` → `parseDashboardResponse` parse.
+- `enabled` tied to validated session — the query **doesn't fire** until the guard/`fetchMe` confirms the JWT.
+- `watch` on `query.data` → `analyticsStore.setDashboard(data)` (store as source for charts/computeds).
+
+---
+
+## 7. Authenticated Layout: `AppLayout.vue` (Lifecycle)
 
 `[frontend/src/components/layout/AppLayout.vue](../../frontend/src/components/layout/AppLayout.vue)`:
 
-`**onMounted`**:
+**`onMounted`**:
 
-1. `document.documentElement.setAttribute('data-theme', uiStore.theme)` e `uiStore.applyCustomTheme()`.
-2. `tryConnectWebSocket()`: só se `authStore.sessionValidated && authStore.user?.id` → `connectWebSocket(authStore.user.id)`.
+1. `document.documentElement.setAttribute('data-theme', uiStore.theme)` and `uiStore.applyCustomTheme()`.
+2. `tryConnectWebSocket()`: only if `authStore.sessionValidated && authStore.user?.id` → `connectWebSocket(authStore.user.id)`.
 
 **Watchers**:
 
-- `[sessionValidated, user?.id]` → reconecta WebSocket quando usuário/sessão mudam.
-- `sessionValidated` → se false, `disconnectWebSocket()`.
-- `route.path` → reset de scroll no container principal.
-- `uiStore.theme` → atualiza `data-theme`, tema custom, invalida cache de gráficos/medidas de texto.
+- `[sessionValidated, user?.id]` → reconnects WebSocket when user/session changes.
+- `sessionValidated` → if false, `disconnectWebSocket()`.
+- `route.path` → resets scroll on main container.
+- `uiStore.theme` → updates `data-theme`, custom theme, invalidates chart/text measure cache.
 
-`**onUnmounted`**: `disconnectWebSocket()`.
+**`onUnmounted`**: `disconnectWebSocket()`.
 
-Template: **sidebar**, **banner de sessão ativa** (exceto rota `session-focus`), `RouterView` filho.
+Template: **sidebar**, **active session banner** (except `session-focus` route), child `RouterView`.
 
 ---
 
@@ -210,99 +210,96 @@ Template: **sidebar**, **banner de sessão ativa** (exceto rota `session-focus`)
 
 `[frontend/src/composables/useWebSocket.ts](../../frontend/src/composables/useWebSocket.ts)`:
 
-1. Retorno imediato se `VITE_REVERB_ENABLED === 'false'`, sem `window`, ou `!authStore.sessionValidated`.
-2. `disconnectWebSocket()` antes de nova conexão.
-3. Dynamic import `laravel-echo` e `pusher-js`; `window.Pusher = Pusher`.
-4. Instancia `Echo` com `broadcaster: 'reverb'`, host/porta/scheme das env, `authEndpoint: ${VITE_API_URL}/api/broadcasting/auth`, header `Authorization: Bearer ${token}`.
-5. `echo.private('dashboard.${userId}')` — autorização em `[backend/routes/channels.php](../../backend/routes/channels.php)`: `Broadcast::channel('dashboard.{userId}', fn ($user, $userId) => (string) $user->id === (string) $userId)`.
-6. `.listen('.metrics.updated', ...)` → atualiza `analyticsStore`, invalida `queryKeys.analytics.dashboard()`.
+1. Immediate return if `VITE_REVERB_ENABLED === 'false'`, no `window`, or `!authStore.sessionValidated`.
+2. `disconnectWebSocket()` before new connection.
+3. Dynamic import `laravel-echo` and `pusher-js`; `window.Pusher = Pusher`.
+4. Instantiates `Echo` with `broadcaster: 'reverb'`, host/port/scheme from env, `authEndpoint: ${VITE_API_URL}/api/broadcasting/auth`, header `Authorization: Bearer ${token}`.
+5. `echo.private('dashboard.${userId}')` — authorization in `[backend/routes/channels.php](../../backend/routes/channels.php)`: `Broadcast::channel('dashboard.{userId}', fn ($user, $userId) => (string) $user->id === (string) $userId)`.
+6. `.listen('.metrics.updated', ...)` → updates `analyticsStore`, invalidates `queryKeys.analytics.dashboard()`.
 7. `.listen('.metrics.recalculating', ...)` → spinner + fallback timer.
-8. `.listen('.session.started', ...)` → monta payload e `sessionsStore.setActiveSession`.
+8. `.listen('.session.started', ...)` → builds payload and `sessionsStore.setActiveSession`.
 9. `.listen('.session.ended', ...)` → `sessionsStore.clearActiveSession()`.
 
 ---
 
-## 9. Domínio “sessão de estudo”: fluxo API → serviço → eventos → broadcast
+## 9. "Study Session" Domain: API → Service → Events → Broadcast
 
-### 9.1 HTTP → controller → service
+### 9.1 HTTP → Controller → Service
 
-Ex.: `POST /api/v1/study-sessions/start` (`[StudySessionController::start](../../backend/app/Http/Controllers/V1/StudySessionController.php)`):
+E.g., `POST /api/v1/study-sessions/start` (`[StudySessionController::start](../../backend/app/Http/Controllers/V1/StudySessionController.php)`):
 
-1. Validação `StartStudySessionRequest`.
-2. Se já existe ativa: `ConcurrentSessionException`.
-3. Resolve `technology_id` ou primeira tecnologia do usuário.
-4. Monta `StudySessionDTO` com `startedAt: now()`, etc.
+1. `StartStudySessionRequest` validation.
+2. If one is already active: `ConcurrentSessionException`.
+3. Resolves `technology_id` or the user's first technology.
+4. Builds `StudySessionDTO` with `startedAt: now()`, etc.
 5. `$this->studySessionService->create($user->id, $dto)`.
 
 ### 9.2 `StudySessionService::create`
 
 `[StudySessionService.php](../../backend/app/Modules/StudySessions/Services/StudySessionService.php)`:
 
-1. `$this->repository->create($dto)` persiste o modelo.
-2. `event(new StudySessionCreated($session))` — ponto de integração com analytics e tempo real.
+1. `$this->repository->create($dto)` persists the model.
+2. `event(new StudySessionCreated($session))` — integration point with analytics and real-time.
 
-### 9.3 Listeners registrados (ordem em `EventServiceProvider`)
+### 9.3 Registered Listeners (Order in `EventServiceProvider`)
 
-`[backend/app/Providers/EventServiceProvider.php](../../backend/app/Providers/EventServiceProvider.php)` para `StudySessionCreated`:
+`[backend/app/Providers/EventServiceProvider.php](../../backend/app/Providers/EventServiceProvider.php)` for `StudySessionCreated`:
 
-1. `InvalidateSessionCache` — limpa caches relacionados a listagens/sessão ativa.
-2. `DispatchMetricsRecalculation` — enfileira/trigger recálculo de métricas (assíncrono conforme implementação).
-3. `BroadcastSessionStarted` — se `ended_at === null`, dispara `event(new SessionStarted($event->session))` (`[BroadcastSessionStarted.php](../../backend/app/Listeners/StudySession/BroadcastSessionStarted.php)`).
-4. `BroadcastMetricsRecalculating` — emite evento de UI “recalculando”.
+1. `InvalidateSessionCache` — clears caches related to listings/active session.
+2. `DispatchMetricsRecalculation` — queues/triggers metrics recalculation (asynchronous per implementation).
+3. `BroadcastSessionStarted` — if `ended_at === null`, dispatches `event(new SessionStarted($event->session))` (`[BroadcastSessionStarted.php](../../backend/app/Listeners/StudySession/BroadcastSessionStarted.php)`).
+4. `BroadcastMetricsRecalculating` — emits UI "recalculating" event.
 
-O evento `SessionStarted` (`[SessionStarted.php](../../backend/app/Events/StudySession/SessionStarted.php)`) implementa `ShouldBroadcast`: canal `private dashboard.{user_id}`, nome `.session.started`, payload com sessão + tecnologia + `elapsed_seconds`.
+The `SessionStarted` event (`[SessionStarted.php](../../backend/app/Events/StudySession/SessionStarted.php)`) implements `ShouldBroadcast`: channel `private dashboard.{user_id}`, name `.session.started`, payload with session + technology + `elapsed_seconds`.
 
-`StudySessionUpdated` / `StudySessionDeleted` disparam outro conjunto (invalidação, recálculo, `BroadcastSessionEnded`, etc.) — mesmo padrão: service chama `event(...)` → listeners → jobs/broadcast.
+`StudySessionUpdated` / `StudySessionDeleted` dispatch another set (invalidation, recalculation, `BroadcastSessionEnded`, etc.) — same pattern: service calls `event(...)` → listeners → jobs/broadcast.
 
-### 9.4 Quando o recálculo termina
+### 9.4 When Recalculation Completes
 
-`MetricsRecalculated` → `UpdateCacheWithFreshData` + `BroadcastMetricsUpdate` (listener emite/atualiza métricas que o frontend recebe como `.metrics.updated`).
+`MetricsRecalculated` → `UpdateCacheWithFreshData` + `BroadcastMetricsUpdate` (listener emits/updates metrics that the frontend receives as `.metrics.updated`).
 
 ---
 
-## 10. Store de sessões no frontend (alinhamento com API e WS)
+## 10. Session Store in Frontend (Alignment with API and WS)
 
 `[frontend/src/stores/sessions.store.ts](../../frontend/src/stores/sessions.store.ts)`:
 
-- `fetchActiveSession` → `sessionsApi.getActive()` (alinha com `StudySessionController::active` que calcula `elapsed_seconds` com `diffInSeconds`).
-- `setActiveSession` / `clearActiveSession` — usados pelo WebSocket e pela UI (banner, timer).
-- `$reset` chamado em `clearSessionLocally` no logout/401.
+- `fetchActiveSession` → `sessionsApi.getActive()` (aligned with `StudySessionController::active` which calculates `elapsed_seconds` with `diffInSeconds`).
+- `setActiveSession` / `clearActiveSession` — used by WebSocket and UI (banner, timer).
+- `$reset` called in `clearSessionLocally` on logout/401.
 
 ---
 
-## 11. Resumo da ordem em um “cold start” com token salvo
+## 11. Cold Start Order with Saved Token
 
-1. `index.html` carrega o bundle → `main.ts` configura tema, Pinia, Vue Query, Router, PrimeVue, `mount(App)`.
-2. `App.vue` monta `RouterView`; `setupAuthGuard` corre no primeiro destino.
-3. Store já tem `token` do `localStorage`, `sessionValidated === false`.
-4. Guard chama `fetchMe` (deduplicado); request interceptor **permite** `GET /auth/me`.
-5. Sucesso → `sessionValidated = true`.
-6. Queries com `useQuerySessionEnabled` passam a `enabled: true` → ex.: dashboard busca analytics.
-7. `AppLayout` monta → `connectWebSocket` assina `dashboard.{userId}`.
-8. Interações (iniciar sessão) → API → `StudySessionService::create` → `StudySessionCreated` → listeners → Reverb → Echo atualiza stores e invalida queries.
-
----
-
-## Arquivos de referência rápida
-
-
-| Área                 | Arquivo principal                                                                                                                                                                                                                                                               |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Entrada HTTP Laravel | `[backend/public/index.php](../../backend/public/index.php)`, `[backend/bootstrap/app.php](../../backend/bootstrap/app.php)`                                                                                                                                                    |
-| Rotas API            | `[backend/routes/api.php](../../backend/routes/api.php)`                                                                                                                                                                                                                        |
-| Auth API + Sanctum   | `[AuthController](../../backend/app/Http/Controllers/V1/AuthController.php)`, `[AuthService](../../backend/app/Modules/Auth/Services/AuthService.php)`                                                                                                                          |
-| Sessões + eventos    | `[StudySessionController](../../backend/app/Http/Controllers/V1/StudySessionController.php)`, `[StudySessionService](../../backend/app/Modules/StudySessions/Services/StudySessionService.php)`, `[EventServiceProvider](../../backend/app/Providers/EventServiceProvider.php)` |
-| Bootstrap Vue        | `[frontend/src/main.ts](../../frontend/src/main.ts)`, `[App.vue](../../frontend/src/App.vue)`                                                                                                                                                                                   |
-| Router + guard       | `[router/index.ts](../../frontend/src/router/index.ts)`, `[guards.ts](../../frontend/src/router/guards.ts)`                                                                                                                                                                     |
-| HTTP + auth UX       | `[api/client.ts](../../frontend/src/api/client.ts)`, `[auth.store.ts](../../frontend/src/stores/auth.store.ts)`                                                                                                                                                                 |
-| WebSocket            | `[useWebSocket.ts](../../frontend/src/composables/useWebSocket.ts)`, `[channels.php](../../backend/routes/channels.php)`                                                                                                                                                        |
-
-
-**Nota:** alguns trechos no backend (por exemplo `StudySessionController` e `AuthService`) podem conter blocos de log em arquivo para debug; não alteram a arquitetura acima, apenas gravam artefatos em disco durante certas requisições.
+1. `index.html` loads the bundle → `main.ts` configures theme, Pinia, Vue Query, Router, PrimeVue, `mount(App)`.
+2. `App.vue` mounts `RouterView`; `setupAuthGuard` runs on first destination.
+3. Store already has `token` from `localStorage`, `sessionValidated === false`.
+4. Guard calls `fetchMe` (deduplicated); request interceptor **allows** `GET /auth/me`.
+5. Success → `sessionValidated = true`.
+6. Queries with `useQuerySessionEnabled` become `enabled: true` → e.g., dashboard fetches analytics.
+7. `AppLayout` mounts → `connectWebSocket` subscribes to `dashboard.{userId}`.
+8. Interactions (start session) → API → `StudySessionService::create` → `StudySessionCreated` → listeners → Reverb → Echo updates stores and invalidates queries.
 
 ---
 
-## Ver também
+## Quick Reference Files
 
-- [DOCUMENTACAO_TECNICA.md](DOCUMENTACAO_TECNICA.md) — visão geral complementar do stack e dos fluxos.
+| Area | Main File |
+|------|-----------|
+| Laravel HTTP Entry | `[backend/public/index.php](../../backend/public/index.php)`, `[backend/bootstrap/app.php](../../backend/bootstrap/app.php)` |
+| API Routes | `[backend/routes/api.php](../../backend/routes/api.php)` |
+| Auth API + Sanctum | `[AuthController](../../backend/app/Http/Controllers/V1/AuthController.php)`, `[AuthService](../../backend/app/Modules/Auth/Services/AuthService.php)` |
+| Sessions + Events | `[StudySessionController](../../backend/app/Http/Controllers/V1/StudySessionController.php)`, `[StudySessionService](../../backend/app/Modules/StudySessions/Services/StudySessionService.php)`, `[EventServiceProvider](../../backend/app/Providers/EventServiceProvider.php)` |
+| Vue Bootstrap | `[frontend/src/main.ts](../../frontend/src/main.ts)`, `[App.vue](../../frontend/src/App.vue)` |
+| Router + Guard | `[router/index.ts](../../frontend/src/router/index.ts)`, `[guards.ts](../../frontend/src/router/guards.ts)` |
+| HTTP + Auth UX | `[api/client.ts](../../frontend/src/api/client.ts)`, `[auth.store.ts](../../frontend/src/stores/auth.store.ts)` |
+| WebSocket | `[useWebSocket.ts](../../frontend/src/composables/useWebSocket.ts)`, `[channels.php](../../backend/routes/channels.php)` |
 
+**Note:** Some backend sections (e.g., `StudySessionController` and `AuthService`) may contain file log blocks for debugging; they do not change the architecture above, they only write artifacts to disk during certain requests.
+
+---
+
+## See Also
+
+- [DOCUMENTACAO_TECNICA.md](DOCUMENTACAO_TECNICA.md) — complementary overview of the stack and flows.

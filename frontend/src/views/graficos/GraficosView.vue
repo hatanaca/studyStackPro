@@ -6,7 +6,7 @@
  * Hero chart com glassmorphism, gradientes vibrantes, glow effects
  * e animações suaves entre layouts.
  */
-import { ref, computed, onMounted, defineAsyncComponent, watch } from 'vue'
+import { ref, computed, onMounted, defineAsyncComponent, watch, onErrorCaptured } from 'vue'
 import PageView from '@/components/layout/PageView.vue'
 import { useGraficos } from '@/features/graficos/composables/useGraficos'
 import RadarChart from '@/components/charts/RadarChart.vue'
@@ -27,6 +27,13 @@ const TrendComparisonPanel = defineAsyncComponent(() => import('./components/Tre
 
 const graficos = useGraficos()
 
+const renderError = ref<string | null>(null)
+
+onErrorCaptured((err) => {
+  renderError.value = err instanceof Error ? err.message : String(err)
+  return false // impede propagação
+})
+
 type HeroLayout = 'area' | 'line' | 'bar' | 'radar'
 const heroLayout = ref<HeroLayout>('area')
 
@@ -43,7 +50,7 @@ const { baseOptions, theme } = useApexChartTheme()
 const heroChartOptions = computed<ApexOptions | undefined>(() => {
   try {
     const data = graficos.timeSeriesForChart.value
-    if (!data.labels.length || !data.values.length) return undefined
+    if (!data?.labels?.length || !data?.values?.length) return undefined
     const isBar = heroLayout.value === 'bar'
     const isRadar = heroLayout.value === 'radar'
     const t = theme.value
@@ -163,7 +170,7 @@ const heroChartOptions = computed<ApexOptions | undefined>(() => {
 const heroSeries = computed(() => {
   try {
     const data = graficos.timeSeriesForChart.value
-    if (!data.values.length) return [{ name: 'Minutos', data: [] }]
+    if (!data?.values?.length) return [{ name: 'Minutos', data: [] }]
     if (heroLayout.value === 'radar') {
       const values = data.values.slice(-14)
       return [{
@@ -183,6 +190,11 @@ const heroRadarLabels = computed(() => {
   } catch {
     return []
   }
+})
+
+const safeTimeSeries = computed(() => {
+  try { return graficos.timeSeriesForChart.value }
+  catch { return { labels: [] as string[], values: [] as number[] } }
 })
 
 onMounted(() => {
@@ -210,6 +222,10 @@ watch(() => graficos.dateRange.value, () => {
     subtitle="Visualize seus dados de estudo com gráficos interativos e relatórios detalhados."
     narrow
   >
+    <div v-if="renderError" style="padding:2rem;background:#fef2f2;border:1px solid #ef4444;border-radius:8px;margin-bottom:1rem;">
+      <p style="color:#dc2626;font-weight:600;">Erro ao renderizar gráficos</p>
+      <p style="color:#6b7280;font-size:0.875rem;">{{ renderError }}</p>
+    </div>
     <div class="gv">
       <!-- Toolbar -->
       <div class="gv__toolbar animate-fade-in-up">
@@ -254,6 +270,9 @@ watch(() => graficos.dateRange.value, () => {
 
         <div class="hero__chart">
           <Skeleton v-if="graficos.loadingStates.value.timeSeries" height="420px" class="hero__skeleton" />
+          <div v-else-if="!heroChartOptions || (heroChartOptions as any).categories?.length === 0" class="hero__empty">
+            <p class="hero__empty-text">Nenhum dado disponível para exibir.</p>
+          </div>
           <template v-else>
             <VueApexCharts
               v-if="heroLayout === 'area' || heroLayout === 'line'"
@@ -323,7 +342,7 @@ watch(() => graficos.dateRange.value, () => {
         </div>
         <div class="grid__half animate-fade-in-up stagger-8">
           <TrendComparisonPanel
-            :data="graficos.timeSeriesForChart.value"
+            :data="safeTimeSeries"
             :loading="graficos.loadingStates.value.timeSeries"
           />
         </div>
@@ -528,6 +547,19 @@ watch(() => graficos.dateRange.value, () => {
 
 .hero__skeleton {
   border-radius: var(--radius-lg, 0.75rem);
+}
+
+.hero__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+}
+
+.hero__empty-text {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  opacity: 0.7;
 }
 
 /* ── CHILD GRID ───────────────────────────────────── */

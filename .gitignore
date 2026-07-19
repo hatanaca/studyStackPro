@@ -57,3 +57,8 @@ Thumbs.db
 
 # === RELATÓRIOS ===
 vulnerability_scan_report.md
+
+# === MONITORAMENTO ===
+monitoring/.sentry.env
+monitoring/logs/
+monitoring/reports/

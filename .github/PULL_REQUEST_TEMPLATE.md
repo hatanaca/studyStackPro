@@ -1,17 +1,17 @@
-## Descrição
+## Description
 
-<!-- Descreva as alterações deste PR -->
+<!-- Describe the changes in this PR -->
 
-## Tipo de mudança
+## Change Type
 
 - [ ] Bug fix
-- [ ] Nova feature
+- [ ] New feature
 - [ ] Breaking change
-- [ ] Documentação
+- [ ] Documentation
 
 ## Checklist
 
-- [ ] Testes passando (`make test` ou `make test-back` e `make test-front`)
-- [ ] Code style verificado (`make pint` no backend, `make lint` no frontend)
-- [ ] Tipos TypeScript sem erros (`cd frontend && npm run type-check`)
-- [ ] Documentação atualizada (se aplicável)
+- [ ] Tests passing (`make test` or `make test-back` and `make test-front`)
+- [ ] Code style verified (`make pint` in backend, `make lint` in frontend)
+- [ ] TypeScript types without errors (`cd frontend && npm run type-check`)
+- [ ] Documentation updated (if applicable)

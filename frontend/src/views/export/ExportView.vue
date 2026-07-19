@@ -4,6 +4,7 @@ import Card from 'primevue/card'
 import Button from 'primevue/button'
 import Fieldset from 'primevue/fieldset'
 import ErrorCard from '@/components/ui/ErrorCard.vue'
+import PageView from '@/components/layout/PageView.vue'
 import { analyticsApi } from '@/api/modules/analytics.api'
 
 const dateRange = ref<{ start: string; end: string }>({ start: '', end: '' })
@@ -96,6 +97,12 @@ async function doExport() {
 </script>
 
 <template>
+  <PageView
+    :breadcrumb="[{ label: 'Dashboard', to: '/' }, { label: 'Exportar dados' }]"
+    title="Exportar dados"
+    subtitle="Exporte seus dados de estudo para análise externa."
+    narrow
+  >
   <div class="export-view">
     <p class="export-view__lead">
       Os dados são buscados no servidor para o período escolhido. O arquivo inclui data, minutos e
@@ -166,6 +173,7 @@ async function doExport() {
       </template>
     </Card>
   </div>
+  </PageView>
 </template>
 
 <style scoped>

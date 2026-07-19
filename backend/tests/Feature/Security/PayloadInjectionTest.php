@@ -42,8 +42,8 @@ class PayloadInjectionTest extends TestCase
         $response = $this->withHeaders(['Origin' => 'http://127.0.0.1:5173'])->postJson('/api/v1/auth/register', [
             'name' => 'Test User',
             'email' => 'extra@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
             'is_admin' => true,
             'role' => 'admin',
         ]);

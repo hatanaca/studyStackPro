@@ -15,9 +15,10 @@ class TokenService
     public function revoke(PersonalAccessToken $token): void
     {
         $ttl = $this->resolveTtl($token);
+        $hashedToken = hash('sha256', $token->token);
 
         try {
-            Redis::setex("token_blacklist:{$token->token}", $ttl, '1');
+            Redis::setex("token_blacklist:{$hashedToken}", $ttl, '1');
         } catch (Throwable $exception) {
             Log::warning('Falha ao enviar token para blacklist Redis; exclusão seguirá em fail-open.', [
                 'token_id' => $token->getKey(),
@@ -50,7 +51,8 @@ class TokenService
             $connection->pipeline(function ($pipe) use ($tokenList) {
                 foreach ($tokenList as $token) {
                     $ttl = $this->resolveTtl($token);
-                    $pipe->setex("token_blacklist:{$token->token}", $ttl, '1');
+                    $hashedToken = hash('sha256', $token->token);
+                    $pipe->setex("token_blacklist:{$hashedToken}", $ttl, '1');
                 }
             });
         } catch (Throwable $exception) {
@@ -73,6 +75,8 @@ class TokenService
             return max(now()->diffInSeconds($token->expires_at, false), 1);
         }
 
-        return 60 * 60 * 24 * 365;
+        // Tokens sem expiração: blacklist por 7 dias (padrão Sanctum é 1440 min).
+        // 1 ano ocuparia memória Redis desnecessariamente.
+        return 60 * 60 * 24 * 7;
     }
 }

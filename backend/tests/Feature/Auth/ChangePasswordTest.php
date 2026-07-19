@@ -18,8 +18,8 @@ class ChangePasswordTest extends TestCase
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/v1/auth/change-password', [
                 'current_password' => 'old-password',
-                'password' => 'new-password123',
-                'password_confirmation' => 'new-password123',
+                'password' => 'new-Password123',
+                'password_confirmation' => 'new-Password123',
             ]);
 
         $response->assertStatus(200)
@@ -37,8 +37,8 @@ class ChangePasswordTest extends TestCase
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/v1/auth/change-password', [
                 'current_password' => 'wrong-password',
-                'password' => 'new-password123',
-                'password_confirmation' => 'new-password123',
+                'password' => 'new-Password123',
+                'password_confirmation' => 'new-Password123',
             ]);
 
         $response->assertStatus(422)
@@ -59,8 +59,8 @@ class ChangePasswordTest extends TestCase
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/v1/auth/change-password', [
                 'current_password' => 'old-password',
-                'password' => 'new-password123',
-                'password_confirmation' => 'new-password123',
+                'password' => 'new-Password123',
+                'password_confirmation' => 'new-Password123',
             ])
             ->assertStatus(200);
 
@@ -77,7 +77,7 @@ class ChangePasswordTest extends TestCase
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/v1/auth/change-password', [
                 'current_password' => 'password',
-                'password' => 'new-password123',
+                'password' => 'new-Password123',
             ]);
 
         $response->assertStatus(422)
@@ -91,8 +91,8 @@ class ChangePasswordTest extends TestCase
     {
         $response = $this->postJson('/api/v1/auth/change-password', [
             'current_password' => 'password',
-            'password' => 'new-password123',
-            'password_confirmation' => 'new-password123',
+            'password' => 'new-Password123',
+            'password_confirmation' => 'new-Password123',
         ]);
 
         $response->assertStatus(401);

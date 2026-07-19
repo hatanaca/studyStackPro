@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, shallowRef, computed } from 'vue'
 import type { Technology } from '@/types/domain.types'
 import { technologiesApi } from '@/api/modules/technologies.api'
+import { parseTechnologiesListResponse } from '@/types/schemas/api.schemas'
 
 /** TTL para considerar lista de tecnologias "fresca" (1 min) */
 const CACHE_FRESH_MS = 60_000
@@ -29,11 +30,10 @@ export const useTechnologiesStore = defineStore('technologies', () => {
     if (isFresh.value && !force) return technologies.value
     loading.value = true
     try {
-      const { data } = await technologiesApi.list()
-      if (data.success && Array.isArray(data.data)) {
-        technologies.value = data.data
-        lastFetchedAt.value = Date.now()
-      }
+      const res = await technologiesApi.list()
+      const validated = parseTechnologiesListResponse(res.data)
+      technologies.value = validated
+      lastFetchedAt.value = Date.now()
       return technologies.value
     } finally {
       loading.value = false

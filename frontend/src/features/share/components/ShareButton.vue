@@ -3,14 +3,12 @@ import { ref, computed } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { linkedinApi } from '@/api/modules/linkedin.api'
 import { queryKeys } from '@/api/queryKeys'
-import { useAuthStore } from '@/stores/auth.store'
 import { useToast } from '@/composables/useToast'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import Textarea from 'primevue/textarea'
 import type { LinkedInStatus } from '@/types/domain.types'
 
-const authStore = useAuthStore()
 const toast = useToast()
 const queryClient = useQueryClient()
 
@@ -50,7 +48,7 @@ const shareMutation = useMutation({
 })
 
 function handleConnect() {
-  const apiOrigin = import.meta.env.VITE_API_URL
+  const apiOrigin = String(import.meta.env.VITE_API_URL ?? '')
   window.location.href = `${apiOrigin}/api/v1/auth/linkedin`
 }
 

@@ -38,14 +38,14 @@ class CodeExecutionController extends Controller
         );
 
         try {
-            $result = $this->codeExecution->execute($dto);
+            $result = $this->codeExecution->execute($dto->code, $dto->language);
 
             return $this->success($result);
         } catch (\Throwable $e) {
             Log::error('Code execution failed', [
                 'user_id' => $request->user()->id,
                 'language' => $dto->language,
-                'error' => $e->getMessage(),
+                'exception' => $e,
             ]);
 
             return $this->error(

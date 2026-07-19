@@ -1,36 +1,36 @@
-# Metas (Goals) — apenas frontend
+# Goals — Frontend Only
 
-As **metas** (objetivos de minutos por semana, sessões por semana, streak) são uma funcionalidade **somente no frontend** do StudyTrackPro.
+The **goals** (objectives for minutes per week, sessions per week, streak) are a **frontend-only** feature in StudyTrackPro.
 
-## Decisão
+## Decision
 
-- **Não existe** endpoint de Goals na API Laravel (`/api/v1/goals`).
-- O frontend persiste metas em **localStorage** (chave `studytrack.goals`).
-- A store Pinia (`goals.store`) e o módulo `api/modules/goals.api.ts` leem e gravam apenas no navegador do usuário.
+- **There is no** Goals endpoint in the Laravel API (`/api/v1/goals`).
+- The frontend persists goals in **localStorage** (key `studytrack.goals`).
+- The Pinia store (`goals.store`) and the `api/modules/goals.api.ts` module only read and write in the user's browser.
 
-## Motivação
+## Rationale
 
-- Permite lançar a feature de metas sem alterar backend nem migrations.
-- Metas são por dispositivo/navegador; não há sincronização entre dispositivos.
-- Se no futuro for necessário backend (multi-dispositivo, relatórios), será preciso:
-  - migrations para tabela `goals`,
-  - módulo Goals no backend (Repository, Service, Controller),
-  - rotas CRUD e testes,
-  - e então alterar `goals.api.ts` para usar `apiClient` em vez de localStorage.
+- Allows launching the goals feature without changing the backend or migrations.
+- Goals are per device/browser; there is no cross-device synchronization.
+- If backend support is needed in the future (multi-device, reports), the following will be required:
+  - migration for the `goals` table,
+  - Goals module in the backend (Repository, Service, Controller),
+  - CRUD routes and tests,
+  - then update `goals.api.ts` to use `apiClient` instead of localStorage.
 
-## Contrato atual (frontend)
+## Current Contract (Frontend)
 
-- **Tipos:** `Goal`, `CreateGoalPayload`, `UpdateGoalPayload` em `types/goals.types.ts`.
-- **API local:** `goalsApi.list()`, `goalsApi.create(payload)`, `goalsApi.update(id, payload)`, `goalsApi.delete(id)` em `api/modules/goals.api.ts` (todos operam sobre localStorage).
-- **Rotas:** `/goals` (GoalsView), widget no Dashboard.
+- **Types:** `Goal`, `CreateGoalPayload`, `UpdateGoalPayload` in `types/goals.types.ts`.
+- **Local API:** `goalsApi.list()`, `goalsApi.create(payload)`, `goalsApi.update(id, payload)`, `goalsApi.delete(id)` in `api/modules/goals.api.ts` (all operate on localStorage).
+- **Routes:** `/goals` (GoalsView), Dashboard widget.
 
-## Checklist para futura API de Goals
+## Checklist for Future Goals API
 
-Se for implementar Goals no backend:
+If implementing Goals in the backend:
 
-- [ ] Migration `goals` (user_id, type, target_value, current_value, status, start_date, end_date, meta JSON).
-- [ ] Model `Goal`, enum para type/status.
-- [ ] Módulo `app/Modules/Goals/` (Repository, Service, DTOs).
-- [ ] Rotas GET/POST/PUT/DELETE com throttle e auth.
-- [ ] Form Requests e Resources.
-- [ ] Feature tests e atualizar `goals.api.ts` para chamar a API.
+- [ ] `goals` migration (user_id, type, target_value, current_value, status, start_date, end_date, JSON meta).
+- [ ] `Goal` model, enum for type/status.
+- [ ] `app/Modules/Goals/` module (Repository, Service, DTOs).
+- [ ] GET/POST/PUT/DELETE routes with throttle and auth.
+- [ ] Form Requests and Resources.
+- [ ] Feature tests and update `goals.api.ts` to call the API.

@@ -310,6 +310,21 @@ function handleLogout() {
         </span>
       </RouterLink>
       <RouterLink
+        to="/terminal"
+        class="app-sidebar__link"
+        :class="{ active: route.path.startsWith('/terminal') }"
+        title="Terminal"
+        aria-label="Ir para Terminal"
+      >
+        <span class="app-sidebar__icon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        </span>
+        <span class="app-sidebar__link-content">
+          <span class="app-sidebar__link-text">Terminal</span>
+          <span class="app-sidebar__link-route">/terminal</span>
+        </span>
+      </RouterLink>
+      <RouterLink
         to="/settings"
         class="app-sidebar__link"
         :class="{ active: route.path.startsWith('/settings') }"

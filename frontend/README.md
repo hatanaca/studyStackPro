@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">🎨 StudyTrack Pro — Frontend</h1>
   <p align="center">
-    <em>Interface Vue 3 + TypeScript para acompanhamento de sessões de estudo e métricas</em>
+    <em>Vue 3 + TypeScript interface for tracking study sessions and metrics</em>
   </p>
 </p>
 
@@ -14,8 +14,8 @@
 
 <p align="center">
   <a href="#stack">Stack</a> •
-  <a href="#estrutura">Estrutura</a> •
-  <a href="#rotas">Rotas</a> •
+  <a href="#structure">Structure</a> •
+  <a href="#routes">Routes</a> •
   <a href="#design-system">Design System</a> •
   <a href="#scripts">Scripts</a>
 </p>
@@ -27,8 +27,8 @@
 <table>
 <tr>
 <td><strong>Core</strong></td>
-<td><strong>Estado & Dados</strong></td>
-<td><strong>UI & Visualização</strong></td>
+<td><strong>State & Data</strong></td>
+<td><strong>UI & Visualization</strong></td>
 </tr>
 <tr>
 <td>
@@ -41,55 +41,55 @@
 </td>
 <td>
 
-- Pinia (stores globais)
-- TanStack Query (cache API)
-- Vue Router (navegação)
+- Pinia (global stores)
+- TanStack Query (API cache)
+- Vue Router (navigation)
 - Axios (HTTP client)
 
 </td>
 <td>
 
-- PrimeVue (componentes)
-- ApexCharts (gráficos)
-- Zod (validação)
+- PrimeVue (components)
+- ApexCharts (charts)
+- Zod (validation)
 - VueUse (composables)
 
 </td>
 </tr>
 </table>
 
-### Dependências Adicionais
+### Additional Dependencies
 
-| Pacote | Uso |
-|--------|-----|
-| `fabric` | Canvas para manipulação de imagens |
-| `jspdf` | Geração de PDF |
-| `vue-flow` | Diagramas e fluxos visuais |
+| Package | Usage |
+|---------|-------|
+| `fabric` | Canvas for image manipulation |
+| `jspdf` | PDF generation |
+| `vue-flow` | Diagrams and visual flows |
 | `laravel-echo` | WebSocket via Reverb |
 
 ---
 
-## Estrutura
+## Structure
 
 ```
 src/
-├── api/                        # Cliente HTTP e módulos
+├── api/                        # HTTP client and modules
 │   ├── client.ts               # Axios + interceptors (token, 401, 429)
-│   ├── endpoints.ts            # Constantes de URLs
-│   ├── queryKeys.ts            # Chaves TanStack Query
+│   ├── endpoints.ts            # URL constants
+│   ├── queryKeys.ts            # TanStack Query keys
 │   └── modules/                # auth, sessions, technologies, analytics
 ├── assets/
 │   └── styles/
 │       ├── main.css
-│       └── variables.css       # Design tokens (cores, spacing, breakpoints)
+│       └── variables.css       # Design tokens (colors, spacing, breakpoints)
 ├── components/
 │   ├── layout/                 # AppLayout, AppSidebar, AppTopBar
 │   ├── ui/                     # BaseButton, BaseCard, BaseModal, etc.
 │   ├── charts/                 # BarChart, LineChart, PieChart, HeatmapChart
 │   └── onboarding/             # OnboardingBanner
 ├── composables/                # useToast, useWebSocket, useApexChartTheme
-├── constants/                  # Mensagens, constantes
-├── features/                   # Módulos por domínio
+├── constants/                  # Messages, constants
+├── features/                   # Modules by domain
 │   ├── auth/                   # LoginForm, RegisterForm
 │   ├── dashboard/              # KpiCards, HeatmapWidget, TimeSeriesWidget
 │   ├── sessions/               # SessionCard, SessionTimer, SessionFilters
@@ -108,75 +108,75 @@ src/
 
 ---
 
-## Rotas
+## Routes
 
-| Rota | Descrição | Auth |
-|------|-----------|------|
+| Route | Description | Auth |
+|-------|-------------|------|
 | `/login` | Login | ❌ |
-| `/register` | Registro | ❌ |
+| `/register` | Registration | ❌ |
 | `/` | Dashboard | ✅ |
-| `/sessions` | Lista de sessões | ✅ |
-| `/sessions/focus` | Modo foco (timer) | ✅ |
-| `/technologies` | Tecnologias | ✅ |
-| `/technologies/:id` | Detalhe + sessões | ✅ |
-| `/goals` | Metas | ✅ |
-| `/export` | Exportar dados | ✅ |
-| `/reports` | Relatórios | ✅ |
-| `/settings` | Configurações | ✅ |
-| `/profile` | Perfil | ✅ |
-| `/help` | Ajuda | ✅ |
+| `/sessions` | Session list | ✅ |
+| `/sessions/focus` | Focus mode (timer) | ✅ |
+| `/technologies` | Technologies | ✅ |
+| `/technologies/:id` | Detail + sessions | ✅ |
+| `/goals` | Goals | ✅ |
+| `/export` | Export data | ✅ |
+| `/reports` | Reports | ✅ |
+| `/settings` | Settings | ✅ |
+| `/profile` | Profile | ✅ |
+| `/help` | Help | ✅ |
 
 ---
 
 ## Design System
 
-**Tokens** em `src/assets/styles/variables.css`:
+**Tokens** in `src/assets/styles/variables.css`:
 
-| Categoria | Exemplos |
-|-----------|----------|
-| **Cores** | primary, success, text, bg, border |
-| **Espaçamento** | xs, sm, md, lg, xl |
+| Category | Examples |
+|----------|----------|
+| **Colors** | primary, success, text, bg, border |
+| **Spacing** | xs, sm, md, lg, xl |
 | **Border radius** | sm, md, lg, full |
 | **Shadows** | sm, md, lg |
 | **Breakpoints** | 375px, 480px, 640px, 768px, 1024px, 1280px, 1440px |
-| **Tema escuro** | `[data-theme='dark']` |
+| **Dark theme** | `[data-theme='dark']` |
 
-> ⚠️ Evite valores hardcoded; use variáveis CSS.
+> ⚠️ Avoid hardcoded values; use CSS variables.
 
 ---
 
 ## WebSocket
 
-O composable `useWebSocket` conecta ao canal privado `dashboard.{userId}`:
+The `useWebSocket` composable connects to the private channel `dashboard.{userId}`:
 
-| Evento | Descrição |
-|--------|-----------|
-| `.metrics.updated` | Dashboard atualizado |
-| `.metrics.recalculating` | Recálculo iniciado |
-| `.session.started` | Sessão iniciada |
-| `.session.ended` | Sessão encerrada |
+| Event | Description |
+|-------|-------------|
+| `.metrics.updated` | Dashboard updated |
+| `.metrics.recalculating` | Recalculation started |
+| `.session.started` | Session started |
+| `.session.ended` | Session ended |
 
-> Quando WebSocket está desconectado, o dashboard usa polling de fallback.
+> When WebSocket is disconnected, the dashboard uses fallback polling.
 
 ---
 
 ## Scripts
 
-| Comando | Descrição |
-|---------|-----------|
-| `npm run dev` | Servidor de desenvolvimento (Vite) |
-| `npm run build` | Build de produção |
-| `npm run preview` | Preview do build |
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Development server (Vite) |
+| `npm run build` | Production build |
+| `npm run preview` | Build preview |
 | `npm run test` | Vitest (watch) |
 | `npm run test:run` | Vitest (single run) |
-| `npm run test:coverage` | Cobertura |
-| `npm run type-check` | Verificação TypeScript |
+| `npm run test:coverage` | Coverage |
+| `npm run type-check` | TypeScript verification |
 | `npm run lint` | ESLint |
 | `npm run format` | Prettier |
 
 ---
 
-## Instalação
+## Installation
 
 ### Docker
 
@@ -196,19 +196,19 @@ npm run dev
 
 ---
 
-## Variáveis de Ambiente
+## Environment Variables
 
-| Variável | Descrição | Default |
-|----------|-----------|---------|
-| `VITE_API_URL` | Base URL da API | same-origin |
-| `VITE_REVERB_HOST` | Host do Reverb | localhost |
-| `VITE_REVERB_PORT` | Porta do Reverb | 80 |
-| `VITE_REVERB_SCHEME` | http ou https | http |
-| `VITE_REVERB_APP_KEY` | Chave do Reverb | — |
-| `VITE_REVERB_ENABLED` | Habilitar WebSocket | true |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VITE_API_URL` | API base URL | same-origin |
+| `VITE_REVERB_HOST` | Reverb host | localhost |
+| `VITE_REVERB_PORT` | Reverb port | 80 |
+| `VITE_REVERB_SCHEME` | http or https | http |
+| `VITE_REVERB_APP_KEY` | Reverb key | — |
+| `VITE_REVERB_ENABLED` | Enable WebSocket | true |
 
 ---
 
 <p align="center">
-  <a href="../README.md">← Voltar ao README principal</a>
+  <a href="../README.md">← Back to main README</a>
 </p>

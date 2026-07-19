@@ -1,71 +1,71 @@
 # Security Checklist — StudyTrack Pro
 
-> Pontos de segurança identificados na auditoria de 2026-06-23.
-> Corrigir antes de deploy em produção.
+> Security points identified in the 2026-06-23 audit.
+> Fix before deploying to production.
 
-## CRÍTICO
+## CRITICAL
 
-### 1. Secrets hardcoded no `backend/.env`
-- **Arquivo:** `backend/.env:74-84`
-- **Problema:** OAuth credentials (Google, Discord) e YouTube API key em texto plano.
-- **Risco:** Vazamento se `.gitignore` for alterado ou `git add .` acidental.
-- **Correção:** Usar apenas placeholders no `.env.example`. Em produção, usar variáveis de ambiente do sistema ou secret manager (Vault, AWS SSM).
+### 1. Hardcoded secrets in `backend/.env`
+- **File:** `backend/.env:74-84`
+- **Issue:** OAuth credentials (Google, Discord) and YouTube API key in plaintext.
+- **Risk:** Leakage if `.gitignore` is modified or `git add .` is accidental.
+- **Fix:** Use only placeholders in `.env.example`. In production, use system environment variables or a secret manager (Vault, AWS SSM).
 
-### 2. Tokens OAuth em `$fillable` do model User
-- **Arquivo:** `backend/app/Models/User.php:37-42`
-- **Problema:** `discord_token`, `google_token`, `discord_refresh_token`, etc. estão em `$fillable`.
-- **Risco:** `User::create($request->all())` pode injetar tokens arbitrários via mass assignment.
-- **Correção:** Remover tokens de `$fillable`; usar `forceFill` ou update direto nos services.
+### 2. OAuth tokens in User model `$fillable`
+- **File:** `backend/app/Models/User.php:37-42`
+- **Issue:** `discord_token`, `google_token`, `discord_refresh_token`, etc. are in `$fillable`.
+- **Risk:** `User::create($request->all())` can inject arbitrary tokens via mass assignment.
+- **Fix:** Remove tokens from `$fillable`; use `forceFill` or direct update in services.
 
-### 3. Debug mode em produção
-- **Arquivo:** `backend/app/Exceptions/Handler.php:72`
-- **Problema:** `config('app.debug') ? $e->getMessage()` expõe detalhes internos se `APP_DEBUG=true`.
-- **Risco:** Information disclosure (SQL queries, file paths, stack traces).
-- **Correção:** Nunca retornar `$e->getMessage()` em produção; usar mensagens genéricas.
+### 3. Debug mode in production
+- **File:** `backend/app/Exceptions/Handler.php:72`
+- **Issue:** `config('app.debug') ? $e->getMessage()` exposes internal details if `APP_DEBUG=true`.
+- **Risk:** Information disclosure (SQL queries, file paths, stack traces).
+- **Fix:** Never return `$e->getMessage()` in production; use generic messages.
 
-### 4. `env()` direto no controller
-- **Arquivo:** `backend/app/Http/Controllers/V1/OAuthController.php:56`
-- **Problema:** `env('FRONTEND_URL')` retorna `null` após `php artisan config:cache`.
-- **Correção:** Usar `config('app.frontend_url')` e criar entrada em `config/app.php`.
+### 4. Direct `env()` in controller
+- **File:** `backend/app/Http/Controllers/V1/OAuthController.php:56`
+- **Issue:** `env('FRONTEND_URL')` returns `null` after `php artisan config:cache`.
+- **Fix:** Use `config('app.frontend_url')` and create an entry in `config/app.php`.
 
-## MÉDIO
+## MEDIUM
 
-### 5. Rate limit compartilhado entre endpoints heterogêneos
-- **Arquivo:** `backend/routes/api.php:68`
-- **Problema:** Logout, update profile, change password, CRUD sessions — todos no bucket `throttle:30,1`.
-- **Risco:** Ataque em um endpoint drena a cota dos outros.
-- **Correção:** Separar em buckets distintos por categoria.
+### 5. Shared rate limit across heterogeneous endpoints
+- **File:** `backend/routes/api.php:68`
+- **Issue:** Logout, update profile, change password, CRUD sessions — all in the `throttle:30,1` bucket.
+- **Risk:** An attack on one endpoint drains the quota of others.
+- **Fix:** Separate into distinct buckets by category.
 
-### 6. CORS — adicionar headers de segurança
-- **Problema:** Falta `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options` em produção.
-- **Correção:** Configurar middleware de headers de segurança no Nginx ou Laravel.
+### 6. CORS — add security headers
+- **Issue:** Missing `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options` in production.
+- **Fix:** Configure security header middleware in Nginx or Laravel.
 
-### 7. Session cookie — SameSite e Secure
-- **Arquivo:** `backend/.env:42`
-- **Problema:** `SESSION_COOKIE` não define `SameSite=Lax/Strict` nem `Secure=true`.
-- **Correção:** Configurar em `config/session.php` para produção.
+### 7. Session cookie — SameSite and Secure
+- **File:** `backend/.env:42`
+- **Issue:** `SESSION_COOKIE` doesn't define `SameSite=Lax/Strict` or `Secure=true`.
+- **Fix:** Configure in `config/session.php` for production.
 
-### 8. Horizon — proteção por IP/email
-- **Arquivo:** `backend/app/Providers/AppServiceProvider.php:57-73`
-- **Problema:** `HORIZON_ADMIN_EMAILS` não configurado no `.env` — qualquer usuário autenticado pode acessar Horizon.
-- **Correção:** Definir emails admin no `.env` de produção.
+### 8. Horizon — IP/email protection
+- **File:** `backend/app/Providers/AppServiceProvider.php:57-73`
+- **Issue:** `HORIZON_ADMIN_EMAILS` not configured in `.env` — any authenticated user can access Horizon.
+- **Fix:** Define admin emails in production `.env`.
 
-## BAIXO
+## LOW
 
-### 9. Password hashing — verificar rounds
-- **Problema:** `bcrypt()` usa rounds padrão (10). Em produção, considerar 12+.
-- **Correção:** Configurar `BCRYPT_ROUNDS` no `.env` de produção.
+### 9. Password hashing — check rounds
+- **Issue:** `bcrypt()` uses default rounds (10). In production, consider 12+.
+- **Fix:** Configure `BCRYPT_ROUNDS` in production `.env`.
 
-### 10. YouTubeService — cache sem invalidação de segurança
-- **Arquivo:** `backend/app/Services/YouTubeService.php:180-191`
-- **Problema:** `cache()` helper global sempre existe; fallback nunca executa.
-- **Correção:** Melhorar tratamento de erro do cache.
+### 10. YouTubeService — cache without security invalidation
+- **File:** `backend/app/Services/YouTubeService.php:180-191`
+- **Issue:** Global `cache()` helper always exists; fallback never executes.
+- **Fix:** Improve cache error handling.
 
-### 11. Logs — não logar tokens/senhas
-- **Problema:** Alguns logs podem capturar headers com Authorization.
-- **Correção:** Configurar `LogApiRequests` para sanitizar headers sensíveis.
+### 11. Logs — don't log tokens/passwords
+- **Issue:** Some logs may capture headers with Authorization.
+- **Fix:** Configure `LogApiRequests` to sanitize sensitive headers.
 
 ---
 
-**Última atualização:** 2026-06-23
-**Status:** Pendente — implementar antes de produção
+**Last updated:** 2026-06-23
+**Status:** Pending — implement before production

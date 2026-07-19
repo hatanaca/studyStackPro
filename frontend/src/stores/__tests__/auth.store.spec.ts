@@ -44,7 +44,9 @@ describe('auth.store', () => {
     expect(fetchSanctumCsrfCookie).toHaveBeenCalledOnce()
     expect(store.user).toEqual(mockUser)
     expect(store.sessionValidated).toBe(true)
-    expect(localStorage.getItem('studytrack_user')).toBe(JSON.stringify(mockUser))
+    const cached = JSON.parse(localStorage.getItem('studytrack_user')!)
+    expect(cached.user).toEqual(mockUser)
+    expect(cached.ts).toBeTypeOf('number')
   })
 
   it('register obtém CSRF e guarda utilizador', async () => {
@@ -105,7 +107,9 @@ describe('auth.store', () => {
 
     expect(store.user).toEqual(updatedUser)
     expect(store.sessionValidated).toBe(true)
-    expect(localStorage.getItem('studytrack_user')).toBe(JSON.stringify(updatedUser))
+    const cached = JSON.parse(localStorage.getItem('studytrack_user')!)
+    expect(cached.user).toEqual(updatedUser)
+    expect(cached.ts).toBeTypeOf('number')
   })
 
   it('inicializa sem utilizador quando o JSON em cache é inválido', () => {

@@ -1,10 +1,10 @@
-# Debug de Arquitetura — StudyTrackPro
+# Architecture Debug — StudyTrackPro
 
-Guia de diagnóstico ponta a ponta: Frontend → Nginx → Laravel → PostgreSQL/Redis → Reverb → Frontend.
+End-to-end diagnostic guide: Frontend → Nginx → Laravel → PostgreSQL/Redis → Reverb → Frontend.
 
 ---
 
-## Fluxo da Aplicação
+## Application Flow
 
 ```
 Browser (Vue 3)
@@ -16,12 +16,12 @@ Nginx :80
    │ Static  /*                      → /frontend/index.html
    ▼
 php-fpm (Laravel 11)
-   │ Middleware: EnsureJsonResponse, auth:sanctum, SetUserTimezone, LogApiRequests, throttle nomeados, throttle.sliding (sessões)
+   │ Middleware: EnsureJsonResponse, auth:sanctum, SetUserTimezone, LogApiRequests, named throttles, throttle.sliding (sessions)
    │ FormRequest → Controller → Service → Repository → Eloquent → PostgreSQL
-   │ Event → Listener → Job (fila: metrics) → Redis → Horizon → RecalculateMetricsJob
+   │ Event → Listener → Job (queue: metrics) → Redis → Horizon → RecalculateMetricsJob
    │                   → ShouldBroadcast → Reverb
    ▼
-Reverb :8080  →  canal privado: private-dashboard.{userId}
+Reverb :8080  →  private channel: private-dashboard.{userId}
    ▼
 Browser (Laravel Echo / Pusher-JS)
    └─ .metrics.updated, .metrics.recalculating, .session.started, .session.ended
@@ -29,128 +29,128 @@ Browser (Laravel Echo / Pusher-JS)
 
 ---
 
-## Prompt de Debug (use no Composer / IA)
+## Debug Prompt (Use in Composer / AI)
 
-> Cole o trecho abaixo como contexto inicial quando um bug cruzar camadas:
+> Paste the following as initial context when a bug crosses layers:
 
 ```
-Contexto do projeto StudyTrackPro:
+StudyTrackPro project context:
 - Frontend: Vue 3 + TypeScript, Pinia, Laravel Echo (Reverb), Axios (Bearer token)
 - Backend: Laravel 11, Sanctum 4, Reverb 1, Horizon 5, PostgreSQL 16, Redis 7
-- Infra: Docker (nginx:80 → php-fpm:9000 / reverb:8080), Vite proxy em dev
+- Infra: Docker (nginx:80 → php-fpm:9000 / reverb:8080), Vite proxy in dev
 
-Sintoma observado:
-[DESCREVA AQUI: URL, método HTTP, resposta recebida, estado da store Pinia, evento WS esperado vs recebido]
+Observed symptom:
+[DESCRIBE HERE: URL, HTTP method, response received, Pinia store state, expected vs received WS event]
 
-Camadas suspeitas:
-[ ] Redis (cache/filas/Reverb)
+Suspected layers:
+[ ] Redis (cache/queues/Reverb)
 [ ] CORS / Auth (401 / preflight)
-[ ] Laravel (500 / 422 / lógica de negócio)
-[ ] WebSocket (canal não recebe evento)
-[ ] Frontend (store desatualizada / race condition)
+[ ] Laravel (500 / 422 / business logic)
+[ ] WebSocket (channel not receiving event)
+[ ] Frontend (stale store / race condition)
 
-Solicito: rastrear a origem, listar camadas afetadas e propor correção em todas elas.
+Request: trace the origin, list affected layers, and propose a fix across all of them.
 ```
 
 ---
 
-## Checklist de Diagnóstico por Camada
+## Layer-by-Layer Diagnostic Checklist
 
-### 1. Infraestrutura / Docker
+### 1. Infrastructure / Docker
 
 ```bash
-# Verificar containers em execução
+# Check running containers
 docker compose ps
 
-# Logs de cada serviço
+# Logs for each service
 docker compose logs nginx --tail=50
 docker compose logs php-fpm --tail=50
 docker compose logs reverb --tail=50
 docker compose logs horizon --tail=50
 
-# Testar conectividade Redis (com senha)
+# Test Redis connectivity (with password)
 docker compose exec redis redis-cli -a "$REDIS_PASSWORD" ping
-# Esperado: PONG
+# Expected: PONG
 
-# Filas: o nome da chave no Redis depende de REDIS_PREFIX (ex.: studytrackpro_database_)
+# Queues: the key name in Redis depends on REDIS_PREFIX (e.g., studytrackpro_database_)
 docker compose exec redis redis-cli -a "$REDIS_PASSWORD" KEYS "*queues*metrics*"
-# Ou via Artisan (recomendado)
+# Or via Artisan (recommended)
 docker compose exec php-fpm php artisan queue:monitor metrics --max=1000
 ```
 
 **Checklist:**
-- [ ] Todos os containers `Up`
-- [ ] Redis responde `PONG` com a senha do `redis.conf`
-- [ ] `REDIS_PASSWORD` no `.env` igual ao `requirepass` em `docker/redis/redis.conf`
-- [ ] Portas `80` e `5173` acessíveis no host
+- [ ] All containers `Up`
+- [ ] Redis responds `PONG` with the `redis.conf` password
+- [ ] `REDIS_PASSWORD` in `.env` matches `requirepass` in `docker/redis/redis.conf`
+- [ ] Ports `80` and `5173` accessible on host
 
 ---
 
 ### 2. CORS
 
 ```bash
-# Testar preflight para a API
+# Test preflight for the API
 curl -X OPTIONS http://localhost/api/v1/auth/login \
   -H "Origin: http://localhost:5173" \
   -H "Access-Control-Request-Method: POST" \
   -H "Access-Control-Request-Headers: Authorization, Content-Type" \
   -v 2>&1 | grep -i "access-control"
 
-# Esperado: Access-Control-Allow-Origin: http://localhost:5173
+# Expected: Access-Control-Allow-Origin: http://localhost:5173
 ```
 
 **Checklist:**
-- [ ] `CORS_ALLOWED_ORIGINS=http://localhost:5173` no `.env`
-- [ ] Resposta HTTP contém `Access-Control-Allow-Origin` com a origem correta
-- [ ] `supports_credentials=false` em `config/cors.php` (Bearer token, não cookie)
+- [ ] `CORS_ALLOWED_ORIGINS=http://localhost:5173` in `.env`
+- [ ] HTTP response contains `Access-Control-Allow-Origin` with the correct origin
+- [ ] `supports_credentials=false` in `config/cors.php` (Bearer token, not cookie)
 
 ---
 
-### 3. Autenticação (Sanctum Bearer Token)
+### 3. Authentication (Sanctum Bearer Token)
 
 ```bash
-# Login — deve retornar { success, data: { user, token, token_type } }
+# Login — should return { success, data: { user, token, token_type } }
 curl -X POST http://localhost/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{"email":"user@example.com","password":"password"}' | jq .
 
-# Registro — deve retornar { success, data: { user, token, token_type } } (igual ao login)
+# Register — should return { success, data: { user, token, token_type } } (same as login)
 curl -X POST http://localhost/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{"name":"Test","email":"test@example.com","password":"password","password_confirmation":"password"}' | jq .
 
-# Usar token retornado para acessar rota protegida
-TOKEN="<cole o token aqui>"
+# Use the returned token to access a protected route
+TOKEN="<paste token here>"
 curl -X GET http://localhost/api/v1/auth/me \
   -H "Authorization: Bearer $TOKEN" \
   -H "Accept: application/json" | jq .
 ```
 
 **Checklist:**
-- [ ] Login retorna `data.token` (não apenas no header)
-- [ ] Register retorna `data.token` e `data.user` (não apenas `data` com o user)
-- [ ] `/auth/me` retorna `200` com token válido; `401` sem token ou com token expirado
-- [ ] `EnsureJsonResponse` middleware ativo: erros de auth retornam JSON, não HTML redirect
+- [ ] Login returns `data.token` (not just in header)
+- [ ] Register returns `data.token` and `data.user` (not just `data` with the user)
+- [ ] `/auth/me` returns `200` with valid token; `401` without token or with expired token
+- [ ] `EnsureJsonResponse` middleware active: auth errors return JSON, not HTML redirect
 
 ---
 
-### 4. Endpoints da API
+### 4. API Endpoints
 
 ```bash
-TOKEN="<seu token>"
+TOKEN="<your token>"
 
 # Health
 curl http://localhost/api/health | jq .
 
-# Tecnologias
+# Technologies
 curl -H "Authorization: Bearer $TOKEN" http://localhost/api/v1/technologies | jq .
 
-# Sessão ativa
+# Active session
 curl -H "Authorization: Bearer $TOKEN" http://localhost/api/v1/study-sessions/active | jq .
 
-# Iniciar sessão
+# Start session
 curl -X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"technology_id":"<uuid>"}' \
@@ -160,140 +160,140 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
 curl -H "Authorization: Bearer $TOKEN" http://localhost/api/v1/analytics/dashboard | jq .
 ```
 
-**Checklist de respostas esperadas:**
-- [ ] Todos retornam `{ success: true, data: {...} }` em `200`
-- [ ] Erros de validação retornam `422` com `{ success: false, error: { code, message, details } }`
-- [ ] Rate limit retorna `429` (não `500`)
-- [ ] Rotas sem auth retornam `401` JSON (não redirect HTML)
+**Expected response checklist:**
+- [ ] All return `{ success: true, data: {...} }` on `200`
+- [ ] Validation errors return `422` with `{ success: false, error: { code, message, details } }`
+- [ ] Rate limit returns `429` (not `500`)
+- [ ] Unauthenticated routes return `401` JSON (not HTML redirect)
 
 ---
 
-### 5. Filas / Horizon
+### 5. Queues / Horizon
 
 ```bash
-# Status do Horizon
+# Horizon status
 docker compose exec php-fpm php artisan horizon:status
 
-# Jobs com falha
+# Failed jobs
 docker compose exec php-fpm php artisan queue:failed
 
-# Reprocessar falhas
+# Retry failures
 docker compose exec php-fpm php artisan queue:retry all
 
-# Monitorar jobs em tempo real
+# Monitor jobs in real time
 docker compose exec redis redis-cli -a "$REDIS_PASSWORD" MONITOR
-# Filtrar: ^"LPUSH\|RPOP"
+# Filter: ^"LPUSH\|RPOP"
 ```
 
 **Checklist:**
-- [ ] Horizon `running` (não `paused` ou `inactive`)
-- [ ] Fila `metrics` sem jobs acumulados (após encerrar sessão, o job deve processar em ~2s)
-- [ ] Nenhum job em `queue:failed`
-- [ ] `RecalculateMetricsJob` finaliza e dispara `MetricsRecalculated` event
+- [ ] Horizon `running` (not `paused` or `inactive`)
+- [ ] `metrics` queue without accumulated jobs (after ending a session, the job should process in ~2s)
+- [ ] No jobs in `queue:failed`
+- [ ] `RecalculateMetricsJob` completes and dispatches `MetricsRecalculated` event
 
 ---
 
-### 6. Cache Redis (tags por usuário)
+### 6. Redis Cache (Tags per User)
 
 ```bash
-# Listar chaves de cache (prefixo vem de REDIS_PREFIX no .env)
+# List cache keys (prefix comes from REDIS_PREFIX in .env)
 docker compose exec redis redis-cli -a "$REDIS_PASSWORD" \
   KEYS "*analytics*"
 
-# Verificar TTL de uma chave (substitua pelo nome real retornado em KEYS)
+# Check TTL of a key (replace with the real name returned by KEYS)
 docker compose exec redis redis-cli -a "$REDIS_PASSWORD" \
-  TTL "<chave>"
+  TTL "<key>"
 
-# Limpar cache manualmente (em dev)
+# Clear cache manually (in dev)
 docker compose exec php-fpm php artisan cache:clear
 ```
 
 **Checklist:**
-- [ ] Cache invalida após criar/atualizar/deletar sessão (`InvalidateSessionCache` listener)
-- [ ] Tags `['analytics', 'user:{userId}']` são limpas antes do recálculo
-- [ ] Cache é repopulado por `UpdateCacheWithFreshData` após `MetricsRecalculated`
+- [ ] Cache invalidates after creating/updating/deleting a session (`InvalidateSessionCache` listener)
+- [ ] Tags `['analytics', 'user:{userId}']` are cleared before recalculation
+- [ ] Cache is repopulated by `UpdateCacheWithFreshData` after `MetricsRecalculated`
 
 ---
 
 ### 7. WebSocket (Reverb)
 
 ```bash
-# Verificar que Reverb está rodando
+# Verify Reverb is running
 docker compose logs reverb --tail=20
 
-# Testar autenticação do canal privado
-TOKEN="<seu token>"
-USER_ID="<uuid do usuário>"
+# Test private channel authentication
+TOKEN="<your token>"
+USER_ID="<user uuid>"
 curl -X POST http://localhost/api/broadcasting/auth \
   -H "Authorization: Bearer $TOKEN" \
   -H "Accept: application/json" \
   -H "Content-Type: application/json" \
   -d "{\"socket_id\":\"123.456\",\"channel_name\":\"private-dashboard.${USER_ID}\"}" | jq .
-# Esperado: { "auth": "local-key:...<assinatura>" }
+# Expected: { "auth": "local-key:...<signature>" }
 ```
 
-**No DevTools do browser (aba Network > WS):**
-1. Filtrar por `app/` — deve aparecer uma conexão WebSocket ativa
-2. Na aba Messages, observar frames bidirecionais
-3. Após criar/encerrar sessão, verificar se chega frame com evento `.metrics.updated`
+**In browser DevTools (Network tab > WS):**
+1. Filter by `app/` — should show an active WebSocket connection
+2. In the Messages tab, observe bidirectional frames
+3. After creating/ending a session, check if a frame with the `.metrics.updated` event arrives
 
 **Checklist:**
-- [ ] Conexão WebSocket estabelecida (status `101 Switching Protocols`)
-- [ ] Canal `private-dashboard.{userId}` autenticado com sucesso
-- [ ] `VITE_REVERB_APP_KEY` igual a `REVERB_APP_KEY` no backend
-- [ ] Eventos escutados com ponto inicial (`.session.started`, `.metrics.updated`) — o ponto omite o namespace do app no Laravel Echo
-- [ ] `forceTLS: false` em HTTP / `forceTLS: true` em HTTPS
-- [ ] `wsPort` e `wssPort` apontam para a porta correta (nginx `:80` em produção, `:5173` via proxy Vite em dev)
+- [ ] WebSocket connection established (status `101 Switching Protocols`)
+- [ ] `private-dashboard.{userId}` channel authenticated successfully
+- [ ] `VITE_REVERB_APP_KEY` matches `REVERB_APP_KEY` in backend
+- [ ] Events listened with leading dot (`.session.started`, `.metrics.updated`) — the dot omits the app namespace in Laravel Echo
+- [ ] `forceTLS: false` on HTTP / `forceTLS: true` on HTTPS
+- [ ] `wsPort` and `wssPort` point to the correct port (nginx `:80` in production, `:5173` via Vite proxy in dev)
 
 ---
 
 ### 8. Frontend (Vue DevTools + Network)
 
-**Vue DevTools — aba Pinia:**
-- `auth` → `token` preenchido, `user` com id
-- `sessions` → `activeSession` atualiza ao iniciar sessão; `null` ao encerrar
-- `analytics` → `dashboard` atualiza após `MetricsRecalculated`; `isRecalculating: true` durante o job
+**Vue DevTools — Pinia tab:**
+- `auth` → `token` populated, `user` with id
+- `sessions` → `activeSession` updates on session start; `null` on end
+- `analytics` → `dashboard` updates after `MetricsRecalculated`; `isRecalculating: true` during the job
 
-**Network — requisições a observar:**
+**Network — requests to watch:**
 
-| Ação do usuário | Requisição esperada | Resposta esperada |
+| User Action | Expected Request | Expected Response |
 |---|---|---|
 | Login | `POST /api/v1/auth/login` | `200 { data: { user, token } }` |
-| Registro | `POST /api/v1/auth/register` | `201 { data: { user, token } }` |
-| Iniciar sessão | `POST /api/v1/study-sessions/start` | `200 { data: StudySession }` |
-| Encerrar sessão | `PATCH /api/v1/study-sessions/:id/end` | `200 { data: StudySession }` |
+| Register | `POST /api/v1/auth/register` | `201 { data: { user, token } }` |
+| Start session | `POST /api/v1/study-sessions/start` | `200 { data: StudySession }` |
+| End session | `PATCH /api/v1/study-sessions/:id/end` | `200 { data: StudySession }` |
 | Dashboard | `GET /api/v1/analytics/dashboard` | `200 { data: DashboardData }` |
 
 **Checklist:**
-- [ ] Interceptor Axios injeta `Authorization: Bearer <token>` em todas as rotas protegidas
-- [ ] `401` redireciona para `/login` e limpa localStorage
-- [ ] `429` exibe toast de rate limit (não crash silencioso)
-- [ ] Store `analytics` não é sobrescrita por `refetchOnWindowFocus` do TanStack Query após atualização via WebSocket (verificar ordem dos handlers)
+- [ ] Axios interceptor injects `Authorization: Bearer <token>` on all protected routes
+- [ ] `401` redirects to `/login` and clears localStorage
+- [ ] `429` shows rate limit toast (not silent crash)
+- [ ] `analytics` store is not overwritten by TanStack Query's `refetchOnWindowFocus` after WebSocket update (check handler order)
 
 ---
 
-## Mapa Sintoma → Causa Raiz → Correção
+## Symptom → Root Cause → Fix Map
 
-| Sintoma | Causa mais provável | Como confirmar | Correção |
+| Symptom | Most Likely Cause | How to Confirm | Fix |
 |---|---|---|---|
-| `500` em qualquer endpoint | Redis sem senha / sem conexão | `docker compose exec redis redis-cli -a <senha> ping` | Alinhar `REDIS_PASSWORD` com `requirepass` em `redis.conf` |
-| `401` mesmo com token válido | Token expirado (1440 min) ou `EnsureJsonResponse` ausente | Checar `created_at` do token via `/auth/tokens` | Re-logar; confirmar middleware |
-| CORS bloqueado (`preflight` 403) | `CORS_ALLOWED_ORIGINS` vazio ou origin errada | `curl -X OPTIONS` com header `Origin` | Definir `CORS_ALLOWED_ORIGINS=http://localhost:5173` |
-| Métricas não atualizam ao encerrar sessão | Bug `array_keys()` em `DispatchMetricsRecalculation` | Ver jobs na fila `metrics`; checar `fullRecalc` | **Já corrigido**: usar `$event->changedFields` diretamente |
-| WebSocket não conecta | Porta 8080 não exposta / `VITE_REVERB_PORT` errado | `curl ws://localhost:8080/app/` | Usar porta `80` via nginx; `VITE_REVERB_PORT=80` |
-| Canal privado não autorizado (`403` no broadcasting/auth) | Token não enviado no header do Echo ou `authEndpoint` errado | Ver request `POST /api/broadcasting/auth` no Network | Confirmar `auth.headers.Authorization` no Echo config |
-| Dashboard "trava" ao deletar sessão (sem spinner) | `BroadcastMetricsRecalculating` ausente no `StudySessionDeleted` | Ver eventos no canal WS após delete | **Já corrigido**: listener adicionado ao `EventServiceProvider` |
-| Registro cria conta mas não loga | `authApi.register` não retornava token | Ver response de `POST /api/v1/auth/register` | **Já corrigido**: backend e frontend alinhados |
-| `wssPort: 443` em HTTP | Bug hardcoded nos dois branches do ternário | Inspecionar config do Echo no DevTools | **Já corrigido**: `wssPort` usa a porta configurada |
-| Jobs acumulados na fila `metrics` | Horizon parado ou Redis inacessível | `php artisan horizon:status` + `redis-cli ping` | Reiniciar Horizon; corrigir senha Redis |
-| `session_count` undefined em metas | Backend não retorna o campo em `/analytics/time-series` | Logar `d.session_count` em `useGoalProgress` | Incluir `session_count` na query do `AnalyticsRepository` |
+| `500` on any endpoint | Redis without password / no connection | `docker compose exec redis redis-cli -a <password> ping` | Align `REDIS_PASSWORD` with `requirepass` in `redis.conf` |
+| `401` even with valid token | Token expired (1440 min) or `EnsureJsonResponse` missing | Check token `created_at` via `/auth/tokens` | Re-login; confirm middleware |
+| CORS blocked (`preflight` 403) | `CORS_ALLOWED_ORIGINS` empty or wrong origin | `curl -X OPTIONS` with `Origin` header | Set `CORS_ALLOWED_ORIGINS=http://localhost:5173` |
+| Metrics don't update on session end | `array_keys()` bug in `DispatchMetricsRecalculation` | Check jobs in `metrics` queue; check `fullRecalc` | **Already fixed**: use `$event->changedFields` directly |
+| WebSocket won't connect | Port 8080 not exposed / `VITE_REVERB_PORT` wrong | `curl ws://localhost:8080/app/` | Use port `80` via nginx; `VITE_REVERB_PORT=80` |
+| Private channel unauthorized (`403` on broadcasting/auth) | Token not sent in Echo header or wrong `authEndpoint` | Check `POST /api/broadcasting/auth` request in Network | Confirm `auth.headers.Authorization` in Echo config |
+| Dashboard "freezes" on session delete (no spinner) | `BroadcastMetricsRecalculating` missing in `StudySessionDeleted` | Check events on WS channel after delete | **Already fixed**: listener added to `EventServiceProvider` |
+| Register creates account but doesn't log in | `authApi.register` didn't return token | Check `POST /api/v1/auth/register` response | **Already fixed**: backend and frontend aligned |
+| `wssPort: 443` on HTTP | Hardcoded bug in both ternary branches | Inspect Echo config in DevTools | **Already fixed**: `wssPort` uses the configured port |
+| Jobs accumulating in `metrics` queue | Horizon stopped or Redis unreachable | `php artisan horizon:status` + `redis-cli ping` | Restart Horizon; fix Redis password |
+| `session_count` undefined in goals | Backend doesn't return the field in `/analytics/time-series` | Log `d.session_count` in `useGoalProgress` | Include `session_count` in `AnalyticsRepository` query |
 
 ---
 
-## Comandos de Validação Ponta a Ponta (smoke test)
+## End-to-End Validation Commands (Smoke Test)
 
 ```bash
-# 1. Registrar usuário
+# 1. Register user
 RESP=$(curl -s -X POST http://localhost/api/v1/auth/register \
   -H "Content-Type: application/json" -H "Accept: application/json" \
   -d '{"name":"Debug","email":"debug@test.com","password":"password123","password_confirmation":"password123"}')
@@ -301,10 +301,10 @@ echo $RESP | jq .
 TOKEN=$(echo $RESP | jq -r '.data.token')
 USER_ID=$(echo $RESP | jq -r '.data.user.id')
 
-# 2. Buscar tecnologias
+# 2. Fetch technologies
 curl -s -H "Authorization: Bearer $TOKEN" http://localhost/api/v1/technologies | jq '.data[0]'
 
-# 3. Criar tecnologia
+# 3. Create technology
 TECH=$(curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name":"TypeScript","color":"#3178C6"}' \
@@ -312,7 +312,7 @@ TECH=$(curl -s -X POST -H "Authorization: Bearer $TOKEN" \
 TECH_ID=$(echo $TECH | jq -r '.data.id')
 echo "Tech ID: $TECH_ID"
 
-# 4. Iniciar sessão
+# 4. Start session
 SESSION=$(curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d "{\"technology_id\":\"$TECH_ID\"}" \
@@ -320,37 +320,37 @@ SESSION=$(curl -s -X POST -H "Authorization: Bearer $TOKEN" \
 SESSION_ID=$(echo $SESSION | jq -r '.data.id')
 echo "Session ID: $SESSION_ID"
 
-# 5. Encerrar sessão
+# 5. End session
 curl -s -X PATCH -H "Authorization: Bearer $TOKEN" \
   http://localhost/api/v1/study-sessions/$SESSION_ID/end | jq .
 
-# 6. Verificar dashboard (aguardar ~3s para o job processar)
+# 6. Check dashboard (wait ~3s for the job to process)
 sleep 3
 curl -s -H "Authorization: Bearer $TOKEN" \
   http://localhost/api/v1/analytics/dashboard | jq '.data.user_metrics'
 
-# 7. Verificar autorização do canal WebSocket
+# 7. Check WebSocket channel authorization
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d "{\"socket_id\":\"123.456\",\"channel_name\":\"private-dashboard.$USER_ID\"}" \
   http://localhost/api/broadcasting/auth | jq .
 ```
 
-**Resultado esperado no passo 6:** `today_minutes` > 0 e `today_sessions` = 1  
-**Resultado esperado no passo 7:** `{ "auth": "local-key:..." }` (não `403`)
+**Expected result at step 6:** `today_minutes` > 0 and `today_sessions` = 1
+**Expected result at step 7:** `{ "auth": "local-key:..." }` (not `403`)
 
 ---
 
-## Variáveis de Ambiente — Checklist de Alinhamento
+## Environment Variables — Alignment Checklist
 
-| Variável | `backend/.env` | `frontend/.env` | `docker-compose.yml` | Observação |
+| Variable | `backend/.env` | `frontend/.env` | `docker-compose.yml` | Notes |
 |---|---|---|---|---|
-| `REDIS_PASSWORD` | `<YOUR_REDIS_PASSWORD>` | — | — | Deve ser igual ao `requirepass` no `redis.conf` |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | — | — | Em produção: URL real do frontend |
-| `REVERB_APP_KEY` | `local-key` | — | — | Deve ser igual a `VITE_REVERB_APP_KEY` |
-| `VITE_REVERB_APP_KEY` | — | `local-key` | — | Deve ser igual a `REVERB_APP_KEY` |
-| `VITE_REVERB_HOST` | — | `localhost` | `localhost` | Em produção: domínio sem protocolo |
-| `VITE_REVERB_PORT` | — | `8080` (`.env.example`) | — | Com Docker atual, Reverb escuta **8080** na rede interna; Nginx expõe WebSocket em **`/app/`** na porta **80**. Se o browser não alcançar `localhost:8080`, use **`VITE_REVERB_PORT=80`** (e mesmo host que serve a API) — pode ser necessário configurar `wsPath` no Echo (não está em `useWebSocket.ts` por omissão; alinhar com a doc do Reverb se a conexão falhar). |
-| `VITE_REVERB_SCHEME` | — | `http` | `http` | Em produção: `https` / `wss` |
-| `VITE_API_URL` | — | `` (vazio = same-origin) | `` | Proxy Vite em dev; em prod costuma ser vazio ou URL pública da API |
-| `BROADCAST_CONNECTION` | `reverb` | — | — | Requer `REVERB_*` preenchidos no backend |
+| `REDIS_PASSWORD` | `<YOUR_REDIS_PASSWORD>` | — | — | Must match `requirepass` in `redis.conf` |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | — | — | In production: real frontend URL |
+| `REVERB_APP_KEY` | `local-key` | — | — | Must match `VITE_REVERB_APP_KEY` |
+| `VITE_REVERB_APP_KEY` | — | `local-key` | — | Must match `REVERB_APP_KEY` |
+| `VITE_REVERB_HOST` | — | `localhost` | `localhost` | In production: domain without protocol |
+| `VITE_REVERB_PORT` | — | `8080` (`.env.example`) | — | With current Docker, Reverb listens on **8080** on the internal network; Nginx exposes WebSocket on **`/app/`** port **80**. If the browser can't reach `localhost:8080`, use **`VITE_REVERB_PORT=80`** (same host as the API) — you may need to configure `wsPath` in Echo (not in `useWebSocket.ts` by default; align with Reverb docs if connection fails). |
+| `VITE_REVERB_SCHEME` | — | `http` | `http` | In production: `https` / `wss` |
+| `VITE_API_URL` | — | `` (empty = same-origin) | `` | Vite proxy in dev; in prod usually empty or public API URL |
+| `BROADCAST_CONNECTION` | `reverb` | — | — | Requires `REVERB_*` filled in backend |

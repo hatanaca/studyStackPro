@@ -1,25 +1,25 @@
 ---
 name: Feature request
-about: Sugira uma nova funcionalidade
+about: Suggest a new feature
 title: '[FEATURE] '
 labels: enhancement
 assignees: ''
 ---
 
-## Descrição
+## Description
 
-<!-- Descrição clara da funcionalidade desejada -->
+<!-- Clear description of the desired feature -->
 
-## Motivação
+## Motivation
 
-<!-- Por que essa funcionalidade seria útil? -->
+<!-- Why would this feature be useful? -->
 
-## Solução proposta
+## Proposed Solution
 
-<!-- Como você imagina que funcionaria? -->
+<!-- How do you imagine it would work? -->
 
-## Alternativas consideradas
+## Alternatives Considered
 
-<!-- Outras abordagens que você considerou -->
+<!-- Other approaches you considered -->
 
-## Informações adicionais
+## Additional Information

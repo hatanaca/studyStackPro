@@ -8,12 +8,22 @@
 #
 # PgAdmin (só desenvolvimento): imagem pinada em docker-compose.dev.yml → dpage/pgadmin4:9.14.0 (nunca :latest).
 
+# ========================
+# Default logging: rotation para todos os servicos
+# ========================
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   # ========================
   # NGINX - Reverse Proxy
   # ========================
   nginx:
     container_name: nginx
+    logging: *default-logging
     build: ./docker/nginx
     ports:
       - "8080:80"
@@ -54,7 +64,16 @@ services:
   # ========================
   php-fpm:
     container_name: php-fpm
+    logging: *default-logging
     build: ./docker/php
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
     volumes:
       - ./backend:/var/www/html
       - ./redis-scripts:/var/www/redis-scripts:ro
@@ -94,10 +113,20 @@ services:
   # ========================
   reverb:
     container_name: reverb
+    logging: *default-logging
     build:
       context: ./docker/php
       dockerfile: Dockerfile.cli
     command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+      - NET_BIND_SERVICE
     volumes:
       - ./backend:/var/www/html
       - ./redis-scripts:/var/www/redis-scripts:ro
@@ -132,10 +161,19 @@ services:
   # ========================
   horizon:
     container_name: horizon
+    logging: *default-logging
     build:
       context: ./docker/php
       dockerfile: Dockerfile.cli
     command: php artisan horizon
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
     volumes:
       - ./backend:/var/www/html
       - ./redis-scripts:/var/www/redis-scripts:ro
@@ -170,10 +208,19 @@ services:
   # ========================
   scheduler:
     container_name: scheduler
+    logging: *default-logging
     build:
       context: ./docker/php
       dockerfile: Dockerfile.cli
     command: php artisan schedule:work
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
     volumes:
       - ./backend:/var/www/html
       - ./redis-scripts:/var/www/redis-scripts:ro
@@ -192,10 +239,11 @@ services:
       - app
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "php artisan schedule:status 2>/dev/null || php -r \"echo 'ok';\""]
+      test: ["CMD-SHELL", "cat /proc/1/cmdline 2>/dev/null | grep -q schedule:work || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 10s
     deploy:
       resources:
         limits:
@@ -207,6 +255,7 @@ services:
   # ========================
   node:
     container_name: node
+    logging: *default-logging
     build:
       context: ./frontend
       dockerfile: ../docker/node/Dockerfile.frontend
@@ -243,18 +292,18 @@ services:
   # ========================
   postgres:
     container_name: postgres
+    logging: *default-logging
     build: ./docker/postgres
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
     environment:
       POSTGRES_DB: studytrack
       POSTGRES_USER: studytrack
       POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
       PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      # Host: PHPUnit e artisan no Windows/macOS/Linux usam 127.0.0.1 (phpunit.xml)
-      - "127.0.0.1:${POSTGRES_PUBLISH_PORT:-5432}:5432"
     volumes:
       - postgres_pllua_data:/var/lib/postgresql/data
       - ./docker/postgres/init:/docker-entrypoint-initdb.d
+      - ./docker/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
     networks:
       - app
     restart: unless-stopped
@@ -270,17 +319,51 @@ services:
           memory: 1G
 
   # ========================
+  # PG_BACKUP - PostgreSQL Backup (sidecar)
+  # ========================
+  pg-backup:
+    container_name: pg-backup
+    logging: *default-logging
+    image: postgres:16
+    profiles:
+      # Não sobe no `docker compose up` padrão; use `docker compose --profile backup up -d`
+      - backup
+    environment:
+      POSTGRES_DB: studytrack
+      POSTGRES_USER: studytrack
+      PGPASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
+      POSTGRES_HOST: postgres
+    volumes:
+      - ./docker/postgres/backup.sh:/usr/local/bin/backup.sh:ro
+      - pg_backup_data:/backups
+    entrypoint: |
+      sh -c "
+      echo '0 3 * * * /usr/local/bin/backup.sh /backups' > /etc/crontabs/root &&
+      crond -f -l 2
+      "
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+
+  # ========================
   # REDIS - Cache & Sessions
   # ========================
   redis:
     container_name: redis
-    # Tag oficial `alpine` = último Redis estável em Alpine (equiv. a “pull latest alpine”; evita redis:7-alpine com Go/openssl antigos).
+    logging: *default-logging
+    # Tag oficial `alpine` = último Redis estável em Alpine (equiv. a "pull latest alpine"; evita redis:7-alpine com Go/openssl antigos).
     image: redis:7.2-alpine
     entrypoint: ["sh", "/usr/local/bin/docker-entrypoint.sh"]
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}
-    ports:
-      - "127.0.0.1:${REDIS_PUBLISH_PORT:-6379}:6379"
     volumes:
       - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
       - ./docker/redis/docker-entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
@@ -318,6 +401,8 @@ volumes:
   redis_data:
     driver: local
   node_modules:
+    driver: local
+  pg_backup_data:
     driver: local
   # app_storage:  # Uncomment for persistent app storage
   #   driver: local

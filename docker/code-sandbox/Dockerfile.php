@@ -1,7 +1,7 @@
 FROM php:8.4-cli-alpine
 
-# Instalar extensões PHP
-RUN docker-php-ext-install pdo 2>/dev/null || true
+# Atualiza pacotes base Alpine para corrigir CVEs
+RUN apk upgrade --no-cache
 
 WORKDIR /sandbox
 

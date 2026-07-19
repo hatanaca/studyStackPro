@@ -10,19 +10,19 @@ export const useGoalsStore = defineStore('goals', () => {
   const activeGoals = computed(() => items.value.filter((g) => g.status === 'active'))
   const completedGoals = computed(() => items.value.filter((g) => g.status === 'completed'))
 
-  function fetchGoals() {
+  async function fetchGoals() {
     error.value = null
     try {
-      items.value = goalsApi.list()
+      items.value = await goalsApi.list()
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Erro ao carregar metas'
     }
   }
 
-  function createGoal(payload: CreateGoalPayload): Goal | null {
+  async function createGoal(payload: CreateGoalPayload): Promise<Goal | null> {
     error.value = null
     try {
-      const goal = goalsApi.create(payload)
+      const goal = await goalsApi.create(payload)
       items.value = [goal, ...items.value]
       return goal
     } catch (e) {
@@ -31,15 +31,17 @@ export const useGoalsStore = defineStore('goals', () => {
     }
   }
 
-  function updateGoal(
+  async function updateGoal(
     id: string,
     payload: { target_value?: number; status?: Goal['status']; end_date?: string | null }
-  ): Goal | null {
+  ): Promise<Goal | null> {
     error.value = null
     try {
-      const updated = goalsApi.update(id, payload)
+      const updated = await goalsApi.update(id, payload)
       const index = items.value.findIndex((g) => g.id === id)
-      if (index !== -1) items.value[index] = updated
+      if (index !== -1) {
+        items.value = [...items.value.slice(0, index), updated, ...items.value.slice(index + 1)]
+      }
       return updated
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Erro ao atualizar meta'
@@ -47,10 +49,10 @@ export const useGoalsStore = defineStore('goals', () => {
     }
   }
 
-  function deleteGoal(id: string): boolean {
+  async function deleteGoal(id: string): Promise<boolean> {
     error.value = null
     try {
-      goalsApi.delete(id)
+      await goalsApi.delete(id)
       items.value = items.value.filter((g) => g.id !== id)
       return true
     } catch (e) {
@@ -65,21 +67,9 @@ export const useGoalsStore = defineStore('goals', () => {
     return Math.min(100, Math.round((current / goal.target_value) * 100))
   }
 
-  /** Retorna a primeira meta ativa do tipo minutos por semana (para o widget do dashboard). */
   function getActiveWeeklyMinutesGoal(): Goal | null {
     return items.value.find((g) => g.status === 'active' && g.type === 'minutes_per_week') ?? null
   }
 
-  return {
-    items,
-    error,
-    activeGoals,
-    completedGoals,
-    fetchGoals,
-    createGoal,
-    updateGoal,
-    deleteGoal,
-    getProgress,
-    getActiveWeeklyMinutesGoal,
-  }
+  return { items, error, activeGoals, completedGoals, fetchGoals, createGoal, updateGoal, deleteGoal, getProgress, getActiveWeeklyMinutesGoal }
 })

@@ -75,7 +75,7 @@ class TechnologyService
     public function deactivate(string $id, string $userId): void
     {
         $tech = $this->repository->findForUser($id, $userId);
-        $tech->update(['is_active' => false]);
+        $tech->forceFill(['is_active' => false])->save();
         $this->repository->invalidateCacheForUser($userId);
     }
 }

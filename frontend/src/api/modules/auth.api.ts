@@ -26,6 +26,8 @@ export const authApi = {
     timezone?: string
   }) => apiClient.post<ApiResponse<{ user: User }>>(ENDPOINTS.auth.register, data),
   logout: () => apiClient.post(ENDPOINTS.auth.logout),
+  oauthComplete: (token: string) =>
+    apiClient.post<ApiResponse<{ user: User }>>(ENDPOINTS.auth.oauthComplete, { token }),
   me: () => apiClient.get<ApiResponse<User>>(ENDPOINTS.auth.me),
   updateProfile: (data: { name?: string; timezone?: string }) =>
     apiClient.put<ApiResponse<User>>(ENDPOINTS.auth.updateProfile, data),

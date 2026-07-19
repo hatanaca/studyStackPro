@@ -7,6 +7,7 @@ use App\Modules\Auth\DTOs\LoginDTO;
 use App\Modules\Auth\DTOs\RegisterDTO;
 use App\Modules\Auth\Repositories\Contracts\AuthRepositoryInterface;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -82,9 +83,10 @@ class AuthService
             return false;
         }
 
-        // Revogar antes de persistir a nova senha: o save() pode afetar relação/cache de tokens em memória.
-        $this->tokenService->revokeMany($user->tokens()->get());
+        return DB::transaction(function () use ($user, $newPassword) {
+            $this->tokenService->revokeMany($user->tokens()->get());
 
-        return $this->authRepository->updatePassword($user, Hash::make($newPassword));
+            return $this->authRepository->updatePassword($user, Hash::make($newPassword));
+        });
     }
 }

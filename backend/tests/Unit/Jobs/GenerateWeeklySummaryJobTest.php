@@ -27,12 +27,12 @@ class GenerateWeeklySummaryJobTest extends TestCase
 
     public function test_handle_executes_insert_on_conflict_query(): void
     {
-        DB::shouldReceive('statement')
+        DB::shouldReceive('table->where->pluck->unique')
             ->once()
-            ->withArgs(function (string $sql) {
-                return str_contains($sql, 'INSERT INTO analytics.weekly_summaries')
-                    && str_contains($sql, 'ON CONFLICT (user_id, week_start) DO UPDATE');
-            });
+            ->andReturn(collect([]));
+
+        DB::shouldReceive('statement')
+            ->never(); // sem dados, sem chunks
 
         $job = new GenerateWeeklySummaryJob;
         $job->handle();

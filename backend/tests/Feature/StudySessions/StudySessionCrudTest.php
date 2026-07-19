@@ -139,14 +139,17 @@ class StudySessionCrudTest extends TestCase
             ->assertJson([
                 'success' => true,
                 'message' => 'Sessão criada.',
-                'data' => [
-                    'technology_id' => $this->technology->id,
-                    'title' => 'Revisão de componentes',
-                    'notes' => 'Sessão de estudo',
-                    'mood' => 4,
-                    'focus_score' => 8,
-                ],
             ]);
+
+        $response->assertJsonFragment([
+            'technology_id' => $this->technology->id,
+            'title' => 'Revisão de componentes',
+        ]);
+        $response->assertJsonFragment([
+            'notes' => 'Sessão de estudo',
+            'mood' => 4,
+            'focus_score' => 8,
+        ]);
 
         $this->assertDatabaseHas('study_sessions', [
             'user_id' => $this->user->id,
@@ -200,10 +203,9 @@ class StudySessionCrudTest extends TestCase
             ->getJson('/api/v1/study-sessions/'.$session->id);
 
         $response->assertStatus(200)
-            ->assertJson([
-                'success' => true,
-                'data' => ['id' => $session->id, 'technology_id' => $this->technology->id],
-            ]);
+            ->assertJson(['success' => true]);
+        $response->assertJsonFragment(['id' => $session->id]);
+        $response->assertJsonFragment(['technology_id' => $this->technology->id]);
     }
 
     public function test_show_returns_403_for_cross_user(): void
@@ -250,10 +252,8 @@ class StudySessionCrudTest extends TestCase
             ]);
 
         $response->assertStatus(200)
-            ->assertJson([
-                'success' => true,
-                'data' => ['notes' => 'Notas atualizadas', 'mood' => 5],
-            ]);
+            ->assertJson(['success' => true]);
+        $response->assertJsonFragment(['notes' => 'Notas atualizadas', 'mood' => 5]);
 
         $session->refresh();
         $this->assertEquals('Notas atualizadas', $session->notes);

@@ -64,9 +64,15 @@ class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
             $aggregator->recalculateDailyMinutes($this->userId, $timezone);
         });
 
-        Cache::tags(['analytics', "analytics:user:{$this->userId}"])->flush();
-
-        event(new MetricsRecalculated($this->userId));
+        try {
+            Cache::tags(['analytics', "analytics:user:{$this->userId}"])->flush();
+            event(new MetricsRecalculated($this->userId));
+        } catch (\Throwable $e) {
+            Log::warning('Post-recalc cache flush or broadcast failed', [
+                'userId' => $this->userId,
+                'exception' => $e,
+            ]);
+        }
     }
 
     /** Callback de falha: log para debug */
@@ -75,7 +81,7 @@ class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
         Log::error('RecalculateMetricsJob failed', [
             'userId' => $this->userId,
             'attempt' => $this->attempts(),
-            'error' => $e->getMessage(),
+            'exception' => $e,
         ]);
     }
 }

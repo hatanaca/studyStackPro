@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
 /**
@@ -25,7 +26,8 @@ class HealthController extends Controller
         try {
             DB::connection()->getPdo();
             $services['database'] = 'ok';
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('Health check: database failed', ['exception' => $e]);
             $services['database'] = 'error';
             $healthy = false;
         }
@@ -33,7 +35,8 @@ class HealthController extends Controller
         try {
             Redis::ping();
             $services['redis'] = 'ok';
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('Health check: redis failed', ['exception' => $e]);
             $services['redis'] = 'error';
             $healthy = false;
         }
@@ -41,19 +44,24 @@ class HealthController extends Controller
         try {
             $queueConn = config('queue.default');
             $services['queue'] = $queueConn === 'redis' ? 'ok' : $queueConn;
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('Health check: queue failed', ['exception' => $e]);
             $services['queue'] = 'error';
+            $healthy = false;
         }
 
         $reverbHost = config('broadcasting.connections.reverb.options.host', 'localhost');
         $reverbPort = config('broadcasting.connections.reverb.options.port', 8080);
         try {
-            $socket = @fsockopen($reverbHost, (int) $reverbPort, $errno, $errstr, 2);
+            $hostStr = is_string($reverbHost) ? $reverbHost : 'localhost';
+            $portInt = (is_int($reverbPort) || is_string($reverbPort)) ? (int) $reverbPort : 8080;
+            $socket = @fsockopen($hostStr, $portInt, $errno, $errstr, 2);
             $services['websocket'] = $socket ? 'ok' : 'error';
             if ($socket) {
                 fclose($socket);
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('Health check: websocket failed', ['exception' => $e, 'host' => $reverbHost, 'port' => $reverbPort]);
             $services['websocket'] = 'error';
         }
 

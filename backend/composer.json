@@ -10,6 +10,7 @@
         "laravel/reverb": "^1.0",
         "laravel/tinker": "^2.10",
         "laravel/horizon": "^5.0",
+        "sentry/sentry-laravel": "*",
         "laravel/socialite": "*",
         "socialiteproviders/discord": "^4.2",
         "socialiteproviders/linkedin": "^5.0"
