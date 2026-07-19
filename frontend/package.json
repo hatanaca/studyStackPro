@@ -43,7 +43,7 @@
     "fabric": "^7.4.0",
     "fengari-web": "^0.1.4",
     "jspdf": "^4.2.1",
-    "laravel-echo": "^2.3.7",
+    "laravel-echo": "^2.4.0",
     "pinia": "^3.0.4",
     "primeicons": "^7.0.0",
     "primevue": "^4.5.5",
