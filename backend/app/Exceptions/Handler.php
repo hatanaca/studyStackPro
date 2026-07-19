@@ -10,7 +10,9 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Throwable;
 
@@ -85,6 +87,14 @@ class Handler extends ExceptionHandler
                     'success' => false,
                     'error' => ['code' => 'METHOD_NOT_ALLOWED', 'message' => 'Método não permitido.'],
                 ], 405),
+                $e instanceof NotFoundHttpException => response()->json([
+                    'success' => false,
+                    'error' => ['code' => 'NOT_FOUND', 'message' => 'Rota não encontrada.'],
+                ], 404),
+                $e instanceof HttpException => response()->json([
+                    'success' => false,
+                    'error' => ['code' => 'HTTP_ERROR', 'message' => $e->getMessage() ?: 'Erro HTTP.'],
+                ], $e->getStatusCode()),
                 default => response()->json([
                     'success' => false,
                     'error' => ['code' => 'INTERNAL_ERROR', 'message' => 'Erro interno.'],

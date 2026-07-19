@@ -375,7 +375,8 @@ services:
       test: ["CMD-SHELL", "redis-cli --no-auth-warning -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
       interval: 5s
       timeout: 3s
-      retries: 5
+      retries: 12
+      start_period: 30s
     deploy:
       resources:
         limits:

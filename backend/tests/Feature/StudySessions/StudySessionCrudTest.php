@@ -67,10 +67,12 @@ class StudySessionCrudTest extends TestCase
         StudySession::factory()->create([
             'user_id' => $this->user->id,
             'technology_id' => $this->technology->id,
+            'ended_at' => now(),
         ]);
         StudySession::factory()->create([
             'user_id' => $this->user->id,
             'technology_id' => $tech2->id,
+            'ended_at' => now(),
         ]);
 
         $response = $this->withHeader('Authorization', 'Bearer '.$this->token)

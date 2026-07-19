@@ -50,9 +50,9 @@ class LinkedInOAuthTest extends TestCase
         $response->assertStatus(302);
     }
 
-    public function test_invalid_provider_returns_400(): void
+    public function test_invalid_provider_returns_404(): void
     {
-        $response = $this->get('/api/v1/auth/invalid-provider');
+        $response = $this->getJson('/api/v1/auth/invalid-provider');
 
         $response->assertStatus(404);
     }

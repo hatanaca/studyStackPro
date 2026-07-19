@@ -20,6 +20,10 @@ chown -R www-data:www-data \
 # em logs rotacionados ou criados por processos diferentes (ex: scheduler, horizon)
 chmod -R 775 /var/www/html/storage
 
+# Setgid: arquivos criados dentro de storage/logs herdam o grupo do diretório pai
+# Isso evita conflitos entre containers php-fpm (Alpine) e CLI (Debian)
+chmod g+s /var/www/html/storage/logs 2>/dev/null || true
+
 # /tmp precisa ser gravável pelos workers www-data (Blade compiler usa tempnam)
 chmod 1777 /tmp
 
