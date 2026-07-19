@@ -64,7 +64,6 @@ prod-up:
 
 prod-down:
 	docker compose -f docker-compose.yml -f docker-compose.production.yml down
-
 # Rebuild das imagens de sandbox (code execution) com base layers atualizadas
 sandbox-rebuild:
 	docker compose -f docker/code-sandbox/docker-compose.sandbox.yml build --no-cache
@@ -112,3 +111,10 @@ logs-node:
 
 logs-worker:
 	docker compose logs -f horizon scheduler
+
+# Qualidade — pipeline completa (verificação + auto-fix + PR)
+quality:
+	bash monitoring/quality-pipeline.sh
+
+quality-check:
+	bash monitoring/quality-pipeline.sh --no-fix --no-ai

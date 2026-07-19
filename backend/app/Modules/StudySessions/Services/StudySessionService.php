@@ -86,6 +86,10 @@ class StudySessionService
      */
     public function start(User $user, ?string $technologyId): StudySession
     {
+        if ($this->getActiveForUser($user->id)) {
+            throw new ConcurrentSessionException('O usuário já possui uma sessão ativa.');
+        }
+
         $techId = $technologyId ?? $user->technologies()->first()?->id;
 
         $dto = new StudySessionDTO(

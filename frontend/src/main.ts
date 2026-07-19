@@ -11,7 +11,8 @@ import router from './router'
 import './assets/styles/main.css'
 import 'primeicons/primeicons.css'
 import 'viewerjs/dist/viewer.css'
-import VueViewer from 'v-viewer'
+import * as Sentry from "@sentry/vue"
+import VueViewer from "v-viewer"
 
 /**
  * Bootstrap da aplicação Vue.
@@ -62,6 +63,18 @@ app.use(PrimeVue, {
 })
 app.use(ConfirmationService)
 app.use(ToastService)
+Sentry.init({
+  app,
+  dsn: "https://1483657c8a75804566d8ef09f4130477@o4511751656308736.ingest.us.sentry.io/4511763052691456",
+  integrations: [
+    Sentry.browserTracingIntegration(),
+    Sentry.replayIntegration(),
+  ],
+  tracesSampleRate: 0.1,
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+})
+
 app.use(VueViewer, {
   defaultOptions: {
     zIndex: 12000,
