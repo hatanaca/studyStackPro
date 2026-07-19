@@ -1,18 +1,14 @@
 #!/usr/bin/env bash
 # =============================================================================
-# check-tests.sh — Suíte Completa de Testes
-#
-# Executa: 1. Backend tests (PHPUnit)  2. Frontend tests (Vitest)  3. Coverage
-#
-# Uso: ./check-tests.sh [--cron] [--json] [--skip-backend] [--skip-frontend] [--help]
+# check-tests.sh — Suíte Completa de Testes (modo check + fix)
 # =============================================================================
-
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"; PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$SCRIPT_DIR/sentry-lib.sh"
 BACKEND_DIR="$PROJECT_ROOT/backend"; FRONTEND_DIR="$PROJECT_ROOT/frontend"
 LOG_DIR="$SCRIPT_DIR/logs"; REPORT_DIR="$SCRIPT_DIR/reports"
 TIMESTAMP="$(date '+%Y-%m-%d_%H%M%S')"; REPORT_FILE="$REPORT_DIR/check-tests-$TIMESTAMP.md"
-CRON_MODE=false; JSON_MODE=false; SKIP_BACKEND=false; SKIP_FRONTEND=false
+CRON_MODE=false; JSON_MODE=false; SKIP_BACKEND=false; SKIP_FRONTEND=false; FIX_MODE=false
 mkdir -p "$LOG_DIR" "$REPORT_DIR"
 if [ -t 1 ]; then RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 else RED=''; GREEN=''; YELLOW=''; CYAN=''; NC=''; fi
@@ -24,10 +20,15 @@ docker_is_running() { docker info > /dev/null 2>&1; }
 service_is_up() { local s="$1"; docker compose -f "$PROJECT_ROOT/docker-compose.yml" ps --services --filter "status=running" 2>/dev/null | grep -q "$s"; }
 append_report() { echo "$1" >> "$REPORT_FILE"; }
 
-# ─── 1. Backend Tests ─────────────────────────────────────────────────────────
 run_backend_tests() {
     log_info "▶ Testes do Backend..."
     if $SKIP_BACKEND; then log_info "Pulado"; append_report "- **Backend**: ⏭️"; return 2; fi
+    if $FIX_MODE && docker_is_running; then
+        log_info "  → Setup pré-teste..."
+        docker compose -f "$PROJECT_ROOT/docker-compose.yml" exec -T postgres psql -U studytrack -d postgres -c "CREATE DATABASE studytrack_test OWNER studytrack;" 2>/dev/null || true
+        docker compose -f "$PROJECT_ROOT/docker-compose.yml" exec -T php-fpm mkdir -p bootstrap/cache storage/framework/views storage/framework/cache storage/framework/sessions storage/logs 2>/dev/null || true
+        docker compose -f "$PROJECT_ROOT/docker-compose.yml" exec -T php-fpm php artisan key:generate 2>/dev/null || true
+    fi
     if docker_is_running && service_is_up "php-fpm" && service_is_up "postgres" && service_is_up "redis"; then
         if docker compose -f "$PROJECT_ROOT/docker-compose.yml" exec -T php-fpm php artisan test --coverage 2>&1; then
             log_ok "Backend — passou"; append_report "- **Backend Tests**: ✅ OK"; return 0
@@ -40,7 +41,6 @@ run_backend_tests() {
     else log_warn "Backend indisponível"; append_report "- **Backend Tests**: ⏭️"; return 2; fi
 }
 
-# ─── 2. Frontend Tests ────────────────────────────────────────────────────────
 run_frontend_tests() {
     log_info "▶ Testes do Frontend..."
     if $SKIP_FRONTEND; then log_info "Pulado"; append_report "- **Frontend**: ⏭️"; return 2; fi
@@ -51,7 +51,6 @@ run_frontend_tests() {
     else log_warn "node_modules ausente"; append_report "- **Frontend Tests**: ⏭️"; return 2; fi
 }
 
-# ─── 3. Coverage ──────────────────────────────────────────────────────────────
 check_coverage() {
     log_info "▶ Cobertura..."; local found=false
     for cf in "$BACKEND_DIR/coverage.xml" "$FRONTEND_DIR/coverage/coverage-final.json"; do
@@ -60,7 +59,6 @@ check_coverage() {
     $found && return 0 || { log_info "Nenhum relatório"; append_report "- **Coverage**: ⚠️ Ausente"; return 1; }
 }
 
-# ─── Main ─────────────────────────────────────────────────────────────────────
 run_all() {
     echo ""; echo "╔══════════════════════════════════════════════════════╗"
     echo "║        Testes — $(date '+%Y-%m-%d %H:%M:%S')           ║"
@@ -74,5 +72,5 @@ run_all() {
     echo "╚══════════════════════════════════════════════════════╝"; echo "Relatório: $REPORT_FILE"; echo ""; return $f
 }
 
-while [[ $# -gt 0 ]]; do case "$1" in --cron) CRON_MODE=true ;; --json) JSON_MODE=true ;; --skip-backend) SKIP_BACKEND=true ;; --skip-frontend) SKIP_FRONTEND=true ;; --help|-h) echo "Uso: $0 [--cron] [--json] [--skip-backend] [--skip-frontend]"; exit 0 ;; *) echo "Arg desconhecido: $1"; exit 1 ;; esac; shift; done
+while [[ $# -gt 0 ]]; do case "$1" in --cron) CRON_MODE=true ;; --fix) FIX_MODE=true ;; --json) JSON_MODE=true ;; --skip-backend) SKIP_BACKEND=true ;; --skip-frontend) SKIP_FRONTEND=true ;; --help|-h) echo "Uso: \$0 [--cron] [--fix] [--json] [--skip-backend] [--skip-frontend]"; exit 0 ;; *) echo "Arg desconhecido: $1"; exit 1 ;; esac; shift; done
 if $CRON_MODE; then run_all > /dev/null 2>&1; exit $?; fi; run_all; exit $?

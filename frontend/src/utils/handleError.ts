@@ -1,8 +1,7 @@
+import * as Sentry from '@sentry/vue'
+
 /**
- * Callback para .catch() que loga o erro em vez de engoli-lo silenciosamente.
- *
- * Em produção, tenta capturar no Sentry (import dinâmico).
- * Em desenvolvimento, usa console.warn.
+ * Callback para .catch() que captura erros no Sentry.
  *
  * Uso:
  *   apiCall().catch(handleError('contexto'))
@@ -17,15 +16,8 @@ export function handleError(context: string): (error: unknown) => void {
       return
     }
 
-    // Produção: tenta capturar no Sentry sem quebrar se o chunk não carregar
-    import('@sentry/vue')
-      .then((Sentry) => {
-        Sentry.captureException(error instanceof Error ? error : new Error(String(error)), {
-          tags: { handled_error: context },
-        })
-      })
-      .catch(() => {
-        // fallback: console silencioso — não podemos fazer mais nada
-      })
+    Sentry.captureException(error instanceof Error ? error : new Error(String(error)), {
+      tags: { handled_error: context },
+    })
   }
 }
