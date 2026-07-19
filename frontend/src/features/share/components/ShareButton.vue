@@ -86,7 +86,7 @@ function handlePost() {
     :closable="!shareMutation.isPending.value"
   >
     <div class="linkedin-share">
-      <div class="linkedin-share__profile" v-if="linkedinStatus?.profile">
+      <div v-if="linkedinStatus?.profile" class="linkedin-share__profile">
         <span class="linkedin-share__profile-name">
           {{ linkedinStatus.profile.name }}
         </span>

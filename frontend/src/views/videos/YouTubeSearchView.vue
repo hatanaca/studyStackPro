@@ -290,11 +290,11 @@ onUnmounted(() => {
             <path d="M10 8.5v7l6-3.5-6-3.5z"/><circle cx="12" cy="12" r="10"/>
           </svg>
         </div>
-        <p class="yt-state__text" v-if="query.trim()">
+        <p v-if="query.trim()" class="yt-state__text">
           Nenhum vídeo encontrado para "{{ query }}".
         </p>
-        <p class="yt-state__sub" v-if="query.trim()">Tente outro termo de busca.</p>
-        <p class="yt-state__text" v-else>
+        <p v-if="query.trim()" class="yt-state__sub">Tente outro termo de busca.</p>
+        <p v-else class="yt-state__text">
           Pesquise por tutoriais e aulas para complementar seus estudos.
         </p>
       </div>

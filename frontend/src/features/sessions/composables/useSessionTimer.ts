@@ -3,8 +3,8 @@ import { sessionsApi } from '@/api/modules/sessions.api'
 import type { StudySession } from '@/types/domain.types'
 
 // Singleton compartilhado entre todos os consumidores
-let activeSession = ref<StudySession | null>(null)
-let elapsedSeconds = ref(0)
+const activeSession = ref<StudySession | null>(null)
+const elapsedSeconds = ref(0)
 let timerInterval: ReturnType<typeof setInterval> | null = null
 let consumerCount = 0
 

@@ -84,7 +84,7 @@ function handleDisconnect() {
   <div class="share-page">
     <!-- Loading state -->
     <div v-if="statusLoading" class="share-page__loading">
-      <Skeleton width="100%" height="12rem" borderRadius="var(--radius-lg)" />
+      <Skeleton width="100%" height="12rem" border-radius="var(--radius-lg)" />
     </div>
 
     <!-- Not connected -->

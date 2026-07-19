@@ -17,7 +17,7 @@ const seekPercent = ref(-1)
 const isSeeking = ref(false)
 const isMobile = ref(window.innerWidth <= 768)
 const searchResultsRef = ref<HTMLElement | null>(null)
-void searchResultsRef // template ref
+void searchResultsRef.value // template ref
 
 const playlistTitle = computed(() => player.selectedPlaylist?.snippet?.title ?? 'Selecionar playlist')
 

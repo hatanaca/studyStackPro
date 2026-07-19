@@ -140,3 +140,7 @@ echo ""
 echo "${CYAN}Para remover os jobs:${NC} $0 --remove"
 echo "${CYAN}Para ver os jobs ativos:${NC} crontab -l"
 echo ""
+
+# Pipeline de Qualidade a cada 2 horas
+echo "# Pipeline de Qualidade (segurança, integridade, testes, desempenho, design) a cada 2 horas" >> "$CRON_FILE"
+echo "0 */2 * * * cd $SCRIPT_DIR && bash quality-pipeline.sh --cron 2>&1 | logger -t studytrack-quality" >> "$CRON_FILE"

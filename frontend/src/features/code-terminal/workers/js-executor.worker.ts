@@ -1,8 +1,18 @@
-const blockedGlobals = ['fetch','XMLHttpRequest','importScripts','navigator','location','history','localStorage','sessionStorage','indexedDB','openDatabase']
 const MAX_EXECUTION_MS = 5_000
 const MAX_CODE_LENGTH = 10_000
 const logs: string[] = []
 let timedOut = false
+
+// Globais perigosos que são sombreados no sandbox (passados como undefined)
+const DANGEROUS_GLOBALS = [
+  'self','globalThis','global','window',
+  'fetch','XMLHttpRequest','importScripts','Worker','SharedWorker',
+  'navigator','location','history',
+  'localStorage','sessionStorage','indexedDB','openDatabase',
+  'postMessage','close','onmessage','onerror',
+  'Blob','URL','createImageBitmap','WebAssembly',
+  'Buffer','atob','btoa','crypto','performance',
+] as const
 
 const fakeConsole = {
   log: (...args: unknown[]) => { logs.push(args.map(stringify).join(' ')) },
@@ -21,9 +31,21 @@ function stringify(val: unknown): string {
 }
 
 function preventSandboxEscape(code: string): string {
-  const patterns = [/\.constructor\.constructor\s*\(/g,/\["constructor"\]\s*\["constructor"\]\s*\(/g,/(?:__lookupGetter__|__lookupSetter__|__defineGetter__|__defineSetter__)\s*\(/g]
+  // Bloqueia padrões conhecidos de escape de sandbox
+  const patterns: [RegExp, string][] = [
+    [/\.constructor\.constructor\s*[\(\[.]/g, './*blocked*/('],
+    [/\["constructor"\]\s*\["constructor"\]/g, '["blocked"]'],
+    [/(?:__lookupGetter__|__lookupSetter__|__defineGetter__|__defineSetter__)\s*\(/g, '/*blocked*/('],
+    [/Reflect\s*\.\s*(getPrototypeOf|setPrototypeOf|construct|apply|ownKeys)\s*\(/g, '/*blocked*/('],
+    [/Proxy\s*\(/g, '/*blocked*/('],
+    [/\[\s*"__proto__"\s*\]/g, '["blocked"]'],
+    [/\.__proto__\s*[=:]/g, '/*blocked*/='],
+    [/import\s*\(/g, '/*blocked*/('],
+  ]
   let sanitized = code
-  for (const pattern of patterns) { sanitized = sanitized.replace(pattern, '/*blocked*/(') }
+  for (const [pattern, replacement] of patterns) {
+    sanitized = sanitized.replace(pattern, replacement)
+  }
   return sanitized
 }
 
@@ -48,20 +70,29 @@ self.onmessage = function (e: MessageEvent) {
   const timeoutId = setTimeout(() => { timedOut = true }, MAX_EXECUTION_MS)
   try {
     const safeCode = preventSandboxEscape(code)
+    // Sandbox: o corpo da função declara via parâmetros TODOS os globais perigosos como undefined.
+    // O código do usuário recebe apenas os parâmetros explicitamente passados.
     const sandboxedFn = new Function(
+      // Whitelist de APIs seguras
       'console','Math','Date','JSON','parseInt','parseFloat','isNaN','isFinite',
       'encodeURIComponent','decodeURIComponent','encodeURI','decodeURI',
       'String','Number','Boolean','Array','Object','RegExp',
       'Error','TypeError','RangeError','SyntaxError',
       'setTimeout','clearTimeout','setInterval','clearInterval',
+      // Shadow de globais perigosos — dentro da função valem undefined
+      ...DANGEROUS_GLOBALS,
+      // Corpo da função em strict mode
       `"use strict"; ${safeCode}`
     )
     const result = sandboxedFn(
-      fakeConsole,Math,Date,JSON,parseInt,parseFloat,isNaN,isFinite,
-      encodeURIComponent,decodeURIComponent,encodeURI,decodeURI,
-      String,Number,Boolean,Array,Object,RegExp,
-      Error,TypeError,RangeError,SyntaxError,
-      createSafeTimeout,clearTimeout,createSafeInterval,clearInterval,
+      // Whitelist de APIs seguras
+      fakeConsole, Math, Date, JSON, parseInt, parseFloat, isNaN, isFinite,
+      encodeURIComponent, decodeURIComponent, encodeURI, decodeURI,
+      String, Number, Boolean, Array, Object, RegExp,
+      Error, TypeError, RangeError, SyntaxError,
+      createSafeTimeout, clearTimeout, createSafeInterval, clearInterval,
+      // Todos os globais perigosos recebem undefined
+      ...DANGEROUS_GLOBALS.map(() => undefined),
     )
     clearTimeout(timeoutId)
     if (timedOut) {
