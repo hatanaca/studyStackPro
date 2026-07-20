@@ -64,7 +64,7 @@ class RecalculateMetricsJob implements ShouldBeUnique, ShouldQueue
         });
 
         try {
-            Cache::tags(['analytics', "analytics:user:{$this->userId}"])->flush();
+            Cache::tags(["analytics:user:{$this->userId}"])->flush();
             event(new MetricsRecalculated($this->userId));
         } catch (\Throwable $e) {
             Log::warning('Post-recalc cache flush or broadcast failed', [

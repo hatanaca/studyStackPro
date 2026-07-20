@@ -15,6 +15,8 @@ import {
   prefetchSessionsView,
   prefetchSettingsView,
   prefetchTechnologiesView,
+  prefetchGraficosView,
+  prefetchCanvasView,
 } from '@/router/prefetch'
 
 /** Referências explícitas para o vue-tsc reconhecer uso (handlers no template). */
@@ -23,7 +25,8 @@ const prefetch = {
   settings: prefetchSettingsView,
 }
 import { useAuthStore } from '@/stores/auth.store'
-import { useUiStore } from '@/stores/ui.store'
+import { formatHours } from '@/utils/formatters'
+import { useUiStore} from '@/stores/ui.store'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 import RealtimeBadge from '@/features/dashboard/components/RealtimeBadge.vue'
 import { disconnectWebSocket } from '@/composables/useWebSocket'
@@ -61,13 +64,6 @@ const showCollapsedProfileShortcut = computed(
     !uiStore.mobileSidebarOpen &&
     isDesktopLayout.value
 )
-
-function formatHours(h: number): string {
-  if (h <= 0) return '0h'
-  const int = Math.floor(h)
-  const m = Math.round((h - int) * 60)
-  return m === 0 ? `${int}h` : `${int}h ${m}min`
-}
 
 const sidebarSummary = computed(() => {
   const m = analyticsStore.userMetrics
@@ -327,6 +323,7 @@ function handleLogout() {
         :class="{ active: route.path.startsWith('/canvas') }"
         title="Canvas"
         aria-label="Ir para Canvas"
+        @mouseenter="prefetchCanvasView"
       >
         <span class="app-sidebar__icon" aria-hidden="true">
           <svg
@@ -357,6 +354,7 @@ function handleLogout() {
         :class="{ active: route.path.startsWith('/graficos') }"
         title="Gráficos"
         aria-label="Ir para Gráficos"
+        @mouseenter="prefetchGraficosView"
       >
         <span class="app-sidebar__icon" aria-hidden="true">
           <svg

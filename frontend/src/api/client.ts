@@ -12,9 +12,6 @@ const apiClient = axios.create({
 })
 
 apiClient.interceptors.request.use((config) => {
-  if (config.method === 'get') {
-    config.params = { ...config.params, _t: Date.now() }
-  }
   const token = getStoredToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
@@ -116,3 +113,15 @@ export function getApiErrorMessageExport(error: unknown): string {
 }
 
 export { apiClient, getApiErrorMessage }
+
+/**
+ * Unwraps an Axios response with ApiResponse<T> envelope.
+ * Returns the inner data directly, throwing on error responses.
+ */
+export async function unwrap<T>(promise: Promise<{ data: { success: boolean; data: T; message?: string } }>): Promise<T> {
+  const { data } = await promise
+  if (!data.success) {
+    throw new Error(data.message || 'Erro na comunicação com o servidor.')
+  }
+  return data.data
+}

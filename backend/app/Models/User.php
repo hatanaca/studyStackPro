@@ -20,8 +20,6 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password', 'timezone', 'locale', 'avatar_url',
-        'linkedin_id',
-        'linkedin_token', 'linkedin_refresh_token', 'linkedin_token_expires_at',
     ];
 
     protected $hidden = [

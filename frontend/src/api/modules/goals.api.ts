@@ -1,70 +1,26 @@
 /**
  * API de metas (goals).
- * Goals é apenas frontend: persistência em localStorage. Não há endpoints no backend.
- * Ver docs/GOALS-FRONTEND-ONLY.md.
+ * CRUD completo via backend Laravel.
  */
 
+import { apiClient, unwrap } from '@/api/client'
+import { ENDPOINTS } from '@/api/endpoints'
 import type { Goal, CreateGoalPayload, UpdateGoalPayload } from '@/types/goals.types'
 
-const STORAGE_KEY = 'studytrack.goals'
-
-function getStoredGoals(): Goal[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return []
-    return JSON.parse(raw) as Goal[]
-  } catch {
-    return []
-  }
-}
-
-function setStoredGoals(goals: Goal[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(goals))
-  } catch {
-    // ignore
-  }
-}
-
 export const goalsApi = {
-  list(): Goal[] {
-    return getStoredGoals()
+  async list(): Promise<Goal[]> {
+    return unwrap(apiClient.get(ENDPOINTS.goals.list))
   },
 
-  create(payload: CreateGoalPayload): Goal {
-    const list = getStoredGoals()
-    const id = `goal_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
-    const now = new Date().toISOString()
-    const goal: Goal = {
-      id,
-      user_id: '',
-      type: payload.type,
-      target_value: payload.target_value,
-      current_value: 0,
-      status: 'active',
-      start_date: payload.start_date,
-      end_date: payload.end_date ?? null,
-      created_at: now,
-      updated_at: now,
-      meta: payload.meta ?? {},
-    }
-    list.push(goal)
-    setStoredGoals(list)
-    return goal
+  async create(payload: CreateGoalPayload): Promise<Goal> {
+    return unwrap(apiClient.post(ENDPOINTS.goals.list, payload))
   },
 
-  update(id: string, payload: UpdateGoalPayload): Goal {
-    const list = getStoredGoals()
-    const index = list.findIndex((g) => g.id === id)
-    if (index === -1) throw new Error('Meta não encontrada')
-    const updated = { ...list[index], ...payload, updated_at: new Date().toISOString() }
-    list[index] = updated
-    setStoredGoals(list)
-    return updated
+  async update(id: string, payload: UpdateGoalPayload): Promise<Goal> {
+    return unwrap(apiClient.put(ENDPOINTS.goals.one(id), payload))
   },
 
-  delete(id: string): void {
-    const list = getStoredGoals().filter((g) => g.id !== id)
-    setStoredGoals(list)
+  async delete(id: string): Promise<void> {
+    await apiClient.delete(ENDPOINTS.goals.one(id))
   },
 }

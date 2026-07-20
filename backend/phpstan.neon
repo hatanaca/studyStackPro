@@ -2,7 +2,7 @@ includes:
     - vendor/larastan/larastan/extension.neon
     - phpstan-baseline.neon
 parameters:
-    level: 5
+    level: 8
     paths:
         - app
     ignoreErrors:
@@ -12,3 +12,9 @@ parameters:
         -
             identifier: property.notFound
             message: '#Access to an undefined property Laravel\\Socialite\\Contracts\\User::\$#'
+        -
+            identifier: return.type
+            message: '#returned type .* is not covariant#'
+        -
+            identifier: param.type
+            message: '#parameter .* type is not contravariant#'

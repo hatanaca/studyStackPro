@@ -6,6 +6,7 @@ function sanitize(raw: string): string {
 }
 </script>
 <template>
+  <!-- eslint-disable-next-line vue/no-v-html -->
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"

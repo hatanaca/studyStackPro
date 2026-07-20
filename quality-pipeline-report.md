@@ -1,0 +1,100 @@
+# Pipeline de Qualidade — 2026-07-19 14:43:47
+## Resultados
+
+- **Evolução**: ❌ Falhou
+  (mas 10 correção(ões) foram aplicadas)
+- **Segurança**: ❌ Falhou
+- **Integridade**: ❌ Falhou
+  (mas 1 correção(ões) foram aplicadas)
+- **Testes**: ❌ Falhou
+- **Desempenho**: ✅ Passou
+- **Sentry**: ✅ Passou
+- **Design**: ✅ OK + 4 auto-fix(es)
+
+**Resumo**: ❌ 4 de 7 checks falharam
+## Melhorias Commitadas
+-  backend/app/Http/Controllers/V1/AuthController.php |    6 +-
+-  .../app/Http/Controllers/V1/OAuthController.php    |    9 +-
+-  backend/app/Modules/Auth/Services/TokenService.php |   14 +
+-  backend/composer.lock                              |  221 ++--
+-  frontend/package-lock.json                         | 1082 ++++++++--------
+-  frontend/src/App.vue                               |    9 +-
+-  .../code-terminal/code-terminal.store.spec.ts      |   16 +-
+-  .../code-terminal/useLanguageDetection.spec.ts     |   10 +-
+-  frontend/src/api/client.ts                         |   43 +-
+-  frontend/src/api/modules/code-execution.api.ts     |    8 +-
+-  frontend/src/api/modules/linkedin.api.ts           |   12 +-
+-  frontend/src/api/modules/youtube.api.ts            |    3 +-
+-  frontend/src/components/charts/FunnelChart.vue     |   14 +-
+-  frontend/src/components/charts/HeatmapChart.vue    |    4 +-
+-  frontend/src/components/charts/PieChart.vue        |    2 +-
+-  frontend/src/components/charts/SparklineChart.vue  |   10 +-
+-  frontend/src/components/charts/TreemapChart.vue    |    8 +-
+-  frontend/src/components/layout/AppSidebar.vue      |  112 +-
+-  frontend/src/components/player/AudioVisualizer.vue |   16 +-
+-  frontend/src/components/player/MiniPlayer.vue      | 1357 +++++++++++++++++---
+-  frontend/src/components/player/YouTubeFrame.vue    |  107 +-
+-  frontend/src/components/ui/CardSkeleton.vue        |   29 +-
+-  frontend/src/components/ui/SafeSvg.vue             |   13 +-
+-  frontend/src/components/ui/StackSkeleton.vue       |   25 +-
+-  .../src/composables/__tests__/useClipboard.spec.ts |    3 +-
+-  frontend/src/composables/useWebSocket.ts           |  235 ++--
+-  frontend/src/composables/useYouTubeSearch.ts       |   66 -
+-  .../features/canvas/components/CanvasEditor.vue    |  364 +++++-
+-  .../features/canvas/components/CanvasSidebar.vue   |   98 +-
+-  .../features/canvas/components/CanvasToolbar.vue   |   70 +-
+-  .../features/canvas/components/ExportDialog.vue    |   13 +-
+-  .../features/canvas/composables/canvasInstance.ts  |    8 +-
+-  .../src/features/canvas/composables/useCanvas.ts   |  383 ++++--
+-  frontend/src/features/canvas/types/canvas.types.ts |   15 +-
+-  .../code-terminal/components/CodeEditor.vue        |   65 +-
+-  .../code-terminal/components/CodeTerminal.vue      |   21 +-
+-  .../code-terminal/components/LanguageSelector.vue  |    6 +-
+-  .../code-terminal/components/TerminalOutput.vue    |   32 +-
+-  .../code-terminal/composables/useCodeExecution.ts  |   18 +-
+-  .../composables/useLanguageDetection.ts            |   18 +-
+-  .../code-terminal/types/code-terminal.types.ts     |    9 +-
+-  .../features/code-terminal/utils/sandbox-html.ts   |    4 +-
+-  .../code-terminal/workers/js-executor.worker.ts    |  176 ++-
+-  .../graficos/composables/useChartExport.ts         |   26 +-
+-  .../features/graficos/composables/useGraficos.ts   |   52 +-
+-  .../sessions/components/LogSessionWidget.vue       |    4 +-
+-  .../sessions/components/SessionDeleteConfirm.vue   |    4 +-
+-  .../sessions/components/SessionEditForm.vue        |   13 +-
+-  .../composables/__tests__/useSessionTimer.spec.ts  |    8 +-
+-  .../technologies/components/TechnologyCard.vue     |    5 +-
+-  .../technologies/components/TechnologyList.vue     |    7 +-
+-  frontend/src/main.ts                               |   63 +-
+-  frontend/src/stores/__tests__/player.store.spec.ts |    5 +-
+-  .../src/stores/__tests__/youtube.store.spec.ts     |    9 +-
+-  frontend/src/stores/auth.store.ts                  |  120 +-
+-  frontend/src/stores/goals.store.ts                 |   13 +-
+-  frontend/src/stores/notifications.store.ts         |    2 +-
+-  frontend/src/stores/player.store.ts                |  272 +++-
+-  frontend/src/stores/youtube.store.ts               |    6 +-
+-  frontend/src/types/fengari-web.d.ts                |    8 +-
+-  frontend/src/utils/__tests__/color.spec.ts         |    9 +-
+-  frontend/src/utils/formatters.ts                   |   23 +
+-  frontend/src/views/Dashboard/DashboardView.vue     |    4 +-
+-  frontend/src/views/auth/AuthCallbackView.vue       |   10 +-
+-  frontend/src/views/auth/LoginView.vue              |   40 +-
+-  frontend/src/views/export/ExportView.vue           |  140 +-
+-  frontend/src/views/graficos/GraficosView.vue       |  255 ++--
+-  .../src/views/graficos/components/ChartPanel.vue   |    9 +-
+-  .../src/views/graficos/components/FunnelPanel.vue  |    5 +-
+-  .../views/graficos/components/GraficosToolbar.vue  |    5 +-
+-  .../src/views/graficos/components/HeatmapPanel.vue |    6 +-
+-  .../src/views/graficos/components/KpiStrip.vue     |    8 +-
+-  .../src/views/graficos/components/RadarPanel.vue   |    6 +-
+-  .../graficos/components/TechDistributionPanel.vue  |   14 +-
+-  .../views/graficos/components/TimeSeriesPanel.vue  |    7 +-
+-  .../graficos/components/TrendComparisonPanel.vue   |    8 +-
+-  .../views/graficos/components/WeeklyBarPanel.vue   |    2 +-
+-  .../src/views/profile/components/PasswordTab.vue   |   19 +-
+-  .../src/views/profile/components/SessionsTab.vue   |    4 +-
+-  frontend/src/views/reports/ReportsView.vue         |  104 +-
+-  frontend/src/views/share/ShareView.vue             |  132 +-
+-  frontend/src/views/videos/YouTubeSearchView.vue    |   31 +-
+-  frontend/vite.config.js                            |    2 +-
+-  monitoring/reports/pipeline-summary-latest.md      |   17 +-
+-  84 files changed, 4264 insertions(+), 1947 deletions(-)

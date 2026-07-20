@@ -16,11 +16,18 @@ use Symfony\Component\Process\Process;
  */
 class DockerSandboxService
 {
-    private const TIMEOUT = 10; // segundos
+    private int $timeout;
 
-    private const MEMORY_LIMIT = '128m';
+    private string $memoryLimit;
 
-    private const MAX_CODE_LENGTH = 10000;
+    private int $maxCodeLength;
+
+    public function __construct()
+    {
+        $this->timeout = config('code_execution.timeout', 10);
+        $this->memoryLimit = config('code_execution.memory_limit', '128m');
+        $this->maxCodeLength = config('code_execution.max_code_length', 10000);
+    }
 
     /**
      * Executa código em container Docker isolado.
@@ -31,11 +38,11 @@ class DockerSandboxService
     {
         $startTime = microtime(true);
 
-        if (strlen($code) > self::MAX_CODE_LENGTH) {
+        if (strlen($code) > $this->maxCodeLength) {
             return [
                 'success' => false,
                 'output' => '',
-                'error' => 'Código excede o limite de '.self::MAX_CODE_LENGTH.' caracteres.',
+                'error' => 'Código excede o limite de '.$this->maxCodeLength.' caracteres.',
                 'executionTime' => 0,
             ];
         }
@@ -99,12 +106,12 @@ class DockerSandboxService
         try {
             $process = Process::fromShellCommandline(sprintf(
                 'docker run --rm --network none --memory=%s --cpus=0.5 --read-only --pids-limit 50 --user nobody --security-opt no-new-privileges --tmpfs /tmp:size=10m -v %s:/tmp/code.php:ro %s php /tmp/code.php',
-                self::MEMORY_LIMIT,
+                $this->memoryLimit,
                 escapeshellarg($tmpFile),
                 $image
             ));
 
-            $process->setTimeout(self::TIMEOUT);
+            $process->setTimeout($this->timeout);
             $process->run();
 
             return $this->parseProcessOutput($process);
@@ -124,11 +131,11 @@ class DockerSandboxService
         try {
             $process = Process::fromShellCommandline(sprintf(
                 'docker run --rm --network none --memory=%s --cpus=0.5 --read-only --pids-limit 50 --user nobody --security-opt no-new-privileges --tmpfs /tmp:size=10m -v %s:/tmp/query.sql:ro code-sandbox-sql sqlite3 :memory: < /tmp/query.sql',
-                self::MEMORY_LIMIT,
+                $this->memoryLimit,
                 escapeshellarg($tmpFile)
             ));
 
-            $process->setTimeout(self::TIMEOUT);
+            $process->setTimeout($this->timeout);
             $process->run();
 
             return $this->parseProcessOutput($process);
@@ -150,7 +157,7 @@ class DockerSandboxService
             return [
                 'success' => false,
                 'output' => '',
-                'error' => 'Execução interrompida: timeout de '.self::TIMEOUT.'s excedido.',
+                'error' => 'Execução interrompida: timeout de '.$this->timeout.'s excedido.',
             ];
         }
 

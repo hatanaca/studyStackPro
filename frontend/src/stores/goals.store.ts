@@ -6,16 +6,20 @@ import { goalsApi } from '@/api/modules/goals.api'
 export const useGoalsStore = defineStore('goals', () => {
   const items = ref<Goal[]>([])
   const error = ref<string | null>(null)
+  const loading = ref(false)
 
   const activeGoals = computed(() => items.value.filter((g) => g.status === 'active'))
   const completedGoals = computed(() => items.value.filter((g) => g.status === 'completed'))
 
   async function fetchGoals() {
+    loading.value = true
     error.value = null
     try {
       items.value = await goalsApi.list()
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Erro ao carregar metas'
+    } finally {
+      loading.value = false
     }
   }
 
@@ -52,7 +56,7 @@ export const useGoalsStore = defineStore('goals', () => {
   async function deleteGoal(id: string): Promise<boolean> {
     error.value = null
     try {
-      goalsApi.delete(id)
+      await goalsApi.delete(id)
       items.value = items.value.filter((g) => g.id !== id)
       return true
     } catch (e) {
@@ -74,6 +78,7 @@ export const useGoalsStore = defineStore('goals', () => {
   return {
     items,
     error,
+    loading,
     activeGoals,
     completedGoals,
     fetchGoals,

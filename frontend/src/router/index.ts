@@ -44,6 +44,10 @@ const router = createRouter({
         ...terminalRoutes,
         ...settingsRoutes,
         ...legacySettingsRedirects,
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/',
+    },
         ...profileRoutes,
       ],
     },

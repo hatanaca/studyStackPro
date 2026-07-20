@@ -69,7 +69,7 @@ function stringify(val: unknown): string {
 function preventSandboxEscape(code: string): string {
   // Bloqueia padrões conhecidos de escape de sandbox
   const patterns: [RegExp, string][] = [
-    [/\.constructor\.constructor\s*[\(\[.]/g, './*blocked*/('],
+    [/\.constructor\.constructor\s*[([.]/g, './*blocked*/('],
     [/\["constructor"\]\s*\["constructor"\]/g, '["blocked"]'],
     [
       /(?:__lookupGetter__|__lookupSetter__|__defineGetter__|__defineSetter__)\s*\(/g,
@@ -91,13 +91,13 @@ function preventSandboxEscape(code: string): string {
   return sanitized
 }
 
-function createSafeTimeout(fn: Function, _ms: number): number {
+function createSafeTimeout(fn: (...args: unknown[]) => unknown, _ms: number): number {
   if (timedOut) return 0
   return setTimeout(() => {
     if (!timedOut) fn()
   }, _ms) as unknown as number
 }
-function createSafeInterval(fn: Function, _ms: number): number {
+function createSafeInterval(fn: (...args: unknown[]) => unknown, _ms: number): number {
   if (timedOut) return 0
   return setInterval(() => {
     if (!timedOut) fn()

@@ -18,7 +18,7 @@ onMounted(() => {
   const errorParam = route.query.error
   if (errorParam === 'oauth_failed') {
     oauthError.value =
-      'Falha na autenticação com o Google. Verifique se o redirect URI "http://177-112-223-72.nip.io:5173/api/v1/auth/google/callback" está cadastrado no Google Cloud Console em "APIs e Serviços > Credenciais > App OAuth 2.0".'
+      'Falha na autenticação com o Google. Verifique se o redirect URI está cadastrado no Google Cloud Console em "APIs e Serviços > Credenciais > App OAuth 2.0".'
   }
 })
 
@@ -64,7 +64,7 @@ async function onSubmit(payload: { email: string; password: string }) {
     </div>
 
     <div class="oauth-buttons">
-      <button type="button" class="oauth-btn oauth-btn--google" @click="loginWith('google')">
+      <button type="button" class="oauth-btn oauth-btn--google" aria-label="Entrar com Google" @click="loginWith('google')">
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
           <path
             fill="#4285F4"
@@ -85,7 +85,7 @@ async function onSubmit(payload: { email: string; password: string }) {
         </svg>
         Google
       </button>
-      <button type="button" class="oauth-btn oauth-btn--discord" @click="loginWith('discord')">
+      <button type="button" class="oauth-btn oauth-btn--discord" aria-label="Entrar com Discord" @click="loginWith('discord')">
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
           <path
             fill="#5865F2"

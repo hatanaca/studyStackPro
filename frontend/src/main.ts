@@ -63,14 +63,17 @@ app.use(PrimeVue, {
 })
 app.use(ConfirmationService)
 app.use(ToastService)
-Sentry.init({
-  app,
-  dsn: 'https://1483657c8a75804566d8ef09f4130477@o4511751656308736.ingest.us.sentry.io/4511763052691456',
-  integrations: [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
-  tracesSampleRate: 0.1,
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1.0,
-})
+if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
+  Sentry.init({
+    app,
+    dsn: import.meta.env.VITE_SENTRY_DSN,
+    integrations: [Sentry.browserTracingIntegration({ router }), Sentry.replayIntegration()],
+    tracesSampleRate: 0.1,
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+    environment: import.meta.env.MODE,
+  })
+}
 
 app.use(VueViewer, {
   defaultOptions: {
@@ -78,33 +81,12 @@ app.use(VueViewer, {
   },
 })
 
-// Sentry: production error tracking (free tier: 5K errors/month)
-if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
-  import('@sentry/vue')
-    .then((Sentry) => {
-      Sentry.init({
-        app,
-        dsn: import.meta.env.VITE_SENTRY_DSN,
-        integrations: [Sentry.browserTracingIntegration({ router })],
-        tracesSampleRate: 0.1,
-        environment: import.meta.env.MODE,
-      })
-    })
-    .catch(() => {
-      /* chunk fail — Sentry indisponível */
-    })
-}
-
 // Global error handler: Sentry in production, console in development
 app.config.errorHandler = (err, _instance, info) => {
   if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
-    import('@sentry/vue')
-      .then((Sentry) => {
-        Sentry.captureException(err instanceof Error ? err : new Error(String(err)), {
-          tags: { source: 'vue.errorHandler', info },
-        })
-      })
-      .catch(() => {})
+    Sentry.captureException(err instanceof Error ? err : new Error(String(err)), {
+      tags: { source: 'vue.errorHandler', info },
+    })
   } else if (import.meta.env.DEV) {
     console.error('[Global Error]', err, info)
   }
@@ -113,25 +95,17 @@ app.config.errorHandler = (err, _instance, info) => {
 // Capture unhandled errors not caught by Vue's errorHandler
 window.addEventListener('error', (event) => {
   if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
-    import('@sentry/vue')
-      .then((Sentry) => {
-        Sentry.captureException(event.error || new Error(event.message), {
-          tags: { source: 'window.onerror' },
-        })
-      })
-      .catch(() => {})
+    Sentry.captureException(event.error || new Error(event.message), {
+      tags: { source: 'window.onerror' },
+    })
   }
 })
 
 window.addEventListener('unhandledrejection', (event) => {
   if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
-    import('@sentry/vue')
-      .then((Sentry) => {
-        Sentry.captureException(event.reason, {
-          tags: { source: 'unhandledrejection' },
-        })
-      })
-      .catch(() => {})
+    Sentry.captureException(event.reason, {
+      tags: { source: 'unhandledrejection' },
+    })
   }
 })
 

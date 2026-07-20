@@ -47,7 +47,8 @@ onMounted(async () => {
     } else {
       error.value = 'Não foi possível validar a sessão. Tente novamente.'
     }
-  } catch {
+  } catch (e) {
+    console.warn('[AuthCallback] OAuth complete failed:', e)
     error.value = 'Não foi possível validar a sessão. Tente novamente.'
   } finally {
     loading.value = false

@@ -1,11 +1,16 @@
 <?php
 
 use App\Http\Controllers\HealthController;
+use App\Http\Controllers\V1\GoalController;
+use App\Http\Controllers\V1\AchievementController;
 use App\Http\Controllers\V1\AnalyticsController;
 use App\Http\Controllers\V1\AuthController;
+use App\Http\Controllers\V1\CanvasController;
 use App\Http\Controllers\V1\CodeExecutionController;
 use App\Http\Controllers\V1\LinkedInController;
+use App\Http\Controllers\V1\NotificationController;
 use App\Http\Controllers\V1\OAuthController;
+use App\Http\Controllers\V1\StudyPathController;
 use App\Http\Controllers\V1\StudySessionController;
 use App\Http\Controllers\V1\TechnologyController;
 use App\Http\Controllers\V1\YouTubeController;
@@ -113,6 +118,43 @@ Route::prefix('v1')->name('v1.')->group(function () {
                 ->middleware('throttle.sliding:30');
             Route::post('analytics/recalculate', [AnalyticsController::class, 'recalculate'])
                 ->middleware('throttle:recalculate');
+
+            // Goals
+            Route::apiResource('goals', GoalController::class)
+                ->middleware('throttle:30,1');
+
+            // Canvas
+            Route::apiResource('canvas', CanvasController::class)
+                ->middleware('throttle:30,1');
+
+            // Study Paths
+            Route::apiResource('study-paths', StudyPathController::class)
+                ->middleware('throttle:30,1');
+            Route::get('study-paths/technology/{technologyId}', [StudyPathController::class, 'byTechnology'])
+                ->name('study-paths.by-technology');
+
+            // Notifications
+            Route::get('notifications', [NotificationController::class, 'index'])
+                ->middleware('throttle:60,1');
+            Route::post('notifications', [NotificationController::class, 'store'])
+                ->middleware('throttle:30,1');
+            Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])
+                ->middleware('throttle:60,1');
+            Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])
+                ->middleware('throttle:30,1');
+            Route::delete('notifications/{notification}', [NotificationController::class, 'destroy'])
+                ->middleware('throttle:30,1');
+            Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount'])
+                ->middleware('throttle:60,1');
+
+            // Reminders
+        Route::apiResource('reminders', \App\Http\Controllers\V1\ReminderController::class);
+
+        // Achievements (Gamification)
+            Route::get('achievements', [AchievementController::class, 'index'])
+                ->middleware('throttle:60,1');
+            Route::post('achievements/check', [AchievementController::class, 'check'])
+                ->middleware('throttle:10,1');
 
             // Code execution terminal
             Route::middleware('throttle:10,1')->group(function () {

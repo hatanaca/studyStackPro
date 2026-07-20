@@ -1,6 +1,5 @@
 import { setActivePinia, createPinia } from 'pinia'
 import { useSessionTimer } from '@/features/sessions/composables/useSessionTimer'
-import { useSessionsStore } from '@/stores/sessions.store'
 
 vi.mock('@/api/modules/sessions.api', () => ({
   sessionsApi: {

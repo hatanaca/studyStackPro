@@ -52,7 +52,17 @@ export default [
         HTMLInputElement: 'readonly',
         FileReader: 'readonly',
         PointerEvent: 'readonly',
-        File: 'readonly'
+        File: 'readonly',
+        HTMLCanvasElement: 'readonly',
+        CanvasRenderingContext2D: 'readonly',
+        cancelAnimationFrame: 'readonly',
+        TouchEvent: 'readonly',
+        DragEvent: 'readonly',
+        HTMLSelectElement: 'readonly',
+        HTMLDivElement: 'readonly',
+        getComputedStyle: 'readonly',
+        YT: 'readonly',
+        Function: 'readonly',
 }
     }
   }
@@ -60,6 +70,23 @@ export default [
   {
     files: ['src/components/ui/Callout.vue', 'src/components/ui/Divider.vue'],
     rules: { 'vue/multi-word-component-names': 'off' },
+  },
+  {
+    files: ['src/**/*.ts', 'src/**/*.vue'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unsafe-function-type': 'warn',
+      '@typescript-eslint/no-unsafe-declaration-merging': 'warn',
+      '@typescript-eslint/no-unused-expressions': 'warn',
+      'vue/multi-word-component-names': 'off',
+      'vue/no-v-html': 'warn',
+      'vue/require-default-prop': 'warn',
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-empty': ['warn', { allowEmptyCatch: true }],
+      'no-useless-assignment': 'warn',
+      'no-useless-escape': 'warn',
+    },
   },
   eslintConfigPrettier,
 ]

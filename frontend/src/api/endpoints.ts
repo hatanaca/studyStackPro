@@ -54,4 +54,24 @@ export const ENDPOINTS = {
     execute: '/code/execute',
     languages: '/code/languages',
   },
+  goals: {
+    list: '/goals',
+    one: (id: string) => `/goals/${id}`,
+  },
+  canvas: {
+    list: '/canvas',
+    one: (id: string) => `/canvas/${id}`,
+  },
+  studyPaths: {
+    list: '/study-paths',
+    one: (id: string) => `/study-paths/${id}`,
+    byTechnology: (technologyId: string) => `/study-paths/technology/${technologyId}`,
+  },
+  notifications: {
+    list: '/notifications',
+    one: (id: string) => `/notifications/${id}`,
+    markRead: (id: string) => `/notifications/${id}/read`,
+    markAllRead: '/notifications/read-all',
+    unreadCount: '/notifications/unread-count',
+  },
 } as const

@@ -529,8 +529,8 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
     if (!r) return []
     try {
       return JSON.parse(r)
-        .filter((i: any) => i.type === 'image' && i.url)
-        .map((i: any) => i.url)
+        .filter((i: { type?: string; url?: string }) => i.type === 'image' && i.url)
+        .map((i: { url: string }) => i.url)
     } catch {
       return []
     }
@@ -558,7 +558,7 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
     const d = toDataURL({ format: 'png', quality: 1, multiplier: 2 })
     if (!d) return
     const k = `${MURAL_PREFIX}${tid}`
-    let items: any[] = []
+    let items: { id: string; type: string; url: string }[]
     try {
       items = JSON.parse(localStorage.getItem(k) || '[]')
     } catch {

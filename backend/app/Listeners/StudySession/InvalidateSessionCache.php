@@ -18,7 +18,7 @@ class InvalidateSessionCache
             $userId = $event instanceof StudySessionDeleted
                 ? $event->userId
                 : $event->session->user_id;
-            Cache::tags(['sessions', "sessions:user:{$userId}"])->flush();
+            Cache::tags(["sessions:user:{$userId}"])->flush();
         } catch (Throwable $e) {
             Log::warning('Failed to invalidate session cache', [
                 'error' => $e->getMessage(),

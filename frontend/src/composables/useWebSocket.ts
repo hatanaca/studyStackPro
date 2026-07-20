@@ -148,7 +148,7 @@ export async function connectWebSocket(userId: string): Promise<void> {
     const host = import.meta.env.VITE_REVERB_HOST || 'localhost'
     const port = import.meta.env.VITE_REVERB_PORT || '8080'
     if (!(await probeReverb(host, port))) {
-      console.info('[WS] Reverb não está disponível no momento')
+      console.warn('[WS] Reverb não está disponível no momento')
       return
     }
 

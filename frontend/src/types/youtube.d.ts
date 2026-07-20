@@ -53,25 +53,5 @@ declare namespace YT {
 
   function ready(callback: () => void): void
 
-  class Player {
-    constructor(target: string | HTMLElement, options: PlayerOptions)
-    destroy(): void
-    getDuration(): number
-    getCurrentTime(): number
-    getVolume(): number
-    isMuted(): boolean
-    loadVideoById(videoId: string): void
-    loadPlaylist(playlistId: string, startIndex?: number): void
-    pauseVideo(): void
-    playVideo(): void
-    seekTo(seconds: number, allowSeekAhead: boolean): void
-    setVolume(volume: number): void
-    mute(): void
-    unMute(): void
-    getPlayerState(): number
-    getPlaylistIndex(): number
-    setShuffle(shuffle: boolean): void
-    setLoop(loop: boolean): void
-    playVideoAt(index: number): void
-  }
+
 }

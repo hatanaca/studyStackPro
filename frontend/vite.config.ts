@@ -29,6 +29,7 @@ export default defineConfig({
         manualChunks(id) {
           if (id.includes('node_modules/axios')) return 'http-vendor'
           if (id.includes('pusher-js') || id.includes('laravel-echo')) return 'ws-vendor'
+          if (id.includes('/@sentry/') || id.includes('sentry')) return 'sentry-vendor'
           if (id.includes('/vue/') || id.includes('/vue-router/') || id.includes('/pinia/')) return 'vue-vendor'
           if (id.includes('/@tanstack/vue-query/') || id.includes('/@tanstack/vue-virtual/')) return 'query-vendor'
           if (id.includes('/primevue/') || id.includes('/@primeuix/') || id.includes('/primeicons/')) return 'primevue-vendor'

@@ -2,7 +2,7 @@
 import { LANGUAGE_CONFIGS } from '../types/code-terminal.types'
 import type { ProgrammingLanguage } from '../types/code-terminal.types'
 
-const props = defineProps<{
+defineProps<{
   modelValue: ProgrammingLanguage
 }>()
 

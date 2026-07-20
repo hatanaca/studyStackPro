@@ -182,9 +182,11 @@ function saveCanvasToMural() {
  */
 function handleOrganogram(action: 'import' | 'export') {
   if (!technologyId.value) return
-  action === 'import'
-    ? importFromOrganogram(technologyId.value)
-    : exportToOrganogram(technologyId.value)
+  if (action === 'import') {
+    importFromOrganogram(technologyId.value)
+  } else {
+    exportToOrganogram(technologyId.value)
+  }
   showOrganogramDialog.value = false
 }
 
@@ -221,7 +223,7 @@ function onKeydown(e: KeyboardEvent) {
   }
   if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
     e.preventDefault()
-    e.shiftKey ? redo() : undo()
+    if (e.shiftKey) { redo() } else { undo() }
   }
   if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
     e.preventDefault()
