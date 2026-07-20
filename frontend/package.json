@@ -45,7 +45,7 @@
     "jspdf": "^4.2.1",
     "laravel-echo": "^2.3.7",
     "pinia": "^3.0.4",
-    "primeicons": "^7.0.0",
+    "primeicons": "^8.0.0",
     "primevue": "^4.5.5",
     "pusher-js": "^8.5.0",
     "v-viewer": "^3.0.23",
