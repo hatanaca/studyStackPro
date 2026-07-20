@@ -126,8 +126,7 @@ class AnalyticsDashboardTest extends TestCase
 
     public function test_recalculate_dispatches_job(): void
     {
-        Event::fake();
-        Queue::fake([RecalculateMetricsJob::class]);
+        Queue::fake();
 
         $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
             ->postJson('/api/v1/analytics/recalculate');
