@@ -7,11 +7,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("
+        DB::statement('
             CREATE INDEX IF NOT EXISTS idx_sessions_user_completed
             ON public.study_sessions (user_id, started_at DESC)
             WHERE ended_at IS NOT NULL
-        ");
+        ');
     }
 
     public function down(): void

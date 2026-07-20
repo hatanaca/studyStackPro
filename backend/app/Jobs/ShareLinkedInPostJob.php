@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\User;
+use App\Modules\LinkedIn\DTOs\LinkedInPostDTO;
 use App\Modules\LinkedIn\Services\LinkedInService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -37,7 +38,7 @@ class ShareLinkedInPostJob implements ShouldQueue
             return;
         }
 
-        $dto = new \App\Modules\LinkedIn\DTOs\LinkedInPostDTO(text: $this->text);
+        $dto = new LinkedInPostDTO(text: $this->text);
         $result = $linkedin->sharePost($user, $dto);
 
         Log::info('LinkedIn post shared via job', [

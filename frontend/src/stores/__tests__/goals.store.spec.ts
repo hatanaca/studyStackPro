@@ -118,7 +118,7 @@ describe('goals.store', () => {
 
     const store = useGoalsStore()
     store.items = [mockGoal, mockCompletedGoal]
-    store.deleteGoal('goal-1')
+    await store.deleteGoal('goal-1')
 
     expect(store.items).toHaveLength(1)
     expect(store.items[0].id).toBe('goal-2')

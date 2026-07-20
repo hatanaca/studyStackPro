@@ -8,7 +8,6 @@ use Illuminate\Support\Collection;
 
 class AchievementService
 {
-
     public function getUserAchievements(string $userId): Collection
     {
         return Achievement::where('user_id', $userId)

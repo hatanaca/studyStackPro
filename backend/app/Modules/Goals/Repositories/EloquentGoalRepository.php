@@ -16,7 +16,7 @@ class EloquentGoalRepository implements GoalRepositoryInterface
 
     public function listForUser(string $userId, ?string $status = null): Collection
     {
-        $cacheKey = "goals:list:{$userId}:" . ($status ?? 'all');
+        $cacheKey = "goals:list:{$userId}:".($status ?? 'all');
 
         return Cache::tags(['goals', "goals:user:{$userId}"])->remember(
             $cacheKey,

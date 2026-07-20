@@ -1,15 +1,16 @@
 <?php
 
 use App\Http\Controllers\HealthController;
-use App\Http\Controllers\V1\GoalController;
 use App\Http\Controllers\V1\AchievementController;
 use App\Http\Controllers\V1\AnalyticsController;
 use App\Http\Controllers\V1\AuthController;
 use App\Http\Controllers\V1\CanvasController;
 use App\Http\Controllers\V1\CodeExecutionController;
+use App\Http\Controllers\V1\GoalController;
 use App\Http\Controllers\V1\LinkedInController;
 use App\Http\Controllers\V1\NotificationController;
 use App\Http\Controllers\V1\OAuthController;
+use App\Http\Controllers\V1\ReminderController;
 use App\Http\Controllers\V1\StudyPathController;
 use App\Http\Controllers\V1\StudySessionController;
 use App\Http\Controllers\V1\TechnologyController;
@@ -148,9 +149,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
                 ->middleware('throttle:60,1');
 
             // Reminders
-        Route::apiResource('reminders', \App\Http\Controllers\V1\ReminderController::class);
+            Route::apiResource('reminders', ReminderController::class);
 
-        // Achievements (Gamification)
+            // Achievements (Gamification)
             Route::get('achievements', [AchievementController::class, 'index'])
                 ->middleware('throttle:60,1');
             Route::post('achievements/check', [AchievementController::class, 'check'])
