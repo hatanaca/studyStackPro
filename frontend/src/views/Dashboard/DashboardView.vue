@@ -13,6 +13,7 @@ import {
   inject,
   ref,
 } from 'vue'
+import { formatHours } from '@/utils/formatters'
 import { useApexChartTheme } from '@/composables/useApexChartTheme'
 import { useDashboardQuery } from '@/features/dashboard/composables/useDashboardQuery'
 import { useDashboard } from '@/features/dashboard/composables/useDashboard'
@@ -113,13 +114,6 @@ type IdleCapableGlobal = typeof globalThis & {
   requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void
 }
 
-function formatHours(h: number): string {
-  if (h <= 0) return '0h'
-  const int = Math.floor(h)
-  const m = Math.round((h - int) * 60)
-  return m === 0 ? `${int}h` : `${int}h ${m}min`
-}
-
 const stakentSparkline = computed(() => {
   const data = analyticsStore.timeSeriesData['30d'] ?? []
   if (!data.length) return []
@@ -167,7 +161,9 @@ onMounted(async () => {
 
   const idleGlobal = globalThis as IdleCapableGlobal
   if (typeof idleGlobal.requestIdleCallback === 'function') {
-    _idleCallbackId = idleGlobal.requestIdleCallback(loadHeavyWidgets, { timeout: 1200 }) as unknown as number
+    _idleCallbackId = idleGlobal.requestIdleCallback(loadHeavyWidgets, {
+      timeout: 1200,
+    }) as unknown as number
   } else {
     _heavyWidgetTimer = setTimeout(loadHeavyWidgets, 500)
   }

@@ -1,0 +1,13 @@
+.git
+.env
+.env.*
+*.log
+storage/logs/*
+storage/framework/cache/*
+storage/framework/views/*
+storage/framework/sessions/*
+bootstrap/cache/*
+node_modules
+vendor
+.phpunit.result.cache
+.pint.cache

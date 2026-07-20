@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, defineAsyncComponent } from 'vue'
 import { useConfirm } from 'primevue/useconfirm'
 import GoalCard from './GoalCard.vue'
+import StackSkeleton from '@/components/ui/StackSkeleton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ErrorCard from '@/components/ui/ErrorCard.vue'
 import Button from 'primevue/button'
@@ -89,6 +90,11 @@ async function handleUpdate(payload: { id: string; target_value: number }) {
       :message="goalsStore.error"
       :on-retry="() => goalsStore.fetchGoals()"
     />
+    <div v-else-if="goalsStore.loading" class="goal-list__loading">
+      <div v-for="i in 3" :key="i" class="goal-list__skeleton">
+        <StackSkeleton  />
+      </div>
+    </div>
     <template v-else>
       <div v-if="goalsStore.items.length" class="goal-list__grid">
         <GoalCard

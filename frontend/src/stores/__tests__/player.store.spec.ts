@@ -148,10 +148,7 @@ describe('player.store', () => {
 
   it('prevVideo goes back in search mode', () => {
     const store = usePlayerStore()
-    store.searchResults = [
-      { id: { videoId: 'v1' } },
-      { id: { videoId: 'v2' } },
-    ] as never
+    store.searchResults = [{ id: { videoId: 'v1' } }, { id: { videoId: 'v2' } }] as never
 
     store.prevVideo()
     expect(store.videoIndex).toBe(1)

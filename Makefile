@@ -9,6 +9,21 @@ setup:
 	@test -f frontend/.env || cp frontend/.env.example frontend/.env
 	@echo "Arquivos .env criados. Execute 'make dev' e depois 'make shell-php' para key:generate e migrate:fresh --seed"
 
+dev-setup: setup
+	@echo "Building Docker images..."
+	docker compose build
+	@echo "Starting database and cache..."
+	docker compose up -d postgres redis
+	@echo "Waiting for PostgreSQL..."
+	@sleep 5
+	docker compose exec postgres pg_isready -U studytrack || sleep 3
+	@echo "Generating app key..."
+	docker compose run --rm php-fpm php artisan key:generate --force
+	@echo "Running migrations and seeding..."
+	docker compose run --rm php-fpm php artisan migrate:fresh --seed
+	@echo ""
+	@echo "=== Setup complete! Run 'make dev' to start. ==="
+
 dev:
 	docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
@@ -64,7 +79,6 @@ prod-up:
 
 prod-down:
 	docker compose -f docker-compose.yml -f docker-compose.production.yml down
-
 # Rebuild das imagens de sandbox (code execution) com base layers atualizadas
 sandbox-rebuild:
 	docker compose -f docker/code-sandbox/docker-compose.sandbox.yml build --no-cache
@@ -112,3 +126,24 @@ logs-node:
 
 logs-worker:
 	docker compose logs -f horizon scheduler
+
+
+type-check:
+	cd frontend && npm run type-check
+
+test-coverage:
+	docker compose exec -e DB_HOST=postgres php-fpm php artisan test --coverage
+	cd frontend && npm run test:coverage
+
+db-reset:
+	docker compose exec php-fpm php artisan migrate:fresh --seed
+
+routes:
+	docker compose exec php-fpm php artisan route:list
+
+# Qualidade — pipeline completa (verificação + auto-fix + PR)
+quality:
+	bash monitoring/quality-pipeline.sh
+
+quality-check:
+	bash monitoring/quality-pipeline.sh --no-fix --no-ai

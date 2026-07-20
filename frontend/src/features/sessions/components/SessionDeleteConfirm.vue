@@ -27,9 +27,7 @@ const emit = defineEmits<{
       >
         {{ loading ? 'Excluindo...' : 'Excluir' }}
       </button>
-      <button type="button" class="delete-confirm__btn" @click="emit('cancel')">
-        Cancelar
-      </button>
+      <button type="button" class="delete-confirm__btn" @click="emit('cancel')">Cancelar</button>
     </div>
   </div>
 </template>

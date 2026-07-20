@@ -17,10 +17,14 @@ chown -R www-data:www-data \
 # Permissões de escrita para evitar "Failed to open stream: Permission denied"
 # em logs rotacionados ou criados por outros processos
 chmod -R 775 /var/www/html/storage
+chmod 775 /var/www/html/storage/logs 2>/dev/null || true
 
 # Setgid: arquivos criados dentro de storage/logs herdam o grupo do diretório pai
 # Isso evita conflitos entre containers php-fpm (Alpine) e CLI (Debian)
 chmod g+s /var/www/html/storage/logs 2>/dev/null || true
+
+# Garante que novos arquivos em storage/logs herdam o grupo
+setfacl -d -m g::rwx /var/www/html/storage/logs 2>/dev/null || true
 
 # Aguarda Redis ficar pronto (LOADING ao iniciar com AOF grande)
 # Evita RedisException: LOADING Redis is loading the dataset in memory

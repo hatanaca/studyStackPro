@@ -5,7 +5,10 @@ export function useChartExport() {
   const isExporting = ref(false)
   const toast = useToast()
 
-  async function exportChartPNG(chartRef: { exportTo?: (opts: { format: string; filename?: string }) => void } | null, filename = 'chart') {
+  async function exportChartPNG(
+    chartRef: { exportTo?: (opts: { format: string; filename?: string }) => void } | null,
+    filename = 'chart'
+  ) {
     if (!chartRef?.exportTo) {
       toast.error('Não foi possível exportar este gráfico')
       return
@@ -21,17 +24,24 @@ export function useChartExport() {
     }
   }
 
-  function exportDataCSV(data: { headers: string[]; rows: (string | number)[][] }, filename: string) {
+  function exportDataCSV(
+    data: { headers: string[]; rows: (string | number)[][] },
+    filename: string
+  ) {
     isExporting.value = true
     try {
       const csvContent = [
         data.headers.join(','),
-        ...data.rows.map((row) => row.map((cell) => {
-          const str = String(cell)
-          return str.includes(',') || str.includes('"') || str.includes('\n')
-            ? `"${str.replace(/"/g, '""')}"`
-            : str
-        }).join(',')),
+        ...data.rows.map((row) =>
+          row
+            .map((cell) => {
+              const str = String(cell)
+              return str.includes(',') || str.includes('"') || str.includes('\n')
+                ? `"${str.replace(/"/g, '""')}"`
+                : str
+            })
+            .join(',')
+        ),
       ].join('\n')
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })

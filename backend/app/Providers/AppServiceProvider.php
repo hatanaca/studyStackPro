@@ -7,15 +7,12 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Horizon\Horizon;
 use Sentry\Laravel\Integration;
 use Sentry\State\Scope;
-use SocialiteProviders\Discord\DiscordExtendSocialite;
-use SocialiteProviders\Manager\SocialiteWasCalled;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -42,9 +39,6 @@ class AppServiceProvider extends ServiceProvider
                 ]);
             });
         }
-
-        // Registra o driver OAuth do Discord (SocialiteProviders)
-        Event::listen(SocialiteWasCalled::class, DiscordExtendSocialite::class);
 
         // Authentication endpoints - strict rate limiting to prevent brute force
         RateLimiter::for('login', fn (Request $request) => Limit::perMinute(3)->by($request->ip().':'.$request->input('email', '')));

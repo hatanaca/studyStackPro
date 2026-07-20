@@ -39,7 +39,6 @@ class CodeExecutionServiceTest extends TestCase
         $this->assertContains('css', $languages);
         $this->assertContains('sql', $languages);
         $this->assertContains('laravel', $languages);
-        $this->assertContains('bash', $languages);
     }
 
     public function test_validate_rejects_empty_code(): void

@@ -99,7 +99,9 @@ function selectTool(tool: CanvasTool) {
     <!-- Zoom -->
     <div class="ct__section">
       <button class="ct__btn" title="Zoom −" @click="emit('zoomOut')">−</button>
-      <span class="ct__zoom" title="Resetar zoom" @click="emit('zoomReset')">{{ store.zoom }}%</span>
+      <span class="ct__zoom" title="Resetar zoom" @click="emit('zoomReset')"
+        >{{ store.zoom }}%</span
+      >
       <button class="ct__btn" title="Zoom +" @click="emit('zoomIn')">+</button>
     </div>
 
@@ -107,8 +109,22 @@ function selectTool(tool: CanvasTool) {
 
     <!-- Ações -->
     <div class="ct__section">
-      <button class="ct__btn" :disabled="!store.canUndo" title="Desfazer (Ctrl+Z)" @click="emit('undo')">↩</button>
-      <button class="ct__btn" :disabled="!store.canRedo" title="Refazer (Ctrl+Y)" @click="emit('redo')">↪</button>
+      <button
+        class="ct__btn"
+        :disabled="!store.canUndo"
+        title="Desfazer (Ctrl+Z)"
+        @click="emit('undo')"
+      >
+        ↩
+      </button>
+      <button
+        class="ct__btn"
+        :disabled="!store.canRedo"
+        title="Refazer (Ctrl+Y)"
+        @click="emit('redo')"
+      >
+        ↪
+      </button>
       <button class="ct__btn" title="Imagem" @click="emit('addImage')">🖼</button>
       <button class="ct__btn" title="Excluir" @click="emit('delete')">🗑</button>
       <button class="ct__btn" title="Exportar" @click="emit('export')">💾</button>
@@ -160,7 +176,9 @@ function selectTool(tool: CanvasTool) {
   cursor: pointer;
   font-size: 14px;
   flex-shrink: 0;
-  transition: background 0.12s, color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s;
 }
 
 .ct__btn:hover:not(:disabled) {
@@ -202,7 +220,9 @@ function selectTool(tool: CanvasTool) {
   border-radius: 3px;
   border: 1px solid var(--color-border);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-  transition: transform 0.12s, box-shadow 0.12s;
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s;
   pointer-events: none;
 }
 
@@ -243,13 +263,37 @@ function selectTool(tool: CanvasTool) {
 }
 
 @media (max-width: 640px) {
-  .ct { flex-wrap: wrap; gap: 6px; padding: 6px 10px; height: auto; min-height: 40px; }
-  .ct__section { gap: 2px; }
-  .ct__section--colors { gap: 8px; }
-  .ct__btn { width: 36px; height: 36px; font-size: 14px; }
-  .ct__swatch { width: 20px; height: 20px; }
-  .ct__swatch-fill { width: 20px; height: 20px; }
-  .ct__range { width: 52px; }
-  .ct__div { display: none; }
+  .ct {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 10px;
+    height: auto;
+    min-height: 40px;
+  }
+  .ct__section {
+    gap: 2px;
+  }
+  .ct__section--colors {
+    gap: 8px;
+  }
+  .ct__btn {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+  .ct__swatch {
+    width: 20px;
+    height: 20px;
+  }
+  .ct__swatch-fill {
+    width: 20px;
+    height: 20px;
+  }
+  .ct__range {
+    width: 52px;
+  }
+  .ct__div {
+    display: none;
+  }
 }
 </style>

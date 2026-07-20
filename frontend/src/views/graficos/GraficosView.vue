@@ -18,12 +18,16 @@ import { useMediaQuery } from '@/composables/useMediaQuery'
 
 const GraficosToolbar = defineAsyncComponent(() => import('./components/GraficosToolbar.vue'))
 const KpiStrip = defineAsyncComponent(() => import('./components/KpiStrip.vue'))
-const TechDistributionPanel = defineAsyncComponent(() => import('./components/TechDistributionPanel.vue'))
+const TechDistributionPanel = defineAsyncComponent(
+  () => import('./components/TechDistributionPanel.vue')
+)
 const WeeklyBarPanel = defineAsyncComponent(() => import('./components/WeeklyBarPanel.vue'))
 const HeatmapPanel = defineAsyncComponent(() => import('./components/HeatmapPanel.vue'))
 const RadarPanel = defineAsyncComponent(() => import('./components/RadarPanel.vue'))
 const FunnelPanel = defineAsyncComponent(() => import('./components/FunnelPanel.vue'))
-const TrendComparisonPanel = defineAsyncComponent(() => import('./components/TrendComparisonPanel.vue'))
+const TrendComparisonPanel = defineAsyncComponent(
+  () => import('./components/TrendComparisonPanel.vue')
+)
 
 const graficos = useGraficos()
 
@@ -86,22 +90,24 @@ const heroChartOptions = computed<ApexOptions | undefined>(() => {
         curve: 'smooth',
         width: isBar ? 0 : heroLayout.value === 'line' ? 3 : 2,
       },
-      fill: isBar ? { type: 'solid' } : {
-        type: 'gradient',
-        gradient: {
-          shade: 'dark',
-          type: 'vertical',
-          shadeIntensity: 0.3,
-          opacityFrom: 0.6,
-          opacityTo: 0.05,
-          stops: [0, 100],
-          colorStops: [
-            { offset: 0, color: '#8b5cf6', opacity: 0.5 },
-            { offset: 50, color: '#ec4899', opacity: 0.2 },
-            { offset: 100, color: '#06b6d4', opacity: 0.02 },
-          ],
-        },
-      },
+      fill: isBar
+        ? { type: 'solid' }
+        : {
+            type: 'gradient',
+            gradient: {
+              shade: 'dark',
+              type: 'vertical',
+              shadeIntensity: 0.3,
+              opacityFrom: 0.6,
+              opacityTo: 0.05,
+              stops: [0, 100],
+              colorStops: [
+                { offset: 0, color: '#8b5cf6', opacity: 0.5 },
+                { offset: 50, color: '#ec4899', opacity: 0.2 },
+                { offset: 100, color: '#06b6d4', opacity: 0.02 },
+              ],
+            },
+          },
       grid: {
         borderColor: 'rgba(148,163,184,0.08)',
         strokeDashArray: 4,
@@ -116,51 +122,59 @@ const heroChartOptions = computed<ApexOptions | undefined>(() => {
         style: { fontSize: '13px' },
         y: { formatter: (val: number) => `${val} minutos` },
       },
-      plotOptions: isBar ? {
-        bar: {
-          borderRadius: 8,
-          columnWidth: '55%',
-          borderRadiusApplication: 'end',
-        },
-      } : undefined,
+      plotOptions: isBar
+        ? {
+            bar: {
+              borderRadius: 8,
+              columnWidth: '55%',
+              borderRadiusApplication: 'end',
+            },
+          }
+        : undefined,
       dataLabels: { enabled: false },
       legend: { show: false },
-      markers: isRadar ? undefined : {
-        size: 0,
-        hover: { size: 8, sizeOffset: 3 },
-        strokeWidth: 2,
-        strokeColors: '#fff',
-      },
-      xaxis: isRadar ? {} : {
-        categories: data.labels,
-        labels: {
-          style: {
-            colors: t.textMuted,
-            fontSize: '11px',
-            fontFamily: t.fontFamily,
+      markers: isRadar
+        ? undefined
+        : {
+            size: 0,
+            hover: { size: 8, sizeOffset: 3 },
+            strokeWidth: 2,
+            strokeColors: '#fff',
           },
-          rotate: -45,
-        },
-        axisBorder: { show: false },
-        axisTicks: { show: false },
-      },
-      yaxis: isRadar ? { show: false, max: 100 } : {
-        labels: {
-          style: {
-            colors: t.textMuted,
-            fontSize: '11px',
-            fontFamily: t.fontFamily,
+      xaxis: isRadar
+        ? {}
+        : {
+            categories: data.labels,
+            labels: {
+              style: {
+                colors: t.textMuted,
+                fontSize: '11px',
+                fontFamily: t.fontFamily,
+              },
+              rotate: -45,
+            },
+            axisBorder: { show: false },
+            axisTicks: { show: false },
           },
-          formatter: (val: number) => {
-            if (val >= 60) {
-              const h = Math.floor(val / 60)
-              const m = val % 60
-              return m > 0 ? `${h}h${m}` : `${h}h`
-            }
-            return `${val}m`
+      yaxis: isRadar
+        ? { show: false, max: 100 }
+        : {
+            labels: {
+              style: {
+                colors: t.textMuted,
+                fontSize: '11px',
+                fontFamily: t.fontFamily,
+              },
+              formatter: (val: number) => {
+                if (val >= 60) {
+                  const h = Math.floor(val / 60)
+                  const m = val % 60
+                  return m > 0 ? `${h}h${m}` : `${h}h`
+                }
+                return `${val}m`
+              },
+            },
           },
-        },
-      },
     }
   } catch {
     return undefined
@@ -173,10 +187,12 @@ const heroSeries = computed(() => {
     if (!data?.values?.length) return [{ name: 'Minutos', data: [] }]
     if (heroLayout.value === 'radar') {
       const values = data.values.slice(-14)
-      return [{
-        name: 'Minutos',
-        data: values.map((v) => Math.round((v / Math.max(...values, 1)) * 100)),
-      }]
+      return [
+        {
+          name: 'Minutos',
+          data: values.map((v) => Math.round((v / Math.max(...values, 1)) * 100)),
+        },
+      ]
     }
     return [{ name: 'Minutos', data: data.values }]
   } catch {
@@ -193,8 +209,11 @@ const heroRadarLabels = computed(() => {
 })
 
 const safeTimeSeries = computed(() => {
-  try { return graficos.timeSeriesForChart.value }
-  catch { return { labels: [] as string[], values: [] as number[] } }
+  try {
+    return graficos.timeSeriesForChart.value
+  } catch {
+    return { labels: [] as string[], values: [] as number[] }
+  }
 })
 
 onMounted(() => {
@@ -205,14 +224,17 @@ onMounted(() => {
   }
 })
 
-watch(() => graficos.dateRange.value, () => {
-  try {
-    graficos.fetchTimeSeries(90)
-    graficos.fetchHeatmap()
-  } catch {
-    /* swallow */
+watch(
+  () => graficos.dateRange.value,
+  () => {
+    try {
+      graficos.fetchTimeSeries(90)
+      graficos.fetchHeatmap()
+    } catch {
+      /* swallow */
+    }
   }
-})
+)
 </script>
 
 <template>
@@ -222,9 +244,18 @@ watch(() => graficos.dateRange.value, () => {
     subtitle="Visualize seus dados de estudo com gráficos interativos e relatórios detalhados."
     narrow
   >
-    <div v-if="renderError" style="padding:2rem;background:#fef2f2;border:1px solid #ef4444;border-radius:8px;margin-bottom:1rem;">
-      <p style="color:#dc2626;font-weight:600;">Erro ao renderizar gráficos</p>
-      <p style="color:#6b7280;font-size:0.875rem;">{{ renderError }}</p>
+    <div
+      v-if="renderError"
+      style="
+        padding: 2rem;
+        background: #fef2f2;
+        border: 1px solid #ef4444;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+      "
+    >
+      <p style="color: #dc2626; font-weight: 600">Erro ao renderizar gráficos</p>
+      <p style="color: #6b7280; font-size: 0.875rem">{{ renderError }}</p>
     </div>
     <div class="gv">
       <!-- Toolbar -->
@@ -256,12 +287,7 @@ watch(() => graficos.dateRange.value, () => {
               class="hero__pill"
               :class="{ 'hero__pill--active': heroLayout === opt.value }"
             >
-              <input
-                v-model="heroLayout"
-                type="radio"
-                :value="opt.value"
-                class="hero__radio"
-              />
+              <input v-model="heroLayout" type="radio" :value="opt.value" class="hero__radio" />
               <span class="hero__pill-icon">{{ opt.icon }}</span>
               <span class="hero__pill-label">{{ opt.label }}</span>
             </label>
@@ -269,8 +295,15 @@ watch(() => graficos.dateRange.value, () => {
         </div>
 
         <div class="hero__chart">
-          <Skeleton v-if="graficos.loadingStates.value.timeSeries" height="420px" class="hero__skeleton" />
-          <div v-else-if="!heroChartOptions || (heroChartOptions as any).categories?.length === 0" class="hero__empty">
+          <Skeleton
+            v-if="graficos.loadingStates.value.timeSeries"
+            height="420px"
+            class="hero__skeleton"
+          />
+          <div
+            v-else-if="!heroChartOptions || (heroChartOptions as any).categories?.length === 0"
+            class="hero__empty"
+          >
             <p class="hero__empty-text">Nenhum dado disponível para exibir.</p>
           </div>
           <template v-else>
@@ -290,19 +323,17 @@ watch(() => graficos.dateRange.value, () => {
               :options="heroChartOptions"
               :series="heroSeries"
             />
-            <RadarChart
-              v-else
-              :series="heroSeries"
-              :labels="heroRadarLabels"
-              :chart-height="420"
-            />
+            <RadarChart v-else :series="heroSeries" :labels="heroRadarLabels" :chart-height="420" />
           </template>
         </div>
       </div>
 
       <!-- ═══════════════ KPI STRIP ═══════════════ -->
       <div class="gv__kpi animate-fade-in-up stagger-2">
-        <KpiStrip :data="graficos.kpiData.value" :loading="graficos.loadingStates.value.dashboard" />
+        <KpiStrip
+          :data="graficos.kpiData.value"
+          :loading="graficos.loadingStates.value.dashboard"
+        />
       </div>
 
       <!-- ═══════════════ CHILD CHARTS ═══════════════ -->
@@ -370,7 +401,8 @@ watch(() => graficos.dateRange.value, () => {
 /* ── HERO CHART ───────────────────────────────────── */
 .hero {
   position: relative;
-  background: linear-gradient(135deg,
+  background: linear-gradient(
+    135deg,
     color-mix(in srgb, var(--color-bg-card) 95%, transparent) 0%,
     color-mix(in srgb, var(--color-bg-soft) 90%, transparent) 50%,
     color-mix(in srgb, var(--color-bg) 85%, transparent) 100%
@@ -381,7 +413,9 @@ watch(() => graficos.dateRange.value, () => {
   border-radius: 1.25rem;
   padding: var(--spacing-2xl);
   overflow: hidden;
-  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  transition:
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
 }
 .hero:hover {
   border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
@@ -398,14 +432,27 @@ watch(() => graficos.dateRange.value, () => {
   left: -20%;
   width: 60%;
   height: 200%;
-  background: radial-gradient(ellipse, color-mix(in srgb, var(--color-primary) 12%, transparent) 0%, transparent 60%);
+  background: radial-gradient(
+    ellipse,
+    color-mix(in srgb, var(--color-primary) 12%, transparent) 0%,
+    transparent 60%
+  );
   animation: heroGlow 8s ease-in-out infinite alternate;
   pointer-events: none;
 }
 @keyframes heroGlow {
-  0% { transform: translate(0, 0) scale(1); opacity: 0.6; }
-  50% { transform: translate(30%, 10%) scale(1.1); opacity: 1; }
-  100% { transform: translate(-10%, -5%) scale(0.95); opacity: 0.7; }
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate(30%, 10%) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-10%, -5%) scale(0.95);
+    opacity: 0.7;
+  }
 }
 
 .hero__header {
@@ -450,12 +497,22 @@ watch(() => graficos.dateRange.value, () => {
   animation: dotBlink 1.5s ease-in-out infinite;
 }
 @keyframes badgePulse {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 40%, transparent); }
-  50% { box-shadow: 0 0 0 6px transparent; }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px transparent;
+  }
 }
 @keyframes dotBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 .hero__title {

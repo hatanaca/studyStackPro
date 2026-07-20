@@ -19,7 +19,7 @@ class SlidingWindowRateLimit
     public function handle(Request $request, Closure $next, int|string $limit = 60): Response
     {
         $limit = max((int) $limit, 1);
-        $userKey = $request->user()?->id ?? $request->ip();
+        $userKey = $request->user()->id ?? $request->ip();
         $path = trim($request->path(), '/');
         $now = (int) round(microtime(true) * 1000);
 

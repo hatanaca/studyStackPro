@@ -36,7 +36,7 @@ class CodeExecutionService
 
     public function supportedLanguages(): array
     {
-        return ['javascript', 'php', 'lua', 'html', 'css', 'sql', 'laravel', 'bash'];
+        return ['javascript', 'php', 'lua', 'html', 'css', 'sql', 'laravel'];
     }
 
     /**

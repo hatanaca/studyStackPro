@@ -164,6 +164,6 @@ class CodeExecutionTest extends TestCase
             ]);
 
         $languages = $response->json('data');
-        $this->assertCount(8, $languages);
+        $this->assertCount(7, $languages);
     }
 }

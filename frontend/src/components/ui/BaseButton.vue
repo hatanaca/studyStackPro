@@ -5,8 +5,9 @@ withDefaults(
     variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline'
     size?: 'sm' | 'md' | 'lg'
     disabled?: boolean
+    loading?: boolean
   }>(),
-  { type: 'button', variant: 'primary', size: 'md', disabled: false }
+  { type: 'button', variant: 'primary', size: 'md', disabled: false, loading: false }
 )
 </script>
 
@@ -15,8 +16,9 @@ withDefaults(
     :type="type"
     class="base-button"
     :class="[`base-button--${variant}`, `base-button--${size}`]"
-    :disabled="disabled"
+    :disabled="disabled || loading"
   >
+    <span v-if="loading" class="base-button__spinner" aria-hidden="true" />
     <slot />
   </button>
 </template>
@@ -138,5 +140,16 @@ withDefaults(
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+.base-button__spinner {
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

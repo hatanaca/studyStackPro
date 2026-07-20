@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Modules\Auth\Services\SocialAuthService;
+use App\Modules\Auth\Services\TokenService;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -13,13 +14,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 use Laravel\Socialite\Facades\Socialite;
 
 class OAuthController extends Controller
 {
     use HasApiResponse;
 
-    public function __construct(private SocialAuthService $socialAuthService) {}
+    public function __construct(
+        private SocialAuthService $socialAuthService,
+        private TokenService $tokenService
+    ) {}
 
     public function redirect(string $provider): RedirectResponse
     {
@@ -34,7 +39,9 @@ class OAuthController extends Controller
         }
         // Gera estado CSRF autocontido (criptografado) — não depende de sessão,
         // sobrevive a cross-port (Vite:5173 → Nginx:8080).
-        $csrfToken = Crypt::encryptString(json_encode(['ts' => time()]));
+        $nonce = bin2hex(random_bytes(16));
+        Redis::set("oauth:nonce:{$nonce}", '1', 'EX', 600);
+        $csrfToken = Crypt::encryptString(json_encode(['ts' => time(), 'nonce' => $nonce]));
         $response = $driver->redirect();
         $url = $response->getTargetUrl();
         $url .= (str_contains($url, '?') ? '&' : '?').'state='.urlencode($csrfToken);
@@ -63,6 +70,15 @@ class OAuthController extends Controller
 
                 return redirect(config('services.frontend_url').'/login?error=oauth_failed');
             }
+            // Replay protection: nonce must be unused
+            if (isset($payload['nonce'])) {
+                $nonceKey = 'oauth:nonce:'.$payload['nonce'];
+                if (! Redis::del($nonceKey)) {
+                    Log::warning('OAuth callback: nonce already used', ['provider' => $provider]);
+
+                    return redirect(config('services.frontend_url').'/login?error=oauth_failed');
+                }
+            }
         } catch (\Exception $e) {
             Log::error('OAuth callback: state inválido', ['provider' => $provider, 'error' => $e->getMessage()]);
 
@@ -89,9 +105,12 @@ class OAuthController extends Controller
             return redirect($frontendUrl.'/login?error=oauth_failed');
         }
         // Token assinado para criar sessão no port do frontend (5173)
+        $tokenNonce = bin2hex(random_bytes(16));
+        Redis::set("oauth:token:{$tokenNonce}", '1', 'EX', 600);
         $token = Crypt::encryptString(json_encode([
             'user_id' => $user->id,
             'ts' => time(),
+            'token_nonce' => $tokenNonce,
         ]));
 
         return redirect($frontendUrl.'/auth/callback?status=ok&token='.urlencode($token));
@@ -114,6 +133,12 @@ class OAuthController extends Controller
             if (time() - $payload['ts'] > 600) {
                 return $this->error('Token expirado.', 'UNAUTHENTICATED', null, 401);
             }
+            if (isset($payload['token_nonce'])) {
+                $nonceKey = 'oauth:token:'.$payload['token_nonce'];
+                if (! Redis::del($nonceKey)) {
+                    return $this->error('Token já utilizado.', 'UNAUTHENTICATED', null, 401);
+                }
+            }
         } catch (\Exception) {
             return $this->error('Token inválido.', 'UNAUTHENTICATED', null, 401);
         }
@@ -132,8 +157,7 @@ class OAuthController extends Controller
             ]);
         }
         // Gera Bearer token como fallback para autenticação via API
-        $user->tokens()->where('name', 'oauth-token')->delete();
-        $bearer = $user->createToken('oauth-token')->plainTextToken;
+        $bearer = $this->tokenService->createApiToken($user, 'oauth-token');
 
         return $this->success([
             'user' => new UserResource($user),

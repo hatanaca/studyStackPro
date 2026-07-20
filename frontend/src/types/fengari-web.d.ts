@@ -22,7 +22,13 @@ declare module 'fengari-web' {
   export const lauxlib: {
     luaL_newstate(): unknown
     luaL_openlibs(L: unknown): void
-    luaL_loadbuffer(L: unknown, buf: Uint8Array, size: number, name: Uint8Array | null, sourceName: Uint8Array | null): number
+    luaL_loadbuffer(
+      L: unknown,
+      buf: Uint8Array,
+      size: number,
+      name: Uint8Array | null,
+      sourceName: Uint8Array | null
+    ): number
     luaL_loadstring(L: unknown, s: Uint8Array): number
     luaL_tolstring(L: unknown, idx: number): Uint8Array | null
     luaL_error(L: unknown, fmt: Uint8Array, ...args: unknown[]): number

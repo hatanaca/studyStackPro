@@ -107,10 +107,11 @@ class LinkedInServiceTest extends TestCase
 
     public function test_refresh_token_makes_correct_request(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->create();
+        $user->forceFill([
             'linkedin_id' => 'abc123',
             'linkedin_refresh_token' => 'refresh-token-123',
-        ]);
+        ])->save();
 
         Http::fake([
             'www.linkedin.com/oauth/v2/accessToken' => Http::response([

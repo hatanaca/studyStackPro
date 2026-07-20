@@ -12,9 +12,6 @@ const apiClient = axios.create({
 })
 
 apiClient.interceptors.request.use((config) => {
-  if (config.method === 'get') {
-    config.params = { ...config.params, _t: Date.now() }
-  }
   const token = getStoredToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
@@ -24,7 +21,9 @@ apiClient.interceptors.request.use((config) => {
 
 type ToastFn = (msg: string, type?: 'success' | 'error' | 'info') => void
 let toastFn: ToastFn | null = null
-export function setApiToast(fn: ToastFn) { toastFn = fn }
+export function setApiToast(fn: ToastFn) {
+  toastFn = fn
+}
 
 let lastUnauthorizedRoute = ''
 let lastUnauthorizedTime = 0
@@ -32,14 +31,9 @@ const UNAUTHORIZED_DEBOUNCE_MS = 300
 
 function getApiErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
-    return error.response?.data?.error?.message
-      ?? error.response?.data?.message
-      ?? error.message
+    return error.response?.data?.error?.message ?? error.response?.data?.message ?? error.message
   }
-  if (
-    typeof error === 'object' && error !== null
-    && 'response' in error
-  ) {
+  if (typeof error === 'object' && error !== null && 'response' in error) {
     const resp = (error as { response?: { data?: Record<string, unknown> } }).response
     const data = resp?.data
     if (data && typeof data === 'object') {
@@ -64,12 +58,19 @@ apiClient.interceptors.response.use(
     const reqUrl = String(error.config?.url ?? '')
 
     if (status === 401) {
-      if (reqUrl.includes('/auth/login') || reqUrl.includes('/auth/register') || reqUrl.includes('auth/logout')) {
+      if (
+        reqUrl.includes('/auth/login') ||
+        reqUrl.includes('/auth/register') ||
+        reqUrl.includes('auth/logout')
+      ) {
         return Promise.reject(error)
       }
       const routeName = router.currentRoute.value.name as string
       const now = Date.now()
-      if (lastUnauthorizedRoute === routeName && now - lastUnauthorizedTime < UNAUTHORIZED_DEBOUNCE_MS) {
+      if (
+        lastUnauthorizedRoute === routeName &&
+        now - lastUnauthorizedTime < UNAUTHORIZED_DEBOUNCE_MS
+      ) {
         return Promise.reject(error)
       }
       lastUnauthorizedRoute = routeName
@@ -79,9 +80,12 @@ apiClient.interceptors.response.use(
         if (routeName !== 'login') {
           await router.push({ name: 'login' })
         }
-      } catch { /* ignore navigation errors */ }
+      } catch {
+        /* ignore navigation errors */
+      }
     } else if (status === 429) {
-      const message = getApiErrorMessage(error) || 'Muitas requisições. Aguarde um momento e tente novamente.'
+      const message =
+        getApiErrorMessage(error) || 'Muitas requisições. Aguarde um momento e tente novamente.'
       if (toastFn) toastFn(message, 'error')
     } else if (status && status >= 500) {
       const message = getApiErrorMessage(error) || 'Erro interno do servidor.'
@@ -89,12 +93,14 @@ apiClient.interceptors.response.use(
 
       // Capture 5xx API errors in Sentry for visibility
       if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
-        import('@sentry/vue').then((Sentry) => {
-          Sentry.captureException(error, {
-            tags: { api_error: 'true', status: String(status) },
-            extra: { url: reqUrl, method: error.config?.method },
+        import('@sentry/vue')
+          .then((Sentry) => {
+            Sentry.captureException(error, {
+              tags: { api_error: 'true', status: String(status) },
+              extra: { url: reqUrl, method: error.config?.method },
+            })
           })
-        }).catch(() => {})
+          .catch(() => {})
       }
     }
 
@@ -107,3 +113,15 @@ export function getApiErrorMessageExport(error: unknown): string {
 }
 
 export { apiClient, getApiErrorMessage }
+
+/**
+ * Unwraps an Axios response with ApiResponse<T> envelope.
+ * Returns the inner data directly, throwing on error responses.
+ */
+export async function unwrap<T>(promise: Promise<{ data: { success: boolean; data: T; message?: string } }>): Promise<T> {
+  const { data } = await promise
+  if (!data.success) {
+    throw new Error(data.message || 'Erro na comunicação com o servidor.')
+  }
+  return data.data
+}

@@ -9,7 +9,14 @@ on:
     branches: [main]
 
 jobs:
+  backend-ci:
+    uses: ./.github/workflows/backend-ci.yml
+
+  frontend-ci:
+    uses: ./.github/workflows/frontend-ci.yml
+
   build-and-push:
+    needs: [backend-ci, frontend-ci]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
@@ -34,6 +41,16 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/studytrack-backend:latest
             ${{ secrets.DOCKER_USERNAME }}/studytrack-backend:${{ github.sha }}
 
+
+      - name: Run Trivy vulnerability scanner (backend)
+        uses: aquasecurity/trivy-action@v0.28.0
+        with:
+          image-ref: ${{ secrets.DOCKER_USERNAME }}/studytrack-backend:${{ github.sha }}
+          format: table
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+        continue-on-error: true
+
       - name: Build and push frontend image
         uses: docker/build-push-action@v7
         with:
@@ -45,6 +62,15 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/studytrack-frontend:latest
             ${{ secrets.DOCKER_USERNAME }}/studytrack-frontend:${{ github.sha }}
+
+      - name: Run Trivy vulnerability scanner (frontend)
+        uses: aquasecurity/trivy-action@v0.28.0
+        with:
+          image-ref: ${{ secrets.DOCKER_USERNAME }}/studytrack-frontend:${{ github.sha }}
+          format: table
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+        continue-on-error: true
 
   # Deploy step: customize conforme seu ambiente (SSH, K8s, etc.)
   # deploy:

@@ -94,60 +94,60 @@ async function onGenerate() {
     subtitle="Gere relatórios em PDF com resumo detalhado de sessões."
     narrow
   >
-  <div class="reports-view">
-    <p class="reports-view__lead">
-      Selecione um período para gerar um relatório em PDF com resumo e detalhamento de sessões.
-    </p>
-    <section class="reports-card">
-      <h2 class="reports-card__title">Relatório de atividades</h2>
-      <div class="reports-form">
-        <div class="reports-field">
-          <label class="reports-label">Período</label>
-          <div class="reports-dates">
-            <input
-              v-model="dateRange.start"
-              type="date"
-              class="reports-input"
-              aria-label="Data inicial"
-            />
-            <span class="reports-sep">até</span>
-            <input
-              v-model="dateRange.end"
-              type="date"
-              class="reports-input"
-              aria-label="Data final"
-            />
+    <div class="reports-view">
+      <p class="reports-view__lead">
+        Selecione um período para gerar um relatório em PDF com resumo e detalhamento de sessões.
+      </p>
+      <section class="reports-card">
+        <h2 class="reports-card__title">Relatório de atividades</h2>
+        <div class="reports-form">
+          <div class="reports-field">
+            <label class="reports-label">Período</label>
+            <div class="reports-dates">
+              <input
+                v-model="dateRange.start"
+                type="date"
+                class="reports-input"
+                aria-label="Data inicial"
+              />
+              <span class="reports-sep">até</span>
+              <input
+                v-model="dateRange.end"
+                type="date"
+                class="reports-input"
+                aria-label="Data final"
+              />
+            </div>
           </div>
+          <BaseButton variant="primary" :disabled="!canGenerate || !!dateError" @click="onGenerate">
+            {{ isLoading ? 'Buscando…' : generating ? 'Gerando…' : 'Gerar relatório PDF' }}
+          </BaseButton>
         </div>
-        <BaseButton variant="primary" :disabled="!canGenerate || !!dateError" @click="onGenerate">
-          {{ isLoading ? 'Buscando…' : generating ? 'Gerando…' : 'Gerar relatório PDF' }}
-        </BaseButton>
-      </div>
-      <div
-        v-if="isLoading"
-        class="reports-loading"
-        role="status"
-        aria-live="polite"
-        aria-label="Buscando sessões para o relatório"
-      >
-        <Skeleton height="3rem" class="reports-loading__skel" />
-        <Skeleton height="3rem" class="reports-loading__skel" />
-      </div>
-      <Callout v-if="dateError" variant="warning" :title="dateError" />
-      <ErrorCard
-        v-else-if="fetchError"
-        title="Erro ao montar o relatório"
-        :message="fetchError"
-        :on-retry="onGenerate"
-      />
-      <Callout v-else-if="periodEmptyMessage" variant="info" :title="periodEmptyMessage" />
-      <Callout v-else-if="warning" variant="info" :title="warning" />
-      <Callout v-else-if="!isLoading" variant="info" title="Relatório em PDF">
-        O relatório inclui resumo geral (sessões, tempo, tecnologias) e uma tabela detalhada de
-        todas as sessões no período. Selecione as datas e clique em gerar.
-      </Callout>
-    </section>
-  </div>
+        <div
+          v-if="isLoading"
+          class="reports-loading"
+          role="status"
+          aria-live="polite"
+          aria-label="Buscando sessões para o relatório"
+        >
+          <Skeleton height="3rem" class="reports-loading__skel" />
+          <Skeleton height="3rem" class="reports-loading__skel" />
+        </div>
+        <Callout v-if="dateError" variant="warning" :title="dateError" />
+        <ErrorCard
+          v-else-if="fetchError"
+          title="Erro ao montar o relatório"
+          :message="fetchError"
+          :on-retry="onGenerate"
+        />
+        <Callout v-else-if="periodEmptyMessage" variant="info" :title="periodEmptyMessage" />
+        <Callout v-else-if="warning" variant="info" :title="warning" />
+        <Callout v-else-if="!isLoading" variant="info" title="Relatório em PDF">
+          O relatório inclui resumo geral (sessões, tempo, tecnologias) e uma tabela detalhada de
+          todas as sessões no período. Selecione as datas e clique em gerar.
+        </Callout>
+      </section>
+    </div>
   </PageView>
 </template>
 

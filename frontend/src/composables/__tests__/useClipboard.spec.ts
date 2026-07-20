@@ -55,7 +55,8 @@ describe('useClipboard', () => {
   it('copy resets error state', async () => {
     vi.stubGlobal('navigator', {
       clipboard: {
-        writeText: vi.fn()
+        writeText: vi
+          .fn()
           .mockRejectedValueOnce(new Error('Fail'))
           .mockResolvedValueOnce(undefined),
       },

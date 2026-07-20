@@ -40,10 +40,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  /* Evita caret de seleção em texto de UI (logs: selectionType Caret + activeElement BODY). */
   cursor: default;
-  -webkit-user-select: none;
-  user-select: none;
 }
 
 input,

@@ -1,11 +1,7 @@
 import { ref, computed } from 'vue'
+import type { PaginationMeta } from '@/types/api.types'
 
-export interface PaginationMeta {
-  current_page: number
-  last_page: number
-  per_page: number
-  total: number
-}
+export type { PaginationMeta }
 
 export function usePagination(initialPerPage = 15) {
   const currentPage = ref(1)

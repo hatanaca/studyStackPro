@@ -77,9 +77,7 @@ export function renderInSandbox(
     iframe.style.border = 'none'
     iframe.style.borderRadius = 'var(--radius-md)'
 
-    const html = type === 'html'
-      ? createSandboxedHTML(code)
-      : createSandboxedCSS(code)
+    const html = type === 'html' ? createSandboxedHTML(code) : createSandboxedCSS(code)
 
     iframe.srcdoc = html
     container.appendChild(iframe)

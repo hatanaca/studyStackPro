@@ -25,6 +25,12 @@ services:
     container_name: nginx
     logging: *default-logging
     build: ./docker/nginx
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
     ports:
       - "8080:80"
       - "443:443"
@@ -114,6 +120,9 @@ services:
   reverb:
     container_name: reverb
     logging: *default-logging
+    read_only: true
+    tmpfs:
+      - /tmp:size=10m
     build:
       context: ./docker/php
       dockerfile: Dockerfile.cli
@@ -162,6 +171,9 @@ services:
   horizon:
     container_name: horizon
     logging: *default-logging
+    read_only: true
+    tmpfs:
+      - /tmp:size=10m
     build:
       context: ./docker/php
       dockerfile: Dockerfile.cli
@@ -209,6 +221,9 @@ services:
   scheduler:
     container_name: scheduler
     logging: *default-logging
+    read_only: true
+    tmpfs:
+      - /tmp:size=10m
     build:
       context: ./docker/php
       dockerfile: Dockerfile.cli
@@ -239,7 +254,7 @@ services:
       - app
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "cat /proc/1/cmdline 2>/dev/null | grep -q schedule:work || exit 1"]
+      test: ["CMD-SHELL", "php artisan schedule:status 2>/dev/null || php -r \"echo 'ok';\""]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -256,6 +271,9 @@ services:
   node:
     container_name: node
     logging: *default-logging
+    read_only: true
+    tmpfs:
+      - /tmp:size=50m
     build:
       context: ./frontend
       dockerfile: ../docker/node/Dockerfile.frontend

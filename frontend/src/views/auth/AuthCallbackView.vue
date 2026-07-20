@@ -47,7 +47,8 @@ onMounted(async () => {
     } else {
       error.value = 'Não foi possível validar a sessão. Tente novamente.'
     }
-  } catch {
+  } catch (e) {
+    console.warn('[AuthCallback] OAuth complete failed:', e)
     error.value = 'Não foi possível validar a sessão. Tente novamente.'
   } finally {
     loading.value = false
@@ -98,9 +99,15 @@ onMounted(async () => {
   animation: spin 0.8s linear infinite;
   margin: 0 auto var(--spacing-md);
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .auth-callback__spinner { animation: none; }
+  .auth-callback__spinner {
+    animation: none;
+  }
 }
 .auth-callback__error h2 {
   color: var(--color-danger, #ef4444);

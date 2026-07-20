@@ -4,7 +4,7 @@ namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LinkedIn\SharePostRequest;
-use App\Modules\LinkedIn\DTOs\LinkedInPostDTO;
+use App\Jobs\ShareLinkedInPostJob;
 use App\Modules\LinkedIn\Services\LinkedInService;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -73,25 +73,9 @@ class LinkedInController extends Controller
             );
         }
 
-        $dto = new LinkedInPostDTO(text: $request->validated('text'));
+        ShareLinkedInPostJob::dispatch($user->id, $request->validated('text'));
 
-        try {
-            $result = $this->linkedin->sharePost($user, $dto);
-
-            return $this->success($result, 'Post publicado no LinkedIn com sucesso.');
-        } catch (\Throwable $e) {
-            Log::error('LinkedIn share failed', [
-                'user_id' => $user->id,
-                'exception' => $e,
-            ]);
-
-            return $this->error(
-                'Falha ao publicar no LinkedIn. O token pode ter expirado.',
-                'LINKEDIN_API_ERROR',
-                null,
-                502
-            );
-        }
+        return $this->success(null, 'Post sendo compartilhado no LinkedIn.', 202);
     }
 
     /**
@@ -101,14 +85,7 @@ class LinkedInController extends Controller
      */
     public function disconnect(Request $request): JsonResponse
     {
-        $user = $request->user();
-
-        $user->forceFill([
-            'linkedin_id' => null,
-            'linkedin_token' => null,
-            'linkedin_refresh_token' => null,
-            'linkedin_token_expires_at' => null,
-        ])->save();
+        $this->linkedin->disconnect($request->user());
 
         return $this->success(null, 'Conta LinkedIn desconectada.');
     }

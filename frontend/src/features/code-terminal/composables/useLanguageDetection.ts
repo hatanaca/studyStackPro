@@ -19,7 +19,11 @@ export function useLanguageDetection() {
     }
 
     // SQL
-    if (/^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|FROM|WHERE|JOIN|INTO|VALUES)\b/i.test(trimmed)) {
+    if (
+      /^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|FROM|WHERE|JOIN|INTO|VALUES)\b/i.test(
+        trimmed
+      )
+    ) {
       return 'sql'
     }
 
@@ -29,12 +33,20 @@ export function useLanguageDetection() {
     }
 
     // CSS
-    if (/\{[\s\S]*:\s*[^;]+;/.test(trimmed) || /^\.[a-zA-Z_-]+\s*\{/.test(trimmed) || /^[a-zA-Z-]+\s*\{/.test(trimmed)) {
+    if (
+      /\{[\s\S]*:\s*[^;]+;/.test(trimmed) ||
+      /^\.[a-zA-Z_-]+\s*\{/.test(trimmed) ||
+      /^[a-zA-Z-]+\s*\{/.test(trimmed)
+    ) {
       return 'css'
     }
 
     // Lua
-    if (/\bfunction\s*\w*\s*\(/.test(trimmed) && /\bend\b/.test(trimmed) && /\blocal\b/.test(trimmed)) {
+    if (
+      /\bfunction\s*\w*\s*\(/.test(trimmed) &&
+      /\bend\b/.test(trimmed) &&
+      /\blocal\b/.test(trimmed)
+    ) {
       return 'lua'
     }
     if (/^\s*(local\s+\w+\s*=|if\s+.+\s+then|for\s+.+\s+do|while\s+.+\s+do)/.test(trimmed)) {

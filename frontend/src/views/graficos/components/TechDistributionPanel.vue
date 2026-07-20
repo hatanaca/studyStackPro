@@ -23,12 +23,16 @@ const viewMode = ref<'donut' | 'treemap'>('donut')
           class="toggle__btn"
           :class="{ 'toggle__btn--active': viewMode === 'donut' }"
           @click="viewMode = 'donut'"
-        >Donut</button>
+        >
+          Donut
+        </button>
         <button
           class="toggle__btn"
           :class="{ 'toggle__btn--active': viewMode === 'treemap' }"
           @click="viewMode = 'treemap'"
-        >Treemap</button>
+        >
+          Treemap
+        </button>
       </div>
     </template>
     <ChartSkeleton v-if="loading" height="280px" />
@@ -39,11 +43,7 @@ const viewMode = ref<'donut' | 'treemap'>('donut')
         :labels="data.labels"
         :colors="data.colors"
       />
-      <TreemapChart
-        v-else
-        :series="treemapData"
-        :colors="data.colors"
-      />
+      <TreemapChart v-else :series="treemapData" :colors="data.colors" />
     </template>
   </ChartPanel>
 </template>

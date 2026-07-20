@@ -51,8 +51,7 @@ async function doExport() {
     })
     // API retorna { success, data: { exported_at, period, data } }
     const payload = res.data?.data as
-      | { exported_at: string; period: { start: string; end: string }; data: ExportRow[] }
-      | undefined
+      { exported_at: string; period: { start: string; end: string }; data: ExportRow[] } | undefined
     if (!payload?.data) {
       throw new Error('Resposta inválida da API')
     }
@@ -80,8 +79,7 @@ async function doExport() {
       'data' in e.response
     ) {
       const data = (e.response as { data?: Record<string, unknown> }).data as
-        | Record<string, unknown>
-        | undefined
+        Record<string, unknown> | undefined
       const err = data?.error as { message?: string } | undefined
       const firstError =
         data?.errors && typeof data.errors === 'object'
@@ -103,76 +101,76 @@ async function doExport() {
     subtitle="Exporte seus dados de estudo para análise externa."
     narrow
   >
-  <div class="export-view">
-    <p class="export-view__lead">
-      Os dados são buscados no servidor para o período escolhido. O arquivo inclui data, minutos e
-      quantidade de sessões por dia.
-    </p>
-    <Card class="export-view__card" :aria-busy="exporting" aria-live="polite">
-      <template #title>Opções de exportação</template>
-      <template #content>
-        <Fieldset legend="Período">
-          <p class="export-view__fieldset-desc">
-            Selecione o intervalo de datas para incluir no export.
-          </p>
-          <div class="export-view__dates">
-            <label for="export-date-start" class="p-field">
-              <span class="export-view__label">Data inicial</span>
-              <input
-                id="export-date-start"
-                v-model="dateRange.start"
-                type="date"
-                class="p-inputtext p-component w-full"
-              />
-            </label>
-            <label for="export-date-end" class="p-field">
-              <span class="export-view__label">Data final</span>
-              <input
-                id="export-date-end"
-                v-model="dateRange.end"
-                type="date"
-                class="p-inputtext p-component w-full"
-              />
-            </label>
+    <div class="export-view">
+      <p class="export-view__lead">
+        Os dados são buscados no servidor para o período escolhido. O arquivo inclui data, minutos e
+        quantidade de sessões por dia.
+      </p>
+      <Card class="export-view__card" :aria-busy="exporting" aria-live="polite">
+        <template #title>Opções de exportação</template>
+        <template #content>
+          <Fieldset legend="Período">
+            <p class="export-view__fieldset-desc">
+              Selecione o intervalo de datas para incluir no export.
+            </p>
+            <div class="export-view__dates">
+              <label for="export-date-start" class="p-field">
+                <span class="export-view__label">Data inicial</span>
+                <input
+                  id="export-date-start"
+                  v-model="dateRange.start"
+                  type="date"
+                  class="p-inputtext p-component w-full"
+                />
+              </label>
+              <label for="export-date-end" class="p-field">
+                <span class="export-view__label">Data final</span>
+                <input
+                  id="export-date-end"
+                  v-model="dateRange.end"
+                  type="date"
+                  class="p-inputtext p-component w-full"
+                />
+              </label>
+            </div>
+          </Fieldset>
+          <Fieldset legend="Formato">
+            <p class="export-view__fieldset-desc">Formato do arquivo gerado.</p>
+            <div class="export-view__format">
+              <label class="export-view__radio-label">
+                <input v-model="format" type="radio" value="csv" name="export-format" />
+                CSV (planilha)
+              </label>
+              <label class="export-view__radio-label">
+                <input v-model="format" type="radio" value="json" name="export-format" />
+                JSON
+              </label>
+            </div>
+          </Fieldset>
+          <div class="export-view__actions">
+            <Button
+              :label="exporting ? 'Buscando dados no servidor…' : 'Gerar exportação'"
+              :loading="exporting"
+              :disabled="!canExport"
+              @click="doExport"
+            />
           </div>
-        </Fieldset>
-        <Fieldset legend="Formato">
-          <p class="export-view__fieldset-desc">Formato do arquivo gerado.</p>
-          <div class="export-view__format">
-            <label class="export-view__radio-label">
-              <input v-model="format" type="radio" value="csv" name="export-format" />
-              CSV (planilha)
-            </label>
-            <label class="export-view__radio-label">
-              <input v-model="format" type="radio" value="json" name="export-format" />
-              JSON
-            </label>
+          <div v-if="exportDone" class="export-view__success" role="status" aria-live="polite">
+            <span class="export-view__success-icon" aria-hidden="true">✓</span>
+            <span
+              >Exportação gerada. O download foi iniciado. Verifique a pasta de downloads do
+              navegador.</span
+            >
           </div>
-        </Fieldset>
-        <div class="export-view__actions">
-          <Button
-            :label="exporting ? 'Buscando dados no servidor…' : 'Gerar exportação'"
-            :loading="exporting"
-            :disabled="!canExport"
-            @click="doExport"
+          <ErrorCard
+            v-if="exportError"
+            title="Falha na exportação"
+            :message="exportError"
+            :on-retry="doExport"
           />
-        </div>
-        <div v-if="exportDone" class="export-view__success" role="status" aria-live="polite">
-          <span class="export-view__success-icon" aria-hidden="true">✓</span>
-          <span
-            >Exportação gerada. O download foi iniciado. Verifique a pasta de downloads do
-            navegador.</span
-          >
-        </div>
-        <ErrorCard
-          v-if="exportError"
-          title="Falha na exportação"
-          :message="exportError"
-          :on-retry="doExport"
-        />
-      </template>
-    </Card>
-  </div>
+        </template>
+      </Card>
+    </div>
   </PageView>
 </template>
 

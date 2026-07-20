@@ -2,7 +2,7 @@
 import { LANGUAGE_CONFIGS } from '../types/code-terminal.types'
 import type { ProgrammingLanguage } from '../types/code-terminal.types'
 
-const props = defineProps<{
+defineProps<{
   modelValue: ProgrammingLanguage
 }>()
 
@@ -25,11 +25,7 @@ function handleChange(event: Event) {
     aria-label="Selecionar linguagem"
     @change="handleChange"
   >
-    <option
-      v-for="lang in languages"
-      :key="lang.name"
-      :value="lang.name"
-    >
+    <option v-for="lang in languages" :key="lang.name" :value="lang.name">
       {{ lang.label }}
     </option>
   </select>

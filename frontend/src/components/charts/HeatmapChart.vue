@@ -74,9 +74,7 @@ const years = computed(() => {
         </option>
       </select>
     </div>
-    <div v-if="!data?.length" class="chart-placeholder">
-      Sem dados
-    </div>
+    <div v-if="!data?.length" class="chart-placeholder">Sem dados</div>
     <div v-else class="heatmap">
       <svg
         viewBox="0 0 730 110"

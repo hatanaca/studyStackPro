@@ -43,7 +43,10 @@ const subtitle = computed(() => {
           size="md"
           class="tech-card-v2__primary"
           type="button"
-          @click="technology?.id && router.push({ name: 'technology-detail', params: { id: technology.id } })"
+          @click="
+            technology?.id &&
+            router.push({ name: 'technology-detail', params: { id: technology.id } })
+          "
         >
           Sessões &amp; Detalhes
         </BaseButton>

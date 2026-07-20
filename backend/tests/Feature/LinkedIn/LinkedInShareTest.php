@@ -36,7 +36,7 @@ class LinkedInShareTest extends TestCase
 
     public function test_status_returns_connected_when_has_linkedin(): void
     {
-        $this->user->update(['linkedin_id' => 'linkedin-123']);
+        $this->user->forceFill(['linkedin_id' => 'linkedin-123'])->save();
 
         Http::fake([
             'api.linkedin.com/v2/me' => Http::response([
@@ -81,7 +81,7 @@ class LinkedInShareTest extends TestCase
 
     public function test_share_validates_text_required(): void
     {
-        $this->user->update(['linkedin_id' => 'linkedin-123']);
+        $this->user->forceFill(['linkedin_id' => 'linkedin-123'])->save();
 
         $response = $this->withToken($this->token)
             ->postJson('/api/v1/linkedin/share', []);
@@ -91,7 +91,7 @@ class LinkedInShareTest extends TestCase
 
     public function test_share_validates_text_max_length(): void
     {
-        $this->user->update(['linkedin_id' => 'linkedin-123']);
+        $this->user->forceFill(['linkedin_id' => 'linkedin-123'])->save();
 
         $response = $this->withToken($this->token)
             ->postJson('/api/v1/linkedin/share', [
@@ -103,10 +103,10 @@ class LinkedInShareTest extends TestCase
 
     public function test_share_posts_to_linkedin_successfully(): void
     {
-        $this->user->update([
+        $this->user->forceFill([
             'linkedin_id' => 'abc123',
             'linkedin_token' => 'valid-token',
-        ]);
+        ])->save();
 
         Http::fake([
             'api.linkedin.com/v2/ugcPosts' => Http::response([
@@ -133,10 +133,10 @@ class LinkedInShareTest extends TestCase
 
     public function test_share_handles_api_error_gracefully(): void
     {
-        $this->user->update([
+        $this->user->forceFill([
             'linkedin_id' => 'abc123',
             'linkedin_token' => 'expired-token',
-        ]);
+        ])->save();
 
         Http::fake([
             'api.linkedin.com/v2/ugcPosts' => Http::response([
@@ -158,12 +158,12 @@ class LinkedInShareTest extends TestCase
 
     public function test_disconnect_removes_linkedin_data(): void
     {
-        $this->user->update([
+        $this->user->forceFill([
             'linkedin_id' => 'abc123',
             'linkedin_token' => 'token',
             'linkedin_refresh_token' => 'refresh',
             'linkedin_token_expires_at' => now()->addDays(30),
-        ]);
+        ])->save();
 
         $response = $this->withToken($this->token)
             ->postJson('/api/v1/linkedin/disconnect');

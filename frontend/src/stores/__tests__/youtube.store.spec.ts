@@ -20,9 +20,7 @@ const mockSearchResult = {
 }
 
 const mockVideoDetail = {
-  items: [
-    { id: 'v1', snippet: { title: 'Video 1', description: 'Description' } },
-  ],
+  items: [{ id: 'v1', snippet: { title: 'Video 1', description: 'Description' } }],
 }
 
 describe('youtube.store', () => {
@@ -56,7 +54,10 @@ describe('youtube.store', () => {
   it('search sets loading during request', async () => {
     let resolveSearch!: (v: unknown) => void
     vi.mocked(youtubeApi.search).mockImplementation(
-      () => new Promise((resolve) => { resolveSearch = resolve }) as never,
+      () =>
+        new Promise((resolve) => {
+          resolveSearch = resolve
+        }) as never
     )
 
     const store = useYouTubeStore()
