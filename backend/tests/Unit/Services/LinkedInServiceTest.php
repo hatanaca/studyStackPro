@@ -44,7 +44,7 @@ class LinkedInServiceTest extends TestCase
         ]);
 
         Http::fake([
-            'api.linkedin.com/v2/ugcPosts' => Http::response([
+            'https://api.linkedin.com/v2/ugcPosts' => Http::response([
                 'id' => 'urn:li:share:123456',
             ], 201),
         ]);
@@ -71,7 +71,7 @@ class LinkedInServiceTest extends TestCase
         ]);
 
         Http::fake([
-            'api.linkedin.com/v2/ugcPosts' => Http::response([
+            'https://api.linkedin.com/v2/ugcPosts' => Http::response([
                 'message' => 'Invalid access token',
                 'status' => 401,
             ], 401),
@@ -92,7 +92,7 @@ class LinkedInServiceTest extends TestCase
         ]);
 
         Http::fake([
-            'api.linkedin.com/v2/me' => Http::response([
+            'https://api.linkedin.com/v2/me' => Http::response([
                 'id' => 'abc123',
                 'localizedFirstName' => 'João',
                 'localizedLastName' => 'Silva',
@@ -114,7 +114,7 @@ class LinkedInServiceTest extends TestCase
         ])->save();
 
         Http::fake([
-            'www.linkedin.com/oauth/v2/accessToken' => Http::response([
+            'https://www.linkedin.com/oauth/v2/accessToken' => Http::response([
                 'access_token' => 'new-access-token',
                 'refresh_token' => 'new-refresh-token',
                 'expires_in' => 5184000,
