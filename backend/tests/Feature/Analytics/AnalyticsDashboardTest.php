@@ -6,7 +6,6 @@ use App\Jobs\RecalculateMetricsJob;
 use App\Models\Technology;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
@@ -124,14 +123,14 @@ class AnalyticsDashboardTest extends TestCase
 
     public function test_recalculate_dispatches_job(): void
     {
-        Bus::fake();
+        Queue::fake();
 
         $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
             ->postJson('/api/v1/analytics/recalculate');
 
         $response->assertStatus(202);
 
-        Bus::assertDispatched(RecalculateMetricsJob::class, function (RecalculateMetricsJob $job) {
+        Queue::assertPushed(RecalculateMetricsJob::class, function (RecalculateMetricsJob $job) {
             return $job->userId === $this->user->id;
         });
     }
