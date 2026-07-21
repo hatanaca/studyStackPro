@@ -6,7 +6,6 @@ use App\Jobs\RecalculateMetricsJob;
 use App\Models\Technology;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
@@ -23,7 +22,6 @@ class AnalyticsDashboardTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Event::fake();
         Queue::fake();
         $this->user = User::factory()->create();
         $this->technology = Technology::forceCreate([

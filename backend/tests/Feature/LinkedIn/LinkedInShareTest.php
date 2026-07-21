@@ -38,13 +38,13 @@ class LinkedInShareTest extends TestCase
     {
         $this->user->forceFill(['linkedin_id' => 'linkedin-123'])->save();
 
-        Http::fake([
-            'api.linkedin.com/v2/me' => Http::response([
+        Http::fake(function ($request) {
+            return Http::response([
                 'id' => 'linkedin-123',
                 'localizedFirstName' => 'João',
                 'localizedLastName' => 'Silva',
-            ]),
-        ]);
+            ]);
+        });
 
         $response = $this->withToken($this->token)
             ->getJson('/api/v1/linkedin/status');
@@ -108,11 +108,11 @@ class LinkedInShareTest extends TestCase
             'linkedin_token' => 'valid-token',
         ])->save();
 
-        Http::fake([
-            'api.linkedin.com/v2/ugcPosts' => Http::response([
+        Http::fake(function ($request) {
+            return Http::response([
                 'id' => 'urn:li:share:789',
-            ], 201),
-        ]);
+            ], 201);
+        });
 
         $response = $this->withToken($this->token)
             ->postJson('/api/v1/linkedin/share', [
@@ -138,11 +138,11 @@ class LinkedInShareTest extends TestCase
             'linkedin_token' => 'expired-token',
         ])->save();
 
-        Http::fake([
-            'api.linkedin.com/v2/ugcPosts' => Http::response([
+        Http::fake(function ($request) {
+            return Http::response([
                 'message' => 'Invalid token',
-            ], 401),
-        ]);
+            ], 401);
+        });
 
         $response = $this->withToken($this->token)
             ->postJson('/api/v1/linkedin/share', [

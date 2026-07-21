@@ -30,7 +30,7 @@ class InvalidateSessionCacheTest extends TestCase
         $taggedCache = Mockery::mock();
         $taggedCache->shouldReceive('flush')->once();
         Cache::shouldReceive('tags')
-            ->with(['sessions', "sessions:user:{$userId}"])
+            ->with(["sessions:user:{$userId}"])
             ->once()
             ->andReturn($taggedCache);
 
@@ -49,7 +49,7 @@ class InvalidateSessionCacheTest extends TestCase
         $taggedCache = Mockery::mock();
         $taggedCache->shouldReceive('flush')->once();
         Cache::shouldReceive('tags')
-            ->with(['sessions', "sessions:user:{$userId}"])
+            ->with(["sessions:user:{$userId}"])
             ->once()
             ->andReturn($taggedCache);
 
@@ -66,7 +66,7 @@ class InvalidateSessionCacheTest extends TestCase
         $taggedCache = Mockery::mock();
         $taggedCache->shouldReceive('flush')->once();
         Cache::shouldReceive('tags')
-            ->with(['sessions', "sessions:user:{$userId}"])
+            ->with(["sessions:user:{$userId}"])
             ->once()
             ->andReturn($taggedCache);
 

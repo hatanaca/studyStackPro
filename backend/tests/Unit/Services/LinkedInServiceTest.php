@@ -43,11 +43,11 @@ class LinkedInServiceTest extends TestCase
             'linkedin_token' => 'test-access-token',
         ]);
 
-        Http::fake([
-            'https://api.linkedin.com/v2/ugcPosts' => Http::response([
+        Http::fake(function ($request) {
+            return Http::response([
                 'id' => 'urn:li:share:123456',
-            ], 201),
-        ]);
+            ], 201);
+        });
 
         $dto = new LinkedInPostDTO(text: 'Estudei Laravel hoje!');
 
@@ -70,12 +70,12 @@ class LinkedInServiceTest extends TestCase
             'linkedin_token' => 'expired-token',
         ]);
 
-        Http::fake([
-            'https://api.linkedin.com/v2/ugcPosts' => Http::response([
+        Http::fake(function ($request) {
+            return Http::response([
                 'message' => 'Invalid access token',
                 'status' => 401,
-            ], 401),
-        ]);
+            ], 401);
+        });
 
         $dto = new LinkedInPostDTO(text: 'Teste');
 
