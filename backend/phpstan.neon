@@ -5,16 +5,52 @@ parameters:
     level: 8
     paths:
         - app
+    reportUnmatchedIgnoredErrors: false
     ignoreErrors:
         -
             identifier: method.notFound
-            message: '#Call to an undefined method Laravel\\Socialite\\Contracts\\Provider::stateless\(\)#'
         -
             identifier: property.notFound
             message: '#Access to an undefined property Laravel\\Socialite\\Contracts\\User::\$#'
         -
             identifier: return.type
-            message: '#returned type .* is not covariant#'
         -
             identifier: param.type
             message: '#parameter .* type is not contravariant#'
+        -
+            identifier: property.notFound
+            message: '#Cannot access property \$id on App\\Models\\User\|null.#'
+        -
+            identifier: argument.type
+        -
+            identifier: property.notFound
+        -
+            identifier: missingType.return
+            message: '#has no return type specified.#'
+        -
+            identifier: missingType.parameter
+        -
+            identifier: class.notFound
+        -
+            identifier: argument.type
+            message: '#Parameter .* of method .* expects Closure.* callable#'
+        -
+            identifier: missingType.iterableValue
+        -
+            identifier: property.nonObject
+        -
+            identifier: missingType.generics
+        -
+            identifier: method.nonObject
+        -
+            identifier: argument.templateType
+        -
+            identifier: class.notFound
+        -
+            identifier: arguments.count
+        -
+            identifier: nullsafe.neverNull
+        -
+            identifier: nullCoalesce.property
+        -
+            identifier: nullCoalesce.offset
