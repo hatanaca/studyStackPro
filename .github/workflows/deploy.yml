@@ -48,8 +48,8 @@ jobs:
           image-ref: ${{ secrets.DOCKER_USERNAME }}/studytrack-backend:${{ github.sha }}
           format: table
           exit-code: '1'
-          severity: CRITICAL,HIGH
-        continue-on-error: true
+          severity: CRITICAL
+        continue-on-error: false
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v7
@@ -69,8 +69,8 @@ jobs:
           image-ref: ${{ secrets.DOCKER_USERNAME }}/studytrack-frontend:${{ github.sha }}
           format: table
           exit-code: '1'
-          severity: CRITICAL,HIGH
-        continue-on-error: true
+          severity: CRITICAL
+        continue-on-error: false
 
   # Deploy step: customize conforme seu ambiente (SSH, K8s, etc.)
   # deploy:

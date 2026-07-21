@@ -113,7 +113,9 @@ class OAuthController extends Controller
             'token_nonce' => $tokenNonce,
         ]));
 
-        return redirect($frontendUrl.'/auth/callback?status=ok&token='.urlencode($token));
+        // Usa fragment (#) em vez de query string para expor o token.
+        // Fragmentos não são enviados ao servidor (não ficam em logs/Referer).
+        return redirect($frontendUrl.'/auth/callback#status=ok&token='.urlencode($token));
     }
 
     /**

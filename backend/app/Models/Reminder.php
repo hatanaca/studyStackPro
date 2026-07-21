@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Reminder extends BaseModel
 {
     protected $fillable = [
-        'user_id',
         'technology_id',
         'text',
         'completed',

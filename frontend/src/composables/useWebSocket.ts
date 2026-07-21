@@ -55,9 +55,10 @@ let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 let isConnecting = false
 
 /** Testa rapidamente se o Reverb está acessível via WebSocket */
-function probeReverb(host: string, port: string, timeout = 1500): Promise<boolean> {
+function probeReverb(host: string, port: string, scheme: string, timeout = 1500): Promise<boolean> {
   return new Promise((resolve) => {
-    const url = `ws://${host}:${port}/app/local-key?protocol=7&client=js&version=8.5.0`
+    const wsScheme = scheme === 'https' ? 'wss' : 'ws'
+    const url = `${wsScheme}://${host}:${port}/app/local-key?protocol=7&client=js&version=8.5.0`
     const ws = new WebSocket(url)
     const timer = setTimeout(() => {
       ws.onclose = null
@@ -147,7 +148,7 @@ export async function connectWebSocket(userId: string): Promise<void> {
     const scheme = import.meta.env.VITE_REVERB_SCHEME || 'http'
     const host = import.meta.env.VITE_REVERB_HOST || 'localhost'
     const port = import.meta.env.VITE_REVERB_PORT || '8080'
-    if (!(await probeReverb(host, port))) {
+    if (!(await probeReverb(host, port, scheme))) {
       console.warn('[WS] Reverb não está disponível no momento')
       return
     }

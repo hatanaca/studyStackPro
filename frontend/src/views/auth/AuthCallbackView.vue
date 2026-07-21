@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { authApi } from '@/api/modules/auth.api'
 import { fetchSanctumCsrfCookie } from '@/api/sanctum'
 import type { User } from '@/types/domain.types'
 
-const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
@@ -14,7 +13,18 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 
 onMounted(async () => {
-  const { status, error: queryError, token } = route.query
+  // Lê parâmetros do fragment (#) em vez de query string por segurança.
+  // Fragmentos não são enviados ao servidor (logs, Referer headers).
+  const fragment = window.location.hash.substring(1)
+  const fragmentParams = Object.fromEntries(
+    fragment.split('&').map((p) => {
+      const [k, ...v] = p.split('=')
+      return [k, decodeURIComponent(v.join('='))]
+    })
+  )
+  const status = fragmentParams.status ?? null
+  const queryError = fragmentParams.error ?? null
+  const token = fragmentParams.token ?? null
 
   if (queryError) {
     error.value = 'Falha na autenticação com o provedor. Tente novamente.'

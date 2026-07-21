@@ -38,7 +38,7 @@ class EloquentReminderRepository implements ReminderRepositoryInterface
 
     public function create(string $userId, array $data): Reminder
     {
-        return Reminder::create(array_merge($data, ['user_id' => $userId]));
+        return Reminder::forceCreate(array_merge($data, ['user_id' => $userId]));
     }
 
     public function update(string $id, string $userId, array $data): Reminder
