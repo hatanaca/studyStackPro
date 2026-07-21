@@ -23,7 +23,6 @@ class AnalyticsDashboardTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Queue::fake();
         $this->user = User::factory()->create();
         $this->technology = Technology::forceCreate([
             'user_id' => $this->user->id,
