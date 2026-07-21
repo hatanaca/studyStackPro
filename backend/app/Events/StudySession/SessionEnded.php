@@ -30,6 +30,9 @@ class SessionEnded implements ShouldBroadcast
         return '.session.ended';
     }
 
+    /**
+     * @return array{session: array{id: string, started_at: string|null, ended_at: string|null, duration_min: int|null, duration_formatted: string|null, mood: int|null, focus_score: int|null}}
+     */
     public function broadcastWith(): array
     {
         return [

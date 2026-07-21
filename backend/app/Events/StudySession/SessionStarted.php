@@ -30,9 +30,14 @@ class SessionStarted implements ShouldBroadcast
         return '.session.started';
     }
 
+    /**
+     * @return array{session: array{id: string, technology: array{id: string, name: string, color: string, slug: string}|null, started_at: string|null, ended_at: null, elapsed_seconds: int}}
+     */
     public function broadcastWith(): array
     {
-        $elapsedSeconds = (int) $this->session->started_at->diffInSeconds(now());
+        $elapsedSeconds = $this->session->started_at
+            ? (int) $this->session->started_at->diffInSeconds(now())
+            : 0;
 
         return [
             'session' => [
