@@ -92,7 +92,7 @@ async function handleUpdate(payload: { id: string; target_value: number }) {
     />
     <div v-else-if="goalsStore.loading" class="goal-list__loading">
       <div v-for="i in 3" :key="i" class="goal-list__skeleton">
-        <StackSkeleton  />
+        <StackSkeleton />
       </div>
     </div>
     <template v-else>

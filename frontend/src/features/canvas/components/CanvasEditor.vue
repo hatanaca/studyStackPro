@@ -223,7 +223,11 @@ function onKeydown(e: KeyboardEvent) {
   }
   if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
     e.preventDefault()
-    if (e.shiftKey) { redo() } else { undo() }
+    if (e.shiftKey) {
+      redo()
+    } else {
+      undo()
+    }
   }
   if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
     e.preventDefault()

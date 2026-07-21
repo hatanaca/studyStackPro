@@ -26,7 +26,7 @@ const prefetch = {
 }
 import { useAuthStore } from '@/stores/auth.store'
 import { formatHours } from '@/utils/formatters'
-import { useUiStore} from '@/stores/ui.store'
+import { useUiStore } from '@/stores/ui.store'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 import RealtimeBadge from '@/features/dashboard/components/RealtimeBadge.vue'
 import { disconnectWebSocket } from '@/composables/useWebSocket'

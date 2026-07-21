@@ -13,7 +13,10 @@ export function useCanvasPersistence() {
   const saving = ref(false)
   const loading = ref(false)
 
-  async function save(canvasData: Record<string, unknown>, options?: { title?: string; muralItems?: Array<{ id: string; type: string; url: string }> }): Promise<CanvasArtwork | null> {
+  async function save(
+    canvasData: Record<string, unknown>,
+    options?: { title?: string; muralItems?: Array<{ id: string; type: string; url: string }> }
+  ): Promise<CanvasArtwork | null> {
     saving.value = true
     try {
       if (currentArtwork.value) {

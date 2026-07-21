@@ -58,7 +58,9 @@ function onKeydown(e: KeyboardEvent) {
     return
   }
   if (!isOpen.value) return
-  const items = panelRef.value?.querySelectorAll('[role="menuitem"], [role="option"], button:not([disabled])')
+  const items = panelRef.value?.querySelectorAll(
+    '[role="menuitem"], [role="option"], button:not([disabled])'
+  )
   if (!items?.length) return
   const current = document.activeElement as HTMLElement
   const idx = Array.from(items).indexOf(current)

@@ -33,9 +33,7 @@ function retry() {
     <h2>Algo deu errado</h2>
     <p class="error-boundary__message">{{ error?.message }}</p>
     <p v-if="isDev" class="error-boundary__stack">{{ error?.stack }}</p>
-    <button class="error-boundary__btn" @click="retry">
-      Tentar novamente
-    </button>
+    <button class="error-boundary__btn" @click="retry">Tentar novamente</button>
   </div>
   <RouterView v-else />
   <Toast />

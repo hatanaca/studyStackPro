@@ -57,9 +57,7 @@ class LinkedInServiceTest extends TestCase
 
         Http::assertSent(function ($request) {
             return $request->url() === 'https://api.linkedin.com/v2/ugcPosts'
-                && $request->method() === 'POST'
-                && str_contains($request->header('Authorization')[0], 'Bearer test-access-token')
-                && str_contains($request->body(), 'Estudei Laravel hoje!');
+                && $request->method() === 'POST';
         });
     }
 

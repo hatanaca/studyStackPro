@@ -64,7 +64,12 @@ async function onSubmit(payload: { email: string; password: string }) {
     </div>
 
     <div class="oauth-buttons">
-      <button type="button" class="oauth-btn oauth-btn--google" aria-label="Entrar com Google" @click="loginWith('google')">
+      <button
+        type="button"
+        class="oauth-btn oauth-btn--google"
+        aria-label="Entrar com Google"
+        @click="loginWith('google')"
+      >
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
           <path
             fill="#4285F4"
@@ -85,7 +90,12 @@ async function onSubmit(payload: { email: string; password: string }) {
         </svg>
         Google
       </button>
-      <button type="button" class="oauth-btn oauth-btn--discord" aria-label="Entrar com Discord" @click="loginWith('discord')">
+      <button
+        type="button"
+        class="oauth-btn oauth-btn--discord"
+        aria-label="Entrar com Discord"
+        @click="loginWith('discord')"
+      >
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
           <path
             fill="#5865F2"
