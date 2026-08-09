@@ -39,7 +39,7 @@
     "apexcharts": "^5.15.2",
     "axios": "^1.18.1",
     "codemirror": "^6.0.2",
-    "dompurify": "^3.4.12",
+    "dompurify": "^3.4.13",
     "fabric": "^7.4.0",
     "fengari-web": "^0.1.4",
     "jspdf": "^4.2.1",
