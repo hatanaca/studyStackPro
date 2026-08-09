@@ -244,18 +244,9 @@ watch(
     subtitle="Visualize seus dados de estudo com gráficos interativos e relatórios detalhados."
     narrow
   >
-    <div
-      v-if="renderError"
-      style="
-        padding: 2rem;
-        background: #fef2f2;
-        border: 1px solid #ef4444;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-      "
-    >
-      <p style="color: #dc2626; font-weight: 600">Erro ao renderizar gráficos</p>
-      <p style="color: #6b7280; font-size: 0.875rem">{{ renderError }}</p>
+    <div v-if="renderError" class="gv__render-error">
+      <p class="gv__render-error-title">Erro ao renderizar gráficos</p>
+      <p class="gv__render-error-msg">{{ renderError }}</p>
     </div>
     <div class="gv">
       <!-- Toolbar -->
@@ -397,6 +388,23 @@ watch(
   top: 0;
   z-index: 10;
 }
+.gv__render-error {
+  padding: var(--spacing-2xl);
+  background: var(--color-error-soft);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+}
+.gv__render-error-title {
+  color: var(--color-error);
+  font-weight: 600;
+  margin: 0 0 var(--spacing-xs);
+}
+.gv__render-error-msg {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  margin: 0;
+}
 
 /* ── HERO CHART ───────────────────────────────────── */
 .hero {
@@ -475,8 +483,8 @@ watch(
 .hero__badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
   background: linear-gradient(135deg, var(--color-primary), var(--color-error));
   color: var(--color-text);
   font-size: var(--text-xs);
@@ -485,13 +493,13 @@ watch(
   text-transform: uppercase;
   border-radius: var(--radius-full);
   width: fit-content;
-  margin-bottom: 4px;
+  margin-bottom: var(--spacing-xs);
   animation: badgePulse 2s ease-in-out infinite;
 }
 .hero__badge::before {
   content: '';
-  width: 6px;
-  height: 6px;
+  width: var(--spacing-sm);
+  height: var(--spacing-sm);
   background: var(--color-text);
   border-radius: 50%;
   animation: dotBlink 1.5s ease-in-out infinite;
@@ -538,11 +546,11 @@ watch(
 /* ── Layout Picker ────────────────────────────────── */
 .hero__layout-picker {
   display: flex;
-  gap: 6px;
+  gap: var(--spacing-sm);
   background: color-mix(in srgb, var(--color-bg) 40%, transparent);
   backdrop-filter: blur(10px);
-  border-radius: 1rem;
-  padding: 4px;
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xs);
   border: 1px solid color-mix(in srgb, var(--color-primary-contrast) 4%, transparent);
 }
 

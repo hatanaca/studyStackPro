@@ -17,6 +17,7 @@ const seekPercent = ref(-1)
 const isSeeking = ref(false)
 const isMobile = ref(window.innerWidth <= 768)
 const searchResultsRef = ref<HTMLElement | null>(null)
+const expandedPanelRef = ref<HTMLElement | null>(null)
 void searchResultsRef.value // template ref
 
 const playlistTitle = computed(
@@ -113,6 +114,66 @@ function onResize() {
   isMobile.value = window.innerWidth <= 768
 }
 
+// Body scroll lock when expanded panel is open on mobile
+function lockBodyScroll() {
+  if (isMobile.value) {
+    document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.width = '100%'
+  }
+}
+
+function unlockBodyScroll() {
+  if (isMobile.value) {
+    document.body.style.overflow = ''
+    document.body.style.position = ''
+    document.body.style.width = ''
+  }
+}
+
+// Focus trap for expanded panel
+function trapFocus(e: KeyboardEvent) {
+  if (!player.isExpanded || !isMobile.value) return
+  if (e.key !== 'Tab') return
+
+  const panel = expandedPanelRef.value
+  if (!panel) return
+
+  const focusableElements = panel.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  )
+  if (focusableElements.length === 0) return
+
+  const firstElement = focusableElements[0]
+  const lastElement = focusableElements[focusableElements.length - 1]
+
+  if (e.shiftKey) {
+    if (document.activeElement === firstElement) {
+      e.preventDefault()
+      lastElement.focus()
+    }
+  } else {
+    if (document.activeElement === lastElement) {
+      e.preventDefault()
+      firstElement.focus()
+    }
+  }
+}
+
+// Watch expanded state to toggle body scroll lock
+watch(
+  () => player.isExpanded,
+  (expanded) => {
+    if (expanded) {
+      lockBodyScroll()
+      document.addEventListener('keydown', trapFocus)
+    } else {
+      unlockBodyScroll()
+      document.removeEventListener('keydown', trapFocus)
+    }
+  }
+)
+
 onMounted(() => {
   if (hasGoogleAccount.value) player.fetchPlaylists()
   window.addEventListener('resize', onResize)
@@ -120,6 +181,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', onResize)
+  document.removeEventListener('keydown', trapFocus)
+  unlockBodyScroll()
   onDragEnd()
   if (seekResetTimer) {
     clearTimeout(seekResetTimer)
@@ -207,31 +270,12 @@ function formatTime(sec: number) {
     <div
       v-if="!player.isExpanded"
       class="mini-player__collapse-bar"
+      role="region"
+      aria-label="Mini player"
       @mousedown="onDragStart"
       @touchstart="onDragStart"
       @dblclick.stop="player.toggleExpand()"
     >
-      <button
-        class="mini-player__hamburger"
-        aria-label="Abrir navegação"
-        @click.stop="uiStore.openMobileSidebar()"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-      </button>
       <div
         v-if="player.currentTrack?.thumbnail"
         class="mini-player__mini-thumb"
@@ -327,13 +371,36 @@ function formatTime(sec: number) {
     </div>
 
     <!-- Painel expandido -->
-    <div v-else class="mini-player__panel">
-      <div
-        class="mini-player__handle"
-        @mousedown="onDragStart"
-        @touchstart="onDragStart"
-        @dblclick.stop="player.toggleExpand()"
-      >
+    <div
+      v-else
+      ref="expandedPanelRef"
+      class="mini-player__panel"
+      role="dialog"
+      aria-label="Player de música"
+      aria-modal="true"
+    >
+      <div class="mini-player__handle">
+        <button
+          class="mini-player__hamburger"
+          aria-label="Abrir navegação"
+          @click.stop="uiStore.openMobileSidebar()"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="12"
@@ -455,6 +522,10 @@ function formatTime(sec: number) {
           step="0.1"
           :value="player.progress"
           class="mini-player__progress"
+          aria-label="Progresso da música"
+          :aria-valuenow="Math.round(player.progress)"
+          aria-valuemin="0"
+          aria-valuemax="100"
           @input="onSeekInput"
           @change="onSeekChange"
           @mousedown.stop
@@ -639,6 +710,10 @@ function formatTime(sec: number) {
             max="100"
             :value="player.volume"
             class="mini-player__volume-slider"
+            aria-label="Volume"
+            :aria-valuenow="player.volume"
+            aria-valuemin="0"
+            aria-valuemax="100"
             @input="player.setVolume(Number(($event.target as HTMLInputElement).value))"
             @mousedown.stop
           />
@@ -646,9 +721,11 @@ function formatTime(sec: number) {
       </div>
 
       <!-- Tabs -->
-      <div class="mini-player__tabs">
+      <div class="mini-player__tabs" role="tablist" aria-label="Navegação do player">
         <button
           class="mini-player__tab"
+          role="tab"
+          :aria-selected="player.mode === 'playlists'"
           :class="{ 'mini-player__tab--active': player.mode === 'playlists' }"
           @click="player.switchMode('playlists')"
         >
@@ -656,6 +733,8 @@ function formatTime(sec: number) {
         </button>
         <button
           class="mini-player__tab"
+          role="tab"
+          :aria-selected="player.mode === 'search'"
           :class="{ 'mini-player__tab--active': player.mode === 'search' }"
           @click="player.switchMode('search')"
         >
@@ -663,6 +742,8 @@ function formatTime(sec: number) {
         </button>
         <button
           class="mini-player__tab"
+          role="tab"
+          :aria-selected="player.mode === 'favorites'"
           :class="{ 'mini-player__tab--active': player.mode === 'favorites' }"
           @click="player.switchMode('favorites')"
         >
@@ -722,6 +803,10 @@ function formatTime(sec: number) {
             v-model="searchInput"
             class="mini-player__input"
             placeholder="Buscar música..."
+            type="search"
+            inputmode="search"
+            enterkeyhint="search"
+            aria-label="Buscar música"
             @keyup.enter="handleSearch"
             @mousedown.stop
           />
@@ -735,12 +820,16 @@ function formatTime(sec: number) {
           v-if="player.searchResults.length"
           ref="searchResultsRef"
           class="mini-player__search-results"
+          role="listbox"
+          aria-label="Resultados da busca"
           @scroll="onSearchScroll"
         >
           <button
             v-for="(item, i) in player.searchResults"
             :key="item.id?.videoId || i"
             class="mini-player__search-item"
+            role="option"
+            :aria-selected="i === player.videoIndex && player.isPlaying"
             :class="{
               'mini-player__search-item--active': i === player.videoIndex && player.isPlaying,
             }"
@@ -941,6 +1030,9 @@ function formatTime(sec: number) {
   color: var(--color-primary-hover);
 }
 
+.mini-player--expanded .yt-player-wrapper {
+  display: none;
+}
 .mini-player__panel {
   width: 280px;
   max-height: 85vh;
@@ -1384,74 +1476,122 @@ function formatTime(sec: number) {
     display: none !important;
   }
   .mini-player {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
     width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .mini-player:not(.mini-player--expanded) {
+    width: auto !important;
+    height: auto !important;
+  }
+  .mini-player--expanded {
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden;
   }
   .mini-player__hamburger {
-    display: flex;
-    width: 32px;
-    height: 32px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.12s, color 0.12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mini-player__hamburger:hover {
+    background: var(--color-bg-soft);
   }
   .mini-player__collapse-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    position: fixed !important;
+    top: env(safe-area-inset-top, 0px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: auto !important;
     z-index: 9999;
-    max-width: 100%;
-    width: 100%;
-    border-radius: 0;
-    border: none;
-    border-bottom: 1px solid var(--color-border);
+    width: 100% !important;
+    max-width: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid var(--color-border) !important;
     box-shadow: var(--shadow-sm);
     justify-content: flex-start;
-    padding: 6px 10px;
+    padding: 4px 8px !important;
     gap: 4px;
     font-size: 10px;
     background: var(--color-bg-card);
+    min-height: 44px;
   }
   .mini-player__mini-thumb {
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
   }
   .mini-player__title-label {
     font-size: 10px;
     max-width: none;
     flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .mini-player__collapse-controls {
-    gap: 0;
+    gap: 2px;
+    flex-shrink: 0;
   }
   .mini-player__btn-icon {
-    width: 28px;
-    height: 28px;
+    width: 44px;
+    height: 44px;
   }
   .mini-player__btn-icon svg {
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
   }
   .mini-player__panel {
-    width: 100%;
-    height: 100dvh;
-    max-height: 100dvh;
-    border-radius: 0;
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 9998;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    background: var(--color-bg);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .mini-player__handle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     padding: 8px 10px;
     padding-top: calc(8px + env(safe-area-inset-top, 0px));
     flex-shrink: 0;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-card);
   }
   .mini-player__album {
     width: 100%;
-    height: 120px;
+    height: 140px;
     aspect-ratio: auto;
     max-height: none;
     flex-shrink: 0;
@@ -1462,18 +1602,23 @@ function formatTime(sec: number) {
   }
   .mini-player__progress-wrap {
     flex-shrink: 0;
+    padding: 6px 12px;
   }
   .mini-player__controls {
     flex-shrink: 0;
+    gap: 12px;
+    padding: 8px 12px;
   }
   .mini-player__tabs {
     flex-shrink: 0;
+    padding: 0;
   }
   .mini-player__section {
     flex: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     min-height: 0;
+    padding: 8px 12px;
   }
   .mini-player__search-results {
     max-height: none;
@@ -1482,37 +1627,41 @@ function formatTime(sec: number) {
   .mini-player__track-title {
     font-size: 12px;
   }
-  .mini-player__progress-wrap {
-    padding: 4px 10px;
-  }
-  .mini-player__controls {
-    gap: 10px;
-    padding: 6px 10px;
-  }
   .mini-player__btn-play {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
   }
   .mini-player__ctrl-btn {
-    width: 28px;
-    height: 28px;
-  }
-  .mini-player__tabs {
-    padding: 0;
+    width: 44px;
+    height: 44px;
   }
   .mini-player__tab {
-    padding: 6px 0;
-    font-size: 9px;
+    padding: 10px 0;
+    font-size: 11px;
+    min-height: 44px; /* WCAG minimum touch target */
+  }
+  .mini-player__volume-wrap {
+    position: relative;
+  }
+  .mini-player__volume-slider {
+    width: 100px; /* Larger slider for touch */
+    height: 6px; /* Thicker for easier touch */
+  }
+  .mini-player__remove-fav {
+    width: 44px; /* WCAG minimum touch target */
+    height: 44px;
   }
 }
 .yt-player-wrapper {
-  position: fixed;
-  top: -9999px;
-  left: -9999px;
-  width: 0;
-  height: 0;
-  pointer-events: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
   overflow: hidden;
+  pointer-events: none;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  contain: strict;
+  opacity: 0;
 }
 
 /* --- Transição expand/collapse --- */

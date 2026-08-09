@@ -120,7 +120,7 @@ onMounted(async () => {
   }
 }
 .auth-callback__error h2 {
-  color: var(--color-danger, #ef4444);
+  color: var(--color-error);
   margin: 0 0 var(--spacing-sm);
   font-size: var(--text-lg);
 }

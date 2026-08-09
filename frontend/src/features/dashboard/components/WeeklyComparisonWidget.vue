@@ -5,8 +5,10 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import Skeleton from 'primevue/skeleton'
 import { formatShortDate } from '@/utils/formatters'
 import { useAnalyticsStore } from '@/stores/analytics.store'
+import { useWeeklyQuery } from '@/features/dashboard/composables/useWeeklyQuery'
 
 const analyticsStore = useAnalyticsStore()
+const weeklyQuery = useWeeklyQuery()
 
 function resolveWeeklyScore(entry: Record<string, unknown>): number | undefined {
   const candidateKeys = ['score', 'focus_score', 'avg_focus_score', 'study_score']
@@ -34,7 +36,7 @@ const chartData = computed(() => {
 <template>
   <div class="weekly-widget">
     <h3 class="title">Comparação semanal</h3>
-    <div v-if="analyticsStore.weeklyLoading" class="chart-skeleton">
+    <div v-if="weeklyQuery.isLoading.value" class="chart-skeleton">
       <Skeleton v-for="i in 6" :key="i" height="1.5rem" class="skeleton-bar" />
     </div>
     <EmptyState

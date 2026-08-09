@@ -56,6 +56,11 @@ class AppServiceProvider extends ServiceProvider
         // Health check - high limit for monitoring
         RateLimiter::for('health', fn (Request $request) => Limit::perMinute(300)->by($request->ip()));
 
+        // Math service - CPU-bound (SymPy): limites por usuário
+        RateLimiter::for('grade', fn (Request $request) => Limit::perMinute(30)->by($request->user()?->id ?? $request->ip()));
+        RateLimiter::for('generate', fn (Request $request) => Limit::perMinute(30)->by($request->user()?->id ?? $request->ip()));
+        RateLimiter::for('review', fn (Request $request) => Limit::perMinute(60)->by($request->user()?->id ?? $request->ip()));
+
         $this->loadMigrationsFrom([
             database_path('migrations'),
             database_path('migrations/transactional'),

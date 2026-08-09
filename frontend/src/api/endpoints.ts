@@ -54,6 +54,23 @@ export const ENDPOINTS = {
     execute: '/code/execute',
     languages: '/code/languages',
   },
+  exercises: {
+    templates: '/exercises/templates',
+    template: (id: string) => `/exercises/templates/${id}`,
+    generateVariant: (id: string) => `/exercises/templates/${id}/generate`,
+    grade: '/exercises/grade',
+    solve: '/exercises/solve',
+    attempts: '/exercises/attempts',
+    stats: '/exercises/stats',
+  },
+  flashcards: {
+    decks: '/flashcard-decks',
+    deck: (id: string) => `/flashcard-decks/${id}`,
+    cards: (deckId: string) => `/flashcard-decks/${deckId}/cards`,
+    card: (id: string) => `/flashcards/${id}`,
+    due: '/flashcards/due',
+    review: (id: string) => `/flashcards/${id}/review`,
+  },
   goals: {
     list: '/goals',
     one: (id: string) => `/goals/${id}`,

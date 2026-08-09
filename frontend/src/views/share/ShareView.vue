@@ -253,7 +253,7 @@ function handleDisconnect() {
 
 .share-page__profile-status {
   font-size: var(--text-xs);
-  color: var(--color-success, #27ae60);
+  color: var(--color-success);
 }
 
 .share-page__form {
@@ -286,7 +286,7 @@ function handleDisconnect() {
 }
 
 .share-page__char-count--over {
-  color: var(--color-error, #e74c3c);
+  color: var(--color-error);
   font-weight: 600;
 }
 

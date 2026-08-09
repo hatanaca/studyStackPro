@@ -7,7 +7,6 @@ COPY package*.json ./
 
 # Dependências + auditoria (flatted, cross-spawn, socket.io-parser, etc. — ver scan Docker).
 RUN npm ci
-RUN npm audit fix
 
 # Copiar resto do código (será sobrescrito por volume em dev)
 COPY . .

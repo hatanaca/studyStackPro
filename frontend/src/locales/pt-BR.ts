@@ -26,6 +26,9 @@ export default {
     loginWithGoogle: 'Entrar com Google',
     loginWithDiscord: 'Entrar com Discord',
     loginWithLinkedIn: 'Entrar com LinkedIn',
+    oauthError: 'Falha na autenticação com o Google. Verifique se o redirect URI está cadastrado no Google Cloud Console em "APIs e Serviços > Credenciais > App OAuth 2.0".',
+    invalidCredentials: 'Credenciais inválidas.',
+    registerFailed: 'Falha no cadastro.',
   },
   dashboard: {
     title: 'Dashboard',

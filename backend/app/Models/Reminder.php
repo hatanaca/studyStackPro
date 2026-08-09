@@ -12,9 +12,12 @@ class Reminder extends BaseModel
         'completed',
     ];
 
-    protected $casts = [
-        'completed' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'completed' => 'boolean',
+        ];
+    }
 
     public function user(): BelongsTo
     {

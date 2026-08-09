@@ -5,67 +5,30 @@ import {
   type YouTubePlaylistItem,
   type YouTubeSearchItem,
 } from '@/api/modules/youtube.api'
+import {
+  type PlayerMode,
+  type RepeatMode,
+  type FavoriteEntry,
+  type TrackInfo,
+  loadPlayerState,
+  savePlayerState,
+  loadFavorites,
+  saveFavorites,
+  loadShuffle,
+  saveShuffle,
+  loadRepeat,
+  saveRepeat,
+  loadVolume,
+  saveVolume,
+} from './playerStorage'
 
-type PlayerMode = 'playlists' | 'search' | 'favorites'
+export type { TrackInfo } from './playerStorage'
 
-export interface TrackInfo {
-  title: string
-  artist: string
-  thumbnail: string
-  videoId: string
-}
-interface FavoriteEntry {
-  playlistId: string
-  title: string
-  thumbnail: string
-}
-interface PlayerState {
-  playlist: YouTubePlaylistItem | null
-  videoIndex: number
-  isPlaying: boolean
-  isExpanded: boolean
-  mode: PlayerMode
-  searchResults: YouTubeSearchItem[]
-}
-
-const STORAGE_KEY = 'studytrack_miniplayer'
-const FAVORITES_KEY = 'studytrack_favorites'
-
-function loadFavorites(): FavoriteEntry[] {
-  try {
-    const r = localStorage.getItem(FAVORITES_KEY)
-    return r ? JSON.parse(r) : []
-  } catch {
-    return []
-  }
-}
-function saveFavorites(list: FavoriteEntry[]) {
-  try {
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(list))
-  } catch {}
-}
-
-function loadState(): PlayerState {
-  try {
-    const r = localStorage.getItem(STORAGE_KEY)
-    if (r) return JSON.parse(r)
-  } catch {}
-  return {
-    playlist: null,
-    videoIndex: 0,
-    isPlaying: false,
-    isExpanded: false,
-    mode: 'search',
-    searchResults: [],
-  }
-}
-function saveState(s: PlayerState) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(s))
-  } catch {}
-}
+const MAX_SEARCH_RESULTS = 100
 
 export const usePlayerStore = defineStore('player', () => {
+  // --- Data (loaded once from localStorage) ---
+  const saved = loadPlayerState()
   const playlists = ref<YouTubePlaylistItem[]>([])
   const loadingPlaylists = ref(false)
   const playlistError = ref<string | null>(null)
@@ -77,17 +40,16 @@ export const usePlayerStore = defineStore('player', () => {
 
   const favorites = ref<FavoriteEntry[]>(loadFavorites())
 
-  const saved = loadState()
-  const mode = ref<PlayerMode>((saved as any).mode ?? 'search')
+  const mode = ref<PlayerMode>(saved.mode)
   const selectedPlaylist = ref<YouTubePlaylistItem | null>(saved.playlist)
   const videoIndex = ref(saved.videoIndex)
   const isPlaying = ref(saved.isPlaying)
   const isExpanded = ref(saved.isExpanded)
-  const searchResults = ref<YouTubeSearchItem[]>((saved as any).searchResults ?? [])
+  const searchResults = ref<YouTubeSearchItem[]>(saved.searchResults)
 
-  // Player controls state
-  const isShuffled = ref(false)
-  const repeatMode = ref<'none' | 'playlist' | 'single'>(loadRepeat())
+  // --- Player controls state ---
+  const isShuffled = ref(loadShuffle())
+  const repeatMode = ref<RepeatMode>(loadRepeat())
   const volume = ref(loadVolume())
   const currentTime = ref(0)
   const duration = ref(0)
@@ -95,40 +57,10 @@ export const usePlayerStore = defineStore('player', () => {
     duration.value > 0 ? (currentTime.value / duration.value) * 100 : 0
   )
 
-  function loadRepeat(): 'none' | 'playlist' | 'single' {
-    try {
-      const v = localStorage.getItem('studytrack_repeat')
-      if (v === 'none' || v === 'playlist' || v === 'single') return v
-      return 'none'
-    } catch {
-      return 'none'
-    }
-  }
-  function loadVolume(): number {
-    try {
-      const v = localStorage.getItem('studytrack_volume')
-      return v ? Number(v) : 80
-    } catch {
-      return 80
-    }
-  }
-
-  // Persist watchers
-  watch(isShuffled, (v) => {
-    try {
-      localStorage.setItem('studytrack_shuffle', String(v))
-    } catch {}
-  })
-  watch(repeatMode, (v) => {
-    try {
-      localStorage.setItem('studytrack_repeat', v)
-    } catch {}
-  })
-  watch(volume, (v) => {
-    try {
-      localStorage.setItem('studytrack_volume', String(v))
-    } catch {}
-  })
+  // --- Persist watchers ---
+  watch(isShuffled, (v) => saveShuffle(v))
+  watch(repeatMode, (v) => saveRepeat(v))
+  watch(volume, (v) => saveVolume(v))
 
   const currentPlaylistId = computed(() =>
     mode.value === 'playlists' || mode.value === 'favorites'
@@ -169,7 +101,7 @@ export const usePlayerStore = defineStore('player', () => {
   const hasContent = computed(() => !!currentPlaylistId.value || searchResults.value.length > 0)
 
   function persist() {
-    saveState({
+    savePlayerState({
       playlist: selectedPlaylist.value,
       videoIndex: videoIndex.value,
       isPlaying: isPlaying.value,
@@ -186,8 +118,8 @@ export const usePlayerStore = defineStore('player', () => {
     try {
       const r = await youtubeApi.playlists()
       playlists.value = r.data.data?.items ?? []
-    } catch (e: any) {
-      playlistError.value = e?.response?.data?.error?.message ?? 'Falha ao carregar'
+    } catch (e: unknown) {
+      playlistError.value = getErrorMessage(e, 'Falha ao carregar')
     } finally {
       loadingPlaylists.value = false
       persist()
@@ -212,14 +144,13 @@ export const usePlayerStore = defineStore('player', () => {
       searchResults.value = r.data.data?.items ?? []
       searchNextPageToken.value = r.data.data?.nextPageToken ?? null
       if (!searchResults.value.length) searchError.value = 'Nenhum resultado.'
-    } catch (e: any) {
-      searchError.value = e?.response?.data?.error?.message ?? 'Falha ao buscar'
+    } catch (e: unknown) {
+      searchError.value = getErrorMessage(e, 'Falha ao buscar')
     } finally {
       searching.value = false
       persist()
     }
   }
-  const MAX_SEARCH_RESULTS = 100
 
   async function loadMoreResults() {
     if (!searchNextPageToken.value || searching.value || !searchQuery.value) return
@@ -231,8 +162,8 @@ export const usePlayerStore = defineStore('player', () => {
       searchResults.value = [...searchResults.value, ...newItems].slice(0, MAX_SEARCH_RESULTS)
       searchNextPageToken.value = r.data.data?.nextPageToken ?? null
       if (searchResults.value.length >= MAX_SEARCH_RESULTS) searchNextPageToken.value = null
-    } catch {
-      /* silent */
+    } catch (e: unknown) {
+      if (import.meta.env.DEV) console.warn('[player.store] Falha ao carregar mais resultados', e)
     } finally {
       searching.value = false
       persist()
@@ -266,16 +197,7 @@ export const usePlayerStore = defineStore('player', () => {
   }
   function selectFavorite(entry: FavoriteEntry) {
     mode.value = 'favorites'
-    selectedPlaylist.value = {
-      id: entry.playlistId,
-      snippet: {
-        title: entry.title,
-        channelTitle: '',
-        description: '',
-        thumbnails: { medium: { url: entry.thumbnail }, high: { url: entry.thumbnail } },
-        publishedAt: '',
-      },
-    } as any
+    selectedPlaylist.value = favoriteToPlaylist(entry)
     videoIndex.value = 0
     isPlaying.value = true
     isExpanded.value = true
@@ -401,3 +323,24 @@ export const usePlayerStore = defineStore('player', () => {
     persist,
   }
 })
+
+function favoriteToPlaylist(entry: FavoriteEntry): YouTubePlaylistItem {
+  return {
+    id: entry.playlistId,
+    snippet: {
+      title: entry.title,
+      channelTitle: '',
+      description: '',
+      thumbnails: { medium: { url: entry.thumbnail }, high: { url: entry.thumbnail } },
+      publishedAt: '',
+    },
+  } as YouTubePlaylistItem
+}
+
+function getErrorMessage(e: unknown, fallback: string): string {
+  if (e && typeof e === 'object' && 'response' in e) {
+    const data = (e as { response?: { data?: { error?: { message?: string } } } }).response?.data
+    return data?.error?.message ?? fallback
+  }
+  return fallback
+}

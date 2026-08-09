@@ -16,7 +16,7 @@ class StudyPathController extends Controller
     use HasApiResponse;
 
     public function __construct(
-        private StudyPathService $studyPathService
+        private readonly StudyPathService $studyPathService
     ) {}
 
     public function index(Request $request): JsonResponse

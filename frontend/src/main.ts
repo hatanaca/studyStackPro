@@ -10,13 +10,11 @@ import App from './App.vue'
 import router from './router'
 import './assets/styles/main.css'
 import 'primeicons/primeicons.css'
-import 'viewerjs/dist/viewer.css'
 import * as Sentry from '@sentry/vue'
-import VueViewer from 'v-viewer'
 
 /**
  * Bootstrap da aplicação Vue.
- * Plugins: Pinia, Vue Query, Router, PrimeVue (Aura), Confirmation, Toast, v-viewer.
+ * Plugins: Pinia, Vue Query, Router, PrimeVue (Aura), Confirmation, Toast.
  * Tema (light/dark) aplicado no document antes do primeiro render.
  */
 const savedTheme = (() => {
@@ -26,7 +24,7 @@ const savedTheme = (() => {
   } catch {
     // ignore
   }
-  return 'light'
+  return 'dark'
 })()
 document.documentElement.setAttribute('data-theme', savedTheme)
 
@@ -74,12 +72,6 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
     environment: import.meta.env.MODE,
   })
 }
-
-app.use(VueViewer, {
-  defaultOptions: {
-    zIndex: 12000,
-  },
-})
 
 // Global error handler: Sentry in production, console in development
 app.config.errorHandler = (err, _instance, info) => {

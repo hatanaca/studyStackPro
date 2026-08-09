@@ -12,6 +12,8 @@ const props = defineProps<{
   error?: string
   autocomplete?: string
   maxlength?: number
+  inputmode?: 'text' | 'search' | 'email' | 'tel' | 'url' | 'numeric' | 'decimal' | 'none'
+  enterkeyhint?: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send'
 }>()
 
 defineEmits<{
@@ -33,6 +35,8 @@ const inputId = computed(() => props.id ?? props.name ?? undefined)
       :disabled="disabled"
       :maxlength="maxlength"
       :autocomplete="autocomplete"
+      :inputmode="inputmode"
+      :enterkeyhint="enterkeyhint"
       :class="{ 'base-input__field--error': error }"
       class="base-input__field"
       @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"

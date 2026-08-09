@@ -8,7 +8,6 @@ import {
   h,
   onMounted,
   onBeforeUnmount,
-  watch,
   computed,
   inject,
   ref,
@@ -16,6 +15,9 @@ import {
 import { formatHours } from '@/utils/formatters'
 import { useApexChartTheme } from '@/composables/useApexChartTheme'
 import { useDashboardQuery } from '@/features/dashboard/composables/useDashboardQuery'
+import { useHeatmapQuery } from '@/features/dashboard/composables/useHeatmapQuery'
+import { useWeeklyQuery } from '@/features/dashboard/composables/useWeeklyQuery'
+import { useTimeSeriesQuery } from '@/features/dashboard/composables/useTimeSeriesQuery'
 import { useDashboard } from '@/features/dashboard/composables/useDashboard'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 import Skeleton from 'primevue/skeleton'
@@ -87,9 +89,15 @@ const stakentMetricColors = computed(() => ({
   warning: chartTheme.value.palette[2],
 }))
 const dashboardQuery = useDashboardQuery()
-const { initDashboard } = useDashboard({
+const heatmapQuery = useHeatmapQuery()
+const weeklyQuery = useWeeklyQuery()
+const timeSeries30dQuery = useTimeSeriesQuery('30d')
+const timeSeries7dQuery = useTimeSeriesQuery('7d')
+
+useDashboard({
   refetchDashboard: () => dashboardQuery.refetch(),
 })
+
 const analyticsStore = useAnalyticsStore()
 const hasError = computed(() => dashboardQuery.isError.value)
 const showHeavyWidgets = ref(false)
@@ -120,37 +128,17 @@ const stakentSparkline = computed(() => {
   return data.slice(-14).map((d) => d.total_minutes / 60)
 })
 
-// Lazy fetch para 90d quando usuário selecionar
-watch(
-  () => analyticsStore.selectedPeriod,
-  async (period) => {
-    if (period === '90d' && !analyticsStore.timeSeriesData['90d']?.length) {
-      try {
-        await analyticsStore.fetchTimeSeries('90d')
-      } catch {
-        // erro de rede/timeout — dados ficam vazios e widget mostra skeleton
-      }
-    }
-  }
-)
-
 let _heavyWidgetTimer: ReturnType<typeof setTimeout> | null = null
 
 let _idleCallbackId: number | null = null
 
-onMounted(async () => {
+onMounted(() => {
   try {
     if (localStorage.getItem(TODAY_SUMMARY_DISMISS_KEY) !== todayCalendarKey()) {
       showTodaySummaryFloat.value = true
     }
   } catch {
     showTodaySummaryFloat.value = true
-  }
-
-  try {
-    await initDashboard()
-  } catch {
-    // initDashboard só carrega heatmap/weekly/timeSeries; erro de dashboard vem do query
   }
 
   const loadHeavyWidgets = () => {
@@ -180,12 +168,18 @@ onBeforeUnmount(() => {
   }
 })
 
-async function retry() {
+async function handleRefresh() {
   await Promise.all([
     dashboardQuery.refetch(),
-    analyticsStore.fetchHeatmap(),
-    analyticsStore.fetchWeekly(),
+    heatmapQuery.refetch(),
+    weeklyQuery.refetch(),
+    timeSeries30dQuery.refetch(),
+    timeSeries7dQuery.refetch(),
   ])
+}
+
+async function retry() {
+  await handleRefresh()
 }
 </script>
 
@@ -211,7 +205,7 @@ async function retry() {
         </aside>
       </Transition>
     </Teleport>
-    <DashboardHeader v-if="!stakentStyle?.value" />
+    <DashboardHeader v-if="!stakentStyle?.value" :refresh-data="handleRefresh" />
     <div v-if="hasError" class="dashboard__error">
       <ErrorCard
         title="Dashboard indisponível"
@@ -263,7 +257,7 @@ async function retry() {
       </template>
       <template v-else>
         <OnboardingBanner />
-        <template v-if="analyticsStore.isLoading && !analyticsStore.dashboard">
+        <template v-if="dashboardQuery.isLoading.value && !analyticsStore.dashboard">
           <div
             class="widgets widgets--skeleton"
             role="status"
@@ -333,10 +327,13 @@ async function retry() {
   padding: var(--widget-padding);
 }
 .dashboard__content {
-  background: color-mix(in srgb, var(--color-bg-soft) 40%, var(--color-bg));
+  background: rgba(255, 255, 255, 0.02);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
   margin-top: var(--spacing-xs);
+}
+[data-theme='light'] .dashboard__content {
+  background: rgba(0, 0, 0, 0.02);
 }
 .dashboard__error {
   margin: var(--spacing-lg) 0;
@@ -506,7 +503,7 @@ async function retry() {
   padding: var(--widget-padding);
   border-radius: var(--widget-radius);
   box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
+  border: var(--card-chrome-border);
   min-height: var(--widget-card-min-height);
 }
 .kpi-card-skeleton :deep(.p-skeleton),
@@ -533,7 +530,7 @@ async function retry() {
   display: flex;
   flex-direction: column;
   pointer-events: auto;
-  filter: drop-shadow(0 12px 40px color-mix(in srgb, var(--color-text) 18%, transparent));
+  filter: drop-shadow(0 12px 40px rgba(0, 0, 0, 0.4));
 }
 @media (max-width: 768px) {
   .today-summary-float {
@@ -638,9 +635,12 @@ async function retry() {
   font-size: var(--text-xs);
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-full);
-  background: var(--color-bg-soft);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--color-text-muted);
   font-weight: 500;
+}
+[data-theme='light'] .stakent-dashboard__section-tag {
+  background: rgba(0, 0, 0, 0.04);
 }
 .stakent-dashboard__cards {
   display: grid;
@@ -664,7 +664,7 @@ async function retry() {
 /* Placeholder do LogSessionWidget (defineAsyncComponent); fora do scoped para o loadingComponent inline. */
 .dashboard-log-session-loading {
   background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
+  border: var(--card-chrome-border);
   border-radius: var(--radius-lg);
   padding: var(--spacing-xl);
   box-shadow: var(--shadow-sm);

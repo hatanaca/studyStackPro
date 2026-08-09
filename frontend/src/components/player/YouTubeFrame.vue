@@ -241,9 +241,14 @@ onUnmounted(() => {
 
 <style scoped>
 .yt-frame {
+  position: absolute;
   width: 1px;
   height: 1px;
-  position: absolute;
   overflow: hidden;
+  pointer-events: none;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  contain: strict;
+  opacity: 0;
 }
 </style>

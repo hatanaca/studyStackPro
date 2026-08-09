@@ -16,7 +16,7 @@ class GoalController extends Controller
     use HasApiResponse;
 
     public function __construct(
-        private GoalService $goalService
+        private readonly GoalService $goalService
     ) {}
 
     public function index(Request $request): JsonResponse

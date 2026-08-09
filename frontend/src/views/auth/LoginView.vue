@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import AuthLayout from '@/components/layout/AuthLayout.vue'
 import LoginForm from '@/features/auth/components/LoginForm.vue'
+import { getLocale, t } from '@/locales'
 
 const loading = ref(false)
 const loginFormRef = ref<InstanceType<typeof LoginForm> | null>(null)
@@ -17,8 +18,7 @@ const apiOrigin = String(import.meta.env.VITE_API_URL ?? '')
 onMounted(() => {
   const errorParam = route.query.error
   if (errorParam === 'oauth_failed') {
-    oauthError.value =
-      'Falha na autenticação com o Google. Verifique se o redirect URI está cadastrado no Google Cloud Console em "APIs e Serviços > Credenciais > App OAuth 2.0".'
+    oauthError.value = t(getLocale(), 'auth.oauthError')
   }
 })
 
@@ -113,12 +113,13 @@ async function onSubmit(payload: { email: string; password: string }) {
 <style scoped>
 h1 {
   font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: 700;
-  letter-spacing: var(--tracking-tight);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
   line-height: var(--leading-tight);
   margin: 0 0 var(--spacing-sm);
-  color: var(--color-text);
+  color: var(--color-accent);
 }
 .subtitle {
   color: var(--color-text-muted);
@@ -201,12 +202,12 @@ h1 {
 }
 
 .oauth-error {
-  background: var(--color-danger-bg, #fef2f2);
-  border: 1px solid var(--color-danger, #ef4444);
+  background: var(--color-error-soft);
+  border: 1px solid color-mix(in srgb, var(--color-error) 40%, transparent);
   border-radius: var(--radius-md);
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
-  color: var(--color-danger, #ef4444);
+  color: var(--color-on-error-soft);
   font-size: var(--text-sm);
   line-height: var(--leading-snug);
 }

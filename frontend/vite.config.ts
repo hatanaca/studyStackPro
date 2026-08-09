@@ -23,7 +23,7 @@ export default defineConfig({
     }
   },
   build: {
-    sourcemap: true,
+    sourcemap: !!process.env.SENTRY_AUTH_TOKEN,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -37,6 +37,11 @@ export default defineConfig({
           if (id.includes('/jspdf/')) return 'pdf-vendor'
           if (id.includes('/viewerjs/') || id.includes('/v-viewer/')) return 'viewer-vendor'
           if (id.includes('/@vue-flow/core/')) return 'vue-flow-vendor'
+          if (id.includes('/fabric/')) return 'canvas-vendor'
+          if (id.includes('/codemirror/') || id.includes('/@codemirror/')) return 'editor-vendor'
+          if (id.includes('/katex/')) return 'math-render-vendor'
+          if (id.includes('/function-plot/') || id.includes('/mathjax/')) return 'math-plot-vendor'
+          if (id.includes('/fengari-web/')) return 'lua-vendor'
         },
       },
     },

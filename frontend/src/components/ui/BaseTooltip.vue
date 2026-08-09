@@ -99,16 +99,18 @@ onUnmounted(() => {
   font-size: var(--text-xs);
   font-weight: 500;
   line-height: var(--leading-snug);
-  color: var(--color-bg-card);
-  background: var(--color-text);
+  color: var(--color-text);
+  background: var(--color-bg-soft);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-sm);
   white-space: nowrap;
   box-shadow: var(--shadow-md);
   pointer-events: none;
 }
-[data-theme='dark'] .base-tooltip {
-  background: var(--color-bg-soft);
-  color: var(--color-text);
+[data-theme='light'] .base-tooltip {
+  color: var(--color-bg-card);
+  background: var(--color-text);
+  border-color: transparent;
 }
 .base-tooltip--top {
   bottom: 100%;

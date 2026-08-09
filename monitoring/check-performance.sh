@@ -77,7 +77,7 @@ check_frontend_build() {
 
 check_response_time() {
     log_info "▶ Tempo de resposta..."
-    local url="${APP_URL:-http://177.112.223.72:5173}/api/health"
+    local url="${APP_URL:-http://localhost:5173}/api/health"
     local start; start=$(date +%s%N 2>/dev/null || echo 0)
     local code; code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 10 "$url" 2>&1) || true
     local end; end=$(date +%s%N 2>/dev/null || echo 0)

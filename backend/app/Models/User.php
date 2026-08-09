@@ -61,4 +61,54 @@ class User extends Authenticatable
     {
         return $this->hasMany(StudySession::class);
     }
+
+    public function goals(): HasMany
+    {
+        return $this->hasMany(Goal::class);
+    }
+
+    public function achievements(): HasMany
+    {
+        return $this->hasMany(Achievement::class);
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    public function reminders(): HasMany
+    {
+        return $this->hasMany(Reminder::class);
+    }
+
+    public function flashcardDecks(): HasMany
+    {
+        return $this->hasMany(FlashcardDeck::class);
+    }
+
+    public function flashcards(): HasMany
+    {
+        return $this->hasMany(Flashcard::class);
+    }
+
+    public function canvasArtworks(): HasMany
+    {
+        return $this->hasMany(CanvasArtwork::class);
+    }
+
+    public function studyPaths(): HasMany
+    {
+        return $this->hasMany(StudyPath::class);
+    }
+
+    public function exerciseTemplates(): HasMany
+    {
+        return $this->hasMany(ExerciseTemplate::class);
+    }
+
+    public function exerciseAttempts(): HasMany
+    {
+        return $this->hasMany(ExerciseAttempt::class);
+    }
 }

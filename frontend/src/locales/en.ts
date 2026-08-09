@@ -26,6 +26,9 @@ export default {
     loginWithGoogle: 'Login with Google',
     loginWithDiscord: 'Login with Discord',
     loginWithLinkedIn: 'Login with LinkedIn',
+    oauthError: 'Google authentication failed. Check that the redirect URI is registered in the Google Cloud Console under "APIs & Services > Credentials > OAuth 2.0 Client IDs".',
+    invalidCredentials: 'Invalid credentials.',
+    registerFailed: 'Registration failed.',
   },
   dashboard: {
     title: 'Dashboard',

@@ -9,6 +9,7 @@ const apiClient = axios.create({
   withCredentials: true,
   headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
   withXSRFToken: true,
+  timeout: 30000,
 })
 
 apiClient.interceptors.request.use((config) => {

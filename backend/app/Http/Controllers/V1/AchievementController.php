@@ -14,7 +14,7 @@ class AchievementController extends Controller
     use HasApiResponse;
 
     public function __construct(
-        private AchievementService $achievementService
+        private readonly AchievementService $achievementService
     ) {}
 
     public function index(Request $request): JsonResponse

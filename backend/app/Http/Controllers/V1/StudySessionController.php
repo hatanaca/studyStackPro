@@ -19,7 +19,7 @@ class StudySessionController extends Controller
 {
     use HasApiResponse;
 
-    public function __construct(private StudySessionService $studySessionService) {}
+    public function __construct(private readonly StudySessionService $studySessionService) {}
 
     public function index(IndexStudySessionsRequest $request): JsonResponse
     {
@@ -57,9 +57,9 @@ class StudySessionController extends Controller
         return $this->success(new StudySessionResource($session->load('technology')), 'Sessão criada.', 201);
     }
 
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
-        $session = $this->studySessionService->findForUser($id, request()->user()->id);
+        $session = $this->studySessionService->findForUser($id, $request->user()->id);
 
         return $this->success(new StudySessionResource($session->load('technology')));
     }
@@ -71,9 +71,9 @@ class StudySessionController extends Controller
         return $this->success(new StudySessionResource($session->load('technology')), 'Sessão atualizada.');
     }
 
-    public function destroy(string $id): JsonResponse
+    public function destroy(Request $request, string $id): JsonResponse
     {
-        $this->studySessionService->delete($id, request()->user()->id);
+        $this->studySessionService->delete($id, $request->user()->id);
 
         return $this->success(null, 'Sessão excluída.');
     }
@@ -97,10 +97,10 @@ class StudySessionController extends Controller
         return $this->success(new StudySessionResource($session->load('technology')), 'Sessão iniciada.', 201);
     }
 
-    public function end(string $id): JsonResponse
+    public function end(Request $request, string $id): JsonResponse
     {
         try {
-            $session = $this->studySessionService->end($id, request()->user()->id);
+            $session = $this->studySessionService->end($id, $request->user()->id);
 
             return $this->success(new StudySessionResource($session->load('technology')), 'Sessão finalizada.');
         } catch (\InvalidArgumentException $e) {

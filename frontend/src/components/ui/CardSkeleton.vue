@@ -28,7 +28,7 @@ withDefaults(
   flex-direction: column;
   gap: var(--spacing-sm, 0.5rem);
   padding: var(--spacing-lg, 1rem);
-  background: var(--color-bg-card, #1c1c1f);
+  background: var(--color-bg-card);
   border-radius: var(--radius-lg, 0.75rem);
 }
 .card-skeleton__title {

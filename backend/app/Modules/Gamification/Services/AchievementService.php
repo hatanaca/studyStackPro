@@ -4,15 +4,19 @@ namespace App\Modules\Gamification\Services;
 
 use App\Models\Achievement;
 use App\Models\User;
+use App\Modules\Gamification\DTOs\AchievementDTO;
+use App\Modules\Gamification\Repositories\Contracts\AchievementRepositoryInterface;
 use Illuminate\Support\Collection;
 
 class AchievementService
 {
+    public function __construct(
+        private AchievementRepositoryInterface $achievementRepository
+    ) {}
+
     public function getUserAchievements(string $userId): Collection
     {
-        return Achievement::where('user_id', $userId)
-            ->orderByDesc('created_at')
-            ->get();
+        return $this->achievementRepository->listForUser($userId);
     }
 
     public function checkAndAward(string $userId): array
@@ -22,7 +26,7 @@ class AchievementService
             return [];
         }
 
-        $existing = Achievement::where('user_id', $userId)->pluck('badge_key')->toArray();
+        $existing = $this->achievementRepository->existingBadgeKeys($userId);
         $newAchievements = [];
 
         $sessionsCount = $user->studySessions()->whereNotNull('ended_at')->count();
@@ -59,15 +63,19 @@ class AchievementService
 
     private function awardBadge(string $userId, string $badgeKey, array $metadata = []): Achievement
     {
-        $badge = config('gamification.badges', [])[$badgeKey] ?? ['title' => $badgeKey, 'description' => null, 'icon' => '🏅'];
+        $badge = config('gamification.badges', [])[$badgeKey] ?? [
+            'title' => $badgeKey,
+            'description' => null,
+            'icon' => '🏅',
+        ];
 
-        return Achievement::forceCreate([
-            'user_id' => $userId,
-            'badge_key' => $badgeKey,
-            'title' => $badge['title'],
-            'description' => $badge['description'],
-            'icon' => $badge['icon'],
-            'metadata' => $metadata,
-        ]);
+        return $this->achievementRepository->create(new AchievementDTO(
+            userId: $userId,
+            badgeKey: $badgeKey,
+            title: $badge['title'],
+            description: $badge['description'],
+            icon: $badge['icon'],
+            metadata: $metadata,
+        ));
     }
 }

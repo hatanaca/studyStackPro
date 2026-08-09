@@ -15,7 +15,7 @@ class NotificationController extends Controller
     use HasApiResponse;
 
     public function __construct(
-        private NotificationService $notificationService
+        private readonly NotificationService $notificationService
     ) {}
 
     public function index(Request $request): JsonResponse

@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\HealthController;
 use App\Http\Controllers\V1\OAuthController;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -11,8 +10,6 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 Route::get('/', function () {
     return ['app' => 'StudyTrack Pro API', 'docs' => '/api/v1'];
 });
-
-Route::middleware('throttle:health')->get('health', HealthController::class)->name('health');
 
 // OAuth routes — precisam de sessão web (cookie HttpOnly).
 // Ficam em web.php porque o callback do provider (Google/Discord) vem sem

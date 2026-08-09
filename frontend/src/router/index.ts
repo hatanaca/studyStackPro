@@ -17,6 +17,9 @@ import { canvasRoutes } from './routes/canvas.routes'
 import { reportsRoutes } from './routes/reports.routes'
 import { shareRoutes } from './routes/share.routes'
 import { terminalRoutes } from './routes/terminal.routes'
+import { exercisesRoutes } from './routes/exercises.routes'
+import { flashcardsRoutes } from './routes/flashcards.routes'
+import { itaStudyRoutes } from './routes/ita-study.routes'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -42,13 +45,16 @@ const router = createRouter({
         ...reportsRoutes,
         ...shareRoutes,
         ...terminalRoutes,
+        ...exercisesRoutes,
+        ...flashcardsRoutes,
+        ...itaStudyRoutes,
         ...settingsRoutes,
         ...legacySettingsRedirects,
+        ...profileRoutes,
         {
           path: '/:pathMatch(.*)*',
           redirect: '/',
         },
-        ...profileRoutes,
       ],
     },
   ],

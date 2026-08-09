@@ -22,8 +22,8 @@ class OAuthController extends Controller
     use HasApiResponse;
 
     public function __construct(
-        private SocialAuthService $socialAuthService,
-        private TokenService $tokenService
+        private readonly SocialAuthService $socialAuthService,
+        private readonly TokenService $tokenService
     ) {}
 
     public function redirect(string $provider): RedirectResponse

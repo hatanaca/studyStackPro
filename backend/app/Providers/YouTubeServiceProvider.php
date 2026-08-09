@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Services\YouTubeService;
+use App\Modules\YouTube\Services\YouTubeService;
 use Illuminate\Support\ServiceProvider;
 
 class YouTubeServiceProvider extends ServiceProvider

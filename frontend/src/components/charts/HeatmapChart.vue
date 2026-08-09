@@ -142,10 +142,11 @@ const years = computed(() => {
 }
 .heatmap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 .heatmap-svg {
   width: 100%;
-  min-width: 730px;
   height: auto;
 }
 </style>

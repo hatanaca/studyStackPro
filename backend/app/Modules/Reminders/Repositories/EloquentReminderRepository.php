@@ -4,9 +4,9 @@ namespace App\Modules\Reminders\Repositories;
 
 use App\Models\Reminder;
 use App\Modules\Reminders\Repositories\Contracts\ReminderRepositoryInterface;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection;
-use Symfony\Component\HttpKernel\Exception\AuthorizationException;
 
 class EloquentReminderRepository implements ReminderRepositoryInterface
 {

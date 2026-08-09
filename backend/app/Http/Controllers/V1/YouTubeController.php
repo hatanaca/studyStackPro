@@ -5,7 +5,7 @@ namespace App\Http\Controllers\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\YouTube\YouTubeSearchRequest;
 use App\Http\Requests\YouTube\YouTubeVideosRequest;
-use App\Services\YouTubeService;
+use App\Modules\YouTube\Services\YouTubeService;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,7 +21,7 @@ class YouTubeController extends Controller
 {
     use HasApiResponse;
 
-    public function __construct(private YouTubeService $youtube) {}
+    public function __construct(private readonly YouTubeService $youtube) {}
 
     /**
      * GET /api/v1/youtube/search?q=...&pageToken=...&maxResults=...

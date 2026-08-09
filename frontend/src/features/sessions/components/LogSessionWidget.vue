@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useQueryClient } from '@tanstack/vue-query'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import LogSessionForm from './LogSessionForm.vue'
 import type { SessionSavedPayload } from './LogSessionForm.vue'
 import { useAnalyticsStore } from '@/stores/analytics.store'
-import { handleError } from '@/utils/handleError'
+import { queryKeys } from '@/api/queryKeys'
 
+const queryClient = useQueryClient()
 const analyticsStore = useAnalyticsStore()
 const showDialog = ref(false)
 
@@ -17,14 +19,8 @@ function onSuccess(payload: SessionSavedPayload) {
     color: payload.technologyColor,
   })
 
-  analyticsStore.fetchDashboard(true).catch(handleError('fetchDashboard'))
-  analyticsStore.fetchHeatmap().catch(handleError('fetchHeatmap'))
-  analyticsStore.fetchWeekly().catch(handleError('fetchWeekly'))
-  if (analyticsStore.selectedPeriod) {
-    analyticsStore
-      .fetchTimeSeries(analyticsStore.selectedPeriod)
-      .catch(handleError('fetchTimeSeries'))
-  }
+  // Invalidate all analytics queries to trigger refetch
+  queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all })
   showDialog.value = false
 }
 </script>

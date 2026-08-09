@@ -22,8 +22,8 @@ class AuthController extends Controller
     use HasApiResponse;
 
     public function __construct(
-        private AuthService $authService,
-        private TokenService $tokenService
+        private readonly AuthService $authService,
+        private readonly TokenService $tokenService
     ) {}
 
     public function register(RegisterRequest $request): JsonResponse

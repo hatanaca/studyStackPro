@@ -60,8 +60,11 @@ if ! $AUTO_MODE; then
     echo "Os seguintes jobs serão criados:"
     echo ""
     echo "  ├── A cada 5 min  → Health Check (monitora se app está no ar)"
+    echo "  ├── A cada 1 h    → Sentry Monitor (consulta erros no Sentry)"
+    echo "  ├── A cada 2 h    → Quality Pipeline (checks completos)"
+    echo "  ├── A cada 3 h    → MiMo Schedule (prompts AI de teste)"
     echo "  ├── A cada 4 h    → Code Scan (análise estática do código)"
-    echo "  └── A cada 1 h    → Sentry Monitor (consulta erros no Sentry)"
+    echo "  └── Diariamente    → Run All (relatório consolidado)"
     echo ""
     echo "Pressione ENTER para continuar ou Ctrl+C para cancelar..."
     read -r
@@ -112,6 +115,14 @@ echo "0 * * * * cd $SCRIPT_DIR && [ -f .sentry.env ] && . .sentry.env && [ -n \"
 # Run-all uma vez por dia
 echo "0 6 * * * cd $SCRIPT_DIR && bash run-all.sh --cron 2>&1 | logger -t studytrack-all" >> "$CRON_FILE"
 
+# Pipeline de Qualidade a cada 2 horas
+echo "# Pipeline de Qualidade (segurança, integridade, testes, desempenho, design) a cada 2 horas" >> "$CRON_FILE"
+echo "0 */2 * * * cd $SCRIPT_DIR && bash quality-pipeline.sh --cron 2>&1 | logger -t studytrack-quality" >> "$CRON_FILE"
+
+# MiMo Schedule — execução agendada de prompts a cada 3 horas
+echo "# MiMo Schedule — prompts de teste agendados" >> "$CRON_FILE"
+echo "0 */3 * * * cd $SCRIPT_DIR && bash mimo-schedule.sh --once 2>&1 | logger -t studytrack-mimo" >> "$CRON_FILE"
+
 # Instala o crontab
 if crontab "$CRON_FILE"; then
     echo "${GREEN}✅ Crontab configurado com sucesso!${NC}"
@@ -123,6 +134,8 @@ if crontab "$CRON_FILE"; then
     echo "  ├─────────────────────┼──────────────────────────────────────────┤"
     echo "  │ A cada 5 min        │ health-check.sh                          │"
     echo "  │ A cada 1 h          │ sentry-check.sh                          │"
+    echo "  │ A cada 2 h          │ quality-pipeline.sh                      │"
+    echo "  │ A cada 3 h          │ mimo-schedule.sh (prompts AI)            │"
     echo "  │ A cada 4 h          │ code-scan.sh                             │"
     echo "  │ Diariamente às 6h   │ run-all.sh (relatório completo)          │"
     echo "  └─────────────────────┴──────────────────────────────────────────┘"
@@ -140,7 +153,3 @@ echo ""
 echo "${CYAN}Para remover os jobs:${NC} $0 --remove"
 echo "${CYAN}Para ver os jobs ativos:${NC} crontab -l"
 echo ""
-
-# Pipeline de Qualidade a cada 2 horas
-echo "# Pipeline de Qualidade (segurança, integridade, testes, desempenho, design) a cada 2 horas" >> "$CRON_FILE"
-echo "0 */2 * * * cd $SCRIPT_DIR && bash quality-pipeline.sh --cron 2>&1 | logger -t studytrack-quality" >> "$CRON_FILE"

@@ -4,7 +4,8 @@ return [
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
 
     'rate_limit' => [
-        'fail_open' => env('RATE_LIMIT_FAIL_OPEN', false),
+        // Fail-open: se o Redis cair, requisições passam em vez de 503 (evita DDoS autoinfligido).
+        'fail_open' => env('RATE_LIMIT_FAIL_OPEN', true),
     ],
 
     'google' => [
@@ -28,5 +29,10 @@ return [
 
     'youtube' => [
         'api_key' => env('YOUTUBE_API_KEY'),
+    ],
+
+    'math' => [
+        'url' => env('MATH_SERVICE_URL', 'http://math-service:8000'),
+        'token' => env('MATH_SERVICE_TOKEN'),
     ],
 ];

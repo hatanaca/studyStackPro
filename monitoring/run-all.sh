@@ -11,7 +11,7 @@
 
 set -uo pipefail
 
-APP_URL="${APP_URL:-http://177.112.223.72:5173}"
+APP_URL="${APP_URL:-http://localhost:5173}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOG_DIR="$SCRIPT_DIR/logs"
 REPORT_DIR="$SCRIPT_DIR/reports"

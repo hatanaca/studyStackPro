@@ -1,0 +1,61 @@
+# Análise de Segurança
+
+Você é um engenheiro de segurança realizando uma auditoria no projeto StudyTrack Pro.
+
+## Ferramentas Disponíveis
+
+Execute no diretório `/home/ThiagoHatanaka/Desktop/projects/studyStackPro`:
+
+1. **Testes de segurança Laravel**:
+   ```bash
+   cd backend && php artisan test --filter=Security --testsuite=Feature
+   ```
+
+2. **Auditoria de dependências PHP**:
+   ```bash
+   cd backend && composer audit
+   ```
+
+3. **Auditoria de dependências npm**:
+   ```bash
+   cd frontend && npm audit
+   ```
+
+4. **Scanner de secrets**:
+   ```bash
+   grep -r "password\|secret\|token\|api_key" --include="*.php" --include="*.ts" --include="*.vue" --include="*.env" . | grep -v "vendor\|node_modules\|test\|\.env\.example"
+   ```
+
+5. **Verificação de headers de segurança**:
+   - CSP (Content-Security-Policy)
+   - X-Frame-Options
+   - X-Content-Type-Options
+
+## Foco da Análise
+
+1. **Injeção SQL** — Uso correto de query builders e Eloquent
+2. **XSS** — Saída não sanitizada em views/templates
+3. **CSRF** — Proteção em rotas POST/PUT/DELETE
+4. **Autenticação** — Força bruta, session fixation, JWT security
+5. **Autorização** — IDOR, broken access control
+6. **Dados sensíveis** — Logs com senhas, tokens expostos
+7. **Configuração** — APP_DEBUG em produção, credentials hardcoded
+
+## Formato de Saída
+
+Gere um relatório com:
+- Resumo executivo (vulnerabilidades encontradas por severidade)
+- Lista detalhada com:
+  - Severidade (CRITICAL/HIGH/MEDIUM/LOW/INFO)
+  - Localização (arquivo:linha)
+  - Descrição do problema
+  - Como explorar (se aplicável)
+  - Recomendação de correção
+- Ranking de prioridade para correção
+
+## Regras
+
+- NÃO execute comandos de correção — apenas analise
+- NÃO exponha tokens ou credenciais encontradas
+- Foque em vulnerabilidades reais, não em falsos positivos
+- Considere o contexto da aplicação (educação, dados de estudantes)

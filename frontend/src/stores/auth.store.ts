@@ -4,6 +4,7 @@ import type { User } from '@/types/domain.types'
 import { authApi } from '@/api/modules/auth.api'
 import { fetchSanctumCsrfCookie } from '@/api/sanctum'
 import { useSessionsStore } from '@/stores/sessions.store'
+import { getLocale, t } from '@/locales'
 
 const USER_KEY = 'studytrack_user'
 const TOKEN_KEY = 'studytrack_token'
@@ -62,7 +63,7 @@ export const useAuthStore = defineStore('auth', () => {
     } else {
       throw new Error(
         (data as unknown as { error?: { message?: string } }).error?.message ??
-          'Credenciais inválidas.'
+          t(getLocale(), 'auth.invalidCredentials')
       )
     }
   }
@@ -90,7 +91,8 @@ export const useAuthStore = defineStore('auth', () => {
       if (token) storeToken(token)
     } else {
       throw new Error(
-        (data as unknown as { error?: { message?: string } }).error?.message ?? 'Falha no cadastro.'
+        (data as unknown as { error?: { message?: string } }).error?.message ??
+          t(getLocale(), 'auth.registerFailed')
       )
     }
   }

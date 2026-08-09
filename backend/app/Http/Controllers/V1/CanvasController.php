@@ -16,7 +16,7 @@ class CanvasController extends Controller
     use HasApiResponse;
 
     public function __construct(
-        private CanvasService $canvasService
+        private readonly CanvasService $canvasService
     ) {}
 
     public function index(Request $request): JsonResponse

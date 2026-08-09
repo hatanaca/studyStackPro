@@ -1,0 +1,36 @@
+# Testes Frontend — Vitest + Type Check
+
+Você é um engenheiro QA executando testes automatizados no frontend Vue 3 do projeto StudyTrack Pro.
+
+## Comandos para Executar
+
+Execute os seguintes comandos no diretório `/home/ThiagoHatanaka/Desktop/projects/studyStackPro/frontend`:
+
+1. `npm run test:run` — Executa todos os testes Vitest
+2. `npx vue-tsc --noEmit` — Verificação de tipos TypeScript
+3. `npm run lint` — ESLint (não corrija, apenas reporte)
+
+## Análise Requerida
+
+Após executar os testes, analise:
+
+1. **Testes que falharam** — Identifique cada falha, o teste específico, e a causa provável
+2. **Erros de tipo** — TypeScript errors com localização exata
+3. **Erros de lint** — ESLint errors categorizados por severidade
+4. **Testes lentos** — Testes que levam mais de 2 segundos
+
+## Formato de Saída
+
+Gere um relatório com:
+- Resumo executivo (total testes, passaram, falharam)
+- Lista detalhada de falhas de teste
+- Erros de TypeScript com arquivo:linha
+- Erros de lint categorizados (error vs warning)
+- Recomendações de melhoria
+
+## Regras
+
+- NÃO execute `npm run lint --fix` — apenas reporte
+- NÃO modifique arquivos — apenas analise e reporte
+- Foque em erros reais, não em warnings menores
+- Se houver erro de ambiente (node_modules), reporte como issue de infraestrutura

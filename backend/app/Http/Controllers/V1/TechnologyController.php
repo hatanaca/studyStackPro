@@ -26,7 +26,7 @@ class TechnologyController extends Controller
      * Injeta o TechnologyService para regras de negócio.
      */
     public function __construct(
-        private TechnologyService $technologyService
+        private readonly TechnologyService $technologyService
     ) {}
 
     /**

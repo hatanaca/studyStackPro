@@ -25,7 +25,7 @@ class AnalyticsController extends Controller
      * Injeta o AnalyticsService para agregação e cache de métricas.
      */
     public function __construct(
-        private AnalyticsService $analyticsService
+        private readonly AnalyticsService $analyticsService
     ) {}
 
     /**

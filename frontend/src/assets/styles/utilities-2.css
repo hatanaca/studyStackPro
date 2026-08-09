@@ -210,9 +210,6 @@
   width: 16rem;
 }
 
-.min-w-0 {
-  min-width: 0;
-}
 .min-w-full {
   min-width: 100%;
 }
@@ -247,9 +244,6 @@
 }
 .h-32 {
   height: 8rem;
-}
-.h-full {
-  height: 100%;
 }
 .h-screen {
   height: 100vh;

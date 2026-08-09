@@ -96,15 +96,27 @@ withDefaults(
   border-color: color-mix(in srgb, var(--color-error) 88%, var(--color-bg));
 }
 
-[data-theme='dark'] .base-button--secondary {
-  background: color-mix(in srgb, var(--color-bg-soft) 88%, #020617 12%);
-  border-color: color-mix(in srgb, var(--color-border) 100%, transparent);
+[data-theme='dark'] .base-button--secondary,
+.base-button--secondary {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--color-border);
   color: var(--color-text);
   box-shadow: none;
 }
-[data-theme='dark'] .base-button--secondary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-primary) 18%, var(--color-bg-soft));
+[data-theme='dark'] .base-button--secondary:hover:not(:disabled),
+.base-button--secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
   border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
+  color: var(--color-primary);
+}
+[data-theme='light'] .base-button--secondary {
+  background: color-mix(in srgb, var(--color-text) 8%, var(--color-bg-card));
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+[data-theme='light'] .base-button--secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-card));
+  border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-border));
   color: var(--color-primary);
 }
 [data-theme='dark'] .base-button--danger:hover:not(:disabled) {

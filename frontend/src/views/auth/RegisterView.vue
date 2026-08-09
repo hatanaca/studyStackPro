@@ -54,12 +54,13 @@ async function onSubmit(payload: {
 <style scoped>
 h1 {
   font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: 700;
-  letter-spacing: var(--tracking-tight);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
   line-height: var(--leading-tight);
+  color: var(--color-accent);
   margin: 0 0 var(--spacing-sm);
-  color: var(--color-text);
 }
 .subtitle {
   color: var(--color-text-muted);

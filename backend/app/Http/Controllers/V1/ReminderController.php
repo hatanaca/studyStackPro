@@ -16,7 +16,7 @@ class ReminderController extends Controller
     use HasApiResponse;
 
     public function __construct(
-        private ReminderService $reminderService
+        private readonly ReminderService $reminderService
     ) {}
 
     public function index(Request $request): JsonResponse

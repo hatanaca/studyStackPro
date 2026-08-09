@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAnalyticsStore } from '@/stores/analytics.store'
-import { useDashboard } from '@/features/dashboard/composables/useDashboard'
 import Button from 'primevue/button'
 import NotificationCenter from '@/features/notifications/components/NotificationCenter.vue'
 import ShareButton from '@/features/share/components/ShareButton.vue'
-import { handleError } from '@/utils/handleError'
+
+interface Props {
+  refreshData?: () => Promise<unknown>
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  refreshData: undefined,
+})
 
 const analyticsStore = useAnalyticsStore()
-const { fetchDashboard } = useDashboard()
 
 function formatHours(hours: number): string {
   if (hours <= 0) return '0h'
@@ -33,14 +38,7 @@ const headerSummary = computed(() => {
 })
 
 async function handleRefresh() {
-  await Promise.all([
-    fetchDashboard(true),
-    analyticsStore.fetchHeatmap(),
-    analyticsStore.fetchWeekly(),
-    analyticsStore.fetchTimeSeries('7d'),
-    analyticsStore.fetchTimeSeries('30d'),
-    analyticsStore.fetchTimeSeries('90d'),
-  ]).catch(handleError('DashboardHeader-refresh'))
+  await props.refreshData?.()
 }
 </script>
 

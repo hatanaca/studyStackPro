@@ -41,7 +41,6 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/studytrack-backend:latest
             ${{ secrets.DOCKER_USERNAME }}/studytrack-backend:${{ github.sha }}
 
-
       - name: Run Trivy vulnerability scanner (backend)
         uses: aquasecurity/trivy-action@v0.28.0
         with:
@@ -72,11 +71,76 @@ jobs:
           severity: CRITICAL
         continue-on-error: false
 
-  # Deploy step: customize conforme seu ambiente (SSH, K8s, etc.)
-  # deploy:
-  #   needs: build-and-push
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Deploy to production
-  #       run: |
-  #         echo "Configure deploy steps for your environment"
+      - name: Build and push nginx image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./docker/nginx
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/studytrack-nginx:latest
+            ${{ secrets.DOCKER_USERNAME }}/studytrack-nginx:${{ github.sha }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - name: Deploy to production server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+
+            PROJECT_DIR="${{ secrets.DEPLOY_PATH }}"
+            cd "$PROJECT_DIR"
+
+            echo "=== Pulling latest code ==="
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "=== Setting DOCKER_IMAGE_PREFIX ==="
+            # Garante que o .env de produção tem o prefixo correto
+            if ! grep -q '^DOCKER_IMAGE_PREFIX=' .env; then
+              echo "DOCKER_IMAGE_PREFIX=${{ secrets.DOCKER_USERNAME }}/" >> .env
+            else
+              sed -i "s|^DOCKER_IMAGE_PREFIX=.*|DOCKER_IMAGE_PREFIX=${{ secrets.DOCKER_USERNAME }}/|" .env
+            fi
+
+            echo "=== Pulling new images ==="
+            docker compose -f docker-compose.yml -f docker-compose.production.yml pull
+
+            echo "=== Starting services ==="
+            docker compose -f docker-compose.yml -f docker-compose.production.yml up -d --remove-orphans nginx php-fpm reverb horizon scheduler postgres redis
+
+            echo "=== Waiting for services to be healthy ==="
+            sleep 10
+
+            echo "=== Running migrations ==="
+            docker compose exec -T php-fpm php artisan migrate --force
+
+            echo "=== Clearing caches ==="
+            docker compose exec -T php-fpm php artisan config:cache
+            docker compose exec -T php-fpm php artisan route:cache
+            docker compose exec -T php-fpm php artisan view:cache
+            docker compose exec -T php-fpm php artisan event:cache
+
+            echo "=== Restarting Horizon ==="
+            docker compose exec -T php-fpm php artisan horizon:terminate || true
+
+            echo "=== Health check ==="
+            sleep 5
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/health || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "Deploy concluído com sucesso! Health check: HTTP $HTTP_CODE"
+            else
+              echo "AVISO: Health check retornou HTTP $HTTP_CODE"
+              exit 1
+            fi

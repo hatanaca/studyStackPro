@@ -277,17 +277,17 @@ function selectTool(tool: CanvasTool) {
     gap: 8px;
   }
   .ct__btn {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     font-size: 14px;
   }
   .ct__swatch {
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
   }
   .ct__swatch-fill {
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
   }
   .ct__range {
     width: 52px;
