@@ -1,28 +1,13 @@
 import { test, expect } from '@playwright/test'
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:8080'
-const TEST_EMAIL = `e2e-nav-${Date.now()}@example.com`
-const TEST_PASSWORD = process.env.E2E_TEST_PASSWORD || 'TestPassword123!'
 
 test.describe('Navigation and Layout', () => {
-  test.beforeAll(async ({ browser }) => {
-    const page = await browser.newPage()
-    await page.goto(`${BASE_URL}/auth/register`)
-    await page.fill('input[name="name"]', 'Nav Test User')
-    await page.fill('input[name="email"]', TEST_EMAIL)
-    await page.fill('input[name="password"]', TEST_PASSWORD)
-    await page.fill('input[name="password_confirmation"]', TEST_PASSWORD)
-    await page.click('button[type="submit"]')
-    await page.waitForURL(/dashboard|home/, { timeout: 15000 })
-    await page.context().storageState({ path: 'e2e/.auth/nav-user.json' })
-    await page.close()
-  })
-
   test.use({ storageState: 'e2e/.auth/nav-user.json' })
 
   test('should display sidebar navigation', async ({ page }) => {
     await page.goto(`${BASE_URL}/dashboard`)
-    const sidebar = page.locator('nav, [role="navigation"], aside, .sidebar')
+    const sidebar = page.locator('aside.app-sidebar')
     await expect(sidebar).toBeVisible({ timeout: 10000 })
   })
 

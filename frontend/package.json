@@ -11,6 +11,8 @@
     "test:run": "vitest run --config vitest.config.ts",
     "test": "vitest --config vitest.config.ts",
     "test:coverage": "vitest run --config vitest.config.ts --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
     "type-check": "vue-tsc --noEmit",
     "lint": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,vue,js,css,json}\"",

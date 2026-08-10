@@ -26,6 +26,11 @@ frontend/vite.config.js
 frontend/vite.config.d.ts
 *.tsbuildinfo
 
+# === TESTES E2E (Playwright) ===
+frontend/playwright-report/
+frontend/test-results/
+frontend/e2e/.auth/
+
 # === BACKEND LARAVEL ===
 backend/storage/logs/*
 backend/storage/framework/cache/*

@@ -1,4 +1,4 @@
-.PHONY: dev stop build setup shell-php shell-vue test test-back test-front test-db-setup migrate seed fresh horizon pint lint logs prod-build prod-up prod-down security-audit health clean deploy math-up math-test math-logs
+.PHONY: dev stop build setup shell-php shell-vue test test-back test-front test-e2e test-e2e-headed zap-scan lighthouse test-db-setup migrate seed fresh horizon pint lint logs prod-build prod-up prod-down security-audit health clean deploy math-up math-test math-logs
 
 # Serviços Docker sem o Vite dev (node) — produção com frontend em frontend/dist
 PROD_SERVICES := nginx php-fpm reverb horizon scheduler math-service postgres redis
@@ -49,6 +49,23 @@ test-back: test-db-setup
 
 test-front:
 	cd frontend && npm run test:run
+
+# E2E — testa a aplicação em execução (Playwright). Pré-requisito: app no ar (make dev).
+test-e2e:
+	cd frontend && npx playwright test
+
+test-e2e-headed:
+	cd frontend && npx playwright test --headed
+
+# Segurança DAST — OWASP ZAP full scan contra a app em execução (relatório em monitoring/reports/)
+# Uso: make zap-scan | make zap-scan ARGS=--baseline
+zap-scan:
+	bash monitoring/zap-scan.sh $(ARGS)
+
+# UI/UX — auditoria Lighthouse (performance, a11y, SEO) da app em execução.
+# Usa o Chrome headless do Playwright (já instalado em frontend/node_modules).
+lighthouse:
+	cd frontend && CHROME_PATH="$$(ls -d ~/.cache/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-linux64/chrome-headless-shell 2>/dev/null | head -1)" npx lighthouse http://localhost:8080 --output html --output-path ../monitoring/reports/lighthouse.html --chrome-flags="--headless --no-sandbox"
 
 migrate:
 	docker compose exec php-fpm php artisan migrate
