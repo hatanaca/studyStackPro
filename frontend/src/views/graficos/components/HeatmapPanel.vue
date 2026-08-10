@@ -12,10 +12,6 @@ defineProps<{
 <template>
   <ChartPanel title="Calendário de atividade" :loading="loading">
     <ChartSkeleton v-if="loading" height="280px" />
-    <HeatmapChart
-      v-else
-      :data="data"
-      :show-year-selector="true"
-    />
+    <HeatmapChart v-else :data="data" :show-year-selector="true" />
   </ChartPanel>
 </template>

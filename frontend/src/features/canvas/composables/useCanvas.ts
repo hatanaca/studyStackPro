@@ -8,7 +8,17 @@
  * mural de imagens e importação/exportação de organogramas.
  */
 import { watch, onBeforeUnmount, type Ref } from 'vue'
-import { Canvas, PencilBrush, Rect, Circle, Triangle, Line, IText, Textbox, Image as FabricImage } from 'fabric'
+import {
+  Canvas,
+  PencilBrush,
+  Rect,
+  Circle,
+  Triangle,
+  Line,
+  IText,
+  Textbox,
+  Image as FabricImage,
+} from 'fabric'
 import { useCanvasStore } from '../store/canvas.store'
 import { setFabricCanvas } from './canvasInstance'
 import type { CanvasTool } from '../types/canvas.types'
@@ -35,7 +45,9 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
   let isRestoringHistory = false
 
   const fabricCanvas = {
-    get value() { return _canvas },
+    get value() {
+      return _canvas
+    },
   }
 
   /**
@@ -92,7 +104,7 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
     c.on('path:created', () => saveHistory())
 
     store.canvasReady = true
-    setFabricCanvas(_canvas ? { value: _canvas } as any : null)
+    setFabricCanvas(_canvas ? ({ value: _canvas } as any) : null)
     saveHistory()
 
     let resizeTimer: ReturnType<typeof setTimeout> | null = null
@@ -100,7 +112,8 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
       if (resizeTimer) clearTimeout(resizeTimer)
       resizeTimer = setTimeout(() => {
         if (!c || !parent) return
-        const nw = parent.clientWidth, nh = parent.clientHeight
+        const nw = parent.clientWidth,
+          nh = parent.clientHeight
         if (nw > 0 && nh > 0 && (c.width !== nw || c.height !== nh)) {
           c.setDimensions({ width: nw, height: nh })
         }
@@ -109,7 +122,13 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
     if (parent) resizeObserver.observe(parent)
   }
 
-  watch(canvasEl, (el) => { if (el) initCanvas() }, { immediate: true })
+  watch(
+    canvasEl,
+    (el) => {
+      if (el) initCanvas()
+    },
+    { immediate: true }
+  )
 
   /**
    * @description Desfaz a última ação, restaurando o estado anterior do canvas.
@@ -119,11 +138,16 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
     if (historyIndex <= 0 || !_canvas) return
     isRestoringHistory = true
     historyIndex--
-    _canvas.loadFromJSON(JSON.parse(history[historyIndex])).then(() => {
-      _canvas?.renderAll()
-      isRestoringHistory = false
-      store.updateHistory(historyIndex, history.length)
-    }).catch(() => { isRestoringHistory = false })
+    _canvas
+      .loadFromJSON(JSON.parse(history[historyIndex]))
+      .then(() => {
+        _canvas?.renderAll()
+        isRestoringHistory = false
+        store.updateHistory(historyIndex, history.length)
+      })
+      .catch(() => {
+        isRestoringHistory = false
+      })
   }
 
   /**
@@ -134,11 +158,16 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
     if (historyIndex >= history.length - 1 || !_canvas) return
     isRestoringHistory = true
     historyIndex++
-    _canvas.loadFromJSON(JSON.parse(history[historyIndex])).then(() => {
-      _canvas?.renderAll()
-      isRestoringHistory = false
-      store.updateHistory(historyIndex, history.length)
-    }).catch(() => { isRestoringHistory = false })
+    _canvas
+      .loadFromJSON(JSON.parse(history[historyIndex]))
+      .then(() => {
+        _canvas?.renderAll()
+        isRestoringHistory = false
+        store.updateHistory(historyIndex, history.length)
+      })
+      .catch(() => {
+        isRestoringHistory = false
+      })
   }
 
   /**
@@ -156,9 +185,16 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
     _canvas.selection = true
     _canvas.defaultCursor = 'default'
     _canvas.hoverCursor = 'default'
-    _canvas.forEachObject((obj: any) => { obj.selectable = true; obj.evented = true })
+    _canvas.forEachObject((obj: any) => {
+      obj.selectable = true
+      obj.evented = true
+    })
     if (_canvas.freeDrawingBrush) {
-      try { _canvas.freeDrawingBrush = null as any } catch { _canvas.freeDrawingBrush = undefined as any }
+      try {
+        _canvas.freeDrawingBrush = null as any
+      } catch {
+        _canvas.freeDrawingBrush = undefined as any
+      }
     }
     if (tool === 'pencil') {
       _canvas.isDrawingMode = true
@@ -185,13 +221,27 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
    */
   function addShape(type: string) {
     if (!_canvas) return
-    const cx = (_canvas.width || 800) / 2, cy = (_canvas.height || 600) / 2
-    const base = { fill: store.fillColor, stroke: store.strokeColor, strokeWidth: store.strokeWidth, selectable: true }
+    const cx = (_canvas.width || 800) / 2,
+      cy = (_canvas.height || 600) / 2
+    const base = {
+      fill: store.fillColor,
+      stroke: store.strokeColor,
+      strokeWidth: store.strokeWidth,
+      selectable: true,
+    }
     let obj: any = null
-    if (type === 'rect') obj = new Rect({ ...base, left: cx - 50, top: cy - 40, width: 100, height: 80 })
-    else if (type === 'circle') obj = new Circle({ ...base, left: cx - 40, top: cy - 40, radius: 40 })
-    else if (type === 'triangle') obj = new Triangle({ ...base, left: cx - 50, top: cy - 40, width: 100, height: 80 })
-    else if (type === 'line') obj = new Line([cx - 60, cy, cx + 60, cy], { stroke: store.strokeColor, strokeWidth: store.strokeWidth, selectable: true })
+    if (type === 'rect')
+      obj = new Rect({ ...base, left: cx - 50, top: cy - 40, width: 100, height: 80 })
+    else if (type === 'circle')
+      obj = new Circle({ ...base, left: cx - 40, top: cy - 40, radius: 40 })
+    else if (type === 'triangle')
+      obj = new Triangle({ ...base, left: cx - 50, top: cy - 40, width: 100, height: 80 })
+    else if (type === 'line')
+      obj = new Line([cx - 60, cy, cx + 60, cy], {
+        stroke: store.strokeColor,
+        strokeWidth: store.strokeWidth,
+        selectable: true,
+      })
     if (obj) {
       _canvas.add(obj)
       _canvas.setActiveObject(obj)
@@ -207,9 +257,21 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
    */
   function addText(type: 'text' | 'textbox' = 'text') {
     if (!_canvas) return
-    const cx = (_canvas.width || 800) / 2, cy = (_canvas.height || 600) / 2
-    const opts = { left: cx - 60, top: cy - 15, fontSize: store.fontSize, fontFamily: store.fontFamily, fill: store.fillColor, selectable: true, editable: true }
-    const obj = type === 'textbox' ? new Textbox('Digite aqui...', { ...opts, width: 200 }) : new IText('Texto', opts)
+    const cx = (_canvas.width || 800) / 2,
+      cy = (_canvas.height || 600) / 2
+    const opts = {
+      left: cx - 60,
+      top: cy - 15,
+      fontSize: store.fontSize,
+      fontFamily: store.fontFamily,
+      fill: store.fillColor,
+      selectable: true,
+      editable: true,
+    }
+    const obj =
+      type === 'textbox'
+        ? new Textbox('Digite aqui...', { ...opts, width: 200 })
+        : new IText('Texto', opts)
     _canvas.add(obj)
     _canvas.setActiveObject(obj)
     obj.setCoords()
@@ -223,9 +285,30 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
    */
   function addStickyNote() {
     if (!_canvas) return
-    const cx = (_canvas.width || 800) / 2, cy = (_canvas.height || 600) / 2
-    const bg = new Rect({ left: cx - 75, top: cy - 75, width: 150, height: 150, fill: '#FEF08A', stroke: '#EAB308', strokeWidth: 1, rx: 8, ry: 8, selectable: true })
-    const txt = new Textbox('Nota', { left: cx - 65, top: cy - 65, width: 130, fontSize: 16, fontFamily: 'Arial', fill: '#fafafa', selectable: true, editable: true })
+    const cx = (_canvas.width || 800) / 2,
+      cy = (_canvas.height || 600) / 2
+    const bg = new Rect({
+      left: cx - 75,
+      top: cy - 75,
+      width: 150,
+      height: 150,
+      fill: '#FEF08A',
+      stroke: '#EAB308',
+      strokeWidth: 1,
+      rx: 8,
+      ry: 8,
+      selectable: true,
+    })
+    const txt = new Textbox('Nota', {
+      left: cx - 65,
+      top: cy - 65,
+      width: 130,
+      fontSize: 16,
+      fontFamily: 'Arial',
+      fill: '#fafafa',
+      selectable: true,
+      editable: true,
+    })
     _canvas.add(bg, txt)
     _canvas.setActiveObject(bg)
     bg.setCoords()
@@ -240,8 +323,18 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
    */
   function addHighlight() {
     if (!_canvas) return
-    const cx = (_canvas.width || 800) / 2, cy = (_canvas.height || 600) / 2
-    const obj = new Rect({ left: cx - 80, top: cy - 15, width: 160, height: 30, fill: 'rgba(250,204,21,0.4)', stroke: 'transparent', strokeWidth: 0, selectable: true })
+    const cx = (_canvas.width || 800) / 2,
+      cy = (_canvas.height || 600) / 2
+    const obj = new Rect({
+      left: cx - 80,
+      top: cy - 15,
+      width: 160,
+      height: 30,
+      fill: 'rgba(250,204,21,0.4)',
+      stroke: 'transparent',
+      strokeWidth: 0,
+      selectable: true,
+    })
     _canvas.add(obj)
     _canvas.setActiveObject(obj)
     obj.setCoords()
@@ -272,16 +365,23 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
    */
   function addImageFromURL(url: string) {
     if (!_canvas || !url) return
-    FabricImage.fromURL(url, { crossOrigin: 'anonymous' }).then((img: any) => {
-      const cw = _canvas!.width || 800, ch = _canvas!.height || 600
-      const scale = Math.min((cw * 0.8) / (img.width || 1), (ch * 0.8) / (img.height || 1), 1)
-      img.scale(scale)
-      img.set({ left: (cw - (img.width || 0) * scale) / 2, top: (ch - (img.height || 0) * scale) / 2, selectable: true })
-      _canvas!.add(img)
-      _canvas!.setActiveObject(img)
-      img.setCoords()
-      _canvas!.renderAll()
-    }).catch(handleError('useCanvas-loadImage'))
+    FabricImage.fromURL(url, { crossOrigin: 'anonymous' })
+      .then((img: any) => {
+        const cw = _canvas!.width || 800,
+          ch = _canvas!.height || 600
+        const scale = Math.min((cw * 0.8) / (img.width || 1), (ch * 0.8) / (img.height || 1), 1)
+        img.scale(scale)
+        img.set({
+          left: (cw - (img.width || 0) * scale) / 2,
+          top: (ch - (img.height || 0) * scale) / 2,
+          selectable: true,
+        })
+        _canvas!.add(img)
+        _canvas!.setActiveObject(img)
+        img.setCoords()
+        _canvas!.renderAll()
+      })
+      .catch(handleError('useCanvas-loadImage'))
   }
 
   /**
@@ -306,7 +406,11 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
   function updateObjectProp(prop: string, value: any) {
     if (!_canvas) return
     const obj = _canvas.getActiveObject()
-    if (obj) { obj.set(prop, value); _canvas.renderAll(); saveHistory() }
+    if (obj) {
+      obj.set(prop, value)
+      _canvas.renderAll()
+      saveHistory()
+    }
   }
 
   /**
@@ -354,7 +458,9 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
    * @description Serializa o estado completo do canvas como objeto JSON.
    * @returns Objeto JSON com todos os objetos e configurações do canvas, ou `null`
    */
-  function toJSON() { return _canvas?.toJSON() || null }
+  function toJSON() {
+    return _canvas?.toJSON() || null
+  }
 
   /**
    * @description Restaura o estado do canvas a partir de um objeto JSON previamente serializado.
@@ -363,32 +469,54 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
   function fromJSON(json: any) {
     if (!_canvas) return
     isRestoringHistory = true
-    _canvas.loadFromJSON(json).then(() => { _canvas?.renderAll(); isRestoringHistory = false; saveHistory() }).catch(() => { isRestoringHistory = false })
+    _canvas
+      .loadFromJSON(json)
+      .then(() => {
+        _canvas?.renderAll()
+        isRestoringHistory = false
+        saveHistory()
+      })
+      .catch(() => {
+        isRestoringHistory = false
+      })
   }
   /**
    * @description Exporta o canvas como Data URL (base64).
    * @param opts - Opções de exportação: formato (png/jpeg), qualidade e multiplicador de resolução
    * @returns String Data URL da imagem, ou string vazia se o canvas não estiver disponível
    */
-  function toDataURL(opts?: { format?: string; quality?: number; multiplier?: number }) { return _canvas?.toDataURL(opts as any) || '' }
+  function toDataURL(opts?: { format?: string; quality?: number; multiplier?: number }) {
+    return _canvas?.toDataURL(opts as any) || ''
+  }
 
   /**
    * @description Exporta o canvas como SVG (Scalable Vector Graphics).
    * @returns String SVG do conteúdo do canvas, ou string vazia se não disponível
    */
-  function toSVG() { return _canvas?.toSVG() || '' }
+  function toSVG() {
+    return _canvas?.toSVG() || ''
+  }
 
   /**
    * @description Salva o estado do canvas no armazenamento local do navegador.
    * @param key - Chave do localStorage onde o JSON será armazenado
    */
-  function saveToLocalStorage(key: string) { const j = toJSON(); if (j) localStorage.setItem(key, JSON.stringify(j)) }
+  function saveToLocalStorage(key: string) {
+    const j = toJSON()
+    if (j) localStorage.setItem(key, JSON.stringify(j))
+  }
 
   /**
    * @description Restaura o estado do canvas a partir do armazenamento local do navegador.
    * @param key - Chave do localStorage de onde o JSON será lido
    */
-  function loadFromLocalStorage(key: string) { const r = localStorage.getItem(key); if (r) try { fromJSON(JSON.parse(r)) } catch {} }
+  function loadFromLocalStorage(key: string) {
+    const r = localStorage.getItem(key)
+    if (r)
+      try {
+        fromJSON(JSON.parse(r))
+      } catch {}
+  }
 
   /**
    * @description Recupera as URLs das imagens salvas no mural para uma tecnologia específica.
@@ -399,7 +527,13 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
   function getMuralImages(tid: string): string[] {
     const r = localStorage.getItem(`${MURAL_PREFIX}${tid}`)
     if (!r) return []
-    try { return JSON.parse(r).filter((i: any) => i.type === 'image' && i.url).map((i: any) => i.url) } catch { return [] }
+    try {
+      return JSON.parse(r)
+        .filter((i: { type?: string; url?: string }) => i.type === 'image' && i.url)
+        .map((i: { url: string }) => i.url)
+    } catch {
+      return []
+    }
   }
 
   /**
@@ -408,7 +542,9 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
    * @param _tid - ID da tecnologia (não utilizado internamente, mantido para consistência da API)
    * @param imageUrl - Data URL da imagem a ser adicionada
    */
-  function addImageFromMural(_tid: string, imageUrl: string) { addImageFromURL(imageUrl) }
+  function addImageFromMural(_tid: string, imageUrl: string) {
+    addImageFromURL(imageUrl)
+  }
 
   /**
    * @description Exporta o estado atual do canvas como imagem e salva no mural da tecnologia.
@@ -422,8 +558,12 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
     const d = toDataURL({ format: 'png', quality: 1, multiplier: 2 })
     if (!d) return
     const k = `${MURAL_PREFIX}${tid}`
-    let items: any[] = []
-    try { items = JSON.parse(localStorage.getItem(k) || '[]') } catch { items = [] }
+    let items: { id: string; type: string; url: string }[]
+    try {
+      items = JSON.parse(localStorage.getItem(k) || '[]')
+    } catch {
+      items = []
+    }
     items.push({ id: `canvas-${Date.now()}`, type: 'image', url: d })
     localStorage.setItem(k, JSON.stringify(items))
   }
@@ -443,17 +583,46 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
       const { nodes = [], edges = [] } = JSON.parse(r)
       const nodeMap = new Map<string, { x: number; y: number }>()
       nodes.forEach((n: any) => {
-        const x = n.position?.x || 0, y = n.position?.y || 0
+        const x = n.position?.x || 0,
+          y = n.position?.y || 0
         nodeMap.set(n.id, { x, y })
-        const rect = new Rect({ left: x, top: y, width: 180, height: 60, fill: '#1c1c1f', stroke: '#8b5cf6', strokeWidth: 2, rx: 8, ry: 8, selectable: true })
+        const rect = new Rect({
+          left: x,
+          top: y,
+          width: 180,
+          height: 60,
+          fill: '#1c1c1f',
+          stroke: '#8b5cf6',
+          strokeWidth: 2,
+          rx: 8,
+          ry: 8,
+          selectable: true,
+        })
         rect.setCoords()
         _canvas!.add(rect)
-        const txt = new IText(n.data?.label || n.id, { left: x + 10, top: y + 20, fontSize: 14, fontFamily: 'Arial', fill: '#8b5cf6', selectable: false, evented: false })
+        const txt = new IText(n.data?.label || n.id, {
+          left: x + 10,
+          top: y + 20,
+          fontSize: 14,
+          fontFamily: 'Arial',
+          fill: '#8b5cf6',
+          selectable: false,
+          evented: false,
+        })
         _canvas!.add(txt)
       })
       edges.forEach((e: any) => {
-        const from = nodeMap.get(e.source), to = nodeMap.get(e.target)
-        if (from && to) _canvas!.add(new Line([from.x + 90, from.y + 60, to.x + 90, to.y], { stroke: '#a1a1aa', strokeWidth: 2, selectable: false, evented: false }))
+        const from = nodeMap.get(e.source),
+          to = nodeMap.get(e.target)
+        if (from && to)
+          _canvas!.add(
+            new Line([from.x + 90, from.y + 60, to.x + 90, to.y], {
+              stroke: '#a1a1aa',
+              strokeWidth: 2,
+              selectable: false,
+              evented: false,
+            })
+          )
       })
       _canvas.renderAll()
       saveHistory()
@@ -470,56 +639,120 @@ export function useCanvas(canvasEl: Ref<HTMLCanvasElement | undefined>) {
    */
   function exportToOrganogram(tid: string) {
     if (!_canvas) return
-    const objects = _canvas.getObjects(), nodes: any[] = [], edges: any[] = []
+    const objects = _canvas.getObjects(),
+      nodes: any[] = [],
+      edges: any[] = []
     const centers = new Map<string, { x: number; y: number }>()
     objects.forEach((obj: any, i: number) => {
       if (obj.type === 'rect') {
-        const id = `node-${i}`, x = obj.left || 0, y = obj.top || 0
+        const id = `node-${i}`,
+          x = obj.left || 0,
+          y = obj.top || 0
         centers.set(id, { x: x + 90, y: y + 30 })
-        const txt = objects.find((o: any) => (o.type === 'i-text' || o.type === 'text') && Math.abs((o.left || 0) - (x + 10)) < 20 && Math.abs((o.top || 0) - (y + 20)) < 20) as any
+        const txt = objects.find(
+          (o: any) =>
+            (o.type === 'i-text' || o.type === 'text') &&
+            Math.abs((o.left || 0) - (x + 10)) < 20 &&
+            Math.abs((o.top || 0) - (y + 20)) < 20
+        ) as any
         nodes.push({ id, type: 'default', position: { x, y }, data: { label: txt?.text ?? 'Nó' } })
       }
     })
     objects.forEach((obj: any, i: number) => {
       if (obj.type === 'line' && (obj.points?.length ?? 0) >= 4) {
-        let fromId = '', toId = ''
+        let fromId = '',
+          toId = ''
         centers.forEach((ct: { x: number; y: number }, id: string) => {
-          if (Math.abs(obj.points![0] - ct.x) < 5 && Math.abs(obj.points![1] - ct.y) < 5) fromId = id
+          if (Math.abs(obj.points![0] - ct.x) < 5 && Math.abs(obj.points![1] - ct.y) < 5)
+            fromId = id
           if (Math.abs(obj.points![2] - ct.x) < 5 && Math.abs(obj.points![3] - ct.y) < 5) toId = id
         })
         if (fromId && toId) edges.push({ id: `edge-${i}`, source: fromId, target: toId })
       }
     })
-    if (nodes.length) localStorage.setItem(`studytrack.study-flow.v1.${tid}`, JSON.stringify({ nodes, edges }))
+    if (nodes.length)
+      localStorage.setItem(`studytrack.study-flow.v1.${tid}`, JSON.stringify({ nodes, edges }))
   }
 
   /**
    * @description Dispara o download do canvas como arquivo PNG com resolução 2x.
    */
-  function downloadPNG() { const u = toDataURL({ format: 'png', quality: 1, multiplier: 2 }); if (u) { const a = document.createElement('a'); a.href = u; a.download = 'canvas.png'; a.click() } }
+  function downloadPNG() {
+    const u = toDataURL({ format: 'png', quality: 1, multiplier: 2 })
+    if (u) {
+      const a = document.createElement('a')
+      a.href = u
+      a.download = 'canvas.png'
+      a.click()
+    }
+  }
 
   /**
    * @description Dispara o download do canvas como arquivo SVG vetorial.
    */
-  function downloadSVG() { const s = toSVG(); if (s) { const url = URL.createObjectURL(new Blob([s], { type: 'image/svg+xml' })); const a = document.createElement('a'); a.href = url; a.download = 'canvas.svg'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 100) } }
+  function downloadSVG() {
+    const s = toSVG()
+    if (s) {
+      const url = URL.createObjectURL(new Blob([s], { type: 'image/svg+xml' }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'canvas.svg'
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(url), 100)
+    }
+  }
 
   /**
    * @description Dispara o download do estado do canvas como arquivo JSON formatado.
    */
-  function downloadJSON() { const j = JSON.stringify(toJSON(), null, 2); const url = URL.createObjectURL(new Blob([j], { type: 'application/json' })); const a = document.createElement('a'); a.href = url; a.download = 'canvas.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 100) }
+  function downloadJSON() {
+    const j = JSON.stringify(toJSON(), null, 2)
+    const url = URL.createObjectURL(new Blob([j], { type: 'application/json' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'canvas.json'
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 100)
+  }
 
-  onBeforeUnmount(() => { resizeObserver?.disconnect(); resizeObserver = null; _canvas?.dispose(); _canvas = null; setFabricCanvas(null as any) })
+  onBeforeUnmount(() => {
+    resizeObserver?.disconnect()
+    resizeObserver = null
+    _canvas?.dispose()
+    _canvas = null
+    setFabricCanvas(null as any)
+  })
 
   return {
     canvas: fabricCanvas,
-    setTool, addShape, addText, addStickyNote, addHighlight,
-    addImage, addImageFromURL, addImageFromMural,
-    deleteSelected, updateObjectProp,
-    undo, redo, zoomIn, zoomOut, zoomReset, clearCanvas,
-    toJSON, fromJSON, toDataURL, toSVG,
-    saveToLocalStorage, loadFromLocalStorage,
-    getMuralImages, saveToMural,
-    importFromOrganogram, exportToOrganogram,
-    downloadPNG, downloadSVG, downloadJSON,
+    setTool,
+    addShape,
+    addText,
+    addStickyNote,
+    addHighlight,
+    addImage,
+    addImageFromURL,
+    addImageFromMural,
+    deleteSelected,
+    updateObjectProp,
+    undo,
+    redo,
+    zoomIn,
+    zoomOut,
+    zoomReset,
+    clearCanvas,
+    toJSON,
+    fromJSON,
+    toDataURL,
+    toSVG,
+    saveToLocalStorage,
+    loadFromLocalStorage,
+    getMuralImages,
+    saveToMural,
+    importFromOrganogram,
+    exportToOrganogram,
+    downloadPNG,
+    downloadSVG,
+    downloadJSON,
   }
 }

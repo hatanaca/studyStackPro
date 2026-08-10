@@ -6,9 +6,8 @@ import type {
   TechnologyMetric,
   DailyMinute,
 } from '@/types/domain.types'
-import { analyticsApi } from '@/api/modules/analytics.api'
 
-/** Períodos disponíveis para gráficos de séries temporais */
+/** Periodos disponiveis para graficos de series temporais */
 export type TimeSeriesPeriod = '7d' | '30d' | '90d'
 
 export interface WeeklySummary {
@@ -36,45 +35,33 @@ interface PendingSession {
   technology: { id: string; name: string; color: string } | null
 }
 
-const PERIOD_TO_DAYS: Record<TimeSeriesPeriod, number> = {
-  '7d': 7,
-  '30d': 30,
-  '90d': 90,
-}
-
+/**
+ * Store de analytics: estado de UI e computeds que mesclam dados da API com
+ * sessoes pendentes (optimistic). O data fetching e gerenciado por TanStack Query
+ * composables (useDashboardQuery, useHeatmapQuery, etc.) que escrevem neste store
+ * via setters.
+ */
 export const useAnalyticsStore = defineStore('analytics', () => {
+  // --- Data refs (escritas por query composables) ---
   const dashboard = shallowRef<DashboardData | null>(null)
-  const isLoading = ref(false)
-  const isRecalculating = ref(false)
-  const lastFetchAt = ref<Date | null>(null)
-
   const heatmapData = shallowRef<HeatmapDay[]>([])
-  const heatmapLoading = ref(false)
   const heatmapYear = ref<number>(new Date().getFullYear())
-
   const weeklyData = shallowRef<WeeklySummary[]>([])
-  const weeklyLoading = ref(false)
-
   const timeSeriesData = shallowRef<Record<TimeSeriesPeriod, DailyMinute[]>>({
     '7d': [],
     '30d': [],
     '90d': [],
   })
-  const timeSeriesLoading = ref(false)
-  const selectedPeriod = ref<TimeSeriesPeriod>('30d')
-
   const techStatsData = shallowRef<TechnologyMetric[]>([])
-  const techStatsLoading = ref(false)
 
-  // --- Pending optimistic sessions (never overwritten by API) ---
+  // --- UI state ---
+  const isRecalculating = ref(false)
+  const selectedPeriod = ref<TimeSeriesPeriod>('30d')
+  const lastFetchAt = ref<Date | null>(null)
+
+  // --- Pending optimistic sessions ---
   const pendingSessions = ref<PendingSession[]>([])
   const sessionCountAtPendingStart = ref<number | null>(null)
-
-  /** TTL para considerar dados "frescos" (5min) */
-  const TTL_MS = 5 * 60 * 1000
-  const isFresh = computed(
-    () => lastFetchAt.value !== null && Date.now() - lastFetchAt.value.getTime() < TTL_MS
-  )
 
   const todayStr = computed(() => {
     const d = new Date()
@@ -98,7 +85,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     return merged
   }
 
-  // --- Computeds that merge API data + pending ---
+  // --- Computeds que mesclam dados da API + pending ---
   const userMetrics = computed((): UserMetrics | null => {
     const base = dashboard.value?.user_metrics
     if (!base) return null
@@ -205,23 +192,28 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     const seenIds = new Set(apiTechs.map((tm) => tm.technology?.id))
     const extras: TechnologyMetric[] = []
 
+    // Agrega sessões pendentes por tecnologia em uma única passada.
+    const byTech = new Map<string, { minutes: number; count: number; tech: PendingSession['technology'] }>()
     for (const ps of pendingSessions.value) {
       if (ps.date !== today || !ps.technology || seenIds.has(ps.technology.id)) continue
       seenIds.add(ps.technology.id)
-      const pendingMins = pendingSessions.value
-        .filter((s) => s.technology?.id === ps.technology!.id)
-        .reduce((sum, s) => sum + s.minutes, 0)
+      const entry = byTech.get(ps.technology.id) ?? { minutes: 0, count: 0, tech: ps.technology }
+      entry.minutes += ps.minutes
+      entry.count += 1
+      byTech.set(ps.technology.id, entry)
+    }
+
+    for (const { minutes, count, tech } of byTech.values()) {
       extras.push({
         technology: {
-          id: ps.technology.id,
-          name: ps.technology.name,
-          color: ps.technology.color,
+          id: tech!.id,
+          name: tech!.name,
+          color: tech!.color,
           slug: '',
           is_active: true,
         },
-        total_minutes: pendingMins,
-        session_count: pendingSessions.value.filter((s) => s.technology?.id === ps.technology!.id)
-          .length,
+        total_minutes: minutes,
+        session_count: count,
         last_studied_at: new Date().toISOString(),
       })
     }
@@ -229,8 +221,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     return [...apiTechs, ...extras]
   })
 
-  // --- Reconcile: clear pending when API confirms data is up to date ---
-  /** Remove pending quando API confirma que dados estão atualizados */
+  // --- Reconcile: limpar pending quando API confirma dados atualizados ---
   function reconcilePending() {
     if (!pendingSessions.value.length || sessionCountAtPendingStart.value === null) return
     const apiTotal = dashboard.value?.user_metrics?.total_sessions ?? 0
@@ -241,8 +232,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     }
   }
 
-  // --- Optimistic add: just pushes to pending, never touches API data ---
-  /** Adiciona sessão otimista (antes da API confirmar) */
+  // --- Optimistic: adiciona ao pending, nao toca nos dados da API ---
   function addLocalTodaySession(
     sessionDate: string,
     minutes: number,
@@ -257,80 +247,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     ]
   }
 
-  // --- Fetch functions ---
-  async function fetchDashboard(force = false) {
-    if (!force && isFresh.value) return
-
-    isLoading.value = true
-    try {
-      const res = await analyticsApi.getDashboard()
-      if (res.data.success && res.data.data) {
-        const data = res.data.data
-        dashboard.value = data
-        if (data.time_series_30d?.length) {
-          timeSeriesData.value = { ...timeSeriesData.value, '30d': data.time_series_30d }
-        }
-        lastFetchAt.value = new Date()
-        reconcilePending()
-      }
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  async function fetchHeatmap(year?: number) {
-    heatmapLoading.value = true
-    try {
-      const res = await analyticsApi.getHeatmap(year ?? heatmapYear.value)
-      if (res.data.success && Array.isArray(res.data.data)) {
-        heatmapData.value = res.data.data as HeatmapDay[]
-        if (year) heatmapYear.value = year
-      }
-    } finally {
-      heatmapLoading.value = false
-    }
-  }
-
-  async function fetchWeekly() {
-    weeklyLoading.value = true
-    try {
-      const res = await analyticsApi.getWeekly()
-      if (res.data.success && Array.isArray(res.data.data)) {
-        weeklyData.value = res.data.data as WeeklySummary[]
-      }
-    } finally {
-      weeklyLoading.value = false
-    }
-  }
-
-  async function fetchTimeSeries(period?: TimeSeriesPeriod) {
-    const p = period ?? selectedPeriod.value
-    const days = PERIOD_TO_DAYS[p]
-    timeSeriesLoading.value = true
-    try {
-      const res = await analyticsApi.getTimeSeries(days)
-      const payload = res.data?.data
-      if (res.data?.success && Array.isArray(payload)) {
-        timeSeriesData.value = { ...timeSeriesData.value, [p]: payload }
-      }
-    } finally {
-      timeSeriesLoading.value = false
-    }
-  }
-
-  async function fetchTechStats() {
-    techStatsLoading.value = true
-    try {
-      const res = await analyticsApi.getTechStats()
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        techStatsData.value = res.data.data
-      }
-    } finally {
-      techStatsLoading.value = false
-    }
-  }
-
-  /** Atualiza o dashboard a partir de dados (ex.: TanStack Query). */
+  // --- Setters (chamados por TanStack Query composables) ---
   function setDashboard(data: DashboardData | null) {
     dashboard.value = data
     if (data) {
@@ -342,7 +259,23 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     }
   }
 
-  /** Atualiza store com dados recebidos via WebSocket (recálculo concluído) */
+  function setHeatmapData(data: HeatmapDay[], year?: number) {
+    heatmapData.value = data
+    if (year) heatmapYear.value = year
+  }
+
+  function setWeeklyData(data: WeeklySummary[]) {
+    weeklyData.value = data
+  }
+
+  function setTimeSeriesData(period: TimeSeriesPeriod, data: DailyMinute[]) {
+    timeSeriesData.value = { ...timeSeriesData.value, [period]: data }
+  }
+
+  function setTechStatsData(data: TechnologyMetric[]) {
+    techStatsData.value = data
+  }
+
   function updateFromWebSocket(data: DashboardData) {
     dashboard.value = data
     lastFetchAt.value = new Date()
@@ -360,42 +293,41 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   }
 
   return {
+    // Data
     dashboard,
-    isLoading,
+    heatmapData,
+    heatmapYear,
+    weeklyData,
+    timeSeriesData,
+    techStatsData,
+    // UI state
     isRecalculating,
+    selectedPeriod,
     lastFetchAt,
-    isFresh,
+    // Pending
+    pendingSessions,
+    sessionCountAtPendingStart,
+    // Computeds
     userMetrics,
     technologyMetrics,
+    timeSeries,
     timeSeries30d: computed(() =>
       mergeDailyWithPending(timeSeriesData.value['30d'] ?? dashboard.value?.time_series_30d ?? [])
     ),
-    timeSeries,
     weeklyComparison,
     heatmap,
-    heatmapLoading,
-    heatmapYear,
-    weeklyData,
-    weeklyLoading,
-    timeSeriesLoading,
-    selectedPeriod,
     techMetrics,
-    techStatsData,
-    techStatsLoading,
-    timeSeriesData,
     topTechnologies,
     todayMinutes,
     todaySessions,
     todayTechnologies,
-    pendingSessions,
-    sessionCountAtPendingStart,
+    // Actions
     addLocalTodaySession,
     setDashboard,
-    fetchDashboard,
-    fetchHeatmap,
-    fetchWeekly,
-    fetchTimeSeries,
-    fetchTechStats,
+    setHeatmapData,
+    setWeeklyData,
+    setTimeSeriesData,
+    setTechStatsData,
     updateFromWebSocket,
     setRecalculating,
     setSelectedPeriod,

@@ -1,16 +1,5 @@
 import { setActivePinia, createPinia } from 'pinia'
 import { useAnalyticsStore } from '../analytics.store'
-import { analyticsApi } from '@/api/modules/analytics.api'
-
-vi.mock('@/api/modules/analytics.api', () => ({
-  analyticsApi: {
-    getDashboard: vi.fn(),
-    getHeatmap: vi.fn(),
-    getWeekly: vi.fn(),
-    getTimeSeries: vi.fn(),
-    getTechStats: vi.fn(),
-  },
-}))
 
 describe('analytics.store', () => {
   beforeEach(() => {
@@ -18,42 +7,33 @@ describe('analytics.store', () => {
     vi.clearAllMocks()
   })
 
-  it('fetchDashboard preenche dashboard e lastFetchAt', async () => {
+  it('setDashboard preenche dashboard e lastFetchAt', () => {
     const mockData = {
-      success: true,
-      data: {
-        user_metrics: { total_sessions: 10, total_minutes: 120 },
-        technology_metrics: [],
-        time_series_30d: [],
-        top_technologies: [],
-      },
+      user_metrics: { total_sessions: 10, total_minutes: 120 },
+      technology_metrics: [],
+      time_series_30d: [],
+      top_technologies: [],
     }
-    vi.mocked(analyticsApi.getDashboard).mockResolvedValue({ data: mockData } as never)
 
     const store = useAnalyticsStore()
-    await store.fetchDashboard(true)
+    store.setDashboard(mockData)
 
-    expect(store.dashboard).toEqual(mockData.data)
+    expect(store.dashboard).toEqual(mockData)
     expect(store.lastFetchAt).toBeInstanceOf(Date)
   })
 
-  it('isFresh retorna true dentro do TTL e false fora', async () => {
+  it('setDashboard atualiza time series de 30d', () => {
     const mockData = {
-      success: true,
-      data: {
-        user_metrics: {},
-        technology_metrics: [],
-        time_series_30d: [],
-        top_technologies: [],
-      },
+      user_metrics: {},
+      technology_metrics: [],
+      time_series_30d: [{ date: '2025-03-15', total_minutes: 30, session_count: 1 }],
+      top_technologies: [],
     }
-    vi.mocked(analyticsApi.getDashboard).mockResolvedValue({ data: mockData } as never)
 
     const store = useAnalyticsStore()
-    expect(store.isFresh).toBe(false)
+    store.setDashboard(mockData)
 
-    await store.fetchDashboard(true)
-    expect(store.isFresh).toBe(true)
+    expect(store.timeSeriesData['30d']).toEqual(mockData.time_series_30d)
   })
 
   it('updateFromWebSocket substitui dashboard', () => {
@@ -101,18 +81,13 @@ describe('analytics.store', () => {
     expect(store.pendingSessions).toHaveLength(1)
     expect(store.sessionCountAtPendingStart).toBe(5)
 
-    const mockData = {
-      success: true,
-      data: {
-        user_metrics: { total_sessions: 6, total_minutes: 130, total_hours: 2.17 },
-        technology_metrics: [],
-        time_series_30d: [],
-        top_technologies: [],
-      },
-    }
-    vi.mocked(analyticsApi.getDashboard).mockResolvedValue({ data: mockData } as never)
-
-    await store.fetchDashboard(true)
+    // API confirma sessão: total vai de 5 para 6 → pending deve ser limpo.
+    store.setDashboard({
+      user_metrics: { total_sessions: 6, total_minutes: 130, total_hours: 2.17 },
+      technology_metrics: [],
+      time_series_30d: [],
+      top_technologies: [],
+    })
 
     expect(store.pendingSessions).toHaveLength(0)
     expect(store.sessionCountAtPendingStart).toBeNull()

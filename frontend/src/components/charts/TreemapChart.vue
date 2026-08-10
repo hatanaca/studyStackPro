@@ -70,9 +70,11 @@ const chartOptions = computed<ApexOptions>(() => ({
   responsive: [],
 }))
 
-const series = computed(() => [{
-  data: props.series,
-}])
+const series = computed(() => [
+  {
+    data: props.series,
+  },
+])
 </script>
 
 <template>

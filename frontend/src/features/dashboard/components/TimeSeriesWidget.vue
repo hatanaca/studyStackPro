@@ -1,16 +1,21 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
+import { useQueryClient } from '@tanstack/vue-query'
 const LineChart = defineAsyncComponent(() => import('@/components/charts/LineChart.vue'))
 import Skeleton from 'primevue/skeleton'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { formatMinutesToHoursLabel } from '@/utils/formatters'
 import { formatShortDate } from '@/utils/formatters'
-import { useAnalyticsStore } from '@/stores/analytics.store'
+import { useAnalyticsStore, type TimeSeriesPeriod } from '@/stores/analytics.store'
+import { useTimeSeriesQuery } from '@/features/dashboard/composables/useTimeSeriesQuery'
+import { queryKeys } from '@/api/queryKeys'
 import PeriodSelector from './PeriodSelector.vue'
 
 const router = useRouter()
+const queryClient = useQueryClient()
 const analyticsStore = useAnalyticsStore()
+const timeSeriesQuery = useTimeSeriesQuery()
 
 const chartData = computed(() => {
   const data = analyticsStore.timeSeries
@@ -48,10 +53,12 @@ function goToRegisterSession() {
         <PeriodSelector
           :model-value="analyticsStore.selectedPeriod"
           @update:model-value="
-            (p) => {
+            (p: TimeSeriesPeriod) => {
               analyticsStore.setSelectedPeriod(p)
               const hasDataForPeriod = analyticsStore.timeSeriesData[p]?.length
-              if (!hasDataForPeriod) analyticsStore.fetchTimeSeries(p)
+              if (!hasDataForPeriod) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.analytics.timeSeries(p === '7d' ? 7 : p === '30d' ? 30 : 90) })
+              }
             }
           "
         />
@@ -63,7 +70,7 @@ function goToRegisterSession() {
         Atualizando métricas…
       </p>
     </div>
-    <div v-if="analyticsStore.timeSeriesLoading" class="chart-skeleton">
+    <div v-if="timeSeriesQuery.isLoading.value" class="chart-skeleton">
       <Skeleton v-for="i in 8" :key="i" height="1.25rem" class="skeleton-line" />
     </div>
     <LineChart

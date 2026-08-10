@@ -11,6 +11,9 @@ class StudySessionUpdated
 {
     use Dispatchable, SerializesModels;
 
+    /**
+     * @param  array<int, string>  $changedFields
+     */
     public function __construct(
         public readonly StudySession $session,
         public readonly array $changedFields = [],

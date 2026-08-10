@@ -29,12 +29,20 @@
 .animate-shine {
   background: linear-gradient(
     90deg,
-    var(--color-bg-soft) 0%,
-    var(--color-border) 50%,
-    var(--color-bg-soft) 100%
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 100%
   );
   background-size: 200% 100%;
   animation: shine 1.5s ease-in-out infinite;
+}
+[data-theme='light'] .animate-shine {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.04) 0%,
+    rgba(0, 0, 0, 0.08) 50%,
+    rgba(0, 0, 0, 0.04) 100%
+  );
 }
 
 /* ---- Bounce (micro feedback) ---- */

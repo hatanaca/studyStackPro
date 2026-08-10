@@ -69,6 +69,5 @@ export const youtubeApi = {
     apiClient.get<ApiResponse<YouTubeVideosResult>>(ENDPOINTS.youtube.videos, {
       params: { ids },
     }),
-  playlists: () =>
-    apiClient.get<ApiResponse<YouTubePlaylistsResult>>(ENDPOINTS.youtube.playlists),
+  playlists: () => apiClient.get<ApiResponse<YouTubePlaylistsResult>>(ENDPOINTS.youtube.playlists),
 }

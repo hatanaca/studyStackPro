@@ -34,7 +34,7 @@ class AnalyticsServiceExportTest extends TestCase
         $this->app->instance(AnalyticsRepositoryInterface::class, $repository);
 
         $service = app(AnalyticsService::class);
-        $result = $service->getExportData($userId, $start, $end);
+        $result = $service->getDailyMinutesByRange($userId, $start, $end);
 
         $this->assertSame($expected, $result);
     }

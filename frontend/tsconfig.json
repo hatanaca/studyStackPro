@@ -22,6 +22,6 @@
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"],
-  "exclude": ["node_modules", "src/views/DashboardView.vue", "src/**/__tests__/**", "src/**/*.spec.ts"],
+  "exclude": ["node_modules", "src/**/__tests__/**", "src/**/*.spec.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

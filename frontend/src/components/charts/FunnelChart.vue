@@ -30,9 +30,7 @@ const props = withDefaults(
 const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
 const { baseOptions, theme, palette } = useApexChartTheme()
 
-const sortedData = computed(() =>
-  [...props.data].sort((a, b) => b.value - a.value)
-)
+const sortedData = computed(() => [...props.data].sort((a, b) => b.value - a.value))
 
 const chartOptions = computed<ApexOptions>(() => ({
   ...baseOptions.value,
@@ -117,10 +115,12 @@ const chartOptions = computed<ApexOptions>(() => ({
   responsive: [],
 }))
 
-const series = computed(() => [{
-  name: 'Valor',
-  data: sortedData.value.map((d) => d.value),
-}])
+const series = computed(() => [
+  {
+    name: 'Valor',
+    data: sortedData.value.map((d) => d.value),
+  },
+])
 </script>
 
 <template>

@@ -74,9 +74,7 @@ const years = computed(() => {
         </option>
       </select>
     </div>
-    <div v-if="!data?.length" class="chart-placeholder">
-      Sem dados
-    </div>
+    <div v-if="!data?.length" class="chart-placeholder">Sem dados</div>
     <div v-else class="heatmap">
       <svg
         viewBox="0 0 730 110"
@@ -144,10 +142,11 @@ const years = computed(() => {
 }
 .heatmap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 .heatmap-svg {
   width: 100%;
-  min-width: 730px;
   height: auto;
 }
 </style>

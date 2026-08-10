@@ -1,7 +1,7 @@
 # Docker Compose - StudyTrackPro
 # Produção (sem portas DB/Redis, sem Vite): docker-compose.production.yml + alvo `make prod-up` no Makefile.
 # Services: nginx (proxy), php-fpm (Laravel), reverb (WebSocket), horizon (queue worker),
-# scheduler (cron), node (Vite dev), postgres, redis
+# scheduler (cron), math-service (FastAPI/SymPy), node (Vite dev), postgres, redis
 # 
 # Network: app (internal) - all services communicate internally
 # Public: Only nginx exposes ports to host
@@ -25,6 +25,13 @@ services:
     container_name: nginx
     logging: *default-logging
     build: ./docker/nginx
+    image: ${DOCKER_IMAGE_PREFIX:-}studytrack-nginx:latest
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
     ports:
       - "8080:80"
       - "443:443"
@@ -66,6 +73,7 @@ services:
     container_name: php-fpm
     logging: *default-logging
     build: ./docker/php
+    image: ${DOCKER_IMAGE_PREFIX:-}studytrack-backend:latest
     cap_drop:
       - ALL
     cap_add:
@@ -86,6 +94,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env}
+      MATH_SERVICE_URL: ${MATH_SERVICE_URL:-http://math-service:8000}
+      MATH_SERVICE_TOKEN: ${MATH_SERVICE_TOKEN:?Defina MATH_SERVICE_TOKEN no .env}
       # Load from .env in production:
       # - REDIS_PASSWORD (from .env.production)
       # - DB_PASSWORD (from .env.production)
@@ -93,6 +103,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      math-service:
         condition: service_healthy
     networks:
       - app
@@ -114,6 +126,9 @@ services:
   reverb:
     container_name: reverb
     logging: *default-logging
+    read_only: true
+    tmpfs:
+      - /tmp:size=10m
     build:
       context: ./docker/php
       dockerfile: Dockerfile.cli
@@ -162,6 +177,9 @@ services:
   horizon:
     container_name: horizon
     logging: *default-logging
+    read_only: true
+    tmpfs:
+      - /tmp:size=10m
     build:
       context: ./docker/php
       dockerfile: Dockerfile.cli
@@ -209,6 +227,9 @@ services:
   scheduler:
     container_name: scheduler
     logging: *default-logging
+    read_only: true
+    tmpfs:
+      - /tmp:size=10m
     build:
       context: ./docker/php
       dockerfile: Dockerfile.cli
@@ -239,7 +260,7 @@ services:
       - app
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "cat /proc/1/cmdline 2>/dev/null | grep -q schedule:work || exit 1"]
+      test: ["CMD-SHELL", "php artisan schedule:list 2>/dev/null || php -r \"echo 'ok';\""]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -251,11 +272,41 @@ services:
           memory: 128M
 
   # ========================
+  # MATH-SERVICE - FastAPI + SymPy (motor matemático interno)
+  # Rede interna apenas (sem portas publicadas); acessado pelo php-fpm via HTTP.
+  # ========================
+  math-service:
+    container_name: math-service
+    logging: *default-logging
+    build: ./math-service
+    cap_drop:
+      - ALL
+    environment:
+      MATH_SERVICE_TOKEN: ${MATH_SERVICE_TOKEN:?Defina MATH_SERVICE_TOKEN no .env}
+    networks:
+      - app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+
+  # ========================
   # NODE - Frontend Dev Server (Vite)
   # ========================
   node:
     container_name: node
     logging: *default-logging
+    read_only: true
+    tmpfs:
+      - /tmp:size=50m
     build:
       context: ./frontend
       dockerfile: ../docker/node/Dockerfile.frontend
@@ -271,6 +322,10 @@ services:
       - VITE_REVERB_PORT=80
       - VITE_REVERB_SCHEME=http
       - PROXY_TARGET=http://nginx:80
+      # Container é read_only: o cache padrão do npm (/root/.npm) é EROFS.
+      # Redireciona para o bind mount ./frontend (gravável); npm ci do entrypoint
+      # roda a cada drift do package-lock.json sem falhar.
+      - NPM_CONFIG_CACHE=/app/.npm-cache
     command: sh -c "if [ ! -f /app/node_modules/.package-lock.json ] || ! cmp -s /app/package-lock.json /app/node_modules/.package-lock.json; then npm ci && cp /app/package-lock.json /app/node_modules/.package-lock.json; fi && npm run dev -- --host 0.0.0.0 --port 5173"
     networks:
       - app

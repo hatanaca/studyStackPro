@@ -43,7 +43,10 @@ const subtitle = computed(() => {
           size="md"
           class="tech-card-v2__primary"
           type="button"
-          @click="technology?.id && router.push({ name: 'technology-detail', params: { id: technology.id } })"
+          @click="
+            technology?.id &&
+            router.push({ name: 'technology-detail', params: { id: technology.id } })
+          "
         >
           Sessões &amp; Detalhes
         </BaseButton>
@@ -137,7 +140,8 @@ const subtitle = computed(() => {
   gap: var(--spacing-sm);
 }
 
-[data-theme='dark'] .tech-card-v2 {
+[data-theme='dark'] .tech-card-v2,
+.tech-card-v2 {
   background: color-mix(in srgb, var(--color-bg-card) 92%, #000 8%);
   border-color: color-mix(in srgb, var(--color-border) 70%, var(--color-text-muted) 30%);
 }
@@ -176,12 +180,14 @@ const subtitle = computed(() => {
   border-color: var(--color-error);
   color: var(--color-primary-contrast);
 }
-[data-theme='dark'] .tech-card-v2 :deep(.base-button.base-button--primary) {
+[data-theme='dark'] .tech-card-v2 :deep(.base-button.base-button--primary),
+.tech-card-v2 :deep(.base-button.base-button--primary) {
   background: color-mix(in srgb, var(--color-primary) 20%, var(--color-bg-soft));
   color: var(--color-primary);
   border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
 }
-[data-theme='dark'] .tech-card-v2 :deep(.base-button.base-button--danger) {
+[data-theme='dark'] .tech-card-v2 :deep(.base-button.base-button--danger),
+.tech-card-v2 :deep(.base-button.base-button--danger) {
   background: color-mix(in srgb, var(--color-error) 18%, var(--color-bg-soft));
   color: color-mix(in srgb, var(--color-error) 90%, var(--color-text));
   border-color: color-mix(in srgb, var(--color-error) 38%, var(--color-border));

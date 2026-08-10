@@ -16,12 +16,12 @@ const GoalsWidget = defineAsyncComponent(
 )
 
 const analyticsStore = useAnalyticsStore()
-const { fetchDashboard } = useDashboard()
+const { refetchDashboard } = useDashboard()
 const activeTab = ref('overview')
 
 async function handleRefresh() {
   try {
-    await fetchDashboard(true)
+    await refetchDashboard()
   } catch {
     // erro de rede/timeout — dados mantêm estado anterior
   }

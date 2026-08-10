@@ -154,7 +154,7 @@ class LinkedInOAuthTest extends TestCase
 
         $response = $this->get('/api/v1/auth/linkedin/callback?state='.$this->validState());
 
-        $expectedPrefix = config('services.frontend_url').'/auth/callback?status=ok';
+        $expectedPrefix = config('services.frontend_url').'/auth/callback#status=ok';
         $this->assertTrue(
             str_starts_with($response->headers->get('Location') ?? '', $expectedPrefix),
             'Redirect should start with '.$expectedPrefix

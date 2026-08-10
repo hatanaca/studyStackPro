@@ -12,12 +12,6 @@ defineProps<{
 <template>
   <ChartPanel title="Tendência de estudo" :loading="loading">
     <ChartSkeleton v-if="loading" />
-    <LineChart
-      v-else
-      :data="data"
-      value-unit="minutes"
-      :filled="true"
-      :tall="true"
-    />
+    <LineChart v-else :data="data" value-unit="minutes" :filled="true" :tall="true" />
   </ChartPanel>
 </template>

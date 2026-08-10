@@ -9,20 +9,11 @@ import { useMediaQuery } from '@vueuse/core'
 
 defineOptions({ inheritAttrs: false })
 import { RouterLink, useRoute } from 'vue-router'
-import {
-  prefetchDashboardView,
-  prefetchProfileView,
-  prefetchSessionsView,
-  prefetchSettingsView,
-  prefetchTechnologiesView,
-} from '@/router/prefetch'
+import { sidebarNavItems, sidebarStakentPills } from '@/constants/sidebar-nav'
+import SidebarIcon from './SidebarIcon.vue'
 
-/** Referências explícitas para o vue-tsc reconhecer uso (handlers no template). */
-const prefetch = {
-  profile: prefetchProfileView,
-  settings: prefetchSettingsView,
-}
 import { useAuthStore } from '@/stores/auth.store'
+import { formatHours } from '@/utils/formatters'
 import { useUiStore } from '@/stores/ui.store'
 import { useAnalyticsStore } from '@/stores/analytics.store'
 import RealtimeBadge from '@/features/dashboard/components/RealtimeBadge.vue'
@@ -61,13 +52,6 @@ const showCollapsedProfileShortcut = computed(
     !uiStore.mobileSidebarOpen &&
     isDesktopLayout.value
 )
-
-function formatHours(h: number): string {
-  if (h <= 0) return '0h'
-  const int = Math.floor(h)
-  const m = Math.round((h - int) * 60)
-  return m === 0 ? `${int}h` : `${int}h ${m}min`
-}
 
 const sidebarSummary = computed(() => {
   const m = analyticsStore.userMetrics
@@ -214,130 +198,33 @@ function handleLogout() {
     </RouterLink>
     <div v-if="stakentStyle?.value" class="app-sidebar__pills">
       <RouterLink
-        to="/"
+        v-for="pill in sidebarStakentPills"
+        :key="pill.label"
+        :to="pill.to"
         class="app-sidebar__pill"
-        :class="{ active: route.path === '/' }"
-        @mouseenter="prefetchDashboardView"
+        :class="{ active: pill.isActive?.(route.path, route.name as string, route.query as Record<string, unknown>) }"
+        @mouseenter="pill.prefetch?.()"
       >
-        Estudo
-      </RouterLink>
-      <RouterLink
-        :to="{ name: 'profile', query: { tab: 'goals' } }"
-        class="app-sidebar__pill"
-        :class="{ active: route.name === 'profile' && route.query.tab === 'goals' }"
-        @mouseenter="prefetchProfileView"
-      >
-        Metas
+        {{ pill.label }}
       </RouterLink>
     </div>
     <nav class="app-sidebar__nav">
       <RouterLink
-        to="/"
-        exact-active-class="active"
+        v-for="item in sidebarNavItems"
+        :key="item.label"
+        :to="item.to"
+        :class="{ active: item.isActive?.(route.path, route.name as string, route.query as Record<string, unknown>) }"
         class="app-sidebar__link"
-        title="Dashboard"
-        aria-label="Ir para Dashboard"
-        @mouseenter="prefetchDashboardView"
+        :title="item.label"
+        :aria-label="`Ir para ${item.label}`"
+        @mouseenter="item.prefetch?.()"
       >
         <span class="app-sidebar__icon" aria-hidden="true">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <SidebarIcon :name="item.icon" />
         </span>
         <span class="app-sidebar__link-content">
-          <span class="app-sidebar__link-text">Dashboard</span>
-          <span class="app-sidebar__link-route">/</span>
-        </span>
-      </RouterLink>
-      <RouterLink
-        :to="{ name: 'sessions' }"
-        active-class="active"
-        class="app-sidebar__link"
-        title="Sessões"
-        aria-label="Ir para Sessões"
-        @mouseenter="prefetchSessionsView"
-      >
-        <span class="app-sidebar__icon" aria-hidden="true">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </span>
-        <span class="app-sidebar__link-content">
-          <span class="app-sidebar__link-text">Sessões</span>
-          <span class="app-sidebar__link-route">/sessions</span>
-        </span>
-      </RouterLink>
-      <RouterLink
-        to="/technologies"
-        active-class="active"
-        class="app-sidebar__link"
-        title="Tecnologias"
-        aria-label="Ir para Tecnologias"
-        @mouseenter="prefetchTechnologiesView"
-      >
-        <span class="app-sidebar__icon" aria-hidden="true">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
-        </span>
-        <span class="app-sidebar__link-content">
-          <span class="app-sidebar__link-text">Tecnologias</span>
-          <span class="app-sidebar__link-route">/technologies</span>
-        </span>
-      </RouterLink>
-      <RouterLink
-        to="/canvas"
-        class="app-sidebar__link"
-        :class="{ active: route.path.startsWith('/canvas') }"
-        title="Canvas"
-        aria-label="Ir para Canvas"
-      >
-        <span class="app-sidebar__icon" aria-hidden="true">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg>
-        </span>
-        <span class="app-sidebar__link-content">
-          <span class="app-sidebar__link-text">Canvas</span>
-          <span class="app-sidebar__link-route">/canvas</span>
-        </span>
-      </RouterLink>
-      <RouterLink
-        to="/graficos"
-        class="app-sidebar__link"
-        :class="{ active: route.path.startsWith('/graficos') }"
-        title="Gráficos"
-        aria-label="Ir para Gráficos"
-      >
-        <span class="app-sidebar__icon" aria-hidden="true">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-        </span>
-        <span class="app-sidebar__link-content">
-          <span class="app-sidebar__link-text">Gráficos</span>
-          <span class="app-sidebar__link-route">/graficos</span>
-        </span>
-      </RouterLink>
-      <RouterLink
-        to="/terminal"
-        class="app-sidebar__link"
-        :class="{ active: route.path.startsWith('/terminal') }"
-        title="Terminal"
-        aria-label="Ir para Terminal"
-      >
-        <span class="app-sidebar__icon" aria-hidden="true">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-        </span>
-        <span class="app-sidebar__link-content">
-          <span class="app-sidebar__link-text">Terminal</span>
-          <span class="app-sidebar__link-route">/terminal</span>
-        </span>
-      </RouterLink>
-      <RouterLink
-        to="/settings"
-        class="app-sidebar__link"
-        :class="{ active: route.path.startsWith('/settings') }"
-        title="Configurações"
-        aria-label="Ir para Configurações"
-        @mouseenter="prefetch.settings"
-      >
-        <span class="app-sidebar__icon" aria-hidden="true">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.73l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-        </span>
-        <span class="app-sidebar__link-content">
-          <span class="app-sidebar__link-text">Configurações</span>
-          <span class="app-sidebar__link-route">/settings</span>
+          <span class="app-sidebar__link-text">{{ item.label }}</span>
+          <span class="app-sidebar__link-route">{{ item.routeHint }}</span>
         </span>
       </RouterLink>
     </nav>
@@ -439,9 +326,7 @@ function handleLogout() {
   flex-direction: column;
   flex-shrink: 0;
   border-right: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
   overflow: hidden;
-  /* anima width e padding simultaneamente para colapso suave */
   transition:
     width var(--duration-slow) var(--ease-out-expo),
     padding var(--duration-slow) var(--ease-out-expo);
@@ -495,12 +380,14 @@ function handleLogout() {
   overflow: hidden;
 }
 .app-sidebar__logo {
-  font-size: var(--text-base);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
   font-weight: 600;
-  letter-spacing: var(--tracking-tight);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
   margin: 0;
   white-space: nowrap;
-  color: var(--color-text);
+  color: var(--color-accent);
   overflow: hidden;
 }
 .app-sidebar__toggle {
@@ -578,9 +465,9 @@ function handleLogout() {
   background: var(--color-bg-card);
 }
 .app-sidebar__pill.active {
-  background: var(--color-primary);
-  color: var(--color-primary-contrast);
-  border-color: var(--color-primary);
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border-color: var(--color-accent);
 }
 .app-sidebar__link:focus-visible,
 .app-sidebar__pill:focus-visible {
@@ -596,7 +483,7 @@ function handleLogout() {
   margin-top: auto;
   padding: var(--spacing-sm);
   border-radius: var(--radius-md);
-  background: var(--color-bg-soft);
+  background: color-mix(in srgb, var(--color-text) 3%, transparent);
   border: 1px solid var(--color-border);
   margin-bottom: var(--spacing-sm);
 }
@@ -625,8 +512,8 @@ function handleLogout() {
 .app-sidebar__cta {
   padding: var(--spacing-lg);
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+  background: var(--color-accent-soft);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
   margin-bottom: var(--spacing-lg);
 }
 .app-sidebar__cta-icon {
@@ -637,8 +524,9 @@ function handleLogout() {
 .app-sidebar__cta-title {
   display: block;
   font-size: var(--text-sm);
-  color: var(--color-text);
+  color: var(--color-accent);
   margin-bottom: var(--spacing-2xs);
+  font-weight: 700;
 }
 .app-sidebar__cta-desc {
   margin: 0;
@@ -653,14 +541,13 @@ function handleLogout() {
   padding: var(--spacing-sm);
   margin-bottom: var(--spacing-sm);
   border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
-  background: color-mix(in srgb, var(--color-bg-soft) 70%, transparent);
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-text) 3%, transparent);
   overflow: hidden;
   min-width: 0;
   text-decoration: none;
   color: inherit;
   cursor: pointer;
-  /* anima colapso via max-height em vez de display:none */
   max-height: 5rem;
   opacity: 1;
   pointer-events: auto;
@@ -674,8 +561,8 @@ function handleLogout() {
     box-shadow var(--duration-fast) ease;
 }
 .app-sidebar__profile:hover {
-  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
-  background: color-mix(in srgb, var(--color-primary-soft) 35%, var(--color-bg-soft));
+  border-color: color-mix(in srgb, var(--color-text) 12%, transparent);
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
 }
 .app-sidebar__profile:focus-visible {
   outline: none;
@@ -816,21 +703,41 @@ function handleLogout() {
   white-space: nowrap;
   font-size: var(--text-sm);
   font-weight: 500;
+  position: relative;
   transition:
     color var(--duration-fast) ease,
-    background var(--duration-fast) ease,
-    transform var(--duration-fast) ease;
+    background var(--duration-fast) ease;
   overflow: hidden;
 }
 .app-sidebar__link:hover {
   color: var(--sidebar-link-color-hover);
-  background: var(--color-bg-soft);
-  transform: translateX(var(--spacing-2xs));
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
 }
 .app-sidebar__link.active {
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
   font-weight: 600;
+}
+.app-sidebar__link.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--sidebar-active-indicator);
+  border-radius: 0 var(--radius-full) var(--radius-full) 0;
+}
+[data-theme='light'] .app-sidebar__link:hover {
+  background: color-mix(in srgb, var(--color-text) 3%, transparent);
+}
+[data-theme='light'] .app-sidebar__link.active {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+[data-theme='light'] .app-sidebar__link.active::before {
+  background: var(--color-primary);
 }
 .app-sidebar__link-content {
   display: flex;

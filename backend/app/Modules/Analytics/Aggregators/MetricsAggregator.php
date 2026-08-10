@@ -28,14 +28,13 @@ class MetricsAggregator
             WHERE user_id = ?::uuid AND ended_at IS NOT NULL
         ', [$userId]);
 
-        $currentStreak = $this->calculateCurrentStreak($userId, $userTimezone);
-        $maxStreak = $this->calculateMaxStreak($userId, $userTimezone);
+        $streaks = $this->calculateStreaks($userId, $userTimezone);
 
-        $totalSessions = $row?->total_sessions ?? 0;
-        $totalMinutes = $row?->total_minutes ?? 0;
+        $totalSessions = $row->total_sessions ?? 0;
+        $totalMinutes = $row->total_minutes ?? 0;
         $avgSessionMin = $row ? round((float) $row->avg_session_min, 2) : 0;
-        $longestSessionMin = $row?->longest_session_min ?? 0;
-        $shortestSessionMin = $row?->shortest_session_min ?? 0;
+        $longestSessionMin = $row->longest_session_min ?? 0;
+        $shortestSessionMin = $row->shortest_session_min ?? 0;
         $avgMood = $row?->avg_mood !== null ? round((float) $row->avg_mood, 2) : null;
         $avgFocusScore = $row?->avg_focus_score !== null ? round((float) $row->avg_focus_score, 2) : null;
         $raw = $row?->last_session_at;
@@ -67,8 +66,8 @@ class MetricsAggregator
             $avgSessionMin,
             $longestSessionMin,
             $shortestSessionMin,
-            $currentStreak,
-            $maxStreak,
+            $streaks['current'],
+            $streaks['max'],
             $avgMood,
             $avgFocusScore,
             $lastSessionAt,
@@ -144,70 +143,60 @@ class MetricsAggregator
         ', [$userTimezone, $userId]);
     }
 
-    /** Calcula streak atual (dias consecutivos até hoje) */
-    private function calculateCurrentStreak(string $userId, string $userTimezone = 'UTC'): int
+    /**
+     * Calcula streak atual e máximo em uma única query (2 table scans → 1).
+     */
+    private function calculateStreaks(string $userId, string $userTimezone = 'UTC'): array
     {
         $dates = DB::select('
             SELECT DISTINCT (started_at AT TIME ZONE ?)::date AS d
             FROM public.study_sessions
             WHERE user_id = ?::uuid AND ended_at IS NOT NULL
+              AND started_at >= NOW() - INTERVAL \'730 days\'
             ORDER BY d DESC
-            LIMIT 365
         ', [$userTimezone, $userId]);
 
         if (empty($dates)) {
-            return 0;
+            return ['current' => 0, 'max' => 0];
         }
 
-        $streak = 0;
         $today = now()->timezone($userTimezone)->toDateString();
+        $current = 0;
+        $max = 0;
+        $streak = 0;
+        $prevDate = null;
 
         foreach ($dates as $row) {
-            $d = $row->d;
-            if (is_object($d)) {
-                $d = $d->format('Y-m-d');
-            }
-            $expected = date('Y-m-d', strtotime($today.' -'.$streak.' days'));
-            if ($d === $expected) {
-                $streak++;
-            } else {
-                break;
-            }
-        }
+            $d = is_object($row->d) ? $row->d->format('Y-m-d') : $row->d;
 
-        return $streak;
-    }
-
-    /** Calcula o maior streak histórico (limitado aos últimos 730 dias para performance) */
-    private function calculateMaxStreak(string $userId, string $userTimezone = 'UTC'): int
-    {
-        $dates = DB::select('
-            SELECT DISTINCT (started_at AT TIME ZONE ?)::date AS d
-            FROM public.study_sessions
-            WHERE user_id = ?::uuid
-              AND ended_at IS NOT NULL
-              AND started_at >= NOW() - INTERVAL \'730 days\'
-            ORDER BY d
-        ', [$userTimezone, $userId]);
-
-        if (count($dates) < 2) {
-            return count($dates);
-        }
-
-        $maxStreak = 1;
-        $current = 1;
-        for ($i = 1; $i < count($dates); $i++) {
-            $prev = is_object($dates[$i - 1]->d) ? $dates[$i - 1]->d->format('Y-m-d') : $dates[$i - 1]->d;
-            $curr = is_object($dates[$i]->d) ? $dates[$i]->d->format('Y-m-d') : $dates[$i]->d;
-            $diff = (strtotime($curr) - strtotime($prev)) / 86400;
-            if ($diff === 1) {
-                $current++;
-            } else {
-                $maxStreak = max($maxStreak, $current);
+            // Current streak: must start from today
+            if ($current === 0 && $d === $today) {
                 $current = 1;
+            } elseif ($current > 0) {
+                $expected = date('Y-m-d', strtotime($today.' -'.$current.' days'));
+                if ($d === $expected) {
+                    $current++;
+                }
             }
+
+            // Max streak: count consecutive days
+            if ($prevDate !== null) {
+                $diff = (strtotime($prevDate) - strtotime($d)) / 86400;
+                if ($diff === 1) {
+                    $streak++;
+                } else {
+                    $max = max($max, $streak);
+                    $streak = 1;
+                }
+            } else {
+                $streak = 1;
+            }
+
+            $prevDate = $d;
         }
 
-        return max($maxStreak, $current);
+        $max = max($max, $streak);
+
+        return ['current' => $current, 'max' => $max];
     }
 }

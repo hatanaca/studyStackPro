@@ -28,19 +28,23 @@ const objectAngle = ref(0)
 
 const hasSelection = computed(() => store.hasSelection)
 
-watch(() => store.selectedObject, (obj) => {
-  if (!obj) return
-  fillColor.value = obj.fill || '#000000'
-  strokeColor.value = obj.stroke || '#000000'
-  strokeWidth.value = obj.strokeWidth || 1
-  opacity.value = Math.round((obj.opacity || 1) * 100)
-  fontSize.value = obj.fontSize || 24
-  fontFamily.value = obj.fontFamily || 'Arial'
-  objectName.value = obj.type || ''
-  objectLeft.value = Math.round(obj.left || 0)
-  objectTop.value = Math.round(obj.top || 0)
-  objectAngle.value = Math.round(obj.angle || 0)
-}, { immediate: true })
+watch(
+  () => store.selectedObject,
+  (obj) => {
+    if (!obj) return
+    fillColor.value = obj.fill || '#000000'
+    strokeColor.value = obj.stroke || '#000000'
+    strokeWidth.value = obj.strokeWidth || 1
+    opacity.value = Math.round((obj.opacity || 1) * 100)
+    fontSize.value = obj.fontSize || 24
+    fontFamily.value = obj.fontFamily || 'Arial'
+    objectName.value = obj.type || ''
+    objectLeft.value = Math.round(obj.left || 0)
+    objectTop.value = Math.round(obj.top || 0)
+    objectAngle.value = Math.round(obj.angle || 0)
+  },
+  { immediate: true }
+)
 
 /**
  * @description Atualiza uma propriedade do objeto selecionado no canvas.
@@ -212,7 +216,12 @@ const isText = computed(() => {
       <div class="canvas-sidebar__field">
         <label class="canvas-sidebar__field-label">Preenchimento</label>
         <div class="canvas-sidebar__field-row">
-          <input type="color" :value="fillColor" class="canvas-sidebar__color" @input="handleFillChange" />
+          <input
+            type="color"
+            :value="fillColor"
+            class="canvas-sidebar__color"
+            @input="handleFillChange"
+          />
           <span class="canvas-sidebar__color-value">{{ fillColor }}</span>
         </div>
       </div>
@@ -220,19 +229,38 @@ const isText = computed(() => {
       <div class="canvas-sidebar__field">
         <label class="canvas-sidebar__field-label">Contorno</label>
         <div class="canvas-sidebar__field-row">
-          <input type="color" :value="strokeColor" class="canvas-sidebar__color" @input="handleStrokeChange" />
+          <input
+            type="color"
+            :value="strokeColor"
+            class="canvas-sidebar__color"
+            @input="handleStrokeChange"
+          />
           <span class="canvas-sidebar__color-value">{{ strokeColor }}</span>
         </div>
       </div>
 
       <div class="canvas-sidebar__field">
         <label class="canvas-sidebar__field-label">Espessura do contorno</label>
-        <input type="range" :value="strokeWidth" min="0" max="20" class="canvas-sidebar__range" @input="handleStrokeWidthChange" />
+        <input
+          type="range"
+          :value="strokeWidth"
+          min="0"
+          max="20"
+          class="canvas-sidebar__range"
+          @input="handleStrokeWidthChange"
+        />
       </div>
 
       <div class="canvas-sidebar__field">
         <label class="canvas-sidebar__field-label">Opacidade: {{ opacity }}%</label>
-        <input type="range" :value="opacity" min="0" max="100" class="canvas-sidebar__range" @input="handleOpacityChange" />
+        <input
+          type="range"
+          :value="opacity"
+          min="0"
+          max="100"
+          class="canvas-sidebar__range"
+          @input="handleOpacityChange"
+        />
       </div>
     </div>
 
@@ -241,7 +269,14 @@ const isText = computed(() => {
 
       <div class="canvas-sidebar__field">
         <label class="canvas-sidebar__field-label">Tamanho da fonte</label>
-        <input type="number" :value="fontSize" min="8" max="200" class="canvas-sidebar__input" @input="handleFontSizeChange" />
+        <input
+          type="number"
+          :value="fontSize"
+          min="8"
+          max="200"
+          class="canvas-sidebar__input"
+          @input="handleFontSizeChange"
+        />
       </div>
 
       <div class="canvas-sidebar__field">
@@ -263,17 +298,34 @@ const isText = computed(() => {
       <div class="canvas-sidebar__field-row">
         <div class="canvas-sidebar__field">
           <label class="canvas-sidebar__field-label">X</label>
-          <input type="number" :value="objectLeft" class="canvas-sidebar__input" @input="handleLeftChange" />
+          <input
+            type="number"
+            :value="objectLeft"
+            class="canvas-sidebar__input"
+            @input="handleLeftChange"
+          />
         </div>
         <div class="canvas-sidebar__field">
           <label class="canvas-sidebar__field-label">Y</label>
-          <input type="number" :value="objectTop" class="canvas-sidebar__input" @input="handleTopChange" />
+          <input
+            type="number"
+            :value="objectTop"
+            class="canvas-sidebar__input"
+            @input="handleTopChange"
+          />
         </div>
       </div>
 
       <div class="canvas-sidebar__field">
         <label class="canvas-sidebar__field-label">Rotação: {{ objectAngle }}°</label>
-        <input type="range" :value="objectAngle" min="0" max="360" class="canvas-sidebar__range" @input="handleAngleChange" />
+        <input
+          type="range"
+          :value="objectAngle"
+          min="0"
+          max="360"
+          class="canvas-sidebar__range"
+          @input="handleAngleChange"
+        />
       </div>
     </div>
 
@@ -286,7 +338,9 @@ const isText = computed(() => {
     </div>
 
     <div class="canvas-sidebar__section canvas-sidebar__section--danger">
-      <button class="canvas-sidebar__btn canvas-sidebar__btn--danger" @click="deleteObj">Excluir objeto</button>
+      <button class="canvas-sidebar__btn canvas-sidebar__btn--danger" @click="deleteObj">
+        Excluir objeto
+      </button>
     </div>
   </aside>
 </template>

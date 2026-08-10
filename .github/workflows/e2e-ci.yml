@@ -1,0 +1,154 @@
+name: E2E Tests
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+          POSTGRES_DB: studytrack_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # --- Backend setup ---
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, redis, intl, zip
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: |
+            composer-${{ runner.os }}-
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Create backend env
+        working-directory: backend
+        run: |
+          printf '%s\n' \
+            "APP_NAME=StudyTrackPro" \
+            "APP_ENV=testing" \
+            "APP_KEY=" \
+            "APP_DEBUG=true" \
+            "APP_URL=http://localhost:8080" \
+            "DB_CONNECTION=pgsql" \
+            "DB_HOST=127.0.0.1" \
+            "DB_PORT=5432" \
+            "DB_DATABASE=studytrack_test" \
+            "DB_USERNAME=postgres" \
+            "DB_PASSWORD=${{ secrets.CI_DB_PASSWORD }}" \
+            "REDIS_HOST=127.0.0.1" \
+            "REDIS_PORT=6379" \
+            "REDIS_PASSWORD=" \
+            "CACHE_STORE=array" \
+            "QUEUE_CONNECTION=sync" \
+            "SESSION_DRIVER=array" \
+            "MAIL_MAILER=array" \
+            "BROADCAST_CONNECTION=log" \
+            "REVERB_APP_ID=local" \
+            "REVERB_APP_KEY=local-key" \
+            "REVERB_APP_SECRET=local-secret" \
+            "SANCTUM_STATEFUL_DOMAINS=localhost:8080,localhost:5173" \
+            > .env
+
+      - name: Generate app key and migrate
+        working-directory: backend
+        run: |
+          php artisan key:generate
+          php artisan migrate --force
+          php artisan db:seed --force
+
+      # --- Frontend setup ---
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Create frontend env
+        working-directory: frontend
+        run: |
+          printf '%s\n' \
+            "VITE_API_URL=" \
+            "VITE_REVERB_HOST=localhost" \
+            "VITE_REVERB_PORT=8080" \
+            "VITE_REVERB_SCHEME=http" \
+            > .env
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      # --- Start services ---
+      - name: Start Laravel backend
+        working-directory: backend
+        run: |
+          php artisan serve --host=0.0.0.0 --port=8080 &
+          sleep 3
+
+      - name: Start Vite dev server
+        working-directory: frontend
+        run: |
+          npm run dev -- --host 0.0.0.0 --port 5173 &
+          sleep 5
+
+      # --- E2E Tests ---
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install chromium --with-deps
+
+      - name: Run Playwright E2E
+        working-directory: frontend
+        run: npx playwright test
+        env:
+          BASE_URL: http://localhost:8080
+          CI: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 14

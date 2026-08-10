@@ -81,84 +81,78 @@ function handleDisconnect() {
     subtitle="Compartilhe seus estudos com sua rede profissional."
     narrow
   >
-  <div class="share-page">
-    <!-- Loading state -->
-    <div v-if="statusLoading" class="share-page__loading">
-      <Skeleton width="100%" height="12rem" border-radius="var(--radius-lg)" />
-    </div>
-
-    <!-- Not connected -->
-    <div v-else-if="!isLinked" class="share-page__connect">
-      <div class="share-page__connect-card">
-        <i class="pi pi-linkedin share-page__connect-icon" />
-        <h2 class="share-page__connect-title">Conecte sua conta LinkedIn</h2>
-        <p class="share-page__connect-desc">
-          Para compartilhar seus estudos, primeiro conecte sua conta LinkedIn.
-        </p>
-        <Button
-          label="Conectar LinkedIn"
-          icon="pi pi-external-link"
-          @click="handleConnect"
-        />
-      </div>
-    </div>
-
-    <!-- Connected: editor -->
-    <div v-else class="share-page__editor">
-      <div class="share-page__profile">
-        <i class="pi pi-linkedin share-page__profile-icon" />
-        <div class="share-page__profile-info">
-          <span class="share-page__profile-name">
-            {{ linkedinStatus?.profile?.name ?? 'Conta conectada' }}
-          </span>
-          <span class="share-page__profile-status">Conectado</span>
-        </div>
-        <Button
-          label="Desconectar"
-          severity="danger"
-          variant="text"
-          size="small"
-          :disabled="disconnectMutation.isPending.value"
-          :loading="disconnectMutation.isPending.value"
-          @click="handleDisconnect"
-        />
+    <div class="share-page">
+      <!-- Loading state -->
+      <div v-if="statusLoading" class="share-page__loading">
+        <Skeleton width="100%" height="12rem" border-radius="var(--radius-lg)" />
       </div>
 
-      <div class="share-page__form">
-        <label for="post-text" class="share-page__label">
-          O que você estudou hoje?
-        </label>
-        <Textarea
-          id="post-text"
-          v-model="postText"
-          placeholder="Ex: Hoje estudei Laravel e Vue.js. Aprendi sobre repositories, services e DTOs. Uma sessão muito produtiva!"
-          rows="8"
-          class="share-page__textarea"
-          :class="{ 'p-invalid': isOverLimit }"
-          :disabled="shareMutation.isPending.value"
-        />
-
-        <div class="share-page__form-footer">
-          <span
-            class="share-page__char-count"
-            :class="{ 'share-page__char-count--over': isOverLimit }"
-          >
-            {{ charCount }} / {{ maxChars }}
-          </span>
+      <!-- Not connected -->
+      <div v-else-if="!isLinked" class="share-page__connect">
+        <div class="share-page__connect-card">
+          <i class="pi pi-linkedin share-page__connect-icon" />
+          <h2 class="share-page__connect-title">Conecte sua conta LinkedIn</h2>
+          <p class="share-page__connect-desc">
+            Para compartilhar seus estudos, primeiro conecte sua conta LinkedIn.
+          </p>
+          <Button label="Conectar LinkedIn" icon="pi pi-external-link" @click="handleConnect" />
         </div>
       </div>
 
-      <div class="share-page__actions">
-        <Button
-          label="Publicar no LinkedIn"
-          icon="pi pi-send"
-          :disabled="!canPost || shareMutation.isPending.value"
-          :loading="shareMutation.isPending.value"
-          @click="handlePost"
-        />
+      <!-- Connected: editor -->
+      <div v-else class="share-page__editor">
+        <div class="share-page__profile">
+          <i class="pi pi-linkedin share-page__profile-icon" />
+          <div class="share-page__profile-info">
+            <span class="share-page__profile-name">
+              {{ linkedinStatus?.profile?.name ?? 'Conta conectada' }}
+            </span>
+            <span class="share-page__profile-status">Conectado</span>
+          </div>
+          <Button
+            label="Desconectar"
+            severity="danger"
+            variant="text"
+            size="small"
+            :disabled="disconnectMutation.isPending.value"
+            :loading="disconnectMutation.isPending.value"
+            @click="handleDisconnect"
+          />
+        </div>
+
+        <div class="share-page__form">
+          <label for="post-text" class="share-page__label"> O que você estudou hoje? </label>
+          <Textarea
+            id="post-text"
+            v-model="postText"
+            placeholder="Ex: Hoje estudei Laravel e Vue.js. Aprendi sobre repositories, services e DTOs. Uma sessão muito produtiva!"
+            rows="8"
+            class="share-page__textarea"
+            :class="{ 'p-invalid': isOverLimit }"
+            :disabled="shareMutation.isPending.value"
+          />
+
+          <div class="share-page__form-footer">
+            <span
+              class="share-page__char-count"
+              :class="{ 'share-page__char-count--over': isOverLimit }"
+            >
+              {{ charCount }} / {{ maxChars }}
+            </span>
+          </div>
+        </div>
+
+        <div class="share-page__actions">
+          <Button
+            label="Publicar no LinkedIn"
+            icon="pi pi-send"
+            :disabled="!canPost || shareMutation.isPending.value"
+            :loading="shareMutation.isPending.value"
+            @click="handlePost"
+          />
+        </div>
       </div>
     </div>
-  </div>
   </PageView>
 </template>
 
@@ -259,7 +253,7 @@ function handleDisconnect() {
 
 .share-page__profile-status {
   font-size: var(--text-xs);
-  color: var(--color-success, #27ae60);
+  color: var(--color-success);
 }
 
 .share-page__form {
@@ -292,7 +286,7 @@ function handleDisconnect() {
 }
 
 .share-page__char-count--over {
-  color: var(--color-error, #e74c3c);
+  color: var(--color-error);
   font-weight: 600;
 }
 

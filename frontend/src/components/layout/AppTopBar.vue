@@ -6,10 +6,12 @@
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
+import { useUiStore } from '@/stores/ui.store'
 import NotificationCenter from '@/features/notifications/components/NotificationCenter.vue'
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 
 const authStore = useAuthStore()
+const uiStore = useUiStore()
 const route = useRoute()
 const searchQuery = ref('')
 
@@ -47,6 +49,20 @@ const userInitials = computed(() => {
 <template>
   <header class="app-topbar">
     <div class="app-topbar__left">
+      <button
+        type="button"
+        class="app-topbar__hamburger"
+        aria-label="Abrir menu"
+        @click="uiStore.openMobileSidebar()"
+      >
+        <svg
+xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
       <router-link to="/" class="app-topbar__brand">
         <span class="app-topbar__logo">StudyTrack Pro</span>
       </router-link>
@@ -94,6 +110,8 @@ const userInitials = computed(() => {
         <input
           v-model="searchQuery"
           type="search"
+          inputmode="search"
+          enterkeyhint="search"
           class="app-topbar__search-input"
           placeholder="Buscar..."
           aria-label="Buscar"
@@ -131,7 +149,9 @@ const userInitials = computed(() => {
   justify-content: space-between;
   padding: 0 var(--spacing-xl);
   background: var(--shell-topbar-bg);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
   gap: var(--spacing-lg);
   flex-shrink: 0;
 }
@@ -143,15 +163,17 @@ const userInitials = computed(() => {
 }
 .app-topbar__brand {
   text-decoration: none;
-  color: var(--color-text);
+  color: var(--color-accent);
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--text-base);
-  letter-spacing: var(--tracking-tight);
+  font-weight: 600;
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
   white-space: nowrap;
 }
 .app-topbar__brand:hover {
-  color: var(--color-primary);
+  color: var(--color-accent);
+  opacity: 0.85;
 }
 .app-topbar__brand:focus-visible,
 .app-topbar__icon-btn:focus-visible {
@@ -244,9 +266,8 @@ const userInitials = computed(() => {
   min-height: var(--header-control-size);
   padding: 0 var(--spacing-sm);
   border-radius: var(--radius-full);
-  border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
-  background: color-mix(in srgb, var(--color-bg-card) 94%, var(--color-bg-soft));
-  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--color-text) 5%, transparent);
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
   transition:
     border-color var(--duration-fast) ease,
     box-shadow var(--duration-fast) ease;
@@ -305,9 +326,36 @@ const userInitials = computed(() => {
     background var(--duration-fast) ease;
 }
 .app-topbar__icon-btn:hover {
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
 }
+.app-topbar__hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--header-control-size);
+  height: var(--header-control-size);
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: color var(--duration-fast) ease, background var(--duration-fast) ease;
+}
+.app-topbar__hamburger:hover {
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+}
+.app-topbar__hamburger:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+@media (max-width: 768px) {
+  .app-topbar__hamburger {
+    display: flex;
+  }
+}
+
 @media (max-width: 1024px) {
   .app-topbar__pagetitle {
     display: none;

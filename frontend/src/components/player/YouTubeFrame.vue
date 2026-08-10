@@ -33,7 +33,10 @@ const MAX_API_RETRIES = 15
 
 function loadYT(cb: () => void) {
   if (destroyed) return
-  if ((window as any).YT?.Player) { cb(); return }
+  if ((window as any).YT?.Player) {
+    cb()
+    return
+  }
 
   // Limitar retries para evitar loop infinito
   if (apiLoadRetries >= MAX_API_RETRIES) return
@@ -117,7 +120,10 @@ function createPlayer() {
   loadYT(() => {
     if (destroyed) return
     // Destruir player anterior antes de criar novo
-    if (player) { player.destroy(); player = null }
+    if (player) {
+      player.destroy()
+      player = null
+    }
 
     if (props.playlistId) {
       player = new YT.Player(containerId, config)
@@ -154,45 +160,77 @@ function updateRepeat() {
 onMounted(() => createPlayer())
 
 // Reage a mudanças de props
-watch(() => props.playlistId, (newVal, oldVal) => {
-  if (newVal !== oldVal) createPlayer()
-})
-
-watch(() => props.videoId, (newId, oldId) => {
-  if (!newId || destroyed) return
-  if (player && isReady && newId !== oldId) {
-    player.loadVideoById(newId)
-    if (!props.isPlaying) player.pauseVideo()
-    return
+watch(
+  () => props.playlistId,
+  (newVal, oldVal) => {
+    if (newVal !== oldVal) createPlayer()
   }
-})
+)
 
-watch(() => props.videoIndex, (idx) => {
-  if (player && isReady && !destroyed) {
-    if (props.playlistId) player.playVideoAt(idx)
-    if (props.isPlaying) player.playVideo()
+watch(
+  () => props.videoId,
+  (newId, oldId) => {
+    if (!newId || destroyed) return
+    if (player && isReady && newId !== oldId) {
+      player.loadVideoById(newId)
+      if (!props.isPlaying) player.pauseVideo()
+      return
+    }
   }
-})
+)
 
-watch(() => props.isPlaying, (p) => {
-  if (!player || !isReady || destroyed) return
-  if (p) player.playVideo()
-  else player.pauseVideo()
-})
-watch(() => props.isShuffled, (v) => { if (player && isReady) player.setShuffle(v) })
-watch(() => props.repeatMode, () => { if (player && isReady) updateRepeat() })
-watch(() => props.volume, (v) => { if (player && isReady) player.setVolume(v) })
-watch(() => props.seekPercent, (v) => {
-  if (player && isReady && v >= 0) {
-    const dur = player.getDuration()
-    if (dur > 0) player.seekTo((v / 100) * dur, true)
+watch(
+  () => props.videoIndex,
+  (idx) => {
+    if (player && isReady && !destroyed) {
+      if (props.playlistId) player.playVideoAt(idx)
+      if (props.isPlaying) player.playVideo()
+    }
   }
-})
+)
+
+watch(
+  () => props.isPlaying,
+  (p) => {
+    if (!player || !isReady || destroyed) return
+    if (p) player.playVideo()
+    else player.pauseVideo()
+  }
+)
+watch(
+  () => props.isShuffled,
+  (v) => {
+    if (player && isReady) player.setShuffle(v)
+  }
+)
+watch(
+  () => props.repeatMode,
+  () => {
+    if (player && isReady) updateRepeat()
+  }
+)
+watch(
+  () => props.volume,
+  (v) => {
+    if (player && isReady) player.setVolume(v)
+  }
+)
+watch(
+  () => props.seekPercent,
+  (v) => {
+    if (player && isReady && v >= 0) {
+      const dur = player.getDuration()
+      if (dur > 0) player.seekTo((v / 100) * dur, true)
+    }
+  }
+)
 
 onUnmounted(() => {
   destroyed = true
   if (timeInterval) clearInterval(timeInterval)
-  try { player?.destroy() } catch {}
+  try {
+    player?.destroy()
+  } catch {}
   player = null
 })
 </script>
@@ -203,8 +241,14 @@ onUnmounted(() => {
 
 <style scoped>
 .yt-frame {
-  width: 1px; height: 1px;
   position: absolute;
+  width: 1px;
+  height: 1px;
   overflow: hidden;
+  pointer-events: none;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  contain: strict;
+  opacity: 0;
 }
 </style>

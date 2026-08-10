@@ -75,7 +75,9 @@ withDefaults(
 }
 .page-view__breadcrumb :deep(.p-breadcrumb-item:last-child .p-breadcrumb-item-link) {
   color: var(--color-text);
+  font-family: var(--font-display);
   font-weight: 600;
+  letter-spacing: var(--tracking-wide);
   pointer-events: none;
   cursor: default;
 }
@@ -89,10 +91,14 @@ withDefaults(
 .page-view__header {
   margin-bottom: var(--page-header-margin-bottom);
   padding: var(--spacing-md) var(--spacing-xl);
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-lg);
   background: var(--surface-page-header-bg);
-  box-shadow: var(--surface-page-header-shadow);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+[data-theme='light'] .page-view__header {
+  border-color: rgba(0, 0, 0, 0.06);
 }
 .page-view__header .page-title {
   font-family: var(--font-display);

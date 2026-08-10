@@ -2,7 +2,11 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useElementSize } from '@vueuse/core'
 import Button from 'primevue/button'
+import { directive as viewerDirective } from 'v-viewer'
+import 'viewerjs/dist/viewer.css'
 import { measureText } from '@/composables/useTextMeasure'
+
+const vViewer = viewerDirective()
 
 const props = defineProps<{
   technologyId: string

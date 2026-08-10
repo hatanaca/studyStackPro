@@ -49,12 +49,6 @@ parameters:
 			path: app/Http/Controllers/V1/LinkedInController.php
 
 		-
-			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Middleware/SlidingWindowRateLimit.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$color\.$#'
 			identifier: property.notFound
 			count: 1
@@ -85,48 +79,6 @@ parameters:
 			path: app/Listeners/StudySession/DispatchMetricsRecalculation.php
 
 		-
-			message: '#^Using nullsafe property access "\?\-\>longest_session_min" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Modules/Analytics/Aggregators/MetricsAggregator.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>shortest_session_min" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Modules/Analytics/Aggregators/MetricsAggregator.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>total_minutes" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Modules/Analytics/Aggregators/MetricsAggregator.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>total_sessions" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Modules/Analytics/Aggregators/MetricsAggregator.php
-
-		-
-			message: '#^Property App\\Modules\\Analytics\\Services\\AnalyticsService\:\:\$technologyService is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: app/Modules/Analytics/Services/AnalyticsService.php
-
-		-
-			message: '#^Instantiated class App\\Modules\\CodeExecution\\Exceptions\\SandboxExecutionException not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Modules/CodeExecution/Services/CodeExecutionService.php
-
-		-
-			message: '#^Throwing object of an unknown class App\\Modules\\CodeExecution\\Exceptions\\SandboxExecutionException\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Modules/CodeExecution/Services/CodeExecutionService.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between int and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -139,12 +91,6 @@ parameters:
 			path: app/Modules/CodeExecution/Services/DockerSandboxService.php
 
 		-
-			message: '#^Constant App\\Modules\\LinkedIn\\Services\\LinkedInService\:\:SHARE_SCOPE is unused\.$#'
-			identifier: classConstant.unused
-			count: 1
-			path: app/Modules/LinkedIn/Services/LinkedInService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
@@ -153,7 +99,7 @@ parameters:
 		-
 			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
-			count: 4
+			count: 7
 			path: app/Providers/AppServiceProvider.php
 
 		-
@@ -161,15 +107,3 @@ parameters:
 			identifier: argument.named
 			count: 1
 			path: app/Services/RedisLuaService.php
-
-		-
-			message: '#^Trait App\\Traits\\HasAuditLog is used zero times and is not analysed\.$#'
-			identifier: trait.unused
-			count: 1
-			path: app/Traits/HasAuditLog.php
-
-		-
-			message: '#^Trait App\\Traits\\HasCacheInvalidation is used zero times and is not analysed\.$#'
-			identifier: trait.unused
-			count: 1
-			path: app/Traits/HasCacheInvalidation.php

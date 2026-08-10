@@ -6,13 +6,17 @@
 # Build do frontend antes: make prod-build
 # Subir sem Vite dev: make prod-up (só serviços necessários; não sobe "node")
 #
+# Para deploy via CI (Docker Hub), defina DOCKER_IMAGE_PREFIX no .env de produção:
+#   DOCKER_IMAGE_PREFIX=seu-usuario-dockerhub/
 
 services:
   nginx:
+    image: ${DOCKER_IMAGE_PREFIX}studytrack-nginx:latest
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env de produção}
 
   php-fpm:
+    image: ${DOCKER_IMAGE_PREFIX}studytrack-backend:latest
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
@@ -45,3 +49,8 @@ services:
     ports: []
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?Defina REDIS_PASSWORD no .env de produção}
+
+  # Desabilita o Vite dev server em produção
+  node:
+    deploy:
+      replicas: 0

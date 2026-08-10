@@ -23,7 +23,20 @@
  * - `highlight` — Marcador de destaque semitransparente
  * - `sticky` — Nota adesiva (sticky note)
  */
-export type CanvasTool = 'select' | 'pencil' | 'eraser' | 'line' | 'rect' | 'circle' | 'triangle' | 'arrow' | 'text' | 'textbox' | 'image' | 'highlight' | 'sticky'
+export type CanvasTool =
+  | 'select'
+  | 'pencil'
+  | 'eraser'
+  | 'line'
+  | 'rect'
+  | 'circle'
+  | 'triangle'
+  | 'arrow'
+  | 'text'
+  | 'textbox'
+  | 'image'
+  | 'highlight'
+  | 'sticky'
 
 /**
  * @description Configuração de uma ferramenta exibida na toolbar do canvas.

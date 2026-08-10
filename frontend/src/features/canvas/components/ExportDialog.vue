@@ -54,7 +54,10 @@ function handleExport() {
             <label
               v-for="fmt in formats"
               :key="fmt.value"
-              :class="['export-dialog__format', { 'export-dialog__format--active': selectedFormat === fmt.value }]"
+              :class="[
+                'export-dialog__format',
+                { 'export-dialog__format--active': selectedFormat === fmt.value },
+              ]"
             >
               <input
                 v-model="selectedFormat"
@@ -91,8 +94,12 @@ function handleExport() {
       </div>
 
       <div class="export-dialog__footer">
-        <button class="export-dialog__btn export-dialog__btn--secondary" @click="emit('close')">Cancelar</button>
-        <button class="export-dialog__btn export-dialog__btn--primary" @click="handleExport">Exportar</button>
+        <button class="export-dialog__btn export-dialog__btn--secondary" @click="emit('close')">
+          Cancelar
+        </button>
+        <button class="export-dialog__btn export-dialog__btn--primary" @click="handleExport">
+          Exportar
+        </button>
       </div>
     </div>
   </div>

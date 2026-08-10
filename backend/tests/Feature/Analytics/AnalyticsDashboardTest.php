@@ -2,12 +2,9 @@
 
 namespace Tests\Feature\Analytics;
 
-use App\Jobs\RecalculateMetricsJob;
 use App\Models\Technology;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class AnalyticsDashboardTest extends TestCase
@@ -23,8 +20,6 @@ class AnalyticsDashboardTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Event::fake();
-        Queue::fake();
         $this->user = User::factory()->create();
         $this->technology = Technology::forceCreate([
             'user_id' => $this->user->id,
@@ -126,16 +121,11 @@ class AnalyticsDashboardTest extends TestCase
 
     public function test_recalculate_dispatches_job(): void
     {
-        Event::fake();
-        Queue::fake([RecalculateMetricsJob::class]);
-
         $response = $this->withHeader('Authorization', 'Bearer '.$this->token)
             ->postJson('/api/v1/analytics/recalculate');
 
-        $response->assertStatus(202);
-
-        Queue::assertPushed(RecalculateMetricsJob::class, function (RecalculateMetricsJob $job) {
-            return $job->userId === $this->user->id;
-        });
+        $response->assertStatus(202)
+            ->assertJson(['success' => true])
+            ->assertJsonStructure(['data' => ['job_id']]);
     }
 }

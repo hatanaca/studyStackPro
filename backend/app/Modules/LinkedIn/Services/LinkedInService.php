@@ -25,9 +25,6 @@ class LinkedInService
 
     private const OAUTH_TOKEN_URL = 'https://www.linkedin.com/oauth/v2/accessToken';
 
-    /** Scope necessário para postar em nome do membro. */
-    private const SHARE_SCOPE = 'w_member_social';
-
     /** Retorna atributo do model sem lançar MissingAttributeException. */
     private function attr(User $user, string $key): mixed
     {
@@ -102,7 +99,7 @@ class LinkedInService
 
         $response = Http::timeout(15)
             ->retry(2, 200)
-            ->withToken($user->linkedin_token)
+            ->withToken($this->attr($user, 'linkedin_token'))
             ->withHeaders([
                 'X-Restli-Protocol-Version' => '2.0.0',
             ])
@@ -143,12 +140,27 @@ class LinkedInService
 
         $data = $response->json();
 
-        $user->update([
+        $user->forceFill([
             'linkedin_token' => $data['access_token'],
             'linkedin_refresh_token' => $data['refresh_token'] ?? $this->attr($user, 'linkedin_refresh_token'),
             'linkedin_token_expires_at' => now()->addSeconds($data['expires_in']),
-        ]);
+        ])->save();
 
         Log::info('LinkedIn token refreshed', ['user_id' => $user->id]);
+    }
+
+    /**
+     * Desconecta a conta LinkedIn do usuário (limpa tokens).
+     */
+    public function disconnect(User $user): void
+    {
+        $user->forceFill([
+            'linkedin_id' => null,
+            'linkedin_token' => null,
+            'linkedin_refresh_token' => null,
+            'linkedin_token_expires_at' => null,
+        ])->save();
+
+        Log::info('LinkedIn disconnected', ['user_id' => $user->id]);
     }
 }

@@ -2,6 +2,9 @@
 node_modules/
 backend/vendor/
 projeto/
+.venv/
+__pycache__/
+.pytest_cache/
 # === AMBIENTE ===
 .env
 .env.local
@@ -12,6 +15,9 @@ backend/.env.staging
 backend/.env.testing
 backend/.env.*
 backend/.env.check
+frontend/.env
+frontend/.env.*
+frontend/.npm-cache/
 
 # === BUILD / DIST ===
 frontend/dist/
@@ -19,6 +25,11 @@ frontend/coverage/
 frontend/vite.config.js
 frontend/vite.config.d.ts
 *.tsbuildinfo
+
+# === TESTES E2E (Playwright) ===
+frontend/playwright-report/
+frontend/test-results/
+frontend/e2e/.auth/
 
 # === BACKEND LARAVEL ===
 backend/storage/logs/*

@@ -27,12 +27,15 @@ function formatTimestamp(ts: number): string {
   })
 }
 
-watch(() => props.entries.length, async () => {
-  await nextTick()
-  if (outputContainer.value) {
-    outputContainer.value.scrollTop = 0
+watch(
+  () => props.entries.length,
+  async () => {
+    await nextTick()
+    if (outputContainer.value) {
+      outputContainer.value.scrollTop = 0
+    }
   }
-})
+)
 </script>
 
 <template>
@@ -76,7 +79,10 @@ watch(() => props.entries.length, async () => {
         </div>
 
         <div class="terminal-output__entry-code">
-          <code>{{ entry.code.split('\n').slice(0, 3).join('\n') }}{{ entry.code.split('\n').length > 3 ? '\n...' : '' }}</code>
+          <code
+            >{{ entry.code.split('\n').slice(0, 3).join('\n')
+            }}{{ entry.code.split('\n').length > 3 ? '\n...' : '' }}</code
+          >
         </div>
 
         <div class="terminal-output__entry-result">
@@ -93,11 +99,17 @@ watch(() => props.entries.length, async () => {
           <div class="terminal-output__meta">
             <span
               class="terminal-output__status"
-              :class="entry.result.success ? 'terminal-output__status--ok' : 'terminal-output__status--fail'"
+              :class="
+                entry.result.success
+                  ? 'terminal-output__status--ok'
+                  : 'terminal-output__status--fail'
+              "
             >
               {{ entry.result.success ? 'OK' : 'ERRO' }}
             </span>
-            <span class="terminal-output__duration">{{ formatTime(entry.result.executionTime) }}</span>
+            <span class="terminal-output__duration">{{
+              formatTime(entry.result.executionTime)
+            }}</span>
           </div>
         </div>
       </div>
@@ -175,7 +187,9 @@ watch(() => props.entries.length, async () => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .terminal-output__empty {

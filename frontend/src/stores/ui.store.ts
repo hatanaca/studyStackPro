@@ -80,7 +80,7 @@ export const useUiStore = defineStore('ui', () => {
     fontSans: '--font-sans',
   }
 
-  const SAFE_CSS_VALUE_RE = /^[a-zA-Z0-9\s\-#,.%()\/]+$/
+  const SAFE_CSS_VALUE_RE = /^[a-zA-Z0-9\s\-#,.%()/]+$/u
 
   function applyCustomTheme() {
     const root = document.documentElement

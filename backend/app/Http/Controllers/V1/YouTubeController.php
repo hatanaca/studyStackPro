@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
-use App\Services\YouTubeService;
+use App\Http\Requests\YouTube\YouTubeSearchRequest;
+use App\Http\Requests\YouTube\YouTubeVideosRequest;
+use App\Modules\YouTube\Services\YouTubeService;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,18 +21,14 @@ class YouTubeController extends Controller
 {
     use HasApiResponse;
 
-    public function __construct(private YouTubeService $youtube) {}
+    public function __construct(private readonly YouTubeService $youtube) {}
 
     /**
      * GET /api/v1/youtube/search?q=...&pageToken=...&maxResults=...
      */
-    public function search(Request $request): JsonResponse
+    public function search(YouTubeSearchRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'q' => 'required|string|max:200',
-            'pageToken' => 'string|nullable',
-            'maxResults' => 'integer|min:1|max:50|nullable',
-        ]);
+        $validated = $request->validated();
 
         try {
             $result = $this->youtube->search(
@@ -50,11 +48,9 @@ class YouTubeController extends Controller
     /**
      * GET /api/v1/youtube/videos?ids=id1,id2,...
      */
-    public function videos(Request $request): JsonResponse
+    public function videos(YouTubeVideosRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'ids' => 'required|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         $rawIds = array_slice(
             array_filter(explode(',', $validated['ids'])),

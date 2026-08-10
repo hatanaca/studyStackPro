@@ -24,7 +24,10 @@ defineProps<{
         class="kpi__card animate-bounce-in"
         :class="`stagger-${idx + 1}`"
       >
-        <div class="kpi__glow" :style="{ background: `radial-gradient(ellipse, ${kpi.color}15 0%, transparent 70%)` }" />
+        <div
+          class="kpi__glow"
+          :style="{ background: `radial-gradient(ellipse, ${kpi.color}15 0%, transparent 70%)` }"
+        />
         <span class="kpi__label">{{ kpi.label }}</span>
         <span class="kpi__value" :style="{ color: kpi.color }">{{ kpi.value }}</span>
         <SparklineChart
@@ -61,7 +64,8 @@ defineProps<{
   flex-direction: column;
   gap: var(--spacing-2xs);
   padding: var(--spacing-lg) var(--spacing-md);
-  background: linear-gradient(135deg,
+  background: linear-gradient(
+    135deg,
     color-mix(in srgb, var(--color-bg-card) 95%, transparent) 0%,
     color-mix(in srgb, var(--color-bg-soft) 85%, transparent) 100%
   );

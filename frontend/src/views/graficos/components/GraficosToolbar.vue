@@ -10,7 +10,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:dateRange': [range: DateRange]
-  'toggleTech': [techId: string]
+  toggleTech: [techId: string]
 }>()
 
 const quickRanges = [
@@ -70,7 +70,8 @@ const endModel = computed({
   align-items: center;
   gap: var(--spacing-lg);
   padding: var(--spacing-sm) var(--spacing-lg);
-  background: linear-gradient(135deg,
+  background: linear-gradient(
+    135deg,
     color-mix(in srgb, var(--color-bg-card) 95%, transparent) 0%,
     color-mix(in srgb, var(--color-bg-soft) 85%, transparent) 100%
   );

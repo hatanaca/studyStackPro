@@ -107,9 +107,12 @@ const breadcrumbModel = computed(() => {
   gap: var(--spacing-2xs);
   padding: var(--spacing-2xs);
   margin-bottom: var(--spacing-lg);
-  background: color-mix(in srgb, var(--color-bg-soft) 55%, var(--color-bg-card));
-  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.03);
+  border: var(--card-chrome-border);
   border-radius: var(--radius-lg);
+}
+[data-theme='light'] .settings-layout__tabs {
+  background: rgba(0, 0, 0, 0.02);
 }
 .settings-layout__tab {
   padding: var(--spacing-xs) var(--spacing-md);
@@ -124,7 +127,10 @@ const breadcrumbModel = computed(() => {
 }
 .settings-layout__tab:hover {
   color: var(--color-text);
-  background: color-mix(in srgb, var(--color-bg-card) 70%, transparent);
+  background: rgba(255, 255, 255, 0.04);
+}
+[data-theme='light'] .settings-layout__tab:hover {
+  background: rgba(0, 0, 0, 0.03);
 }
 .settings-layout__tab--active {
   color: var(--color-primary-contrast);

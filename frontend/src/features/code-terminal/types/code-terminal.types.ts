@@ -1,13 +1,6 @@
 /** Linguagens suportadas pelo code terminal */
 export type ProgrammingLanguage =
-  | 'javascript'
-  | 'php'
-  | 'lua'
-  | 'html'
-  | 'css'
-  | 'sql'
-  | 'laravel'
-  | 'bash'
+  'javascript' | 'php' | 'lua' | 'html' | 'css' | 'sql' | 'laravel' | 'bash'
 
 /** Configuração de uma linguagem */
 export interface LanguageConfig {

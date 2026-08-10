@@ -1,45 +1,47 @@
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
+
+const sentryPlugins = process.env.SENTRY_AUTH_TOKEN
+  ? [sentryVitePlugin({
+      org: "thiago-silva-hatanaka",
+      project: "javascript-vue",
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      sourcemaps: { assets: "./dist/**" },
+    })]
+  : []
+
+const plugins = [vue(), ...sentryPlugins]
+
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins,
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
   build: {
+    sourcemap: !!process.env.SENTRY_AUTH_TOKEN,
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules/axios')) {
-            return 'http-vendor'
-          }
-          if (id.includes('pusher-js') || id.includes('laravel-echo')) {
-            return 'ws-vendor'
-          }
-          if (id.includes('/vue/') || id.includes('/vue-router/') || id.includes('/pinia/')) {
-            return 'vue-vendor'
-          }
-          if (id.includes('/@tanstack/vue-query/') || id.includes('/@tanstack/vue-virtual/')) {
-            return 'query-vendor'
-          }
-          if (id.includes('/primevue/') || id.includes('/@primeuix/') || id.includes('/primeicons/')) {
-            return 'primevue-vendor'
-          }
-          if (id.includes('/apexcharts/') || id.includes('/vue3-apexcharts/')) {
-            return 'charts-apex'
-          }
-          if (id.includes('/jspdf/')) {
-            return 'pdf-vendor'
-          }
-          if (id.includes('/viewerjs/') || id.includes('/v-viewer/')) {
-            return 'viewer-vendor'
-          }
-          if (id.includes('/@vue-flow/core/')) {
-            return 'vue-flow-vendor'
-          }
+          if (id.includes('node_modules/axios')) return 'http-vendor'
+          if (id.includes('pusher-js') || id.includes('laravel-echo')) return 'ws-vendor'
+          if (id.includes('/@sentry/') || id.includes('sentry')) return 'sentry-vendor'
+          if (id.includes('/vue/') || id.includes('/vue-router/') || id.includes('/pinia/')) return 'vue-vendor'
+          if (id.includes('/@tanstack/vue-query/') || id.includes('/@tanstack/vue-virtual/')) return 'query-vendor'
+          if (id.includes('/primevue/') || id.includes('/@primeuix/') || id.includes('/primeicons/')) return 'primevue-vendor'
+          if (id.includes('/apexcharts/') || id.includes('/vue3-apexcharts/')) return 'charts-apex'
+          if (id.includes('/jspdf/')) return 'pdf-vendor'
+          if (id.includes('/viewerjs/') || id.includes('/v-viewer/')) return 'viewer-vendor'
+          if (id.includes('/@vue-flow/core/')) return 'vue-flow-vendor'
+          if (id.includes('/fabric/')) return 'canvas-vendor'
+          if (id.includes('/codemirror/') || id.includes('/@codemirror/')) return 'editor-vendor'
+          if (id.includes('/katex/')) return 'math-render-vendor'
+          if (id.includes('/function-plot/') || id.includes('/mathjax/')) return 'math-plot-vendor'
+          if (id.includes('/fengari-web/')) return 'lua-vendor'
         },
       },
     },
@@ -54,19 +56,9 @@ export default defineConfig({
       ? { watch: { usePolling: true, interval: 1000 } }
       : {}),
     proxy: {
-      '/sanctum': {
-        target: process.env.PROXY_TARGET || 'http://127.0.0.1:8000',
-        changeOrigin: true
-      },
-      '/api': {
-        target: process.env.PROXY_TARGET || 'http://127.0.0.1:8000',
-        changeOrigin: true
-      },
-      '/app': {
-        target: process.env.PROXY_TARGET || 'http://127.0.0.1:8000',
-        ws: true,
-        changeOrigin: true
-      }
-    }
+      '/sanctum': { target: process.env.PROXY_TARGET || 'http://127.0.0.1:8000', changeOrigin: true },
+      '/api': { target: process.env.PROXY_TARGET || 'http://127.0.0.1:8000', changeOrigin: true },
+      '/app': { target: process.env.PROXY_TARGET || 'http://127.0.0.1:8000', ws: true, changeOrigin: true },
+    },
   },
 })

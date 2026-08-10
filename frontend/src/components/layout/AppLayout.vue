@@ -14,10 +14,12 @@ import MiniPlayer from '@/components/player/MiniPlayer.vue'
 import { clearMeasureCache } from '@/composables/useTextMeasure'
 import { invalidateChartThemeCache } from '@/composables/useApexChartTheme'
 import { connectWebSocket, disconnectWebSocket } from '@/composables/useWebSocket'
+import { useBreakpoints } from '@/composables/useMediaQuery'
 
 const authStore = useAuthStore()
 const uiStore = useUiStore()
 const route = useRoute()
+const { isMobile } = useBreakpoints()
 
 const mainWrapRef = ref<HTMLElement | null>(null)
 
@@ -28,8 +30,7 @@ watch(
   () => route.path,
   () => {
     if (mainWrapRef.value) {
-      const isMobile = window.innerWidth <= 768
-      if (isMobile) {
+      if (isMobile.value) {
         window.scrollTo({ top: 0, behavior: 'auto' })
       }
       mainWrapRef.value.scrollTo({ top: 0, behavior: 'auto' })
@@ -134,6 +135,7 @@ watch(
   background: var(--gradient-mesh);
   pointer-events: none;
   z-index: 0;
+  opacity: 0.6;
 }
 .app-layout__main > * {
   position: relative;

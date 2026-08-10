@@ -22,8 +22,8 @@ class AuthController extends Controller
     use HasApiResponse;
 
     public function __construct(
-        private AuthService $authService,
-        private TokenService $tokenService
+        private readonly AuthService $authService,
+        private readonly TokenService $tokenService
     ) {}
 
     public function register(RegisterRequest $request): JsonResponse
@@ -39,8 +39,7 @@ class AuthController extends Controller
             Auth::guard('web')->login($user);
             $request->session()->regenerate();
         }
-        $user->tokens()->where('name', 'auth-token')->delete();
-        $token = $user->createToken('auth-token')->plainTextToken;
+        $token = $this->tokenService->createApiToken($user);
 
         return $this->success([
             'user' => new UserResource($user->fresh()),
@@ -64,8 +63,7 @@ class AuthController extends Controller
             Auth::guard('web')->login($user, $dto->remember);
             $request->session()->regenerate();
         }
-        $user->tokens()->where('name', 'auth-token')->delete();
-        $token = $user->createToken('auth-token')->plainTextToken;
+        $token = $this->tokenService->createApiToken($user);
 
         return $this->success([
             'user' => new UserResource($user),

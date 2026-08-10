@@ -1371,3 +1371,40 @@ jobs:
 - **PR review should include:** Verify tests cover the new scenario, edge cases, and regressions.
 - **Flaky tests:** Zero tolerance — fix or quarantine immediately.
 - **Test documentation:** Keep this document updated as the project evolves.
+
+---
+
+## 15. Testar a aplicação em execução (ferramentas open-source)
+
+Diferente dos testes de código (seções 3–7), esta seção cobre como validar a **aplicação rodando de verdade** — via navegador real, scan de segurança dinâmico (DAST) e auditoria de UI/UX. Todas as ferramentas são open-source e sem custo.
+
+| O que | Ferramenta (licença) | Comando | Pré-requisito |
+|---|---|---|---|
+| Funcionalidade (E2E) | Playwright (Apache 2.0) | `make test-e2e` (ou `npm run test:e2e` em `frontend/`) | app no ar em `:8080`; browsers via `npx playwright install chromium` |
+| Funcionalidade (E2E, com UI visível) | Playwright | `make test-e2e-headed` | idem |
+| Segurança (DAST) | OWASP ZAP (Apache 2.0) via Docker | `make zap-scan` (full) / `make zap-scan ARGS=--baseline` | app no ar em `:8080`; Docker |
+| UI/UX (auditoria) | Lighthouse (Apache 2.0) via `npx` | `make lighthouse` | app no ar em `:8080` |
+| Segurança (imagens) | Trivy (Apache 2.0) | já roda no CI (`deploy.yml`) | — |
+| Segurança (deps/secrets) | composer audit + npm audit + secrets scan | `make security-audit` / `bash monitoring/check-security.sh` | — |
+
+**Como subir a app completa para testes:**
+
+```bash
+make setup          # cria os .env (uma vez)
+make dev            # sobe nginx, php-fpm, postgres, redis, math-service, node
+docker compose up -d reverb horizon scheduler   # WebSocket/filas (fluxos em tempo real)
+```
+
+**Fluxo típico de teste da aplicação:**
+
+1. Subir a app (comando acima) e confirmar com `make health` (espera `status: healthy`).
+2. Rodar a suíte E2E: `make test-e2e` — specs em `frontend/e2e/` (auth, navigation, technologies, study-sessions, responsive). Relatório HTML em `frontend/playwright-report/`.
+3. Rodar o scan de segurança: `make zap-scan` — relatório em `monitoring/reports/zap-report-<timestamp>.html` (alertas HIGH/CRITICAL merecem revisão).
+4. Rodar a auditoria de UI/UX: `make lighthouse` — relatório em `monitoring/reports/lighthouse.html` (scores de performance, acessibilidade, SEO).
+
+**Observações importantes:**
+
+- **WAF do nginx** (`docker/nginx/conf.d/studytrack.conf`) bloqueia user-agents de scanners como `nuclei`, `nikto`, `sqlmap` (403). O OWASP ZAP usa UA próprio e **não** é bloqueado — se usar outras ferramentas DAST com UA desses scanners, será necessário fazer spoof de user-agent.
+- Os testes E2E **registram usuários novos** a cada execução (`e2e-test-<timestamp>@example.com`), então o banco dev cresce com o uso; resetar quando necessário com `make fresh`.
+- O `global-setup.ts` do Playwright **pula os testes** se a app não estiver no ar — a suíte não falha por ambiente desligado.
+- Usuário demo com dados de 6 meses: `dev@studytrack.local` / `password` (seed via `make fresh`).

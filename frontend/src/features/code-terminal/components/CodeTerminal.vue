@@ -17,9 +17,7 @@ const previewContainer = ref<HTMLDivElement>()
 const showPreview = ref(false)
 const currentPreviewLanguage = ref<'html' | 'css' | null>(null)
 
-const isPreviewLanguage = computed(() =>
-  store.language === 'html' || store.language === 'css'
-)
+const isPreviewLanguage = computed(() => store.language === 'html' || store.language === 'css')
 
 async function handleRun() {
   if (!store.code.trim()) return
@@ -32,7 +30,11 @@ async function handleRun() {
   if (isPreviewLanguage.value && previewContainer.value) {
     showPreview.value = true
     currentPreviewLanguage.value = store.language as 'html' | 'css'
-    const result = renderInSandbox(previewContainer.value, store.code, store.language as 'html' | 'css')
+    const result = renderInSandbox(
+      previewContainer.value,
+      store.code,
+      store.language as 'html' | 'css'
+    )
 
     store.addEntry({
       id: `entry-${Date.now()}`,
@@ -106,10 +108,7 @@ watch(
 
       <div class="code-terminal__output-panel">
         <!-- Preview para HTML/CSS -->
-        <div
-          v-if="showPreview && isPreviewLanguage"
-          class="code-terminal__preview"
-        >
+        <div v-if="showPreview && isPreviewLanguage" class="code-terminal__preview">
           <div class="code-terminal__preview-header">
             <span class="code-terminal__preview-title">Preview</span>
           </div>
@@ -117,11 +116,7 @@ watch(
         </div>
 
         <!-- Terminal output -->
-        <TerminalOutput
-          :entries="store.history"
-          :is-executing="isExecuting"
-          @clear="handleClear"
-        />
+        <TerminalOutput :entries="store.history" :is-executing="isExecuting" @clear="handleClear" />
       </div>
     </div>
 

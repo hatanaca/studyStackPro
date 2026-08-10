@@ -1,13 +1,23 @@
 <?php
 
 use App\Http\Controllers\HealthController;
+use App\Http\Controllers\V1\AchievementController;
 use App\Http\Controllers\V1\AnalyticsController;
 use App\Http\Controllers\V1\AuthController;
+use App\Http\Controllers\V1\CanvasController;
 use App\Http\Controllers\V1\CodeExecutionController;
+use App\Http\Controllers\V1\ExerciseController;
+use App\Http\Controllers\V1\FlashcardController;
+use App\Http\Controllers\V1\ItaStudyController;
+use App\Http\Controllers\V1\GoalController;
 use App\Http\Controllers\V1\LinkedInController;
+use App\Http\Controllers\V1\NotificationController;
 use App\Http\Controllers\V1\OAuthController;
+use App\Http\Controllers\V1\ReminderController;
+use App\Http\Controllers\V1\StudyPathController;
 use App\Http\Controllers\V1\StudySessionController;
 use App\Http\Controllers\V1\TechnologyController;
+use App\Http\Controllers\V1\UserStudyController;
 use App\Http\Controllers\V1\YouTubeController;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
@@ -114,13 +124,135 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('analytics/recalculate', [AnalyticsController::class, 'recalculate'])
                 ->middleware('throttle:recalculate');
 
+            // Goals
+            Route::apiResource('goals', GoalController::class)
+                ->middleware('throttle:30,1');
+
+            // Canvas
+            Route::apiResource('canvas', CanvasController::class)
+                ->middleware('throttle:30,1');
+
+            // Study Paths
+            Route::apiResource('study-paths', StudyPathController::class)
+                ->middleware('throttle:30,1');
+            Route::get('study-paths/technology/{technologyId}', [StudyPathController::class, 'byTechnology'])
+                ->name('study-paths.by-technology');
+
+            // Notifications
+            Route::get('notifications', [NotificationController::class, 'index'])
+                ->middleware('throttle:60,1');
+            Route::post('notifications', [NotificationController::class, 'store'])
+                ->middleware('throttle:30,1');
+            Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])
+                ->middleware('throttle:60,1');
+            Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])
+                ->middleware('throttle:30,1');
+            Route::delete('notifications/{notification}', [NotificationController::class, 'destroy'])
+                ->middleware('throttle:30,1');
+            Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount'])
+                ->middleware('throttle:60,1');
+
+            // Reminders
+            Route::apiResource('reminders', ReminderController::class)
+                ->middleware('throttle:30,1');
+
+            // Achievements (Gamification)
+            Route::get('achievements', [AchievementController::class, 'index'])
+                ->middleware('throttle:60,1');
+            Route::post('achievements/check', [AchievementController::class, 'check'])
+                ->middleware('throttle:10,1');
+
             // Code execution terminal
             Route::middleware('throttle:10,1')->group(function () {
                 Route::post('code/execute', [CodeExecutionController::class, 'execute'])
                     ->name('code.execute');
             });
             Route::get('code/languages', [CodeExecutionController::class, 'languages'])
+                ->middleware('throttle:60,1')
                 ->name('code.languages');
+
+            // Exercises (matemática)
+            Route::apiResource('exercises/templates', ExerciseController::class)
+                ->middleware('throttle:30,1');
+            Route::post('exercises/templates/{template}/generate', [ExerciseController::class, 'generate'])
+                ->middleware('throttle:generate')
+                ->name('exercises.generate');
+            Route::get('exercises/attempts', [ExerciseController::class, 'attempts'])
+                ->middleware('throttle:60,1')
+                ->name('exercises.attempts');
+            Route::get('exercises/stats', [ExerciseController::class, 'stats'])
+                ->middleware('throttle:60,1')
+                ->name('exercises.stats');
+            Route::post('exercises/grade', [ExerciseController::class, 'grade'])
+                ->middleware('throttle:grade')
+                ->name('exercises.grade');
+            Route::post('exercises/solve', [ExerciseController::class, 'solve'])
+                ->middleware('throttle:grade')
+                ->name('exercises.solve');
+
+            // Flashcards (repetição espaçada FSRS)
+            Route::apiResource('flashcard-decks', FlashcardController::class)
+                ->middleware('throttle:30,1');
+            Route::get('flashcard-decks/{deck}/cards', [FlashcardController::class, 'cards'])
+                ->middleware('throttle:60,1')
+                ->name('flashcards.cards');
+            Route::post('flashcard-decks/{deck}/cards', [FlashcardController::class, 'storeCard'])
+                ->middleware('throttle:30,1')
+                ->name('flashcards.store-card');
+            Route::delete('flashcards/{flashcard}', [FlashcardController::class, 'destroyCard'])
+                ->middleware('throttle:30,1')
+                ->name('flashcards.destroy-card');
+            Route::get('flashcards/due', [FlashcardController::class, 'due'])
+                ->middleware('throttle:60,1')
+                ->name('flashcards.due');
+            Route::post('flashcards/{flashcard}/review', [FlashcardController::class, 'review'])
+                ->middleware('throttle:review')
+                ->name('flashcards.review');
+
+            // ITA Study (checklist de estudo)
+            Route::prefix('ita-study')->name('ita-study.')->group(function () {
+                Route::get('subjects', [ItaStudyController::class, 'subjects'])
+                    ->name('subjects');
+                Route::get('subjects/{subjectId}/topics', [ItaStudyController::class, 'topics'])
+                    ->name('topics');
+                Route::get('topics/{topicId}/subtopics', [ItaStudyController::class, 'subTopics'])
+                    ->name('sub-topics');
+                Route::post('questions/generate', [ItaStudyController::class, 'generate'])
+                    ->middleware('throttle:generate')
+                    ->name('questions.generate');
+                Route::post('questions/answer', [ItaStudyController::class, 'answer'])
+                    ->middleware('throttle:grade')
+                    ->name('questions.answer');
+                Route::post('questions/generate-batch', [ItaStudyController::class, 'generateBatch'])
+                    ->middleware('throttle:generate')
+                    ->name('questions.generate-batch');
+                Route::get('progress', [ItaStudyController::class, 'progress'])
+                    ->name('progress');
+                Route::get('progress/subject/{subjectId}', [ItaStudyController::class, 'subjectProgress'])
+                    ->name('progress.subject');
+                Route::get('progress/topic/{topicId}', [ItaStudyController::class, 'topicProgress'])
+                    ->name('progress.topic');
+
+                // Página completa de estudo: conteúdo, simulação e interações do usuário
+                Route::get('subtopics/{subTopicId}', [UserStudyController::class, 'subTopic'])
+                    ->name('sub-topics.detail');
+                Route::get('favorites', [UserStudyController::class, 'favorites'])
+                    ->name('favorites');
+                Route::post('favorites', [UserStudyController::class, 'addFavorite'])
+                    ->name('favorites.store');
+                Route::delete('favorites/{subTopicId}', [UserStudyController::class, 'removeFavorite'])
+                    ->name('favorites.destroy');
+                Route::get('subtopics/{subTopicId}/note', [UserStudyController::class, 'getNote'])
+                    ->name('notes.show');
+                Route::put('subtopics/{subTopicId}/note', [UserStudyController::class, 'saveNote'])
+                    ->name('notes.update');
+                Route::delete('subtopics/{subTopicId}/note', [UserStudyController::class, 'deleteNote'])
+                    ->name('notes.destroy');
+                Route::get('subtopics/{subTopicId}/reading-progress', [UserStudyController::class, 'getReadingProgress'])
+                    ->name('reading-progress.show');
+                Route::put('subtopics/{subTopicId}/reading-progress', [UserStudyController::class, 'updateReadingProgress'])
+                    ->name('reading-progress.update');
+            });
         });
     });
 });

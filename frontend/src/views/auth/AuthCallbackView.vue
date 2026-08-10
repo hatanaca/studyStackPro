@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { authApi } from '@/api/modules/auth.api'
 import { fetchSanctumCsrfCookie } from '@/api/sanctum'
 import type { User } from '@/types/domain.types'
 
-const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
@@ -14,7 +13,18 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 
 onMounted(async () => {
-  const { status, error: queryError, token } = route.query
+  // Lê parâmetros do fragment (#) em vez de query string por segurança.
+  // Fragmentos não são enviados ao servidor (logs, Referer headers).
+  const fragment = window.location.hash.substring(1)
+  const fragmentParams = Object.fromEntries(
+    fragment.split('&').map((p) => {
+      const [k, ...v] = p.split('=')
+      return [k, decodeURIComponent(v.join('='))]
+    })
+  )
+  const status = fragmentParams.status ?? null
+  const queryError = fragmentParams.error ?? null
+  const token = fragmentParams.token ?? null
 
   if (queryError) {
     error.value = 'Falha na autenticação com o provedor. Tente novamente.'
@@ -47,7 +57,8 @@ onMounted(async () => {
     } else {
       error.value = 'Não foi possível validar a sessão. Tente novamente.'
     }
-  } catch {
+  } catch (e) {
+    console.warn('[AuthCallback] OAuth complete failed:', e)
     error.value = 'Não foi possível validar a sessão. Tente novamente.'
   } finally {
     loading.value = false
@@ -98,12 +109,18 @@ onMounted(async () => {
   animation: spin 0.8s linear infinite;
   margin: 0 auto var(--spacing-md);
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .auth-callback__spinner { animation: none; }
+  .auth-callback__spinner {
+    animation: none;
+  }
 }
 .auth-callback__error h2 {
-  color: var(--color-danger, #ef4444);
+  color: var(--color-error);
   margin: 0 0 var(--spacing-sm);
   font-size: var(--text-lg);
 }

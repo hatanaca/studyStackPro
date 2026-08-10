@@ -16,7 +16,9 @@ describe('useLanguageDetection', () => {
   })
 
   it('detects Laravel code', () => {
-    expect(detect('<?php\nuse App\\Models\\User;\nRoute::get("/test", [Controller::class, "index"]);')).toBe('laravel')
+    expect(
+      detect('<?php\nuse App\\Models\\User;\nRoute::get("/test", [Controller::class, "index"]);')
+    ).toBe('laravel')
     expect(detect('$app->make(Route::class)')).toBe('laravel')
     expect(detect('<?php Illuminate\\Support\\Collection')).toBe('laravel')
   })
@@ -65,6 +67,10 @@ describe('useLanguageDetection', () => {
   })
 
   it('prefers Laravel over PHP when Laravel patterns present', () => {
-    expect(detect('<?php\nuse App\\Http\\Controllers\\Controller;\nRoute::get("/test", [Controller::class, "index"]);')).toBe('laravel')
+    expect(
+      detect(
+        '<?php\nuse App\\Http\\Controllers\\Controller;\nRoute::get("/test", [Controller::class, "index"]);'
+      )
+    ).toBe('laravel')
   })
 })

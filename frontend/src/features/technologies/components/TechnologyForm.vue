@@ -14,7 +14,7 @@ const props = withDefaults(
     /** Bloqueia envio duplo enquanto o pai grava na API */
     submitting?: boolean
   }>(),
-  { submitting: false }
+  { submitting: false, modelValue: null }
 )
 
 const emit = defineEmits<{

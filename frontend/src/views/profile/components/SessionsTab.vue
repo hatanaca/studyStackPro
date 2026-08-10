@@ -142,7 +142,9 @@ function revokeAll() {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 .sessions-tab__item:hover {
   border-color: var(--color-primary);

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Analytics\ExportAnalyticsRequest;
 use App\Http\Requests\Analytics\HeatmapRequest;
 use App\Http\Requests\Analytics\TimeSeriesRequest;
-// DashboardResource removed - returning array directly
 use App\Modules\Analytics\Services\AnalyticsService;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -26,7 +25,7 @@ class AnalyticsController extends Controller
      * Injeta o AnalyticsService para agregação e cache de métricas.
      */
     public function __construct(
-        private AnalyticsService $analyticsService
+        private readonly AnalyticsService $analyticsService
     ) {}
 
     /**
@@ -61,7 +60,7 @@ class AnalyticsController extends Controller
      */
     public function timeSeries(TimeSeriesRequest $request): JsonResponse
     {
-        $data = $this->analyticsService->getTimeSeries30d($request->user()->id);
+        $data = $this->analyticsService->getTimeSeries($request->user()->id, $request->getDays());
 
         return $this->success($data);
     }

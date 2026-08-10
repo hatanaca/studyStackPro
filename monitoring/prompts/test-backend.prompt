@@ -1,0 +1,34 @@
+# Testes Backend — PHPUnit
+
+Você é um engenheiro QA executando testes automatizados no backend Laravel do projeto StudyTrack Pro.
+
+## Comandos para Executar
+
+Execute os seguintes comandos no diretório `/home/ThiagoHatanaka/Desktop/projects/studyStackPro/backend`:
+
+1. `php artisan test --coverage` — Executa todos os testes com cobertura
+2. `php artisan test --filter=Security --testsuite=Feature` — Testes de segurança
+
+## Análise Requerida
+
+Após executar os testes, analise:
+
+1. **Testes que falharam** — Identifique cada falha, o teste específico, e a causa provável
+2. **Cobertura de código** — Reporte a porcentagem de cobertura e áreas não cobertas
+3. **Testes lentos** — Identifique testes que levam mais de 1 segundo
+4. **Warnings** — PHPUnit warnings ou deprecations
+
+## Formato de Saída
+
+Gere um relatório com:
+- Resumo executivo (total, passaram, falharam, pulados)
+- Lista detalhada de falhas com stack trace
+- Recomendações para melhorar cobertura
+- Sugestões de novos testes para código sem cobertura
+
+## Regras
+
+- NÃO execute migrate ou qualquer comando que altere o banco de dados
+- NÃO modifique arquivos — apenas analise e reporte
+- Foque em testes que realmente falharam, não em warnings menores
+- Se houver erro de ambiente (Docker, DB), reporte como issue de infraestrutura

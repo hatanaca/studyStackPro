@@ -1,7 +1,5 @@
 import { onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
-import { handleError } from '@/utils/handleError'
-import { useAnalyticsStore } from '@/stores/analytics.store'
 import { isConnected } from '@/composables/useWebSocket'
 
 /** Intervalo de polling do dashboard quando WebSocket desconectado (2min) */
@@ -10,17 +8,16 @@ const DISCONNECTED_POLLING_DELAY_MS = 5000
 const VISIBILITY_COOLDOWN_MS = 10_000
 
 export interface UseDashboardOptions {
-  /** Refetch do dashboard (ex.: query.refetch do useDashboardQuery). Usado no polling e ao voltar à aba. */
+  /** Refetch do dashboard (ex.: query.refetch do useDashboardQuery). */
   refetchDashboard?: () => Promise<unknown>
 }
 
 /**
- * Composable do dashboard: polling de fallback, refetch ao voltar à aba, init (heatmap/weekly/timeSeries).
- * Quando WebSocket desconecta, inicia polling. initDashboard chama fetchDashboard e carrega widgets extras.
+ * Composable do dashboard: polling de fallback e refetch ao voltar a aba.
+ * Quando WebSocket desconecta, inicia polling.
  */
 export function useDashboard(options?: UseDashboardOptions) {
   const authStore = useAuthStore()
-  const analyticsStore = useAnalyticsStore()
   const refetchDashboard = options?.refetchDashboard
 
   let pollingIntervalId: ReturnType<typeof setInterval> | null = null
@@ -29,15 +26,11 @@ export function useDashboard(options?: UseDashboardOptions) {
   let consecutiveErrors = 0
   let stopWatcher: (() => void) | null = null
 
-  function getFetchFn() {
-    return refetchDashboard ?? (() => analyticsStore.fetchDashboard(true))
-  }
-
   function startPolling() {
-    if (pollingIntervalId) return
+    if (pollingIntervalId || !refetchDashboard) return
     pollingIntervalId = setInterval(async () => {
       try {
-        await getFetchFn()()
+        await refetchDashboard()
         consecutiveErrors = 0
       } catch {
         consecutiveErrors++
@@ -79,16 +72,15 @@ export function useDashboard(options?: UseDashboardOptions) {
 
   async function handleVisibilityChange() {
     if (document.visibilityState !== 'visible') return
-
-    // Skip fetch if WebSocket is connected - it will receive updates via events
     if (isConnected.value) return
+    if (!refetchDashboard) return
 
     const now = Date.now()
     if (now - lastVisibilityFetchAt < VISIBILITY_COOLDOWN_MS) return
     lastVisibilityFetchAt = now
 
     try {
-      await getFetchFn()()
+      await refetchDashboard()
       consecutiveErrors = 0
     } catch {
       consecutiveErrors++
@@ -112,29 +104,7 @@ export function useDashboard(options?: UseDashboardOptions) {
     stopWatcher = null
   })
 
-  /**
-   * Inicializa dados secundários do dashboard (heatmap, weekly, time series).
-   * O dashboard principal é carregado via useDashboardQuery (TanStack Query).
-   */
-  async function initDashboard() {
-    await Promise.all([
-      analyticsStore.fetchHeatmap().catch(handleError('fetchHeatmap')),
-      analyticsStore.fetchWeekly().catch(handleError('fetchWeekly')),
-    ])
-
-    // 30d: widgets padrão; 7d: progresso de metas (useGoalProgress); 90d: sob demanda no TimeSeriesWidget
-    const series: Promise<unknown>[] = []
-    if (!analyticsStore.timeSeriesData['30d']?.length) {
-      series.push(analyticsStore.fetchTimeSeries('30d').catch(handleError('fetchTimeSeries-30d')))
-    }
-    if (!analyticsStore.timeSeriesData['7d']?.length) {
-      series.push(analyticsStore.fetchTimeSeries('7d').catch(handleError('fetchTimeSeries-7d')))
-    }
-    if (series.length) await Promise.all(series)
-  }
-
   return {
-    fetchDashboard: (force?: boolean) => analyticsStore.fetchDashboard(force),
-    initDashboard,
+    refetchDashboard: refetchDashboard ?? (() => Promise.resolve()),
   }
 }

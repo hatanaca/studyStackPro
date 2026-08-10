@@ -53,7 +53,26 @@ function onDocumentClick(e: MouseEvent) {
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') close()
+  if (e.key === 'Escape') {
+    close()
+    return
+  }
+  if (!isOpen.value) return
+  const items = panelRef.value?.querySelectorAll(
+    '[role="menuitem"], [role="option"], button:not([disabled])'
+  )
+  if (!items?.length) return
+  const current = document.activeElement as HTMLElement
+  const idx = Array.from(items).indexOf(current)
+  if (e.key === 'ArrowDown') {
+    e.preventDefault()
+    const next = idx < items.length - 1 ? idx + 1 : 0
+    ;(items[next] as HTMLElement).focus()
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault()
+    const prev = idx > 0 ? idx - 1 : items.length - 1
+    ;(items[prev] as HTMLElement).focus()
+  }
 }
 
 watch(isOpen, (open) => {
@@ -98,6 +117,7 @@ defineExpose({ close })
         class="base-dropdown__panel"
         :class="alignClass"
         role="menu"
+        @keydown="onKeydown"
       >
         <slot name="default" />
       </div>

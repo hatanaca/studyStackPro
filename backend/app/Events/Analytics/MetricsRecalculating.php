@@ -27,6 +27,7 @@ class MetricsRecalculating implements ShouldBroadcast
         return '.metrics.recalculating';
     }
 
+    /** @return array<empty, empty> */
     public function broadcastWith(): array
     {
         return [];

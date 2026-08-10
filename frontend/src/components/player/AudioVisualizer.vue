@@ -65,11 +65,23 @@ onMounted(() => {
 
 onUnmounted(() => cancelAnimationFrame(animId))
 
-watch(() => props.isPlaying, (v) => { if (v) randomizeTargets() })
+watch(
+  () => props.isPlaying,
+  (v) => {
+    if (v) randomizeTargets()
+  }
+)
 </script>
 
 <template>
-  <canvas ref="canvasRef" class="audio-visualizer" width="40" height="18" @mousedown.stop @touchstart.stop />
+  <canvas
+    ref="canvasRef"
+    class="audio-visualizer"
+    width="40"
+    height="18"
+    @mousedown.stop
+    @touchstart.stop
+  />
 </template>
 
 <style scoped>

@@ -25,7 +25,7 @@ export const authApi = {
     password_confirmation: string
     timezone?: string
   }) => apiClient.post<ApiResponse<{ user: User }>>(ENDPOINTS.auth.register, data),
-  logout: () => apiClient.post(ENDPOINTS.auth.logout),
+  logout: () => apiClient.post(ENDPOINTS.auth.logout, {}),
   oauthComplete: (token: string) =>
     apiClient.post<ApiResponse<{ user: User }>>(ENDPOINTS.auth.oauthComplete, { token }),
   me: () => apiClient.get<ApiResponse<User>>(ENDPOINTS.auth.me),

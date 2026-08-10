@@ -27,7 +27,8 @@ defineProps<{
 <style scoped>
 .cp {
   position: relative;
-  background: linear-gradient(135deg,
+  background: linear-gradient(
+    135deg,
     color-mix(in srgb, var(--color-bg-card) 95%, transparent) 0%,
     color-mix(in srgb, var(--color-bg-soft) 90%, transparent) 100%
   );
@@ -55,7 +56,11 @@ defineProps<{
   right: -20%;
   width: 50%;
   height: 120%;
-  background: radial-gradient(ellipse, color-mix(in srgb, var(--color-primary) 4%, transparent) 0%, transparent 70%);
+  background: radial-gradient(
+    ellipse,
+    color-mix(in srgb, var(--color-primary) 4%, transparent) 0%,
+    transparent 70%
+  );
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;

@@ -50,6 +50,14 @@ jobs:
         working-directory: backend
         run: mkdir -p bootstrap/cache storage/framework/views storage/framework/cache storage/framework/sessions storage/logs
 
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: |
+            composer-${{ runner.os }}-
+
       - name: Install dependencies
         working-directory: backend
         run: mkdir -p bootstrap/cache && composer install --no-interaction --prefer-dist
@@ -108,6 +116,13 @@ jobs:
       - name: Run Pint
         working-directory: backend
         run: ./vendor/bin/pint --test
+
+
+      - name: Run Gitleaks secret scanner
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: false
 
       - name: Run PHPStan
         working-directory: backend
